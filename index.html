@@ -3,74 +3,135 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Hinterland — thin slice</title>
+<title>Hinterland — generator</title>
 <!--
-  Hinterland — procedural region-scale map generator (THIN SLICE / §7).
+  Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
-  CRS decision (§5 option 1): FLAT PLANE. All geometry lives in a planar
-  coordinate space x,y in [0,1000]. "kilometers" are made up but internally
-  consistent. y is treated as UP (north) in the data + GeoJSON; the SVG preview
-  flips y for display so it matches QGIS orientation.
+  FOUNDATIONS layer (roadmap §8 #1): parameter UI + seeded/deterministic RNG.
+    - Seeded mulberry32 RNG: same params => byte-identical GeoJSON (reproducible).
+    - Knobs: region count, relaxation (organic<->even), capital position,
+      capital wealth bias (the explicit inequity knob, §6).
+    - Params round-trip through the URL hash (shareable/bookmarkable worlds) and
+      are embedded in the exported FeatureCollection for provenance.
 
-  Inequity model (§6): EXPLICIT knob for now — `wealth` is seeded as a gradient
-  that decays with distance from a designated capital region. Emergent is the
-  eventual goal, not this slice.
+  CRS (§5 option 1): FLAT PLANE. Geometry lives in planar x,y in [0,1000].
+    y is treated as UP (north) in the data + GeoJSON; the SVG preview flips y so
+    the preview matches QGIS orientation.
+
+  Inequity (§6): EXPLICIT knob — `wealth` is seeded as a gradient that decays
+    from a designated capital; the bias slider controls how steep that decay is.
+    Emergent inequity is the eventual goal, not this layer.
 
   Dependency: d3-delaunay (Voronoi + Delaunay) via CDN. Needs internet even when
-  opened from disk. Everything else is vanilla JS.
+  opened from disk. Everything else is vanilla JS, single file.
 -->
 <style>
-  :root { --ink:#222; --line:#444; }
+  :root { --ink:#222; --line:#444; --paper:#f4f1ea; }
   * { box-sizing: border-box; }
   body {
     margin: 0; font: 14px/1.4 system-ui, sans-serif; color: var(--ink);
-    background: #f4f1ea; padding: 16px;
+    background: var(--paper); padding: 16px;
   }
   h1 { font-size: 18px; margin: 0 0 4px; }
-  p.sub { margin: 0 0 12px; color: #666; max-width: 70ch; }
-  .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  p.sub { margin: 0 0 12px; color: #666; max-width: 78ch; }
+  .layout { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+  .controls {
+    width: 260px; background: #fff; border: 1px solid var(--line); border-radius: 6px;
+    padding: 12px; font-size: 13px;
+  }
+  .controls .row { margin-bottom: 12px; }
+  .controls label { display: block; font-weight: 600; margin-bottom: 4px; }
+  .controls .val { font-weight: 400; color: #08519c; }
+  .controls input[type=range] { width: 100%; }
+  .controls input[type=text] { width: 100%; padding: 5px 6px; font: inherit; border: 1px solid var(--line); border-radius: 4px; }
+  .controls .inline { display: flex; gap: 6px; }
+  .hint { color: #888; font-size: 12px; margin-top: 3px; }
   button {
-    font: inherit; padding: 6px 12px; cursor: pointer;
+    font: inherit; padding: 6px 10px; cursor: pointer;
     border: 1px solid var(--line); background: #fff; border-radius: 4px;
   }
   button:hover { background: #eee; }
   button.primary { background: #08519c; color: #fff; border-color: #063a6e; }
   button.primary:hover { background: #063a6e; }
-  .layout { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
-  #stage { background: #fff; border: 1px solid var(--line); }
-  svg { display: block; }
-  .panel { font-size: 13px; min-width: 220px; }
-  .panel table { border-collapse: collapse; width: 100%; }
-  .panel td { padding: 2px 6px; border-bottom: 1px solid #e2ddd1; }
-  .panel td:first-child { color: #666; }
+  button.wide { width: 100%; }
+  #stage { background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+  #stage svg { display: block; cursor: crosshair; }
+  .side { font-size: 13px; min-width: 220px; }
+  .side table { border-collapse: collapse; width: 100%; }
+  .side td { padding: 2px 6px; border-bottom: 1px solid #e2ddd1; }
+  .side td:first-child { color: #666; }
   .legend { margin-top: 12px; }
   .legend .bar {
-    height: 14px; width: 180px; border: 1px solid var(--line);
+    height: 14px; width: 200px; border: 1px solid var(--line);
     background: linear-gradient(to right, rgb(237,248,233), rgb(0,90,50));
   }
-  .legend .ends { display: flex; justify-content: space-between; width: 180px; color: #666; }
+  .legend .ends { display: flex; justify-content: space-between; width: 200px; color: #666; }
   .err { color: #a00; font-weight: 600; }
   code { background: #e8e4da; padding: 1px 4px; border-radius: 3px; }
+  .toast { color: #2a7a2a; font-size: 12px; min-height: 14px; margin-top: 4px; }
 </style>
 </head>
 <body>
-  <h1>Hinterland — thin slice</h1>
+  <h1>Hinterland — generator</h1>
   <p class="sub">
-    Procedural region generator. Flat-plane coords (0–1000). Each region carries a
-    <code>wealth</code> attribute seeded as a gradient that decays away from the
-    capital. Click <b>Download GeoJSON</b> and load it in QGIS to verify the bridge.
+    Procedural regions in flat-plane coords (0–1000). Each region carries a
+    <code>wealth</code> attribute seeded as a gradient that decays from the capital.
+    Everything is driven by a <b>seed</b> — the same seed and knobs always produce the
+    same world. Tune, then <b>Download GeoJSON</b> for QGIS, or copy a share link.
   </p>
 
-  <div class="toolbar">
-    <button id="regen">⟳ Regenerate</button>
-    <button id="download" class="primary">⬇ Download GeoJSON</button>
-    <span id="status" style="color:#666"></span>
-  </div>
-
   <div class="layout">
+    <!-- Controls -->
+    <div class="controls">
+      <div class="row">
+        <label for="seed">Seed</label>
+        <div class="inline">
+          <input type="text" id="seed" inputmode="text" />
+          <button id="diceSeed" title="Random seed">🎲</button>
+        </div>
+        <div class="hint">Any text or number. Drives the whole world.</div>
+      </div>
+
+      <div class="row">
+        <label>Regions <span class="val" id="regionsVal"></span></label>
+        <input type="range" id="regions" min="5" max="40" step="1" />
+      </div>
+
+      <div class="row">
+        <label>Relaxation <span class="val" id="relaxVal"></span></label>
+        <input type="range" id="relax" min="0" max="8" step="1" />
+        <div class="hint">Lloyd passes: 0 = chaotic/organic, 8 = even/regular.</div>
+      </div>
+
+      <div class="row">
+        <label>Capital wealth bias <span class="val" id="biasVal"></span></label>
+        <input type="range" id="bias" min="0" max="100" step="1" />
+        <div class="hint">How steeply wealth concentrates at the capital (the inequity knob).</div>
+      </div>
+
+      <div class="row">
+        <label>Capital</label>
+        <div class="inline">
+          <button id="diceCapital" class="wide" title="Random capital region">🎲 random capital</button>
+        </div>
+        <div class="hint">…or click anywhere on the map to move it.</div>
+      </div>
+
+      <div class="row">
+        <button id="download" class="primary wide">⬇ Download GeoJSON</button>
+      </div>
+      <div class="row" style="margin-bottom:4px">
+        <button id="share" class="wide">🔗 Copy share link</button>
+      </div>
+      <div class="toast" id="toast"></div>
+    </div>
+
+    <!-- Map -->
     <div id="stage"></div>
-    <div class="panel">
+
+    <!-- Readout -->
+    <div class="side">
       <table id="info"></table>
       <div class="legend">
         <div style="margin-bottom:4px;color:#666">wealth (choropleth)</div>
@@ -85,25 +146,48 @@
   (function () {
     "use strict";
 
-    // ---- Config (thin slice: only what §7 needs) ----------------------------
-    const W = 1000;          // world is [0,W] x [0,W], planar, y-up
-    const LLOYD_ITERS = 2;   // "a couple of Lloyd's relaxation passes"
-    const SVG = 640;         // preview size in px
+    // ---- Constants ----------------------------------------------------------
+    const W = 1000;        // world is [0,W] x [0,W], planar, y-up
+    const SVG = 640;       // preview size in px
+    const MARGIN = 120;    // keep derived capital away from the very edge
+
+    const DEFAULTS = { seed: "hinterland", regions: 12, relax: 2, bias: 80, capital: null };
+    // capital === null means "derive deterministically from the seed".
+    // Once the user clicks/dice the capital it becomes an explicit [x,y] (pinned).
+
+    // ---- Deterministic RNG (mulberry32) + string hashing --------------------
+    function hashStr(str) {
+      let h = 2166136261 >>> 0;
+      for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+      return h >>> 0;
+    }
+    function mulberry32(a) {
+      return function () {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    // Independent named sub-streams from one seed, so changing attributes never
+    // perturbs topology and vice-versa.
+    function streams(seedText) {
+      const base = hashStr(String(seedText));
+      return (tag) => mulberry32((base ^ hashStr(tag)) >>> 0);
+    }
 
     // ---- Tiny helpers -------------------------------------------------------
-    const rand = Math.random;
-    const randInt = (lo, hi) => Math.floor(rand() * (hi - lo + 1)) + lo;
     const round2 = (v) => Math.round(v * 100) / 100;
     const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
 
-    // Placeholder name generator (NOT the real Markov names — §7 leaves that out).
-    const SYL_A = ["Bran","Cor","Dun","El","Far","Gar","Hal","Kel","Mor","Nor","Pel","Riv","Tor","Vel","Wyn","Ash","Black"];
-    const SYL_B = ["dale","ford","gate","haven","mere","port","ridge","shire","stead","ton","vale","wick","wood","moor","burgh"];
-    const makeName = () => SYL_A[randInt(0, SYL_A.length - 1)] + SYL_B[randInt(0, SYL_B.length - 1)];
+    // Placeholder name generator (NOT the real Markov names yet). Deterministic.
+    const SYL_A = ["Bran","Cor","Dun","El","Far","Gar","Hal","Kel","Mor","Nor","Pel","Riv","Tor","Vel","Wyn","Ash","Black","Grey","Stone","Oak"];
+    const SYL_B = ["dale","ford","gate","haven","mere","port","ridge","shire","stead","ton","vale","wick","wood","moor","burgh","fell","holm"];
+    const makeName = (r) => SYL_A[Math.floor(r() * SYL_A.length)] + SYL_B[Math.floor(r() * SYL_B.length)];
 
     // ---- Planar polygon geometry (Euclidean — no geodesic Turf, per §5) -----
-    // Rings here are CLOSED arrays of [x,y] (first point repeated at the end),
-    // which is exactly what d3 voronoi.cellPolygon() returns.
+    // Rings are CLOSED arrays of [x,y] (first point repeated), as d3 returns them.
     function signedArea(ring) {
       let a = 0;
       for (let i = 0; i < ring.length - 1; i++) {
@@ -112,7 +196,6 @@
       }
       return a / 2; // >0 == counter-clockwise in y-up space
     }
-
     function centroid(ring) {
       let a = 0, cx = 0, cy = 0;
       for (let i = 0; i < ring.length - 1; i++) {
@@ -128,176 +211,263 @@
       }
       return [cx / (6 * a), cy / (6 * a)];
     }
-
     // Force exterior ring counter-clockwise (RFC 7946 right-hand rule), staying closed.
-    function asCCW(ring) {
-      return signedArea(ring) < 0 ? ring.slice().reverse() : ring;
-    }
+    const asCCW = (ring) => (signedArea(ring) < 0 ? ring.slice().reverse() : ring);
 
     // ---- Voronoi + Lloyd's relaxation --------------------------------------
-    function voronoiOf(points) {
-      return d3.Delaunay.from(points).voronoi([0, 0, W, W]);
-    }
-
-    function relax(points, iters) {
-      let pts = points;
+    const voronoiOf = (pts) => d3.Delaunay.from(pts).voronoi([0, 0, W, W]);
+    function relax(pts, iters) {
       for (let it = 0; it < iters; it++) {
         const vor = voronoiOf(pts);
-        pts = pts.map((p, i) => {
-          const cell = vor.cellPolygon(i);
-          return cell ? centroid(cell) : p; // move each seed to its cell centroid
-        });
+        pts = pts.map((p, i) => { const c = vor.cellPolygon(i); return c ? centroid(c) : p; });
       }
       return pts;
     }
 
-    // ---- Generate one world model ------------------------------------------
-    function generate() {
-      const n = randInt(5, 12); // "~5–12 Voronoi regions"
-      let seeds = Array.from({ length: n }, () => [rand() * W, rand() * W]);
-      seeds = relax(seeds, LLOYD_ITERS);
-
+    // ---- Stage 1: topology (depends only on seed / regions / relax) ---------
+    function buildTopology(params) {
+      const r = streams(params.seed)("topo");
+      let seeds = Array.from({ length: params.regions }, () => [r() * W, r() * W]);
+      seeds = relax(seeds, params.relax);
       const vor = voronoiOf(seeds);
       const regions = [];
-      seeds.forEach((seed, i) => {
+      seeds.forEach((s, i) => {
         const raw = vor.cellPolygon(i);
-        if (!raw) return; // skip any cell d3 couldn't build
+        if (!raw) return;
         const ring = asCCW(raw);
         regions.push({ id: regions.length, ring, c: centroid(ring) });
       });
+      return regions;
+    }
 
-      // Designate a capital region; wealth decays with distance from it (§6 explicit knob).
-      const cap = regions[randInt(0, regions.length - 1)];
+    // ---- Stage 2: attributes (capital, wealth gradient, settlements) --------
+    // Cheap to recompute, so moving the capital or the bias slider is instant.
+    function applyAttributes(regions, params) {
+      const sx = streams(params.seed);
+      // Resolve the capital point: explicit (pinned) or derived from the seed.
+      let capPoint = params.capital;
+      if (!capPoint) {
+        const rc = sx("capital");
+        capPoint = [MARGIN + rc() * (W - 2 * MARGIN), MARGIN + rc() * (W - 2 * MARGIN)];
+      }
+      // Capital region = the one whose centroid is nearest the capital point.
+      let cap = regions[0], best = Infinity;
+      for (const reg of regions) {
+        const d = Math.hypot(reg.c[0] - capPoint[0], reg.c[1] - capPoint[1]);
+        if (d < best) { best = d; cap = reg; }
+      }
+      // Wealth gradient anchored on the capital region centroid.
       let maxD = 0;
-      regions.forEach(r => {
-        r.dist = Math.hypot(r.c[0] - cap.c[0], r.c[1] - cap.c[1]);
-        if (r.dist > maxD) maxD = r.dist;
+      regions.forEach(reg => {
+        reg.dist = Math.hypot(reg.c[0] - cap.c[0], reg.c[1] - cap.c[1]);
+        if (reg.dist > maxD) maxD = reg.dist;
       });
-      regions.forEach(r => {
-        const grad = maxD > 0 ? 1 - r.dist / maxD : 1;       // 1 at capital -> 0 at edge
-        const noise = (rand() * 2 - 1) * 6;                  // small jitter so it's not a clean diagram
-        r.wealth = clamp(Math.round(20 + 80 * grad + noise), 0, 100);
-        r.isCapital = (r === cap);
+      const k = lerp(0.4, 3.0, params.bias / 100); // bias -> falloff exponent (steepness)
+      const rNoise = sx("wealth");
+      regions.forEach(reg => {
+        const t = maxD > 0 ? 1 - reg.dist / maxD : 1;     // 1 at capital -> 0 at the edge
+        const shaped = Math.pow(t, k);
+        const noise = (rNoise() * 2 - 1) * 5;
+        reg.wealth = clamp(Math.round(lerp(5, 100, shaped) + noise), 0, 100);
+        reg.isCapital = (reg === cap);
       });
 
       // Tiered settlements: 1 capital + a few towns, each at a region centroid.
-      const settlements = [];
-      settlements.push({
-        name: makeName(), tier: "capital", regionId: cap.id,
+      const rA = sx("attr"), rN = sx("name");
+      const settlements = [{
+        name: makeName(rN), tier: "capital", regionId: cap.id,
         x: cap.c[0], y: cap.c[1], wealth: cap.wealth
-      });
-      const others = regions.filter(r => r !== cap);
-      // shuffle then take a few
-      for (let i = others.length - 1; i > 0; i--) { const j = randInt(0, i); [others[i], others[j]] = [others[j], others[i]]; }
-      const townCount = Math.min(others.length, randInt(3, 5));
+      }];
+      const others = regions.filter(reg => reg !== cap);
+      for (let i = others.length - 1; i > 0; i--) { const j = Math.floor(rA() * (i + 1)); [others[i], others[j]] = [others[j], others[i]]; }
+      const townCount = Math.min(others.length, Math.min(8, Math.max(3, Math.round(params.regions * 0.35))));
       for (let i = 0; i < townCount; i++) {
-        const r = others[i];
-        settlements.push({
-          name: makeName(), tier: "town", regionId: r.id,
-          x: r.c[0], y: r.c[1], wealth: r.wealth
-        });
+        const reg = others[i];
+        settlements.push({ name: makeName(rN), tier: "town", regionId: reg.id, x: reg.c[0], y: reg.c[1], wealth: reg.wealth });
       }
 
-      return { regions, settlements, capitalName: settlements[0].name };
+      return { regions, settlements, capital: cap, capPoint, capitalName: settlements[0].name };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
-    function toGeoJSON(model) {
+    function toGeoJSON(model, params) {
       const features = [];
-      model.regions.forEach(r => {
+      model.regions.forEach(reg => {
         features.push({
           type: "Feature",
-          properties: {
-            kind: "region",
-            region_id: r.id,
-            wealth: r.wealth,
-            is_capital_region: r.isCapital ? 1 : 0
-          },
-          geometry: {
-            type: "Polygon",
-            coordinates: [r.ring.map(p => [round2(p[0]), round2(p[1])])]
-          }
+          properties: { kind: "region", region_id: reg.id, wealth: reg.wealth, is_capital_region: reg.isCapital ? 1 : 0 },
+          geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
       });
       model.settlements.forEach(s => {
         features.push({
           type: "Feature",
-          properties: {
-            kind: "settlement",
-            name: s.name,
-            tier: s.tier,
-            region_id: s.regionId,
-            wealth: s.wealth
-          },
+          properties: { kind: "settlement", name: s.name, tier: s.tier, region_id: s.regionId, wealth: s.wealth },
           geometry: { type: "Point", coordinates: [round2(s.x), round2(s.y)] }
         });
       });
-      return { type: "FeatureCollection", name: "hinterland", features };
+      return {
+        type: "FeatureCollection",
+        name: "hinterland",
+        // Provenance: the exact params that generated this file (reproducibility).
+        hinterland: {
+          seed: String(params.seed), regions: params.regions, relax: params.relax,
+          bias: params.bias, capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
+          space: "planar 0..1000, y-up (flat-plane CRS, §5 option 1)"
+        },
+        features
+      };
     }
 
     // ---- Rendering (SVG, ugly on purpose) ----------------------------------
     function wealthColor(w) {
-      const t = w / 100;
-      const lo = [237, 248, 233], hi = [0, 90, 50]; // pale -> dark green
+      const t = w / 100, lo = [237, 248, 233], hi = [0, 90, 50];
       const m = (a, b) => Math.round(a + (b - a) * t);
       return `rgb(${m(lo[0], hi[0])},${m(lo[1], hi[1])},${m(lo[2], hi[2])})`;
     }
-    const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const fy = (y) => W - y; // flip y for display so preview matches QGIS (y-up)
 
-    function render(model) {
-      const s = SVG / W;            // world -> px scale
-      const fy = (y) => W - y;      // flip y for display so preview matches QGIS (y-up)
-      const parts = [`<svg width="${SVG}" height="${SVG}" viewBox="0 0 ${W} ${W}" xmlns="http://www.w3.org/2000/svg">`];
-
-      model.regions.forEach(r => {
-        const d = "M" + r.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
-        parts.push(`<path d="${d}" fill="${wealthColor(r.wealth)}" stroke="#333" stroke-width="1.5"/>`);
-        parts.push(`<text x="${r.c[0].toFixed(1)}" y="${fy(r.c[1]).toFixed(1)}" font-size="20" text-anchor="middle" fill="#000" opacity="0.55">${r.wealth}</text>`);
+    function render(model, params) {
+      const parts = [`<svg id="map" width="${SVG}" height="${SVG}" viewBox="0 0 ${W} ${W}" xmlns="http://www.w3.org/2000/svg">`];
+      model.regions.forEach(reg => {
+        const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
+        const stroke = reg.isCapital ? "#d62728" : "#333";
+        const sw = reg.isCapital ? 4 : 1.5;
+        parts.push(`<path d="${d}" fill="${wealthColor(reg.wealth)}" stroke="${stroke}" stroke-width="${sw}"/>`);
+        parts.push(`<text x="${reg.c[0].toFixed(1)}" y="${fy(reg.c[1]).toFixed(1)}" font-size="20" text-anchor="middle" fill="#000" opacity="0.55">${reg.wealth}</text>`);
       });
-
-      model.settlements.forEach(sm => {
-        const cx = sm.x, cy = fy(sm.y);
-        const isCap = sm.tier === "capital";
+      model.settlements.forEach(s => {
+        const cx = s.x, cy = fy(s.y), isCap = s.tier === "capital";
         parts.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${isCap ? 16 : 9}" fill="${isCap ? "#d62728" : "#fff"}" stroke="#000" stroke-width="2"/>`);
-        parts.push(`<text x="${cx.toFixed(1)}" y="${(cy - (isCap ? 22 : 14)).toFixed(1)}" font-size="20" text-anchor="middle" fill="#000" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="4">${esc(sm.name)}</text>`);
+        parts.push(`<text x="${cx.toFixed(1)}" y="${(cy - (isCap ? 22 : 14)).toFixed(1)}" font-size="20" text-anchor="middle" fill="#000" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="4">${esc(s.name)}</text>`);
       });
-
       parts.push(`</svg>`);
-      document.getElementById("stage").innerHTML = parts.join("");
+      const stage = document.getElementById("stage");
+      stage.innerHTML = parts.join("");
+      stage.querySelector("#map").addEventListener("click", onMapClick);
 
-      // info panel
       const ws = model.regions.map(r => r.wealth);
       const rows = [
+        ["seed", esc(params.seed)],
         ["regions", model.regions.length],
-        ["settlements", model.settlements.length],
-        ["capital", esc(model.capitalName)],
+        ["relaxation", params.relax],
+        ["capital", `${esc(model.capitalName)} (region #${model.capital.id})`],
+        ["bias", params.bias + "%"],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["CRS", "planar 0–1000 (y-up)"]
       ];
-      document.getElementById("info").innerHTML =
-        rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+      document.getElementById("info").innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
     }
 
-    // ---- Wire up ------------------------------------------------------------
-    let current = null;
-    function regenerate() {
-      current = generate();
-      render(current);
-      document.getElementById("status").textContent =
-        `${current.regions.length} regions generated`;
+    // ---- State + recompute orchestration ------------------------------------
+    let params = { ...DEFAULTS };
+    let topology = null;   // cached regions (rebuilt only on topology-param change)
+    let model = null;
+
+    function regenerateTopology() { topology = buildTopology(params); recomputeAttributes(); }
+    function recomputeAttributes() {
+      model = applyAttributes(topology, params);
+      render(model, params);
+      writeHash();
     }
 
-    function download() {
-      if (!current) return;
-      const blob = new Blob([JSON.stringify(toGeoJSON(current), null, 2)],
-        { type: "application/geo+json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = "hinterland.geojson";
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
+    // ---- URL hash <-> params (shareable, reproducible worlds) ---------------
+    function writeHash() {
+      const p = new URLSearchParams();
+      p.set("seed", params.seed);
+      p.set("regions", params.regions);
+      p.set("relax", params.relax);
+      p.set("bias", params.bias);
+      if (params.capital) { p.set("cx", round2(params.capital[0])); p.set("cy", round2(params.capital[1])); }
+      // Replace hash without adding a history entry on every slider tick.
+      history.replaceState(null, "", "#" + p.toString());
+    }
+    function readHash() {
+      const h = location.hash.replace(/^#/, "");
+      if (!h) return { ...DEFAULTS };
+      const p = new URLSearchParams(h);
+      // Empty/whitespace values fall back to the default (not the clamp minimum).
+      const num = (key, def) => { const v = p.get(key); return (v != null && v.trim() !== "" && isFinite(+v)) ? +v : def; };
+      const out = {
+        seed: p.get("seed") || DEFAULTS.seed,
+        regions: clamp(Math.round(num("regions", DEFAULTS.regions)), 5, 40),
+        relax: clamp(Math.round(num("relax", DEFAULTS.relax)), 0, 8),
+        bias: clamp(Math.round(num("bias", DEFAULTS.bias)), 0, 100),
+        capital: null
+      };
+      if (p.has("cx") && p.has("cy") && isFinite(+p.get("cx")) && isFinite(+p.get("cy")))
+        out.capital = [clamp(+p.get("cx"), 0, W), clamp(+p.get("cy"), 0, W)];
+      return out;
     }
 
+    // ---- UI sync ------------------------------------------------------------
+    function syncControls() {
+      document.getElementById("seed").value = params.seed;
+      document.getElementById("regions").value = params.regions;
+      document.getElementById("relax").value = params.relax;
+      document.getElementById("bias").value = params.bias;
+      document.getElementById("regionsVal").textContent = params.regions;
+      document.getElementById("relaxVal").textContent = params.relax;
+      document.getElementById("biasVal").textContent = params.bias + "%";
+    }
+
+    function onMapClick(ev) {
+      const svg = ev.currentTarget, rect = svg.getBoundingClientRect();
+      const wx = ((ev.clientX - rect.left) / rect.width) * W;
+      const wyDisplay = ((ev.clientY - rect.top) / rect.height) * W;
+      params.capital = [clamp(round2(wx), 0, W), clamp(round2(W - wyDisplay), 0, W)]; // un-flip y
+      recomputeAttributes(); // topology untouched -> instant
+    }
+
+    function toast(msg) {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      setTimeout(() => { if (t.textContent === msg) t.textContent = ""; }, 2500);
+    }
+
+    // ---- Wiring -------------------------------------------------------------
+    function wire() {
+      const $ = (id) => document.getElementById(id);
+
+      $("seed").addEventListener("change", (e) => { params.seed = e.target.value || DEFAULTS.seed; params.capital = null; regenerateTopology(); });
+      $("diceSeed").addEventListener("click", () => {
+        params.seed = makeName(mulberry32((hashStr(params.seed) ^ (params.regions << 8) ^ params.bias) >>> 0)) +
+          "-" + (1000 + Math.floor((Date.now ? (Date.now() % 9000) : 0)));
+        params.capital = null; syncControls(); regenerateTopology();
+      });
+
+      $("regions").addEventListener("input", (e) => { params.regions = +e.target.value; $("regionsVal").textContent = params.regions; params.capital = null; regenerateTopology(); });
+      $("relax").addEventListener("input", (e) => { params.relax = +e.target.value; $("relaxVal").textContent = params.relax; regenerateTopology(); });
+      $("bias").addEventListener("input", (e) => { params.bias = +e.target.value; $("biasVal").textContent = params.bias + "%"; recomputeAttributes(); });
+
+      $("diceCapital").addEventListener("click", () => {
+        const reg = topology[Math.floor(Math.random() * topology.length)];
+        params.capital = [round2(reg.c[0]), round2(reg.c[1])];
+        recomputeAttributes();
+      });
+
+      $("download").addEventListener("click", () => {
+        if (!model) return;
+        const blob = new Blob([JSON.stringify(toGeoJSON(model, params), null, 2)], { type: "application/geo+json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "hinterland.geojson";
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      });
+
+      $("share").addEventListener("click", async () => {
+        writeHash();
+        const link = location.href;
+        try { await navigator.clipboard.writeText(link); toast("Share link copied ✓"); }
+        catch (_) { toast("Copy failed — link is in the address bar"); }
+      });
+
+      window.addEventListener("hashchange", () => { params = readHash(); syncControls(); regenerateTopology(); });
+    }
+
+    // ---- Boot ---------------------------------------------------------------
     function boot() {
       if (typeof d3 === "undefined" || !d3.Delaunay) {
         document.getElementById("stage").innerHTML =
@@ -306,9 +476,10 @@
            Voronoi library. Check your connection and reload.</p>`;
         return;
       }
-      document.getElementById("regen").addEventListener("click", regenerate);
-      document.getElementById("download").addEventListener("click", download);
-      regenerate();
+      params = readHash();
+      syncControls();
+      wire();
+      regenerateTopology();
     }
 
     boot();

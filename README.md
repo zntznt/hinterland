@@ -36,7 +36,15 @@ choropleth; the export always carries every column.
    (or `aetherstone_endowment`, `pop_density`) → Natural Breaks (Jenks), 5 classes.
 4. **Proportional symbols:** settlements layer → *Graduated* by **size** on
    `population` — or *Categorized* on `tier`.
-5. **The W2 check (the shadow is the state's negative image):** choropleth
+5. **The W3 check (the past sits on the land):** choropleth
+   `abandonment_index` — the dark patches are old ore country
+   (`exhausted_lode = 1`, real blind geology that feeds no income today) whose
+   value left and whose people stayed. Categorize `founding_era` to see the
+   settlement cohorts, `shock_legacy` for the scars (collapses at the dead
+   lodes, plagues at the worst blight, wars on the bloc seams), and scatter
+   `legacy_advantage` × `wealth` to watch head starts persist. Every column is
+   exactly recomputable from the other exported fields.
+6. **The W2 check (the shadow is the state's negative image):** choropleth
    `enforcement_gap` next to `force_projection` — the lawless hinterland is
    the exact complement of where the garrisons (`kind = 'garrison'`, G) can
    reach. Style `smuggling_intensity` and watch the contraband corridors
@@ -45,7 +53,7 @@ choropleth; the export always carries every column.
    index (multiply by `population` in the field calculator for volume) and
    correlates ≈ −0.9 with `arcane_service_index` — the shadow prices the
    underservice. `security_status` gives the categorical version.
-6. **The W1 check (two networks, one lie):** style roads by `road_class`
+7. **The W1 check (two networks, one lie):** style roads by `road_class`
    (width) or graduated on `traffic`, and overlay the conduit. **Every**
    settlement is on the road network — connection is universal, because people
    walk. The conduit is what gets rationed. That side-by-side is the sharpest
@@ -53,7 +61,7 @@ choropleth; the export always carries every column.
    *unserved*. Then choropleth `market_access` (Hansen gravity over road
    costs) and `pilgrim_flux` (through-traffic to the sanctioned sites — the
    on-route economy the bypassed never see).
-7. **The Phase 6 check (who governs whom):** categorize regions on
+8. **The Phase 6 check (who governs whom):** categorize regions on
    `dominant_bloc` (5 classes). The Crown holds the center, the magnates hold
    the refinery districts, the Temple holds its sanctioned sites (▲ points,
    `kind = 'sanctioned_site'`) out on the ore and the margins — and between
@@ -62,7 +70,7 @@ choropleth; the export always carries every column.
    The reach fields behind the classification (`centrality_to_seat`,
    `temple_reach`, `magnate_reach`) are all exported, so the argmax is
    auditable.
-8. **The Phase 5 check (the payload — who gets sick, who gets care):**
+9. **The Phase 5 check (the payload — who gets sick, who gets care):**
    choropleth `disease_burden_per_1k` (a rate — Jenks, 5 classes, sequential
    ramp) and overlay facility points filtered to `facility_type = 'healer'`.
    The burden concentrates exactly where `healing_reach` collapses — the
@@ -72,7 +80,7 @@ choropleth; the export always carries every column.
    unsafe water, or structural vulnerability as small multiples. For coverage:
    `service_gap_idx` choropleth, or buffer the healer points for a service-area
    view and see who falls outside.
-9. **The Phase 4 check (environmental injustice):** choropleth `blight_load`
+10. **The Phase 4 check (environmental injustice):** choropleth `blight_load`
    and bivariate it against `wealth` (or just map the precomputed
    `injustice_idx`). Under the default dump bias the blight–wealth correlation
    is strongly **negative** — the poison lands on the poor. Re-export at
@@ -80,14 +88,14 @@ choropleth; the export always carries every column.
    the spoil stays at the refineries and the centers eat their own waste. That
    sign flip, side by side in a print layout, is the measured *policy share*
    of the injustice.
-10. **The Phase 3 check (off-grid darkness):** style regions by
+11. **The Phase 3 check (off-grid darkness):** style regions by
    `arcane_service_index`, overlay the conduit lines, and categorize settlements
    by `on_conduit` — the dark periphery is exactly where the grid's economics
    said "not worth it" (`population × wealth` below the threshold), never a
    hand-picked list. Compute darkness as `100 - "conduit_access"` in the field
    calculator if you want the negative image. Sweep the grid-threshold slider
    (0 = everyone connected) and re-export to watch darkness spread.
-11. **The Phase 2 check (the resource curse):** scatter or bivariate
+12. **The Phase 2 check (the resource curse):** scatter or bivariate
    `aetherstone_endowment` × `wealth` — under default weights a visible share of
    high-endowment regions sits below median wealth: rich ground, poor people,
    and no layer was authored to produce it (ore is blind noise; the seat prefers
@@ -141,6 +149,12 @@ capital) — every file can reproduce its world.
 | `predation_risk` | 0–100 | traffic + pilgrims worth robbing × absence of protection |
 | `black_market_index` | 0–100 | per-capita reliance on unsanctioned channels (≈ inverse of arcane services) |
 | `enforcement_gap` | 0–100 | illicit pressure − state capacity — the lawless-hinterland column |
+| `exhausted_lode` | 0/1 | blind geology: ore mined out long ago; feeds no income today |
+| `founding_era` | enum | `relic_era` \| `first_settlement` \| `conduit_boom` \| `recent_frontier` (+ `founding_age` 0–100) |
+| `legacy_advantage` | 0–100 | head starts compound: founding age × conduit × centrality |
+| `shock_legacy` | enum | `refinery_collapse` \| `blight_plague` \| `relic_disaster` \| `war` \| `none` (+ `shock_severity`) |
+| `abandonment_index` | 0–100 | past value − present wealth: the hysteresis gap (ghost country) |
+| `tenure_churn` | 0–100 | how often a region changed hands — high on the bloc seams |
 
 **Settlement features (Point):**
 
@@ -178,6 +192,9 @@ least-cost paths — the busy edges are the chokepoints), `from_region`,
 rationed.
 
 **Schema history:**
+- **v10** (second wave W3) added deep time: `exhausted_lode`, `founding_era` +
+  `founding_age`, `legacy_advantage`, `shock_legacy` + `shock_severity`,
+  `abandonment_index`, `tenure_churn`.
 - **v9** (second wave W2) added security + the shadow economy: garrison Point
   features and region columns `force_projection`, `wardline_strength`,
   `security_status`, `smuggling_intensity`, `predation_risk`,

@@ -8,6 +8,12 @@
 >
 > Produced from a structured expert panel (≈20 disciplinary lenses) working off a
 > single binding setting frame. The full per-lens reasoning is in the appendix.
+>
+> Revised after a follow-up design review: generation order pinned as an acyclic
+> DAG, the endowment/seat relationship flipped so the frontier *emerges* (blind
+> geology + agrarian-core seat), `wealth` concretized as three income streams,
+> per-phase acceptance criteria added, and the recompute pipeline split into
+> three stages.
 
 ---
 
@@ -94,19 +100,37 @@ are computed last for mapping. This ordering is what makes emergence honest.
   attribute (the panel's #1 redundancy warning).
 - `darkness` is just `100 − conduit_access` — a render convenience, never an
   independent analytic variable.
+- Every attribute draws from its **own named RNG substream** (the foundations
+  discipline) so the byte-identical-export guarantee survives; every new knob is
+  recorded in the export's `hinterland` provenance member, alongside a
+  `schema_version` field — a file must always be reproducible from its own metadata.
+- The recompute pipeline grows from two stages to three: **topology → geology →
+  society**. Geology (endowment, terrain, biome, relics) depends only on
+  seed + topology; society depends on geology + the socioeconomic knobs. Moving
+  the capital or dragging a bias slider must never reshuffle the geology.
 
 ### 3.1 PRIMITIVES (generated first, independent of `wealth`)
 
 | property | level | type/scale | generation (1-liner) |
 |---|---|---|---|
-| `aetherstone_endowment` | region | 0–100 | Sparse clustered low-frequency noise, thresholded to rare rich pockets; mildly anti-correlated with centrality (ore favors the rugged frontier) **with noise** so some sits near the center. |
+| `aetherstone_endowment` | region | 0–100 | Sparse clustered low-frequency noise, thresholded to rare rich pockets — **pure geology, generated blind to the seat and every social layer.** The ore-in-the-frontier pattern is *not* painted here; it emerges from seat placement (see note below). |
 | `terrain_ruggedness` | region | 0–100 | Local variance of an elevation noise field. |
 | `biome_type` | region | enum {alpine, forest, grassland, wetland, arid_steppe, badland, coastal} | Elevation × moisture noise, Whittaker-style lookup. |
 | `relic_density` | region (+POIs) | 0–100 | Cluster relic sites in remote/upland/blighted terrain; each POI carries salvage/hazard/contested flags. |
-| `population` | settlement (→region) | count | Rank-size (Zipf) draw from tier, modulated up by `wealth`/`on_conduit`, down by `blight_load`. **The denominator for everything.** |
+| `population` | settlement (→region) | count | From the **settlement skeleton**: tiers are assigned first (one `prime` at the seat, `hub`s by centrality rank, the rest `outpost`/`holdfast`), then population is a seeded rank-size draw from the tier's band, scaled by local carrying capacity (biome). **The denominator for everything.** The base count never reads a derived attribute; later phases may add a separate `population_adj` migration column. |
 
 > History primitives (`founding_era`, `shock_legacy`) are powerful path-dependence
 > levers but are deferred (§7); they belong to the second wave.
+
+> **Seat placement (the honest root of the periphery).** From Phase 2 the default
+> (unpinned) seat stops being a uniform random point: it is placed where political
+> centers historically arise — high carrying-capacity, low-ruggedness, well-situated
+> lowland. Because rich ore disproportionately sits in rugged marginal country and
+> the seat deliberately doesn't, the endowment-vs-centrality anti-correlation
+> **emerges from two independent, individually innocent choices** — geology that
+> ignores politics, and a capital that prefers farmland. No layer is authored
+> against the frontier, yet the frontier appears. (Clicking to pin the seat still
+> works; the derivation only replaces the default.)
 
 ### 3.2 DERIVED socioeconomic outcomes
 
@@ -114,9 +138,9 @@ are computed last for mapping. This ordering is what makes emergence honest.
 |---|---|---|---|---|
 | `centrality_to_seat` | region | 0–100 | Inverted, normalized **cost-distance** from the seat over a friction surface (ruggedness+biome). Master peripherality measure. | EMERGENT |
 | `pop_density` | region | persons/area | `population / polygon_area`. The "uneconomic to serve" signal. | EMERGENT |
-| `refining_capacity` | region (+facility) | 0–100 | Site few refineries by center-bias (high centrality, capital, water) — **NOT** at the ore. The engineered extraction/refining split. | EXPLICIT siting |
+| `refining_capacity` | region (+facility) | 0–100 | Site few refineries by center-bias (high centrality + water/terrain; deliberately reads **no** social layer, keeping the DAG acyclic) — **NOT** at the ore. The engineered extraction/refining split. | EXPLICIT siting |
 | `value_retention` | region | 0–100 | Share of locally-generated resource value that stays local = f(local refining vs raw extraction, centrality). **The core inequity ratio.** | EMERGENT |
-| `wealth` (refit) | region | 0–100 | **Reframed**: blend of `value_retention`, `refining_capacity`, centrality, with the existing capital-gradient demoted to one term + noise. Now able to be high-endowment/low-wealth. | EXPLICIT→EMERGENT |
+| `wealth` (refit) | region | 0–100 | **Reframed as three income streams**: `w_e·(endowment × extraction × value_retention)` (what extraction actually leaves behind) + `w_f·refining value-add` + `w_t·trade/service income (∝ centrality)`, plus a `w_g·capital-gradient` legacy term (default low) and seeded noise. All weights are sliders; at `w_g = 0` wealth is fully emergent. Now able to be high-endowment/low-wealth. | EXPLICIT→EMERGENT |
 | `on_conduit` (+`conduit_access`) | settlement/region | boolean (+0–100) | Grow conduit greedily from refineries/seat; connect a node only if `population × wealth` clears `friction × length` (grid-economics threshold). Below → off-grid. | EXPLICIT threshold |
 | `arcane_service_index` | settlement/region | 0–100 | Delivered lumen = f(`on_conduit`, distance line-loss, local `wealth` to pay the meter, sanctioned-site bonus). Need is deliberately **not** an input. | EMERGENT |
 | `blight_load` | region | 0–100 | Emitted by `refining_capacity`/heavy use; spread by a downhill/downwind kernel **plus** a secondary bias toward low-`wealth` land (dumping). | EXPLICIT dump + EMERGENT transport |
@@ -129,7 +153,7 @@ are computed last for mapping. This ordering is what makes emergence honest.
 |---|---|---|---|
 | `nearest_facility_distance` | settlement | distance | Distance to closest facility (healing/water/wardline) — feeds isochrone/coverage. |
 | `service_gap_idx` | settlement/region | 0–100 | Precomputed coverage gap: inverse of service reach + nearest-facility distance + off-grid status, population-weighted. |
-| `injustice_idx` | region | 0–100 or 3×3 bivariate | `normalize(blight_load) × normalize(100 − wealth)` — the "poison lands on the poor" surface. |
+| `injustice_idx` | region | 0–100 or 3×3 bivariate | `normalize(blight_load) × normalize(100 − wealth)` — the "poison lands on the poor" surface. **Presentation-layer only:** the argument rests on the two raw fields (independently generated) and their measured correlation; this column just makes the print layout one-click. |
 
 ---
 
@@ -138,25 +162,38 @@ are computed last for mapping. This ordering is what makes emergence honest.
 The spine (read `A, B -> C` as "A and B generate C"):
 
 ```
-aetherstone_endowment, centrality_to_seat       -> extraction (frontier)
-extraction, centrality_to_seat, wealth          -> refining_capacity (center)   [the split]
-refining_capacity, extraction                   -> value_retention (low at frontier)
-value_retention, refining_capacity, centrality  -> wealth                        [now emergent]
-population, wealth, friction                     -> on_conduit                    [grid economics]
-on_conduit, wealth, sanctioned_site             -> arcane_service_index
-refining_capacity, elevation/wind, wealth       -> blight_load                   [exported downhill]
+terrain, biome (blind geology)                   -> carrying_capacity, friction
+carrying_capacity, friction                      -> seat placement (agrarian core, not ore country)
+seat, friction                                   -> centrality_to_seat
+aetherstone_endowment (blind geology)            -> extraction (falls where the ore is: the frontier)
+centrality_to_seat, water/terrain                -> refining_capacity (center)   [the split; reads no social layer]
+extraction, refining_capacity                    -> value_retention (low at frontier)
+value_retention, refining_capacity, centrality   -> wealth                       [now emergent]
+population, wealth, friction                     -> on_conduit                   [grid economics]
+on_conduit, wealth, sanctioned_site              -> arcane_service_index
+refining_capacity, elevation/wind, (λ·wealth)    -> blight_load                  [exported downhill; λ = dump-bias knob]
 blight_load, water, vulnerability, healing_reach -> disease_burden_per_1k
-blight_load, wealth                             -> injustice_idx
-Crown/Temple/magnate reach fields               -> dominant_bloc
+blight_load, wealth                              -> injustice_idx
+Crown/Temple/magnate reach fields                -> dominant_bloc
 ```
+
+**Canonical generation order (the DAG, run as ONE bounded forward pass):**
+seed → topology (Voronoi/Lloyd) → geology (endowment, ruggedness, biome, relics) →
+settlement skeleton (tiers, population) → seat resolution → centrality → refining
+siting → value_retention → wealth → conduit → arcane services → blight → health →
+relational columns. No unbounded fixed-point loops: any feedback is approximated by
+this fixed order — optionally with a small *fixed* number of relaxation sweeps, in
+the same spirit as the Lloyd's passes: always seeded, always terminating.
 
 **The 3 emergent throughlines to build toward** (each is a chain from fixed
 geography to underservice that no single knob authored):
 
-1. **The resource curse (flagship).** `aetherstone_endowment` is fixed and
-   frontier-biased → ore is extracted there but `refining_capacity` is sited at the
-   center → `value_retention` collapses at the frontier → `wealth` stays low **despite
-   high production**. The headline injustice: rich ground, poor people.
+1. **The resource curse (flagship).** Geology is blind to politics, but the seat
+   settles in the agrarian core — so the ore-rich margins end up peripheral by
+   *consequence*, not by authorship → ore is extracted there but `refining_capacity`
+   is sited at the center → `value_retention` collapses at the frontier → `wealth`
+   stays low **despite high production**. The headline injustice: rich ground, poor
+   people — and no single layer was written to produce it.
 2. **Off-grid darkness.** Low `wealth` + low `pop_density` fail the conduit's
    grid-economics threshold → `on_conduit = false` → `arcane_service_index` ≈ 0 →
    no light, no purified water, no wardline, no healing — *regardless of need.*
@@ -165,9 +202,9 @@ geography to underservice that no single knob authored):
    where `arcane_service_index` is lowest. The periphery eats the pollution of a
    prosperity it cannot share.
 
-These three share one root (`aetherstone_endowment` + `centrality_to_seat`) and one
-victim (the frontier), which is why the map reads as a coherent argument rather than
-a pile of correlated noise.
+These three share one root (blind geology + an agrarian-core seat, meeting in
+`centrality_to_seat`) and one victim (the frontier), which is why the map reads as a
+coherent argument rather than a pile of correlated noise.
 
 ---
 
@@ -177,44 +214,70 @@ One layer at a time, **re-export and re-check in QGIS after each.** Each phase i
 chosen to (a) unblock the next and (b) produce at least one new headline map.
 
 - **Phase 1 — the denominator + the root primitive.**
-  Add **`population`** (settlement→region, with `pop_density`) and
-  **`aetherstone_endowment`** (region primitive). Retire the `capital`/`town`
-  placeholders for the 4-tier `settlement_tier` enum.
+  Add the **settlement skeleton** (every region gets a settlement; tiers assigned
+  by the rank-size rule — one `prime` at the seat, `hub`s by centrality, the rest
+  `outpost`/`holdfast`), **`population`** drawn per tier (with `pop_density`), and
+  **`aetherstone_endowment`** (blind-geology primitive). Retiring `capital`/`town`
+  for the 4-tier enum is a **breaking schema change**: bump `schema_version` in the
+  provenance member and update the QGIS notes.
   *Why first:* `population` unblocks every rate the rest of the model needs, and is
-  immediately useful (proportional symbols, density choropleth). `aetherstone_endowment`
-  is a trivial noise field that **immediately** yields the first emergent headline —
-  an endowment-vs-wealth scatter already shows resource-rich/value-poor cells, even
-  before refining is modeled. Lowest risk, highest unblock.
+  immediately useful (proportional symbols, density choropleth); the endowment
+  field is a trivial noise layer that seeds the flagship storyline before refining
+  exists. Lowest risk, highest unblock.
+  *Accept:* population symbols + endowment choropleth render in QGIS, and the two
+  fields are visibly independent — no built-in correlation; geology is innocent.
 
 - **Phase 2 — make `wealth` emergent (the intellectual turn).**
-  Add `centrality_to_seat` (cost-distance backbone), `refining_capacity`
-  (center-biased siting), and `value_retention`; **refactor `wealth`** to blend
-  retention + centrality, demoting the capital-gradient to one term. Keep the old
-  gradient available as a knob for comparison.
+  Derive the default (unpinned) **seat placement** from geology (agrarian core:
+  high carrying capacity, low ruggedness); add `centrality_to_seat` (cost-distance
+  backbone), `refining_capacity` (center-biased siting), and `value_retention`;
+  **refactor `wealth`** into the three income streams (§3.2), demoting the
+  capital-gradient to the `w_g` term. Keep the old behavior reachable at `w_g = 1`
+  for comparison.
   *Why:* this is where the project stops being a diagram and becomes an argument.
+  *Accept:* under default weights the endowment-vs-wealth scatter has a populated
+  high-endowment/low-wealth quadrant (order of 10–25% of regions); at `w_g = 0`
+  wealth still shows spatial structure — derived from geology, not the capital.
 
 - **Phase 3 — off-grid darkness.**
   Add a **minimal conduit** (a cost-gated minimum spanning tree over settlements —
   does **not** require the full road network) → `on_conduit`/`conduit_access` →
   `arcane_service_index`. Ship the off-grid darkness map.
+  *Accept:* some settlements are off-grid, and off-grid status tracks the
+  population×wealth threshold (not a hand-picked list); conduit + darkness layers
+  render as a coverage map.
 
 - **Phase 4 — exported blight.**
-  Add `blight_load` (downhill/downwind kernel + dumping bias) and the
+  Add `blight_load` (downhill/downwind kernel + λ dump-bias) and the
   `injustice_idx` bivariate. Ship the environmental-injustice map.
+  *Accept:* corr(`blight_load`, `wealth`) is negative at the default λ; sweeping
+  λ → 0 visibly weakens it. The gap between those two runs is the measured
+  **policy share** of the injustice — an analysis in itself.
 
 - **Phase 5 — facilities, coverage, health.**
   Place facilities (healing/water/wardline) gated by tier + `on_conduit`; compute
   `nearest_facility_distance`, `service_gap_idx`, and the emergent
   `disease_burden_per_1k`. This is the §8 "facilities + coverage" payload.
+  *Accept:* burden ships as a per-1k **rate**; the high-burden/low-care quadrant is
+  populated; coverage gaps render as service-area/isochrone maps.
 
 - **Phase 6 — governance overlay.** `dominant_bloc` (+ the deferred institutional
   depth as appetite allows).
+  *Accept:* the bloc map has ≤5 categories and, under defaults, at least one
+  `contested` or `ungoverned` region exists.
 
-Each EXPLICIT knob (grid threshold, refining center-bias, blight-dump bias,
-distance-decay rate, tier→service rationing) should be a **slider**, like the
-existing `wealth bias`, so the user can dial the cruelty and watch the maps respond
-— and, crucially, **dial it to zero** to demonstrate the inequity is structural, not
-authored.
+**Scale note:** correlation scatters, Jenks classes, and bivariate maps need sample
+size. When Phase 1 lands, raise the default region count to ~24 and the slider cap
+toward ~64, and keep one settlement per region so region-level rates have support.
+5–12 regions was right for proving the bridge; it is too few to see a distribution.
+
+Each EXPLICIT knob (grid threshold, refining center-bias, blight-dump bias λ,
+distance-decay rate, tier→service rationing, `w_g` capital-gradient weight) is a
+**slider**, like the existing `wealth bias` — and every knob must have a **defined
+neutral zero** where its mechanism is purely physical/emergent: dump-bias 0 → blight
+follows only terrain and wind; grid-threshold 0 → the conduit reaches everyone;
+`w_g` 0 → wealth is pure economics. Dialing the cruelty down to zero — and watching
+how much inequity *remains* — is the project's thesis stated as an experiment.
 
 ---
 
@@ -264,10 +327,13 @@ spine exists.**
   `wardline`/`healing` booleans if a later spatial join needs them).
 
 **Open questions / tradeoffs (decide before Phase 2):**
-1. **Circularity.** `wealth` will both feed siting and be derived from it. Resolve
-   with a **bounded forward pass** (or a few relaxation iterations, like Lloyd's)
-   that settles wealth/retention/conduit in a fixed, seeded order — never an
-   unbounded loop. Document the generation DAG and order.
+1. **Circularity — RESOLVED.** The canonical DAG in §4 settles it: one bounded,
+   seeded forward pass in a pinned order. The two cycles the panel had introduced
+   are broken structurally — refinery siting no longer reads `wealth` (centrality +
+   terrain only), and `population` no longer reads `wealth`/`on_conduit`/`blight`
+   (settlement skeleton draws from tier + carrying capacity). Revisit feedback only
+   if a later phase genuinely needs it, and then only as a small *fixed* number of
+   relaxation sweeps.
 2. **Time depth.** Migration, depletion, and path-dependence imply "ticks." For now,
    prefer a **single snapshot** with at most a short scripted history pass; full
    temporal simulation is out of scope.

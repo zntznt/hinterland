@@ -8,6 +8,19 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  CAUSAL CHAINS + THE FAITH IN MOTION (D6): events cause events.
+    - Fortune on disputed ground turns it hot: an ore strike whose epicenter
+      is CONTESTED guarantees a war and pulls it forward (~2 epochs after the
+      rush) — and the war-target value function naturally aims the fighting
+      at the struck ground. The most classic loop: fortune causes conflict.
+    - The faith arrives where the suffering is: two epochs after the run's
+      first plague or relic calamity, the Temple CONSECRATES a new sanctioned
+      site at the wound. Temple reach surges (computeBlocs now recomputes
+      temple distance from the LIVE site set), the political map re-contests,
+      and post-loop the pilgrims reroute toward the new shrine. Conditional
+      charity, arriving in character: after the harm, claiming the ground.
+    - New event type "consecration" (seventh). Schema v16.
+
   CONFLICT AND FORTUNE (D5): the last two actors take the stage.
     - ore_strike: a HIDDEN lode — drawn blind in the geology stage, the ore
       was always there — surfaces at a seeded epoch. Extraction income jumps,
@@ -408,7 +421,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 15;
+    const SCHEMA_VERSION = 16;
     const BLOC_TOL = 12;    // top-two reach gap below this => contested
     const BLOC_FLOOR = 25;  // all reaches below this => ungoverned
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
@@ -922,16 +935,17 @@
         sanctionedSites.push({ regionId: reg.id, x: reg.c[0], y: reg.c[1] });
       }
 
-      // D4 live politics: blocs recomputed whenever the refinery set changes.
-      // Crown reach is centrality (static); Temple reach emanates from the
-      // ancient sites (static); magnate reach follows the SURVIVING refineries.
-      const templeCdPre = costDistances(regions, sanctIdxs).dist;
+      // D4/D6 live politics: blocs recomputed whenever the refinery set OR the
+      // sanctioned-site set changes. Crown reach is centrality (static);
+      // Temple reach follows the LIVE shrines; magnate reach the SURVIVING
+      // refineries.
       regions.forEach(reg => { reg.blocChanges = 0; reg.bloc = undefined; });
       const computeBlocs = () => {
+        const templeCdNow = costDistances(regions, sanctIdxs).dist;
         const refNow = regions.map((_, i) => i).filter(i => regions[i].refining > 0);
         const magCdNow = costDistances(regions, refNow).dist;
         regions.forEach((reg, i) => {
-          reg.templeReach = Math.round(100 * Math.exp(-(isFinite(templeCdPre[i]) ? templeCdPre[i] : 1e9) / 300));
+          reg.templeReach = Math.round(100 * Math.exp(-(isFinite(templeCdNow[i]) ? templeCdNow[i] : 1e9) / 300));
           reg.magnateReach = Math.round(100 * Math.exp(-(isFinite(magCdNow[i]) ? magCdNow[i] : 1e9) / 300));
           const fields = [["crown", reg.centrality], ["temple", reg.templeReach], ["magnate", reg.magnateReach]];
           fields.sort((a, b) => b[1] - a[1]); // stable: crown wins exact ties deterministically
@@ -952,10 +966,11 @@
       const calamitySite = sanctIdxs.length ? sanctIdxs[Math.floor(rEv() * sanctIdxs.length)] : -1;
       const strikeCoin = rEv() < 0.5;                      // half of worlds find the hidden lode
       const strikeEpoch = 2 + Math.floor(rEv() * Math.min(Math.max(params.ep, 1), 7));
-      const warCoin = rEv() < 0.55;                        // most contested seams eventually burn
-      const warEpoch = 3 + Math.floor(rEv() * Math.min(Math.max(params.ep, 1), 7));
+      let warCoin = rEv() < 0.55;                          // most contested seams eventually burn
+      let warEpoch = 3 + Math.floor(rEv() * Math.min(Math.max(params.ep, 1), 7));
       const E0sum = regions.reduce((s, r) => s + r.endowment, 0);
       let collapsed = false, collapseEpoch = -1, refounded = false, warIdx = -1;
+      let firstWoundIdx = -1, firstWoundEpoch = -1, consecrated = false;
       regions.forEach(reg => { reg.eventType = "none"; reg.eventEpoch = -1; reg.eventSeverity = 0; reg.plagued = false; });
 
       // ---- THE DYNAMIC LOOP (D1) --------------------------------------------
@@ -1044,6 +1059,12 @@
             epi.eventType = "ore_strike"; epi.eventEpoch = e + 1;
             epi.eventSeverity = Math.max(60, Math.min(100, epi.hiddenOre));
             events.push({ epoch: e + 1, type: "ore_strike", region_id: epi.id });
+            if (epi.bloc === "contested") { // D6: fortune on disputed ground turns it hot
+              warCoin = true;
+              // accelerate a pending war, or schedule one if the date passed
+              // cold (>= e+1: the war block below still runs this epoch)
+              warEpoch = warEpoch >= e + 1 ? Math.min(warEpoch, e + 3) : e + 3;
+            }
           }
         }
         // D5: war — live politics chooses the battlefield: the most valuable
@@ -1080,6 +1101,7 @@
             reg.eventType = "blight_plague"; reg.eventEpoch = e + 1; // latest event wins the columns
             reg.eventSeverity = 60 + Math.round(rEv() * 30);
             events.push({ epoch: e + 1, type: "blight_plague", region_id: reg.id });
+            if (firstWoundIdx === -1) { firstWoundIdx = regions.indexOf(reg); firstWoundEpoch = e + 1; }
           }
         });
         if (calamityCoin && e + 1 === calamityEpoch && calamitySite >= 0) { // the unexplained erupts
@@ -1089,6 +1111,21 @@
           site.eventSeverity = 65 + Math.round(rEv() * 30);
           events.push({ epoch: e + 1, type: "relic_calamity", region_id: site.id });
           computeBlight(); // the scar shows immediately
+          if (firstWoundIdx === -1) { firstWoundIdx = calamitySite; firstWoundEpoch = e + 1; }
+        }
+        // D6: the faith arrives where the suffering is — two epochs after the
+        // run's first wound, the Temple consecrates the ground.
+        if (!consecrated && firstWoundEpoch !== -1 && e + 1 >= firstWoundEpoch + 2) {
+          consecrated = true;
+          if (!sanctIdxs.includes(firstWoundIdx)) {
+            const target = regions[firstWoundIdx];
+            sanctIdxs.push(firstWoundIdx);
+            sanctionedSites.push({ regionId: target.id, x: target.c[0], y: target.c[1] });
+            target.eventType = "consecration"; target.eventEpoch = e + 1;
+            target.eventSeverity = 60 + Math.round(rEv() * 20);
+            events.push({ epoch: e + 1, type: "consecration", region_id: target.id });
+            computeBlocs(); // temple reach surges at the new shrine
+          }
         }
         snapNow();
       }

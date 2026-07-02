@@ -30,7 +30,10 @@
 > **Dynamic institutions (D4)**: capital doesn't die, it moves — replacement
 > refineries founded mid-run where the money went — and the political map is
 > live: blocs re-contest as magnate reach shifts, with `bloc_changes` counting
-> each region's lived changes of ruler. With time real,
+> each region's lived changes of ruler. **Conflict and fortune (D5)**: hidden
+> lodes surface as in-run ore strikes, and wars burn the most valuable
+> contested ground — permanently wounding its capacity — with the Crown
+> garrisoning the battlefield only after the blood. With time real,
 > `abandonment_index` became true hysteresis (peak wealth − present wealth) and
 > dead lodes emerge in-run; the arrow-inversion caveat on deep time is thereby
 > partially resolved (founding-era/shock reconstruction remains). Remaining

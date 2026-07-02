@@ -50,7 +50,11 @@ choropleth; the export always carries every column.
    (`refinery_founded`) opens where the money went, with a trunk hookup and a
    fresh blight plume. Politics are live too — `dominant_bloc` re-contests
    whenever the refinery set changes, and `bloc_changes` counts each region's
-   actual changes of ruler during the run.
+   actual changes of ruler during the run. D5 completes the repertoire:
+   **`ore_strike`** (a hidden lode — blind geology, always there, just unfound —
+   surfaces and a rush begins) and **`war`** (live politics chooses the
+   battlefield: the most valuable *contested* region burns, its capacity is
+   permanently wounded, and the Crown garrisons it *after* the blood).
 6. **The D2 check (watch it happen):** set epochs to 8+, click **Download
    epoch series**, and load `hinterland-epochs.geojson`. On each layer open
    *Properties → Temporal → Single field with date/time* → field `epoch_date`
@@ -211,7 +215,7 @@ capital) — every file can reproduce its world.
 | `peak_wealth` | 0–100 | high-water mark across the run — `abandonment_index` = 0.7 × (peak − present) + dead-lode bonus |
 | `ore_depleted` | 0/1 | the mine died *during* the run (stock < 15 from a founding ≥ 40) |
 | `boom_bust` | enum | `boom` \| `stable` \| `decline` \| `collapse` — the settlement's trajectory |
-| `event_type` | enum | `none` \| `refinery_collapse` \| `blight_plague` \| `relic_calamity` \| `refinery_founded` — lived history (latest event; full timeline in `hinterland.events`) |
+| `event_type` | enum | `none` \| `refinery_collapse` \| `blight_plague` \| `relic_calamity` \| `refinery_founded` \| `ore_strike` \| `war` — lived history (latest event; full timeline in `hinterland.events`) |
 | `event_epoch` / `event_severity` | int / 0–100 | when it struck (−1 = never) and how hard |
 | `bloc_changes` | int | how many times this region's ruler actually changed during the run (feeds `tenure_churn`) |
 
@@ -257,6 +261,9 @@ built, roads from the founding. Built for the QGIS Temporal Controller; the
 last frame is exactly the main export, frame 0 is the founding.
 
 **Schema history:**
+- **v15** (conflict and fortune D5) added `ore_strike` (hidden blind-geology
+  lodes surfacing mid-run) and `war` events (contested ground burns; capacity
+  permanently wounded; the war region garrisoned after the fact).
 - **v14** (dynamic institutions D4) added `refinery_founded` events (capital
   moves two epochs after a collapse, to the best current site), live in-run
   bloc re-contests, and the `bloc_changes` column; `tenure_churn` now counts

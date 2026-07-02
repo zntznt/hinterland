@@ -8,6 +8,17 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  CONFLICT AND FORTUNE (D5): the last two actors take the stage.
+    - ore_strike: a HIDDEN lode — drawn blind in the geology stage, the ore
+      was always there — surfaces at a seeded epoch. Extraction income jumps,
+      migration turns around, a rush town is born (and, per the mobility
+      model, born as a labor camp).
+    - war: at a seeded epoch, the most valuable CURRENTLY CONTESTED region
+      (live politics chooses the battlefield) erupts — ~30% of its people
+      gone, a quarter of its wealth, a permanent hysteresis scar. The Crown
+      responds in character: the war region is garrisoned AFTER the blood.
+      Security arrives late, where the harm already happened. Schema v15.
+
   DYNAMIC INSTITUTIONS (D4): the state as a lagging, chasing actor.
     - refinery_founded: capital doesn't die, it moves. Two epochs after a
       collapse, the magnates open a replacement refinery at the best CURRENT
@@ -397,7 +408,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 14;
+    const SCHEMA_VERSION = 15;
     const BLOC_TOL = 12;    // top-two reach gap below this => contested
     const BLOC_FLOOR = 25;  // all reaches below this => ungoverned
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
@@ -583,6 +594,15 @@
         reg.elevation = Math.round(100 * ev[i]);
       });
 
+      // One HIDDEN lode: ore that was always there, not yet found. Blind
+      // geology, revealed (maybe) by an in-run strike.
+      const hid = { x: rg() * W, y: rg() * W, strength: 0.6 + rg() * 0.4, radius: 90 + rg() * 110 };
+      regions.forEach(reg => {
+        const d = Math.hypot(reg.c[0] - hid.x, reg.c[1] - hid.y);
+        const v = hid.strength * Math.exp(-(d * d) / (2 * hid.radius * hid.radius));
+        reg.hiddenOre = Math.round(100 * Math.pow(Math.min(1, v / (maxRaw || 1)), 2));
+      });
+
       // Prevailing wind: one seeded direction per world (0° = +x/east, CCW).
       const windDeg = Math.floor(sg("wind")() * 360);
       return { windDeg };
@@ -740,13 +760,15 @@
         const ext = (reg.E / 100) * (reg.retention / 100);         // what extraction leaves behind
         const ref = reg.refining / 100;
         const trade = reg.centrality / 100;
-        return total > 0
+        const base = total > 0
           ? (params.we * ext + params.wf * ref + params.wt * trade + params.wg * legacy) / total
           : 0.5; // all weights zero: no income model — flat
+        return base * (reg.warTorn ? 0.85 : 1); // war permanently wounds capacity
       };
       regions.forEach(reg => {
         reg.E = reg.endowment;           // current ore stock (depletes per epoch)
         reg.endowment0 = reg.endowment;  // the geology as founded
+        reg.warTorn = false;
         const noise = (rNoise() * 2 - 1) * 5;
         reg.wealth = clamp(Math.round(100 * income(reg) + noise), 0, 100);
         reg.wealthT0 = reg.wealth;
@@ -928,8 +950,12 @@
       const calamityCoin = rEv() < 0.65;                   // most worlds, not all
       const calamityEpoch = 1 + Math.floor(rEv() * Math.min(Math.max(params.ep, 1), 8));
       const calamitySite = sanctIdxs.length ? sanctIdxs[Math.floor(rEv() * sanctIdxs.length)] : -1;
+      const strikeCoin = rEv() < 0.5;                      // half of worlds find the hidden lode
+      const strikeEpoch = 2 + Math.floor(rEv() * Math.min(Math.max(params.ep, 1), 7));
+      const warCoin = rEv() < 0.55;                        // most contested seams eventually burn
+      const warEpoch = 3 + Math.floor(rEv() * Math.min(Math.max(params.ep, 1), 7));
       const E0sum = regions.reduce((s, r) => s + r.endowment, 0);
-      let collapsed = false, collapseEpoch = -1, refounded = false;
+      let collapsed = false, collapseEpoch = -1, refounded = false, warIdx = -1;
       regions.forEach(reg => { reg.eventType = "none"; reg.eventEpoch = -1; reg.eventSeverity = 0; reg.plagued = false; });
 
       // ---- THE DYNAMIC LOOP (D1) --------------------------------------------
@@ -1003,6 +1029,46 @@
             site.eventSeverity = 60 + Math.round(rEv() * 30);
             events.push({ epoch: e + 1, type: "refinery_founded", region_id: site.id });
             computeBlocs(); // magnate reach surges at the new works
+          }
+        }
+        // D5: the strike — the hidden lode surfaces; a rush begins
+        if (strikeCoin && e + 1 === strikeEpoch) {
+          let epi = null;
+          regions.forEach(reg => {
+            if (reg.hiddenOre > 20 && (!epi || reg.hiddenOre > epi.hiddenOre ||
+                (reg.hiddenOre === epi.hiddenOre && reg.id < epi.id))) epi = reg;
+          });
+          if (epi) {
+            regions.forEach(reg => { if (reg.hiddenOre > 0) reg.E = clamp(reg.E + reg.hiddenOre, 0, 100); });
+            epi.E = clamp(epi.E + Math.max(50, epi.hiddenOre), 0, 100); // the epicenter is rich
+            epi.eventType = "ore_strike"; epi.eventEpoch = e + 1;
+            epi.eventSeverity = Math.max(60, Math.min(100, epi.hiddenOre));
+            events.push({ epoch: e + 1, type: "ore_strike", region_id: epi.id });
+          }
+        }
+        // D5: war — live politics chooses the battlefield: the most valuable
+        // CONTESTED region burns. The garrison comes after the blood.
+        if (warCoin && warIdx === -1 && e + 1 === warEpoch) {
+          let wreg = null, wbest = -Infinity;
+          regions.forEach(reg => {
+            if (reg.bloc !== "contested") return;
+            const v = 0.5 * reg.E + 0.5 * reg.wealth;
+            if (v > wbest || (v === wbest && wreg && reg.id < wreg.id)) { wbest = v; wreg = reg; }
+          });
+          if (wreg) {
+            warIdx = regions.indexOf(wreg);
+            wreg.settlementPop = Math.max(20, Math.round(wreg.settlementPop * 0.7));
+            wreg.population = Math.round(wreg.settlementPop * (1 + wreg.rural));
+            wreg.wealth = Math.round(wreg.wealth * 0.75);
+            // war wrecks the productive base, not just the stock — mines
+            // ruined, institutions broken, capacity permanently wounded —
+            // so the scar persists whatever the region produced
+            wreg.E = Math.round(wreg.E * 0.7);
+            wreg.retention = Math.round(wreg.retention * 0.7);
+            wreg.warTorn = true;
+            wreg.eventType = "war"; wreg.eventEpoch = e + 1;
+            wreg.eventSeverity = 70 + Math.round(rEv() * 25);
+            events.push({ epoch: e + 1, type: "war", region_id: wreg.id });
           }
         }
         computeBlight();   // the poison follows the poor wherever they end up
@@ -1181,8 +1247,9 @@
       const garScored = regions.map((reg, i) => {
         const rj = sx("gar#" + reg.id);
         return { i, s: 0.6 * (100 * thr[i] / maxThr) + 0.4 * reg.centrality + (rj() - 0.5) * 8 };
-      }).filter(o => o.i !== seatIdx).sort((a, b) => b.s - a.s || a.i - b.i);
-      const garrisonIdxs = [seatIdx, ...garScored.slice(0, KG).map(o => o.i)];
+      }).filter(o => o.i !== seatIdx && o.i !== warIdx).sort((a, b) => b.s - a.s || a.i - b.i);
+      // the Crown fortifies the war region AFTER the blood — security arrives late
+      const garrisonIdxs = [seatIdx, ...(warIdx >= 0 ? [warIdx] : []), ...garScored.slice(0, KG).map(o => o.i)];
       const garrisons = garrisonIdxs.map(i => ({ regionId: regions[i].id, x: regions[i].c[0], y: regions[i].c[1] }));
       const garCd = costDistances(regions, garrisonIdxs).dist;
       regions.forEach((reg, i) => {

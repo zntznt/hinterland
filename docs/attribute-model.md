@@ -41,7 +41,14 @@
 > routing, and the political map all re-contesting around the live shrine set
 > (measured: consecration in ~72% of wounded worlds; every new shrine reaches
 > temple_reach 100; a pinned seed carries a war that would not exist without
-> the chain). With time real,
+> the chain). **Markov toponymy (E3)**: the world names itself — order-2
+> character chains over three invented registers walk novel, per-world-unique
+> names from per-region substreams; the register is a blind-geology fact
+> (ore/rugged country speaks frontier, the settled core lowland, holy ground
+> the Temple's liturgical register), so the linguistic frontier tracks the ore
+> rather than the border and the entire toponymy is byte-stable across
+> capital moves, weights, and epochs (measured: ~97% of names are novel
+> compositions, not corpus quotes). With time real,
 > `abandonment_index` became true hysteresis (peak wealth − present wealth) and
 > dead lodes emerge in-run; the arrow-inversion caveat on deep time is thereby
 > partially resolved (founding-era/shock reconstruction remains). Remaining

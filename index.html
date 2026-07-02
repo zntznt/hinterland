@@ -8,6 +8,18 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  MARKOV TOPONYMY (E3): the world names itself.
+    - Order-2 character chains learn three invented registers and walk novel
+      names from per-region substreams: the settled core speaks LOWLAND, ore
+      and rugged country speak FRONTIER, and sanctioned sites are dedicated
+      in the Temple's LITURGICAL register (site_name on the shrine points).
+    - The register is read from blind geology (founding endowment,
+      ruggedness), never politics — so the linguistic frontier tracks the
+      ore, not the border, and the whole toponymy is byte-stable across
+      capital moves, weight changes, and epoch settings of a seed.
+    - Settlements export name_register; all names unique per world.
+      Schema v17.
+
   CAUSAL CHAINS + THE FAITH IN MOTION (D6): events cause events.
     - Fortune on disputed ground turns it hot: an ore strike whose epicenter
       is CONTESTED guarantees a war and pulls it forward (~2 epochs after the
@@ -421,7 +433,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 16;
+    const SCHEMA_VERSION = 17;
     const BLOC_TOL = 12;    // top-two reach gap below this => contested
     const BLOC_FLOOR = 25;  // all reaches below this => ungoverned
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
@@ -469,10 +481,96 @@
     const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
     const lerp = (a, b, t) => a + (b - a) * t;
 
-    // Placeholder name generator (NOT the real Markov names yet). Deterministic.
-    const SYL_A = ["Bran","Cor","Dun","El","Far","Gar","Hal","Kel","Mor","Nor","Pel","Riv","Tor","Vel","Wyn","Ash","Black","Grey","Stone","Oak"];
-    const SYL_B = ["dale","ford","gate","haven","mere","port","ridge","shire","stead","ton","vale","wick","wood","moor","burgh","fell","holm"];
-    const makeName = (r) => SYL_A[Math.floor(r() * SYL_A.length)] + SYL_B[Math.floor(r() * SYL_B.length)];
+    // ---- Markov toponymy (E3) -----------------------------------------------
+    // Order-2 character chains learn the phonology of three invented registers
+    // and walk NOVEL names from per-region substreams. The register a place
+    // names itself in is GEOLOGY, not politics: ore country and rugged
+    // country speak the frontier tongue, the settled core speaks lowland,
+    // and the Temple keeps its own liturgical register for holy ground —
+    // so the linguistic map is a landscape fact that survives capital moves,
+    // weight changes, and time. All corpus entries are invented.
+    const NAME_CORPUS = {
+      lowland: [
+        "maresden","calverow","fenbriar","astermere","bramholt","dellwick",
+        "ockleford","thornmere","witherby","cranmoor","elsden","farrowell",
+        "gorsebrook","haldenmere","kelverton","larkfield","melwick","norbriar",
+        "ostenholt","pellworth","quillmere","rushdale","selverby","tarnwell",
+        "ulvermere","vannock","wexbriar","yeldham","birchstead","coldmere",
+        "everwick","foxmoor","gladeholt","hartswell","ivenbrook","lindenmere",
+        "millowden","nettlewick","oxenholt","pallowmere","ravensden","sorrelfield",
+        "thistlemoor","umberwell","willowmere","aldergate","dunhollow","merrifold"
+      ],
+      frontier: [
+        "kharzek","drossvar","grendhak","zarvolk","thulgar","vorruk",
+        "brakketh","durnhak","skarvolt","morgruk","tazzurn","kraldek",
+        "ostrag","vulzar","gharrek","drumketh","zolvar","narrok",
+        "thrakmar","urzhak","belkruk","dovrag","skallorn","murzek",
+        "grothal","varnak","hulderk","brazzek","korvask","drellok",
+        "stromvar","gnarrek","thozzurn","valgrek","harrgak","zundrak",
+        "ferrok","molvarn","quarzek","rukketh","dhorvek","krazzul",
+        "ulgrath","vondrek","zharkul","tremmok","goldrak","surtash"
+      ],
+      temple: [
+        "santhiel","velionne","oriseth","amaranthe","calisse","therane",
+        "ellisar","novienne","seraphel","ilmarene","ostrienne","vessaline",
+        "aurelith","mirasole","thaliorne","evanthe","solenne","carithiel",
+        "umbrielle","lorasanthe","adorielle","synthaine","meriveth","olisandre",
+        "tessaline","virelaine","anthiel","corvasse","delorienne","faelith",
+        "galliethe","halcyone","isolaire","jessamine","kyrielle","liothaine",
+        "marivelle","nivienne","ophelith","perisandre","rosariel","sylvaine",
+        "theonelle","valisse","yseriane","zephyrelle","irisonne","elowenne"
+      ]
+    };
+    const buildChain = (names) => {
+      const t = new Map();
+      for (const n of names) {
+        const s = "^^" + n + "$";
+        for (let i = 0; i + 2 < s.length; i++) {
+          const k = s.slice(i, i + 2);
+          if (!t.has(k)) t.set(k, []);
+          t.get(k).push(s[i + 2]);
+        }
+      }
+      return t;
+    };
+    const NAME_CHAINS = {};
+    for (const reg in NAME_CORPUS) NAME_CHAINS[reg] = buildChain(NAME_CORPUS[reg]);
+    // A walk only counts if it ENDS naturally (reaches the end token): names
+    // truncated by the length cap sound cut off mid-phoneme and are rejected.
+    const chainWalk = (chain, r, maxLen) => {
+      let s = "^^";
+      while (s.length < maxLen + 2) {
+        const opts = chain.get(s.slice(-2));
+        if (!opts) return null;
+        const c = opts[Math.floor(r() * opts.length)];
+        if (c === "$") return s.slice(2);
+        s += c;
+      }
+      return null;
+    };
+    // Deterministic draw: retry the walk for shape (5-12 letters, natural
+    // ending) and novelty against the used set; the exhaustion fallback
+    // extends with the same register's phonology, so even collisions stay
+    // in-voice.
+    const markovName = (register, r, used) => {
+      const chain = NAME_CHAINS[register];
+      let last = "";
+      for (let a = 0; a < 32; a++) {
+        const w = chainWalk(chain, r, 12);
+        if (!w || w.length < 5) continue;
+        if (/(..).*\1.*\1/.test(w)) continue; // order-2 stutter loops (e.g. mer-mer-mere)
+        last = w;
+        const n = w[0].toUpperCase() + w.slice(1);
+        if (!used.has(n)) { used.add(n); return n; }
+      }
+      let n = (last || register)[0].toUpperCase() + (last || register).slice(1);
+      while (used.has(n)) n += ((chainWalk(chain, r, 8) || "an").slice(0, 2));
+      used.add(n);
+      return n;
+    };
+    // register is a landscape fact: read only from blind geology
+    const nameRegister = (reg) => (reg.endowment0 >= 50 || reg.ruggedness >= 60) ? "frontier" : "lowland";
+    const makeName = (r) => markovName("lowland", r, new Set());
 
     // ---- Planar polygon geometry (Euclidean, per the flat-plane CRS) --------
     function signedArea(ring) {
@@ -1416,8 +1514,16 @@
         reg.uncounted = Math.round(reg.population * reg.legibility / 100 * 0.3);
       });
 
+      // E3: names walked from the region's own substream, register from its
+      // geology — the whole toponymy is identical across capital moves,
+      // weight changes, and epoch settings of the same seed. One shared
+      // used-set keeps every name in the world unique (settlements first,
+      // then the shrines take their liturgical dedications).
+      const usedNames = new Set();
+      regions.forEach(reg => { reg.nameRegister = nameRegister(reg); });
       const settlements = regions.map(reg => ({
-        name: makeName(sx("name#" + reg.id)),
+        name: markovName(reg.nameRegister, sx("name#" + reg.id), usedNames),
+        nameRegister: reg.nameRegister,
         tier: reg.tier, regionId: reg.id,
         x: reg.c[0], y: reg.c[1],
         population: reg.settlementPop,
@@ -1429,6 +1535,11 @@
         burden: reg.burden,
         serviceGap: reg.serviceGap
       }));
+
+      // holy ground is dedicated in the Temple's own register (including any
+      // site consecrated mid-run; its stream is keyed by region id, so the
+      // dedication is stable however the site came to be)
+      sanctionedSites.forEach(s => { s.name = markovName("temple", sx("shrine#" + s.regionId), usedNames); });
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
       return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg };
@@ -1539,7 +1650,7 @@
       model.sanctionedSites.forEach(s => {
         features.push({
           type: "Feature",
-          properties: { kind: "sanctioned_site", region_id: s.regionId },
+          properties: { kind: "sanctioned_site", region_id: s.regionId, site_name: s.name },
           geometry: { type: "Point", coordinates: [round2(s.x), round2(s.y)] }
         });
       });
@@ -1556,6 +1667,7 @@
           properties: {
             kind: "settlement",
             name: s.name,
+            name_register: s.nameRegister,
             tier: s.tier,
             region_id: s.regionId,
             population: s.population,
@@ -1624,7 +1736,7 @@
             type: "Feature",
             properties: {
               kind: "settlement", epoch: e, epoch_date: date, region_id: s.regionId,
-              name: s.name, population: S.pop[s.regionId],
+              name: s.name, name_register: s.nameRegister, population: S.pop[s.regionId],
               on_conduit: S.onGrid[s.regionId] ? 1 : 0
             },
             geometry: { type: "Point", coordinates: [round2(s.x), round2(s.y)] }

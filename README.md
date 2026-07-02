@@ -45,7 +45,12 @@ choropleth; the export always carries every column.
    a **relic calamity** leaves a permanent scar in the blight field. Deep-past
    `shock_legacy` is reconstruction; `event_*` is lived history — a region can
    have both (a plagued refinery town whose works later close keeps its full
-   story in the timeline, latest event in its columns).
+   story in the timeline, latest event in its columns). And capital doesn't
+   die, it moves: two epochs after a collapse a **replacement refinery**
+   (`refinery_founded`) opens where the money went, with a trunk hookup and a
+   fresh blight plume. Politics are live too — `dominant_bloc` re-contests
+   whenever the refinery set changes, and `bloc_changes` counts each region's
+   actual changes of ruler during the run.
 6. **The D2 check (watch it happen):** set epochs to 8+, click **Download
    epoch series**, and load `hinterland-epochs.geojson`. On each layer open
    *Properties → Temporal → Single field with date/time* → field `epoch_date`
@@ -206,8 +211,9 @@ capital) — every file can reproduce its world.
 | `peak_wealth` | 0–100 | high-water mark across the run — `abandonment_index` = 0.7 × (peak − present) + dead-lode bonus |
 | `ore_depleted` | 0/1 | the mine died *during* the run (stock < 15 from a founding ≥ 40) |
 | `boom_bust` | enum | `boom` \| `stable` \| `decline` \| `collapse` — the settlement's trajectory |
-| `event_type` | enum | `none` \| `refinery_collapse` \| `blight_plague` \| `relic_calamity` — lived history (latest event; full timeline in `hinterland.events`) |
+| `event_type` | enum | `none` \| `refinery_collapse` \| `blight_plague` \| `relic_calamity` \| `refinery_founded` — lived history (latest event; full timeline in `hinterland.events`) |
 | `event_epoch` / `event_severity` | int / 0–100 | when it struck (−1 = never) and how hard |
+| `bloc_changes` | int | how many times this region's ruler actually changed during the run (feeds `tenure_churn`) |
 
 **Settlement features (Point):**
 
@@ -251,6 +257,10 @@ built, roads from the founding. Built for the QGIS Temporal Controller; the
 last frame is exactly the main export, frame 0 is the founding.
 
 **Schema history:**
+- **v14** (dynamic institutions D4) added `refinery_founded` events (capital
+  moves two epochs after a collapse, to the best current site), live in-run
+  bloc re-contests, and the `bloc_changes` column; `tenure_churn` now counts
+  lived flips of ruler.
 - **v13** (in-run events D3) added lived history: region columns `event_type`,
   `event_epoch`, `event_severity`; an `events` timeline in provenance;
   sanctioned sites now anchor to the founding geology (`endowment_t0`) —

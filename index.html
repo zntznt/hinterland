@@ -8,6 +8,18 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  DYNAMIC INSTITUTIONS (D4): the state as a lagging, chasing actor.
+    - refinery_founded: capital doesn't die, it moves. Two epochs after a
+      collapse, the magnates open a replacement refinery at the best CURRENT
+      site (wealth + centrality + flat terrain — reading the social layer is
+      legitimate mid-run: capital chases returns). It gets a trunk hookup,
+      emits blight, projects magnate reach.
+    - LIVE POLITICS: dominant_bloc is recomputed whenever the refinery set
+      changes (magnate reach recedes on collapse, surges at a founding).
+      bloc_changes counts each region's ACTUAL changes of ruler during the
+      run, and tenure_churn is now built on lived flips rather than pure
+      reconstruction. Schema v14.
+
   IN-RUN EVENTS (D3): history with dates.
     - Events FIRE during the run and change the trajectory afterward:
         refinery_collapse — when the world's remaining ore falls below a
@@ -385,7 +397,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 13;
+    const SCHEMA_VERSION = 14;
     const BLOC_TOL = 12;    // top-two reach gap below this => contested
     const BLOC_FLOOR = 25;  // all reaches below this => ungoverned
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
@@ -888,6 +900,27 @@
         sanctionedSites.push({ regionId: reg.id, x: reg.c[0], y: reg.c[1] });
       }
 
+      // D4 live politics: blocs recomputed whenever the refinery set changes.
+      // Crown reach is centrality (static); Temple reach emanates from the
+      // ancient sites (static); magnate reach follows the SURVIVING refineries.
+      const templeCdPre = costDistances(regions, sanctIdxs).dist;
+      regions.forEach(reg => { reg.blocChanges = 0; reg.bloc = undefined; });
+      const computeBlocs = () => {
+        const refNow = regions.map((_, i) => i).filter(i => regions[i].refining > 0);
+        const magCdNow = costDistances(regions, refNow).dist;
+        regions.forEach((reg, i) => {
+          reg.templeReach = Math.round(100 * Math.exp(-(isFinite(templeCdPre[i]) ? templeCdPre[i] : 1e9) / 300));
+          reg.magnateReach = Math.round(100 * Math.exp(-(isFinite(magCdNow[i]) ? magCdNow[i] : 1e9) / 300));
+          const fields = [["crown", reg.centrality], ["temple", reg.templeReach], ["magnate", reg.magnateReach]];
+          fields.sort((a, b) => b[1] - a[1]); // stable: crown wins exact ties deterministically
+          const b = fields[0][1] < BLOC_FLOOR ? "ungoverned"
+            : (fields[0][1] - fields[1][1] < BLOC_TOL ? "contested" : fields[0][0]);
+          if (reg.bloc !== undefined && reg.bloc !== b) reg.blocChanges++;
+          reg.bloc = b;
+        });
+      };
+      computeBlocs(); // the founding politics
+
       // D3 event machinery: seeded triggers, epoch-stamped consequences.
       const events = [];
       const rEv = sx("events");
@@ -896,7 +929,7 @@
       const calamityEpoch = 1 + Math.floor(rEv() * Math.min(Math.max(params.ep, 1), 8));
       const calamitySite = sanctIdxs.length ? sanctIdxs[Math.floor(rEv() * sanctIdxs.length)] : -1;
       const E0sum = regions.reduce((s, r) => s + r.endowment, 0);
-      let collapsed = false;
+      let collapsed = false, collapseEpoch = -1, refounded = false;
       regions.forEach(reg => { reg.eventType = "none"; reg.eventEpoch = -1; reg.eventSeverity = 0; reg.plagued = false; });
 
       // ---- THE DYNAMIC LOOP (D1) --------------------------------------------
@@ -937,11 +970,39 @@
                   (r.refining === victim.refining && r.id < victim.id))) victim = r;
             });
             if (victim) {
-              victim.refining = 0; collapsed = true;
+              victim.refining = 0; collapsed = true; collapseEpoch = e + 1;
               victim.eventType = "refinery_collapse"; victim.eventEpoch = e + 1;
               victim.eventSeverity = 70 + Math.round(rEv() * 20);
               events.push({ epoch: e + 1, type: "refinery_collapse", region_id: victim.id });
+              computeBlocs(); // the magnates' reach recedes; the map re-contests
             }
+          }
+        }
+        // D4: capital doesn't die, it moves. Two epochs after a collapse, the
+        // magnates found a replacement where the money went.
+        if (collapsed && !refounded && e + 1 >= collapseEpoch + 2) {
+          let site = null, bestS = -Infinity;
+          regions.forEach(reg => {
+            if (reg.refining > 0 || reg.eventType === "refinery_collapse") return;
+            const s2 = 0.5 * reg.wealth + 0.3 * reg.centrality + 0.2 * (100 - reg.ruggedness);
+            if (s2 > bestS || (s2 === bestS && site && reg.id < site.id)) { bestS = s2; site = reg; }
+          });
+          if (site) {
+            refounded = true;
+            site.refining = Math.round(60 + rEv() * 40);
+            const siteIdx = regions.indexOf(site);
+            onGrid[siteIdx] = true; // trunk hookup to the seat
+            let cur = siteIdx;
+            while (cur !== seatIdx && seatRun.parent[cur] !== -1) {
+              const pnode = seatRun.parent[cur];
+              addEdge(cur, pnode, "trunk");
+              onGrid[pnode] = true;
+              cur = pnode;
+            }
+            site.eventType = "refinery_founded"; site.eventEpoch = e + 1;
+            site.eventSeverity = 60 + Math.round(rEv() * 30);
+            events.push({ epoch: e + 1, type: "refinery_founded", region_id: site.id });
+            computeBlocs(); // magnate reach surges at the new works
           }
         }
         computeBlight();   // the poison follows the poor wherever they end up
@@ -1047,21 +1108,10 @@
         ), 0, 100);
       });
 
-      // Governance overlay. Temple reach emanates from the ancient sanctioned
-      // sites (chosen pre-loop); the magnates reach outward from their
-      // surviving refineries; the Crown's reach IS centrality. No region is
-      // assigned a ruler — rulers reach, or they don't.
-      const templeCd = costDistances(regions, sanctIdxs).dist;
-      const magCd = costDistances(regions, regions.map((_, i) => i).filter(i => regions[i].refining > 0)).dist;
-      regions.forEach((reg, i) => {
-        reg.templeReach = Math.round(100 * Math.exp(-(isFinite(templeCd[i]) ? templeCd[i] : 1e9) / 300));
-        reg.magnateReach = Math.round(100 * Math.exp(-(isFinite(magCd[i]) ? magCd[i] : 1e9) / 300));
-        const fields = [["crown", reg.centrality], ["temple", reg.templeReach], ["magnate", reg.magnateReach]];
-        fields.sort((a, b) => b[1] - a[1]); // stable: crown wins exact ties deterministically
-        if (fields[0][1] < BLOC_FLOOR) reg.bloc = "ungoverned";
-        else if (fields[0][1] - fields[1][1] < BLOC_TOL) reg.bloc = "contested";
-        else reg.bloc = fields[0][0];
-      });
+      // Governance overlay: LIVE since D4. The blocs were computed at the
+      // founding and re-contested inside the loop whenever the refinery set
+      // changed; reg.bloc / templeReach / magnateReach already hold the final
+      // political map, and reg.blocChanges counts each region's lived flips.
 
       // Traffic assignment: gravity flows between all pairs, routed along
       // least-cost road paths. Accumulated edge traffic IS flow betweenness —
@@ -1215,9 +1265,11 @@
         reg.abandonment = clamp(Math.round(
           0.7 * (reg.peakWealth - reg.wealth) + ((reg.exhausted || reg.oreDepleted) ? 30 : 0)
         ), 0, 100);
+        // churn = lived flips of ruler (D4) + frontier seam pressure + war memory
         reg.tenureChurn = clamp(Math.round(
-          60 * (reg.neighbors.length ? diffN / reg.neighbors.length : 0) +
-          (reg.bloc === "contested" ? 25 : 0) + (reg.shock === "war" ? 15 : 0) + (rh() - 0.5) * 8
+          30 * Math.min(reg.blocChanges, 2) +
+          40 * (reg.neighbors.length ? diffN / reg.neighbors.length : 0) +
+          (reg.bloc === "contested" ? 20 : 0) + (reg.shock === "war" ? 10 : 0) + (rh() - 0.5) * 8
         ), 0, 100);
       });
 
@@ -1347,7 +1399,8 @@
             boom_bust: reg.boomBust,
             event_type: reg.eventType,
             event_epoch: reg.eventEpoch,
-            event_severity: reg.eventSeverity
+            event_severity: reg.eventSeverity,
+            bloc_changes: reg.blocChanges
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });

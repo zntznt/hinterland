@@ -26,7 +26,11 @@
 > **In-run events (D3)** add lived history with dates: refinery collapses as
 > the ore economy tires (orphaning trunk conduit as ghost infrastructure),
 > plagues at maximum contamination, and relic calamities that scar the blight
-> field permanently — recorded per region and as a provenance timeline. With time real,
+> field permanently — recorded per region and as a provenance timeline.
+> **Dynamic institutions (D4)**: capital doesn't die, it moves — replacement
+> refineries founded mid-run where the money went — and the political map is
+> live: blocs re-contest as magnate reach shifts, with `bloc_changes` counting
+> each region's lived changes of ruler. With time real,
 > `abandonment_index` became true hysteresis (peak wealth − present wealth) and
 > dead lodes emerge in-run; the arrow-inversion caveat on deep time is thereby
 > partially resolved (founding-era/shock reconstruction remains). Remaining

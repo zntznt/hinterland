@@ -8,7 +8,23 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
-  PHASE 4 of the attribute model (docs/attribute-model.md): exported blight.
+  PHASE 5 of the attribute model (docs/attribute-model.md): facilities,
+  coverage, health — the payload phase.
+    - FACILITIES (healer / waterworks / wardstation) rationed by the planner's
+      rule: prime always; hubs only when on-conduit. Wardstations additionally
+      guard refinery regions (assets get protection whether people do or not).
+      Facilities export as Point features (kind="facility").
+    - healing_reach decays over COST-distance to the nearest healer; safe_water
+      from waterworks/conduit/wealth minus a blight penalty; vulnerability_idx
+      from poverty + peripherality + tier.
+    - disease_burden_per_1k: EMERGENT, never painted — environmental (blight),
+      waterborne (unsafe water), and unmet (vulnerability) cause components,
+      each averted by healing reach, plus seeded jitter. Components export
+      separately so QGIS can attribute burden to cause.
+    - service_gap_idx: precomputed coverage gap (inverse reach + facility
+      distance + off-grid), paint-ready for the headline map. Schema v6.
+
+  PHASE 4 (retained): exported blight.
     - Geology gains a blind ELEVATION field and a seeded prevailing WIND.
     - blight_load: refinery plumes spread by PHYSICS (distance kernel, elongated
       downwind, pulled downhill) PLUS spoil hauled onto poor land, weighted by
@@ -186,8 +202,10 @@
         <label class="radio"><input type="radio" name="view" value="services" /> arcane services</label>
         <label class="radio"><input type="radio" name="view" value="blight" /> blight</label>
         <label class="radio"><input type="radio" name="view" value="injustice" /> injustice (blight × poverty)</label>
+        <label class="radio"><input type="radio" name="view" value="burden" /> disease burden /1k</label>
+        <label class="radio"><input type="radio" name="view" value="gap" /> service gap</label>
         <label class="radio"><input type="radio" name="view" value="density" /> population density</label>
-        <div class="hint">Preview only — the export always carries all columns. ■ = refinery, gold lines = conduit, dashed = off-grid.</div>
+        <div class="hint">Preview only — the export always carries all columns. ■ = refinery, gold lines = conduit, dashed = off-grid, H/W/D = healer/waterworks/wardstation.</div>
       </div>
 
       <div class="row">
@@ -221,7 +239,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 5;
+    const SCHEMA_VERSION = 6;
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
 
     const DEFAULTS = {
@@ -628,6 +646,52 @@
         reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
       });
 
+      // Facilities: the planner's rationing rule — prime always served; hubs
+      // only when on-conduit (arcane facilities need lumen). Wardstations also
+      // guard refinery regions: assets get protection whether people do or not.
+      const facilities = [];
+      const servedIdxs = [], anyFacIdxs = [];
+      regions.forEach((reg, i) => {
+        const served = reg.tier === "prime" || (reg.tier === "hub" && reg.onConduit);
+        if (served) {
+          facilities.push({ type: "healer", regionId: reg.id, x: reg.c[0], y: reg.c[1] });
+          facilities.push({ type: "waterworks", regionId: reg.id, x: reg.c[0], y: reg.c[1] });
+          servedIdxs.push(i);
+        }
+        if (served || reg.refining > 0)
+          facilities.push({ type: "wardstation", regionId: reg.id, x: reg.c[0], y: reg.c[1] });
+        if (served || reg.refining > 0) anyFacIdxs.push(i);
+      });
+      const healerCd = costDistances(regions, servedIdxs).dist;
+      const anyFacCd = costDistances(regions, anyFacIdxs).dist;
+
+      // Health: exposure, water, vulnerability -> EMERGENT burden, averted by
+      // reach. Need is computed, never painted.
+      const r1 = (v) => Math.round(v * 10) / 10;
+      regions.forEach((reg, i) => {
+        reg.healerDist = r1(isFinite(healerCd[i]) ? healerCd[i] : 9999);
+        reg.facDist = r1(isFinite(anyFacCd[i]) ? anyFacCd[i] : 9999);
+        reg.healingReach = Math.round(100 * Math.exp(-(isFinite(healerCd[i]) ? healerCd[i] : 1e9) / 250));
+        const wwHere = reg.tier === "prime" || (reg.tier === "hub" && reg.onConduit);
+        reg.safeWater = clamp(Math.round(
+          (wwHere ? 85 : (reg.onConduit ? 45 : 15)) + 0.25 * reg.wealth - 0.35 * reg.blight
+        ), 0, 100);
+        const tierF = { prime: 0, hub: 30, outpost: 60, holdfast: 85 }[reg.tier];
+        reg.vulnerability = clamp(Math.round(
+          0.5 * (100 - reg.wealth) + 0.3 * (100 - reg.centrality) + 0.2 * tierF
+        ), 0, 100);
+        const care = 1 - 0.55 * reg.healingReach / 100; // reach averts burden
+        const jit = 0.94 + sx("health#" + reg.id)() * 0.12;
+        reg.burdenEnv = r1(0.55 * reg.blight * care * jit);
+        reg.burdenWater = r1(0.45 * (100 - reg.safeWater) * care * jit);
+        reg.burdenUnmet = r1(0.35 * reg.vulnerability * care * jit);
+        reg.burden = r1(reg.burdenEnv + reg.burdenWater + reg.burdenUnmet);
+        reg.serviceGap = clamp(Math.round(
+          0.45 * (100 - reg.healingReach) + 0.3 * Math.min(100, reg.facDist / 6) +
+          0.25 * (reg.onConduit ? 0 : 100)
+        ), 0, 100);
+      });
+
       const settlements = regions.map(reg => ({
         name: makeName(sx("name#" + reg.id)),
         tier: reg.tier, regionId: reg.id,
@@ -635,11 +699,15 @@
         population: reg.settlementPop,
         wealth: reg.wealth,
         onConduit: reg.onConduit,
-        arcaneServices: reg.arcaneServices
+        arcaneServices: reg.arcaneServices,
+        nearestFacility: reg.facDist,
+        nearestHealer: reg.healerDist,
+        burden: reg.burden,
+        serviceGap: reg.serviceGap
       }));
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, conduitEdges, capital: cap, capPoint, capitalName, windDeg: geo.windDeg };
+      return { regions, settlements, facilities, conduitEdges, capital: cap, capPoint, capitalName, windDeg: geo.windDeg };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -666,7 +734,15 @@
             arcane_service_index: reg.arcaneServices,
             elevation: reg.elevation,
             blight_load: reg.blight,
-            injustice_idx: reg.injustice
+            injustice_idx: reg.injustice,
+            healing_reach: reg.healingReach,
+            safe_water: reg.safeWater,
+            vulnerability_idx: reg.vulnerability,
+            burden_env_per_1k: reg.burdenEnv,
+            burden_water_per_1k: reg.burdenWater,
+            burden_unmet_per_1k: reg.burdenUnmet,
+            disease_burden_per_1k: reg.burden,
+            service_gap_idx: reg.serviceGap
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -681,6 +757,13 @@
           ] }
         });
       });
+      model.facilities.forEach(f => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "facility", facility_type: f.type, region_id: f.regionId },
+          geometry: { type: "Point", coordinates: [round2(f.x), round2(f.y)] }
+        });
+      });
       model.settlements.forEach(s => {
         features.push({
           type: "Feature",
@@ -692,7 +775,11 @@
             population: s.population,
             wealth: s.wealth,
             on_conduit: s.onConduit ? 1 : 0,
-            arcane_service_index: s.arcaneServices
+            arcane_service_index: s.arcaneServices,
+            nearest_facility_distance: s.nearestFacility,
+            nearest_healer_dist: s.nearestHealer,
+            disease_burden_per_1k: s.burden,
+            service_gap_idx: s.serviceGap
           },
           geometry: { type: "Point", coordinates: [round2(s.x), round2(s.y)] }
         });
@@ -723,6 +810,8 @@
       services:   { lo: [237, 248, 251], hi: [0, 109, 119],  label: "arcane services" },
       blight:     { lo: [253, 244, 249], hi: [174, 1, 126],  label: "blight load" },
       injustice:  { lo: [255, 245, 240], hi: [103, 0, 13],   label: "injustice (blight × poverty)" },
+      burden:     { lo: [255, 247, 243], hi: [128, 0, 38],   label: "disease burden per 1k" },
+      gap:        { lo: [247, 247, 247], hi: [37, 37, 37],   label: "service gap" },
       density:    { lo: [254, 237, 222], hi: [166, 54, 3],   label: "pop. density (per 100×100 cell)" }
     };
     function rampColor(ramp, t) {
@@ -735,6 +824,7 @@
     function render(model, params) {
       const ramp = RAMPS[view];
       const maxDensity = Math.max(...model.regions.map(r => r.popDensity), 1e-9);
+      const maxBurden = Math.max(...model.regions.map(r => r.burden), 1e-9);
       const cellT = (reg) =>
         view === "wealth" ? reg.wealth / 100 :
         view === "endowment" ? reg.endowment / 100 :
@@ -742,6 +832,8 @@
         view === "services" ? reg.arcaneServices / 100 :
         view === "blight" ? reg.blight / 100 :
         view === "injustice" ? reg.injustice / 100 :
+        view === "burden" ? reg.burden / maxBurden :
+        view === "gap" ? reg.serviceGap / 100 :
         Math.sqrt(reg.popDensity / maxDensity);
       const cellValue = (reg) =>
         view === "wealth" ? reg.wealth :
@@ -750,6 +842,8 @@
         view === "services" ? reg.arcaneServices :
         view === "blight" ? reg.blight :
         view === "injustice" ? reg.injustice :
+        view === "burden" ? reg.burden.toFixed(1) :
+        view === "gap" ? reg.serviceGap :
         reg.popDensity.toFixed(1);
 
       const parts = [`<svg id="map" width="${SVG}" height="${SVG}" viewBox="0 0 ${W} ${W}" xmlns="http://www.w3.org/2000/svg">`];
@@ -762,6 +856,13 @@
         if (reg.refining > 0) { // refinery glyph
           parts.push(`<rect x="${(reg.c[0] - 8).toFixed(1)}" y="${(fy(reg.c[1]) + 32).toFixed(1)}" width="16" height="16" fill="#111" stroke="#fff" stroke-width="2"/>`);
         }
+      });
+
+      // Facility glyphs (H = healer, W = waterworks, D = wardstation)
+      const FAC_STYLE = { healer: ["H", "#006d2c", -20], waterworks: ["W", "#08519c", 0], wardstation: ["D", "#54278f", 20] };
+      model.facilities.forEach(f => {
+        const [ch, color, dx] = FAC_STYLE[f.type];
+        parts.push(`<text class="fac" x="${(f.x + dx).toFixed(1)}" y="${(fy(f.y) + 58).toFixed(1)}" font-size="14" font-weight="700" text-anchor="middle" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="3">${ch}</text>`);
       });
 
       // Conduit lines (drawn under settlement symbols)
@@ -817,6 +918,8 @@
         ["refineries", refineries],
         ["on-conduit", `${model.settlements.filter(s => s.onConduit).length} of ${model.settlements.length} settlements (threshold ${params.gt})`],
         ["wind / dump bias", `${model.windDeg}° / λ ${params.db}%`],
+        ["facilities", (() => { const c = model.facilities.reduce((m, f) => { m[f.type] = (m[f.type] || 0) + 1; return m; }, {}); return `${c.healer || 0} healer / ${c.waterworks || 0} water / ${c.wardstation || 0} ward`; })()],
+        ["worst burden", Math.max(...model.regions.map(r => r.burden)).toFixed(1) + " /1k"],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1000 (y-up)"]

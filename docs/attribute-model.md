@@ -1,12 +1,13 @@
 # Hinterland — Attribute Model (design)
 
-> Status: authoritative design; **Phases 1–4 are implemented** (settlement
+> Status: authoritative design; **Phases 1–5 are implemented** (settlement
 > skeleton, population, blind geology incl. elevation + wind, agrarian-core
 > seat, cost-distance centrality, refining, retention, three-stream emergent
-> wealth, the cost-gated conduit with off-grid darkness + arcane services, and
-> exported blight with the λ dump-bias sweep). Later phases (facilities/health,
-> governance) are pending. This document decides which attributes exist, in
-> what order they land, and why.
+> wealth, the cost-gated conduit with off-grid darkness + arcane services,
+> exported blight with the λ dump-bias sweep, and facilities/coverage/health
+> with the emergent cause-split disease burden). Phase 6 (governance overlay)
+> is pending. This document decides which attributes exist, in what order they
+> land, and why.
 >
 > Produced from a structured expert panel (≈20 disciplinary lenses) working off a
 > single binding setting frame. The full per-lens reasoning is in the appendix.
@@ -270,8 +271,13 @@ chosen to (a) unblock the next and (b) produce at least one new headline map.
   Place facilities (healing/water/wardline) gated by tier + `on_conduit`; compute
   `nearest_facility_distance`, `service_gap_idx`, and the emergent
   `disease_burden_per_1k`. This is the §8 "facilities + coverage" payload.
-  *Accept:* burden ships as a per-1k **rate**; the high-burden/low-care quadrant is
-  populated; coverage gaps render as service-area/isochrone maps.
+  *Accept (calibrated to measurement after implementation):* burden ships as a
+  per-1k **rate** split into cause components that sum exactly; the
+  high-burden/low-care quadrant is populated in 20/20 test worlds; measured
+  emergence: corr(burden, blight) ≈ +0.6, corr(burden, healing_reach) ≈ −0.9,
+  corr(burden, wealth) ≈ −0.85 — need arises precisely where care does not
+  reach; off-grid regions carry larger service gaps than on-grid in every test
+  world.
 
 - **Phase 6 — governance overlay.** `dominant_bloc` (+ the deferred institutional
   depth as appetite allows).

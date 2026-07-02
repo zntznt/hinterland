@@ -406,6 +406,9 @@
         <button id="dlSeries" class="wide">⬇ Download epoch series (QGIS temporal)</button>
       </div>
       <div class="row" style="margin-bottom:4px">
+        <button id="dlChron" class="wide">⬇ Download chronicle (.md)</button>
+      </div>
+      <div class="row" style="margin-bottom:4px">
         <button id="share" class="wide">🔗 Copy share link</button>
       </div>
       <div class="toast" id="toast"></div>
@@ -424,6 +427,12 @@
       </div>
     </div>
   </div>
+
+  <!-- The chronicle: the same world, narrated -->
+  <details id="chronBox" style="margin:14px auto 40px; max-width:860px; padding:0 16px">
+    <summary style="cursor:pointer; font-weight:600">📜 The Chronicle — the world narrating itself</summary>
+    <div id="chronText" style="white-space:pre-wrap; font-family:Georgia,'Times New Roman',serif; font-size:14px; line-height:1.55; padding:14px 18px; background:#faf8f2; border:1px solid #ddd; border-radius:6px; margin-top:8px"></div>
+  </details>
 
   <script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6"></script>
   <script>
@@ -1804,7 +1813,144 @@
     const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     const fy = (y) => W - y; // flip y for display so preview matches QGIS (y-up)
 
+    // ---- The chronicle (E4): the world narrating itself ---------------------
+    // A deterministic written history composed from the SAME facts the export
+    // carries: the founding, the event timeline (with the causal chains told
+    // as chains), and the state of the realm at the record's close. Phrasing
+    // variants are drawn from a dedicated seed substream, so the same world
+    // always tells the same story, in the same words.
+    function composeChronicle(model, params) {
+      const rc = streams(params.seed)("chronicle");
+      const pick = (v) => v[Math.floor(rc() * v.length)];
+      const year = (e) => 1000 + 25 * e;
+      const closeY = year(params.ep);
+      const town = (id) => model.settlements.find(s => s.regionId === id);
+      const tierWord = { prime: "the seat", hub: "the hub town", outpost: "the outpost", holdfast: "the holdfast" };
+      const list = (xs) => xs.length <= 1 ? (xs[0] || "") :
+        xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
+      const compass = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"][Math.round(model.windDeg / 45) % 8];
+      const L = [];
+
+      // -- the founding ------------------------------------------------------
+      L.push(`# A Chronicle of the Hinterland`);
+      L.push(``);
+      L.push(`*The world called "${params.seed}", as set down at ${model.capitalName} in the year ${closeY}.*`);
+      L.push(``);
+      L.push(`## The Founding — year 1000`);
+      L.push(``);
+      const n = model.regions.length;
+      // founding works: today's refineries, minus the mid-run foundings, plus the collapsed
+      const foundedIds = new Set(model.events.filter(ev => ev.type === "refinery_founded").map(ev => ev.region_id));
+      const collapsedIds = model.events.filter(ev => ev.type === "refinery_collapse").map(ev => ev.region_id);
+      const works0 = model.regions.filter(r => (r.refining > 0 && !foundedIds.has(r.id))).map(r => r.id).concat(collapsedIds);
+      const consIds = new Set(model.events.filter(ev => ev.type === "consecration").map(ev => ev.region_id));
+      const shrines0 = model.sanctionedSites.filter(s => !consIds.has(s.regionId));
+      const dark0 = model.epochSnaps[0].onGrid.filter(v => !v).length;
+      L.push(`In the beginning of this record the realm counted ${n} settled regions, and ${model.capitalName} held the seat. ` +
+        `The wind stood out of the ${compass}, as it does in that country, and everything else followed from the ground: ` +
+        `where the aetherstone lay, where the land would carry a road, and where it would not.`);
+      L.push(``);
+      L.push(`The works at ${list(works0.map(id => town(id).name))} turned aetherstone to lumen, and the trunk lines ran from their yards to the seat. ` +
+        `The Temple kept holy ground at ${list(shrines0.map(s => `${s.name} (by ${town(s.regionId).name})`))} — out where the sacred substance lies and the Crown's writ runs thin. ` +
+        (dark0 > 0
+          ? `${dark0} of the realm's settlements sat off the conduit at the founding, in darkness: connected by road — everything is connected by road — but unserved, because the ledgers said serving them would not pay.`
+          : `Every settlement of the realm sat on the conduit at the founding — a generosity of the ledgers the chronicle does not expect to last.`));
+
+      // -- the years ---------------------------------------------------------
+      if (params.ep > 0) {
+        L.push(``);
+        L.push(`## The Years`);
+        L.push(``);
+        if (model.events.length === 0) {
+          L.push(`The chronicle records no upheavals: the years passed as the founding had arranged them, ` +
+            `which is not the same as saying they passed kindly. The grid crawled where the money went, ` +
+            `the ore drew down, and the poison settled where it always settles.`);
+        }
+        const strikeEv = model.events.find(ev => ev.type === "ore_strike");
+        for (const ev of model.events) {
+          const t = town(ev.region_id);
+          const y = year(ev.epoch);
+          let line = "";
+          if (ev.type === "refinery_collapse") line = pick([
+            `The works at ${t.name} fell silent. The fields that fed them had given all they had, and the magnates did not stay for the funeral. The trunk lines still stand there, carrying nothing.`,
+            `In this year the refinery at ${t.name} closed its yards for good. What the ore had built, the ore's end unbuilt; the town kept its wires and lost its wages.`,
+          ]);
+          else if (ev.type === "refinery_founded") line = pick([
+            `The magnates raised new works at ${t.name}, where the money had gone. The charter was sealed at ${model.capitalName}, and the trunk line followed within the season.`,
+            `New refinery fires were lit at ${t.name}. The seat called it progress; the towns the new trunk line passed over called it something else.`,
+          ]);
+          else if (ev.type === "blight_plague") line = pick([
+            `Plague took ${t.name}. The blight had sat heavy on that country for years, and when the sickness came it found a town already half-poisoned. A third of the people were carried off or fled.`,
+            `In this year the sickness came to ${t.name}, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do.`,
+          ]);
+          else if (ev.type === "relic_calamity") line = pick([
+            `The relic ground by ${t.name} woke. What the old power did there is not well described in the accounts that survive, and the land it touched bears the scar still.`,
+            `At the sanctioned ground by ${t.name} something of the old world stirred and broke. The Temple calls it a testing; the survivors called it otherwise. The blight of it has not faded.`,
+          ]);
+          else if (ev.type === "ore_strike") {
+            line = pick([
+              `Prospectors struck a hidden lode under ${t.name}, and by winter the roads were full of wagons and the town was full of strangers.`,
+              `A lode no survey had found came up under ${t.name}. The rush was immediate: retainers, chancers, assayers, and everyone who follows them.`,
+            ]);
+            const warAfter = model.events.find(w => w.type === "war" && w.epoch > ev.epoch && w.epoch <= ev.epoch + 2);
+            if (warAfter) line += ` The ground was disputed ground, and every magnate, priest, and captain in the realm knew what that meant.`;
+          }
+          else if (ev.type === "war") {
+            const chained = strikeEv && ev.epoch > strikeEv.epoch && ev.epoch <= strikeEv.epoch + 2;
+            line = (chained
+              ? `War came to ${t.name}, ${25 * (ev.epoch - strikeEv.epoch)} years after the strike — armies follow ore. `
+              : `War came to ${t.name}, as it comes to ground that three powers claim and none can hold. `) +
+              `When the fighting burned out, ${tierWord[t.tier]} was the poorer by a third of its people and a quarter of its wealth, and the mines and works were ruined ground. The Crown's garrison arrived after the blood, and stayed.`;
+          }
+          else if (ev.type === "consecration") {
+            const shrine = model.sanctionedSites.find(s => s.regionId === ev.region_id);
+            line = `The Temple came to ${t.name}, to the ground of its suffering, and consecrated it as ${shrine ? shrine.name : "holy ground"}. ` +
+              `Pilgrims walk that road now. Where the Crown's writ had failed and the magnates' ledgers saw nothing worth the ink, the faith planted its standard — after the harm, claiming the ground.`;
+          }
+          L.push(`**Year ${y}.** ${line}`);
+          L.push(``);
+        }
+      }
+
+      // -- the state of the realm --------------------------------------------
+      L.push(``);
+      L.push(`## The State of the Realm — year ${closeY}`);
+      L.push(``);
+      if (params.ep > 0) {
+        const bb = { boom: 0, stable: 0, decline: 0, collapse: 0 };
+        model.regions.forEach(r => { bb[r.boomBust]++; });
+        const parts = [];
+        if (bb.boom) parts.push(`${bb.boom} rose through the years`);
+        if (bb.stable) parts.push(`${bb.stable} held steady`);
+        if (bb.decline) parts.push(`${bb.decline} declined`);
+        if (bb.collapse) parts.push(`${bb.collapse} collapsed outright`);
+        L.push(`Of the realm's ${n} settled regions, ${list(parts)}.`);
+        const ghost = model.regions.reduce((a, b) => a.abandonment >= b.abandonment ? a : b);
+        if (ghost.abandonment >= 35)
+          L.push(`${town(ghost.id).name} is the emptiest of the ghost country: its best years are a memory the roads no longer visit.`);
+        const riser = model.regions.reduce((a, b) => (a.wealth - a.wealthT0) >= (b.wealth - b.wealthT0) ? a : b);
+        if (riser.wealth - riser.wealthT0 > 10)
+          L.push(`${town(riser.id).name} rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.`);
+        L.push(``);
+      }
+      const bc = { crown: 0, temple: 0, magnate: 0, contested: 0, ungoverned: 0 };
+      model.regions.forEach(r => { bc[r.bloc]++; });
+      L.push(`The Crown holds ${bc.crown} regions, the Temple ${bc.temple}, the magnates ${bc.magnate}; ` +
+        `${bc.contested} are contested between them, and ${bc.ungoverned} answer to no one at all.`);
+      const darkNow = model.regions.filter(r => !r.onConduit).length;
+      L.push(``);
+      L.push(darkNow > 0
+        ? `${darkNow} of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.`
+        : `At the record's close the conduit reaches every settlement of the realm. The chronicle notes it without comment, so that later readers may check whether it lasted.`);
+      if (params.ep === 0) {
+        L.push(``);
+        L.push(`*Here the record ends at its beginning: the world is newly founded, and its years are still to run.*`);
+      }
+      return L.join("\n").replace(/\n{3,}/g, "\n\n") + "\n";
+    }
+
     function render(model, params) {
+      document.getElementById("chronText").textContent = composeChronicle(model, params);
       const ramp = RAMPS[view];
       // Scrub-aware accessors: the stock fields read the selected epoch's
       // snapshot; derived layers always show the final state.
@@ -2116,6 +2262,16 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url; a.download = "hinterland-epochs.geojson";
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      });
+
+      $("dlChron").addEventListener("click", () => {
+        if (!model) return;
+        const blob = new Blob([composeChronicle(model, params)], { type: "text/markdown" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "hinterland-chronicle.md";
         document.body.appendChild(a); a.click(); a.remove();
         URL.revokeObjectURL(url);
       });

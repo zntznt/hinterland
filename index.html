@@ -8,7 +8,17 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
-  PHASE 3 of the attribute model (docs/attribute-model.md): off-grid darkness.
+  PHASE 4 of the attribute model (docs/attribute-model.md): exported blight.
+    - Geology gains a blind ELEVATION field and a seeded prevailing WIND.
+    - blight_load: refinery plumes spread by PHYSICS (distance kernel, elongated
+      downwind, pulled downhill) PLUS spoil hauled onto poor land, weighted by
+      the dump-bias knob λ. Neutral zero: λ=0 => blight follows only wind and
+      terrain. The λ-sweep is the built-in experiment: the correlation gap
+      between λ=default and λ=0 measures the POLICY SHARE of the injustice.
+    - injustice_idx = normalize(blight) x normalize(poverty) — presentation
+      column only; the argument rests on the raw fields. Export schema v5.
+
+  PHASE 3 (retained): off-grid darkness.
     - Cost-gated conduit: trunk least-cost paths wire each refinery to the seat
       (pass-through regions get tapped); then greedy expansion connects the best
       benefit/cost settlement while (population x wealth) / build-cost clears the
@@ -155,6 +165,12 @@
       </div>
 
       <div class="row">
+        <label>Dump bias λ <span class="val" id="dbVal"></span></label>
+        <input type="range" id="db" min="0" max="100" step="1" />
+        <div class="hint">How much refinery spoil is hauled onto poor land. 0 = blight follows only wind and terrain.</div>
+      </div>
+
+      <div class="row">
         <label>Capital</label>
         <div class="inline">
           <button id="diceCapital" class="wide" title="Random capital region">🎲 random capital</button>
@@ -168,6 +184,8 @@
         <label class="radio"><input type="radio" name="view" value="endowment" /> aetherstone endowment</label>
         <label class="radio"><input type="radio" name="view" value="centrality" /> centrality to seat</label>
         <label class="radio"><input type="radio" name="view" value="services" /> arcane services</label>
+        <label class="radio"><input type="radio" name="view" value="blight" /> blight</label>
+        <label class="radio"><input type="radio" name="view" value="injustice" /> injustice (blight × poverty)</label>
         <label class="radio"><input type="radio" name="view" value="density" /> population density</label>
         <div class="hint">Preview only — the export always carries all columns. ■ = refinery, gold lines = conduit, dashed = off-grid.</div>
       </div>
@@ -203,13 +221,14 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 4;
+    const SCHEMA_VERSION = 5;
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
 
     const DEFAULTS = {
       seed: "hinterland", regions: 24, relax: 2, bias: 80,
       we: 35, wf: 25, wt: 30, wg: 10,   // income-mix weights
       gt: 35,                            // grid threshold (0 = conduit reaches everyone)
+      db: 60,                            // dump bias λ (0 = blight follows only wind/terrain)
       capital: null                      // null => seat derived from geology
     };
 
@@ -349,23 +368,30 @@
         return v;
       });
 
-      // Terrain ruggedness + fertility: independent smooth fields, min-max
-      // normalized per world. Blind: seed + centroids only.
+      // Terrain ruggedness, fertility, elevation: independent smooth fields,
+      // min-max normalized per world. Blind: seed + centroids only.
       const fRug = bumpField(sg("rugged"), 6, 140, 320);
       const fFer = bumpField(sg("fertile"), 5, 180, 380);
+      const fEle = bumpField(sg("elevation"), 5, 160, 360);
       const mm = (vals) => {
         const lo = Math.min(...vals), hi = Math.max(...vals);
         return vals.map(v => hi > lo ? (v - lo) / (hi - lo) : 0.5);
       };
       const rv = mm(regions.map(r => fRug(r.c[0], r.c[1])));
       const fv = mm(regions.map(r => fFer(r.c[0], r.c[1])));
+      const ev = mm(regions.map(r => fEle(r.c[0], r.c[1])));
 
       regions.forEach((reg, i) => {
         const t = maxRaw > 0 ? raw[i] / maxRaw : 0;
         reg.endowment = Math.round(100 * Math.pow(t, 2)); // sparse: most ~0, few rich
         reg.ruggedness = Math.round(100 * rv[i]);
         reg.fertility = Math.round(100 * fv[i]);
+        reg.elevation = Math.round(100 * ev[i]);
       });
+
+      // Prevailing wind: one seeded direction per world (0° = +x/east, CCW).
+      const windDeg = Math.floor(sg("wind")() * 360);
+      return { windDeg };
     }
 
     // ---- Cost-distance over the adjacency graph (Dijkstra, O(n^2)) ----------
@@ -400,7 +426,7 @@
     // ---- Stage 3: society ----------------------------------------------------
     // Order per the DAG: seat -> centrality -> refining -> retention -> wealth
     // -> skeleton -> population. No step reads anything computed after it.
-    function applyAttributes(regions, params) {
+    function applyAttributes(regions, params, geo) {
       const sx = streams(params.seed);
 
       // Seat resolution. Pinned: nearest region to the click. Unpinned: the
@@ -561,6 +587,47 @@
         ), 0, 100);
       });
 
+      // Blight. Two parts per refinery:
+      //   PLUME (physics): leakage spread by a distance kernel, elongated
+      //     downwind, pulled downhill. Always present, λ-independent.
+      //   SPOIL (policy): a FIXED mass of tailings per refinery, allocated by
+      //     weights that λ reshapes — at λ=0 pure distance decay (dumped on
+      //     whoever is NEAREST: geography, the neutral zero), at λ=1 strongly
+      //     poverty-seeking (hauled onto whoever is POOREST). Same mass either
+      //     way: the λ-sweep compares identical contamination under different
+      //     victims — the "policy share" experiment.
+      const windRad = geo.windDeg * Math.PI / 180;
+      const wvx = Math.cos(windRad), wvy = Math.sin(windRad);
+      const lam = params.db / 100;
+      const blightRaw = new Array(regions.length).fill(0);
+      regions.forEach(rf => {
+        if (rf.refining <= 0) return;
+        const C = rf.refining / 100;
+        regions.forEach((reg, i) => {
+          const dx = reg.c[0] - rf.c[0], dy = reg.c[1] - rf.c[1];
+          const d = Math.hypot(dx, dy);
+          const base = Math.exp(-(d * d) / (2 * 160 * 160));
+          const windBoost = d > 1 ? 1 + 0.8 * Math.max(0, (dx * wvx + dy * wvy) / d) : 1;
+          const hillBoost = 1 + 0.8 * Math.max(0, (rf.elevation - reg.elevation) / 100);
+          blightRaw[i] += 0.3 * C * base * windBoost * hillBoost;
+        });
+        const SPOIL = 5 * C;
+        let wsum = 0;
+        const wts = regions.map(reg => {
+          const d = Math.hypot(reg.c[0] - rf.c[0], reg.c[1] - rf.c[1]);
+          const w = Math.exp(-d / 800) * Math.pow(1 - reg.wealth / 100, 10 * lam);
+          wsum += w; return w;
+        });
+        if (wsum > 0) regions.forEach((_, i) => { blightRaw[i] += SPOIL * (wts[i] / wsum); });
+      });
+      let maxB = 0;
+      const rawB = blightRaw.map(v => { if (v > maxB) maxB = v; return v; });
+      regions.forEach((reg, i) => {
+        reg.blight = maxB > 0 ? Math.round(100 * (rawB[i] / maxB)) : 0;
+        // presentation column: the argument rests on the raw fields
+        reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
+      });
+
       const settlements = regions.map(reg => ({
         name: makeName(sx("name#" + reg.id)),
         tier: reg.tier, regionId: reg.id,
@@ -572,7 +639,7 @@
       }));
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, conduitEdges, capital: cap, capPoint, capitalName };
+      return { regions, settlements, conduitEdges, capital: cap, capPoint, capitalName, windDeg: geo.windDeg };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -596,7 +663,10 @@
             value_retention: reg.retention,
             on_conduit: reg.onConduit ? 1 : 0,
             conduit_access: reg.conduitAccess,
-            arcane_service_index: reg.arcaneServices
+            arcane_service_index: reg.arcaneServices,
+            elevation: reg.elevation,
+            blight_load: reg.blight,
+            injustice_idx: reg.injustice
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -636,6 +706,8 @@
           bias: params.bias,
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt,
+          dump_bias: params.db,
+          wind_deg: model.windDeg,
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
           space: "planar 0..1000, y-up (flat-plane CRS)"
         },
@@ -649,6 +721,8 @@
       endowment:  { lo: [242, 240, 247], hi: [84, 39, 143],  label: "aetherstone endowment" },
       centrality: { lo: [239, 243, 255], hi: [8, 48, 107],   label: "centrality to seat" },
       services:   { lo: [237, 248, 251], hi: [0, 109, 119],  label: "arcane services" },
+      blight:     { lo: [253, 244, 249], hi: [174, 1, 126],  label: "blight load" },
+      injustice:  { lo: [255, 245, 240], hi: [103, 0, 13],   label: "injustice (blight × poverty)" },
       density:    { lo: [254, 237, 222], hi: [166, 54, 3],   label: "pop. density (per 100×100 cell)" }
     };
     function rampColor(ramp, t) {
@@ -666,12 +740,16 @@
         view === "endowment" ? reg.endowment / 100 :
         view === "centrality" ? reg.centrality / 100 :
         view === "services" ? reg.arcaneServices / 100 :
+        view === "blight" ? reg.blight / 100 :
+        view === "injustice" ? reg.injustice / 100 :
         Math.sqrt(reg.popDensity / maxDensity);
       const cellValue = (reg) =>
         view === "wealth" ? reg.wealth :
         view === "endowment" ? reg.endowment :
         view === "centrality" ? reg.centrality :
         view === "services" ? reg.arcaneServices :
+        view === "blight" ? reg.blight :
+        view === "injustice" ? reg.injustice :
         reg.popDensity.toFixed(1);
 
       const parts = [`<svg id="map" width="${SVG}" height="${SVG}" viewBox="0 0 ${W} ${W}" xmlns="http://www.w3.org/2000/svg">`];
@@ -704,6 +782,18 @@
           parts.push(`<text x="${cx.toFixed(1)}" y="${(cy - r - 5).toFixed(1)}" font-size="${isPrime ? 21 : 14}" text-anchor="middle" fill="#000" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="4">${esc(s.name)}</text>`);
         }
       });
+      // Wind arrow (top-left; display coords flip y)
+      {
+        const a = model.windDeg * Math.PI / 180;
+        const dx = Math.cos(a), dy = -Math.sin(a);
+        const cx0 = 70, cy0 = 70, L = 36;
+        const x1 = cx0 - dx * L, y1 = cy0 - dy * L, x2 = cx0 + dx * L, y2 = cy0 + dy * L;
+        const hx = -dx * 14, hy = -dy * 14; // arrowhead back-vector
+        const px = -dy, py = dx;            // perpendicular
+        parts.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#000" stroke-width="4" opacity="0.65"/>`);
+        parts.push(`<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(x2 + hx + px * 8).toFixed(1)},${(y2 + hy + py * 8).toFixed(1)} ${(x2 + hx - px * 8).toFixed(1)},${(y2 + hy - py * 8).toFixed(1)}" fill="#000" opacity="0.65"/>`);
+        parts.push(`<text x="${cx0}" y="${cy0 + 58}" font-size="16" text-anchor="middle" fill="#000" opacity="0.6" paint-order="stroke" stroke="#fff" stroke-width="3">wind</text>`);
+      }
       parts.push(`</svg>`);
       const stage = document.getElementById("stage");
       stage.innerHTML = parts.join("");
@@ -726,6 +816,7 @@
         ["tiers", `${tierCounts.prime || 0} prime / ${tierCounts.hub || 0} hub / ${tierCounts.outpost || 0} outpost / ${tierCounts.holdfast || 0} holdfast`],
         ["refineries", refineries],
         ["on-conduit", `${model.settlements.filter(s => s.onConduit).length} of ${model.settlements.length} settlements (threshold ${params.gt})`],
+        ["wind / dump bias", `${model.windDeg}° / λ ${params.db}%`],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1000 (y-up)"]
@@ -736,16 +827,17 @@
     // ---- State + recompute orchestration ------------------------------------
     let params = { ...DEFAULTS };
     let topology = null;   // regions with geology baked in (stages 1+2)
+    let geo = null;        // world-level geology (wind)
     let model = null;
     let view = "wealth";   // preview-only; not a generation param
 
     function regenerateTopology() {
       topology = buildTopology(params);
-      buildGeology(topology, params);   // stage 2: seed + topology only
+      geo = buildGeology(topology, params);   // stage 2: seed + topology only
       recomputeAttributes();
     }
     function recomputeAttributes() {    // stage 3 only — geology untouched
-      model = applyAttributes(topology, params);
+      model = applyAttributes(topology, params, geo);
       render(model, params);
       writeHash();
     }
@@ -760,6 +852,7 @@
       p.set("we", params.we); p.set("wf", params.wf);
       p.set("wt", params.wt); p.set("wg", params.wg);
       p.set("gt", params.gt);
+      p.set("db", params.db);
       if (params.capital) { p.set("cx", round2(params.capital[0])); p.set("cy", round2(params.capital[1])); }
       history.replaceState(null, "", "#" + p.toString());
     }
@@ -778,6 +871,7 @@
         we: w("we", DEFAULTS.we), wf: w("wf", DEFAULTS.wf),
         wt: w("wt", DEFAULTS.wt), wg: w("wg", DEFAULTS.wg),
         gt: w("gt", DEFAULTS.gt),
+        db: w("db", DEFAULTS.db),
         capital: null
       };
       if (p.has("cx") && p.has("cy") && isFinite(+p.get("cx")) && isFinite(+p.get("cy")))
@@ -790,11 +884,11 @@
       const set = (id, v) => { document.getElementById(id).value = v; };
       set("seed", params.seed); set("regions", params.regions); set("relax", params.relax);
       set("bias", params.bias); set("we", params.we); set("wf", params.wf);
-      set("wt", params.wt); set("wg", params.wg); set("gt", params.gt);
+      set("wt", params.wt); set("wg", params.wg); set("gt", params.gt); set("db", params.db);
       document.getElementById("regionsVal").textContent = params.regions;
       document.getElementById("relaxVal").textContent = params.relax;
       document.getElementById("biasVal").textContent = params.bias + "%";
-      for (const kid of ["we", "wf", "wt", "wg", "gt"])
+      for (const kid of ["we", "wf", "wt", "wg", "gt", "db"])
         document.getElementById(kid + "Val").textContent = params[kid];
     }
 
@@ -826,7 +920,7 @@
       $("regions").addEventListener("input", (e) => { params.regions = +e.target.value; $("regionsVal").textContent = params.regions; params.capital = null; regenerateTopology(); });
       $("relax").addEventListener("input", (e) => { params.relax = +e.target.value; $("relaxVal").textContent = params.relax; regenerateTopology(); });
       $("bias").addEventListener("input", (e) => { params.bias = +e.target.value; $("biasVal").textContent = params.bias + "%"; recomputeAttributes(); });
-      for (const kid of ["we", "wf", "wt", "wg", "gt"]) {
+      for (const kid of ["we", "wf", "wt", "wg", "gt", "db"]) {
         $(kid).addEventListener("input", (e) => {
           params[kid] = +e.target.value;
           $(kid + "Val").textContent = params[kid];

@@ -1,11 +1,12 @@
 # Hinterland — Attribute Model (design)
 
-> Status: authoritative design; **Phases 1–3 are implemented** (settlement
-> skeleton, population, blind geology, agrarian-core seat, cost-distance
-> centrality, refining, retention, three-stream emergent wealth, and the
-> cost-gated conduit with off-grid darkness + arcane services). Later phases
-> (blight, facilities/health, governance) are pending. This document decides
-> which attributes exist, in what order they land, and why.
+> Status: authoritative design; **Phases 1–4 are implemented** (settlement
+> skeleton, population, blind geology incl. elevation + wind, agrarian-core
+> seat, cost-distance centrality, refining, retention, three-stream emergent
+> wealth, the cost-gated conduit with off-grid darkness + arcane services, and
+> exported blight with the λ dump-bias sweep). Later phases (facilities/health,
+> governance) are pending. This document decides which attributes exist, in
+> what order they land, and why.
 >
 > Produced from a structured expert panel (≈20 disciplinary lenses) working off a
 > single binding setting frame. The full per-lens reasoning is in the appendix.
@@ -255,9 +256,15 @@ chosen to (a) unblock the next and (b) produce at least one new headline map.
 - **Phase 4 — exported blight.**
   Add `blight_load` (downhill/downwind kernel + λ dump-bias) and the
   `injustice_idx` bivariate. Ship the environmental-injustice map.
-  *Accept:* corr(`blight_load`, `wealth`) is negative at the default λ; sweeping
-  λ → 0 visibly weakens it. The gap between those two runs is the measured
-  **policy share** of the injustice — an analysis in itself.
+  *Accept (calibrated to measurement after implementation):* corr(`blight_load`,
+  `wealth`) ≈ −0.5 at the default λ; sweeping λ → 0 does not merely weaken it —
+  it **flips the sign** (≈ +0.9), because with no dumping policy the spoil stays
+  at the refineries and the centers eat their own waste. The gap between the two
+  runs (≈ 1.4 correlation points) is the measured **policy share** of the
+  injustice — an analysis in itself. Implementation note: λ reshapes the
+  *allocation weights* of a fixed spoil mass (nearest-land at λ=0 →
+  poverty-seeking at λ=1), so the sweep compares identical contamination under
+  different victims.
 
 - **Phase 5 — facilities, coverage, health.**
   Place facilities (healing/water/wardline) gated by tier + `on_conduit`; compute

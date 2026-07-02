@@ -7,12 +7,15 @@
 > arcane services, exported blight with the λ dump-bias sweep,
 > facilities/coverage/health with the emergent cause-split disease burden, and
 > the governance overlay (dominant_bloc from three competing reach fields).
-> The second wave has begun: **W1 (road network + flows) is implemented** —
-> friction-cost MST + shortcut roads spanning every settlement, gravity traffic
-> with road classes, `market_access`, and `pilgrim_flux` along routes to
-> sanctioned sites. Remaining deferred depth (§7): security/illicit corridors
-> (W2), deep time/path dependence (W3), social texture (W4). This document
-> decides which attributes exist, in what order they land, and why.
+> The second wave is underway: **W1 (road network + flows)** and **W2
+> (security + the shadow economy)** are implemented — roads spanning every
+> settlement with gravity traffic and classes, `market_access`, `pilgrim_flux`,
+> garrisons with `force_projection`, lumen-gated `wardline_strength`,
+> `security_status`, and the criminologist's set (`smuggling_intensity` routed
+> around patrols, `predation_risk`, `black_market_index`, `enforcement_gap`).
+> Remaining deferred depth (§7): deep time/path dependence (W3), social
+> texture (W4). This document decides which attributes exist, in what order
+> they land, and why.
 >
 > Produced from a structured expert panel (≈20 disciplinary lenses) working off a
 > single binding setting frame. The full per-lens reasoning is in the appendix.

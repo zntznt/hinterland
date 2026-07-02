@@ -8,7 +8,22 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
-  SECOND WAVE, W1 (docs/attribute-model.md §7): the road network + flows.
+  SECOND WAVE, W2 (docs/attribute-model.md §7): security + the shadow economy.
+    - GARRISONS at the seat and the busiest corridors near the core (score:
+      road throughput + centrality) — protection follows the center's
+      arteries, not the frontier. force_projection decays from them over
+      cost-distance; wardline_strength needs BOTH priority and lumen (off-grid
+      is near-defenseless); security_status classifies secured / patrolled /
+      contested / ungoverned space.
+    - The shadow economy is the NEGATIVE IMAGE of the state: smugglers move
+      unretained ore value to the big markets along roads but pay a premium to
+      cross patrolled ground (they route AROUND force_projection);
+      predation_risk peaks where traffic and pilgrims are worth robbing and
+      nobody guards them; black_market_index prices the underservice;
+      enforcement_gap = illicit pressure minus state capacity — the lawless
+      hinterland column. Garrisons export as Points. Schema v9.
+
+  SECOND WAVE, W1 (retained): the road network + flows.
     - ROADS: a travel network over the region adjacency graph — friction-cost
       MST (so EVERY settlement is connected: people walk; the contrast with
       the rationed conduit is the point) plus detour-justified shortcuts.
@@ -232,6 +247,7 @@
         <label class="radio"><input type="radio" name="view" value="gap" /> service gap</label>
         <label class="radio"><input type="radio" name="view" value="bloc" /> dominant bloc</label>
         <label class="radio"><input type="radio" name="view" value="market" /> market access</label>
+        <label class="radio"><input type="radio" name="view" value="egap" /> enforcement gap</label>
         <label class="radio"><input type="radio" name="view" value="density" /> population density</label>
         <div class="hint">Preview only — the export always carries all columns. ■ = refinery, gold lines = conduit, dashed = off-grid, H/W/D = healer/waterworks/wardstation.</div>
       </div>
@@ -267,7 +283,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 8;
+    const SCHEMA_VERSION = 9;
     const BLOC_TOL = 12;    // top-two reach gap below this => contested
     const BLOC_FLOOR = 25;  // all reaches below this => ungoverned
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
@@ -853,6 +869,66 @@
       const maxFlux = Math.max(...nodeFlux, 1e-9);
       regions.forEach((reg, i) => { reg.pilgrimFlux = Math.round(100 * nodeFlux[i] / maxFlux); });
 
+      // W2 security: garrisons guard the seat and the busiest corridors near
+      // the core — protection follows the center's arteries, not the frontier.
+      const thr = new Array(regions.length).fill(0);
+      roadEdges.forEach(e => { thr[e.a] += e.traffic; thr[e.b] += e.traffic; });
+      const maxThr = Math.max(...thr, 1e-9);
+      const KG = Math.max(1, Math.round(regions.length / 12));
+      const garScored = regions.map((reg, i) => {
+        const rj = sx("gar#" + reg.id);
+        return { i, s: 0.6 * (100 * thr[i] / maxThr) + 0.4 * reg.centrality + (rj() - 0.5) * 8 };
+      }).filter(o => o.i !== seatIdx).sort((a, b) => b.s - a.s || a.i - b.i);
+      const garrisonIdxs = [seatIdx, ...garScored.slice(0, KG).map(o => o.i)];
+      const garrisons = garrisonIdxs.map(i => ({ regionId: regions[i].id, x: regions[i].c[0], y: regions[i].c[1] }));
+      const garCd = costDistances(regions, garrisonIdxs).dist;
+      regions.forEach((reg, i) => {
+        reg.forceProjection = Math.round(100 * Math.exp(-(isFinite(garCd[i]) ? garCd[i] : 1e9) / 280));
+        // wardlines need BOTH strategic priority and lumen: off-grid darkness
+        // is near-defenseless no matter how exposed it is
+        const priority = clamp(0.4 * reg.centrality + 0.4 * reg.forceProjection + 0.2 * reg.refining, 0, 100);
+        reg.wardline = Math.round(Math.pow(reg.conduitAccess / 100, 1.5) * priority);
+        reg.security = reg.forceProjection >= 65 ? "secured"
+          : reg.forceProjection >= 35 ? "patrolled"
+          : (reg.bloc === "contested" ? "contested" : "ungoverned");
+      });
+
+      // W2 shadow economy: the negative image of the state. Smugglers move
+      // unretained ore value to the big markets along roads, but pay a premium
+      // to cross patrolled ground — they route AROUND force projection.
+      const smugAdj = regions.map(() => []);
+      roadEdges.forEach(e => {
+        const c = e.cost * (1 + 2 * ((regions[e.a].forceProjection + regions[e.b].forceProjection) / 200));
+        smugAdj[e.a].push({ to: e.b, c });
+        smugAdj[e.b].push({ to: e.a, c });
+      });
+      const sinkIdxs = regions.map((_, i) => i).filter(i => regions[i].tier === "prime" || regions[i].tier === "hub");
+      const smugFlux = new Array(regions.length).fill(0);
+      regions.forEach((reg, i) => {
+        if (reg.endowment < 30) return;
+        const mass = reg.endowment * (100 - reg.retention) / 100; // what leaks is what wasn't retained
+        const run = spFrom(smugAdj, i);
+        let sink = -1, bc = Infinity;
+        for (const s of sinkIdxs) if (s !== i && run.dist[s] < bc) { bc = run.dist[s]; sink = s; }
+        if (sink === -1 || !isFinite(bc)) return;
+        smugFlux[i] += mass;
+        let cur = sink;
+        while (cur !== i && run.par[cur] !== -1) { smugFlux[cur] += mass; cur = run.par[cur]; }
+      });
+      const maxSmug = Math.max(...smugFlux, 1e-9);
+      regions.forEach((reg, i) => {
+        reg.smuggling = Math.round(100 * smugFlux[i] / maxSmug);
+        // banditry: where traffic and pilgrims are worth robbing and nobody guards them
+        const preyN = 0.7 * (thr[i] / maxThr) + 0.3 * reg.pilgrimFlux / 100;
+        reg.predation = Math.round(100 * preyN * (1 - reg.forceProjection / 100));
+        // the black market prices the underservice: a per-capita RELIANCE index
+        // (rates not counts — multiply by population in QGIS for volume)
+        reg.blackMarket = Math.round(0.6 * (100 - reg.arcaneServices) + 0.4 * (100 - reg.forceProjection));
+        const pressure = 0.4 * reg.smuggling + 0.35 * reg.predation + 0.25 * reg.blackMarket;
+        const capacity = 0.6 * reg.forceProjection + 0.4 * reg.wardline;
+        reg.enforceGap = clamp(Math.round(pressure - capacity), 0, 100);
+      });
+
       const settlements = regions.map(reg => ({
         name: makeName(sx("name#" + reg.id)),
         tier: reg.tier, regionId: reg.id,
@@ -868,7 +944,7 @@
       }));
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, conduitEdges, roadEdges, capital: cap, capPoint, capitalName, windDeg: geo.windDeg };
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, capital: cap, capPoint, capitalName, windDeg: geo.windDeg };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -908,7 +984,14 @@
             magnate_reach: reg.magnateReach,
             dominant_bloc: reg.bloc,
             market_access: reg.marketAccess,
-            pilgrim_flux: reg.pilgrimFlux
+            pilgrim_flux: reg.pilgrimFlux,
+            force_projection: reg.forceProjection,
+            wardline_strength: reg.wardline,
+            security_status: reg.security,
+            smuggling_intensity: reg.smuggling,
+            predation_risk: reg.predation,
+            black_market_index: reg.blackMarket,
+            enforcement_gap: reg.enforceGap
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -945,6 +1028,13 @@
           type: "Feature",
           properties: { kind: "sanctioned_site", region_id: s.regionId },
           geometry: { type: "Point", coordinates: [round2(s.x), round2(s.y)] }
+        });
+      });
+      model.garrisons.forEach(g => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "garrison", region_id: g.regionId },
+          geometry: { type: "Point", coordinates: [round2(g.x), round2(g.y)] }
         });
       });
       model.settlements.forEach(s => {
@@ -997,6 +1087,7 @@
       gap:        { lo: [247, 247, 247], hi: [37, 37, 37],   label: "service gap" },
       bloc:       { lo: [247, 247, 247], hi: [37, 37, 37],   label: "dominant bloc" }, // categorical; colors below
       market:     { lo: [255, 255, 204], hi: [37, 52, 148],  label: "market access" },
+      egap:       { lo: [255, 255, 229], hi: [102, 37, 6],   label: "enforcement gap (shadow > state)" },
       density:    { lo: [254, 237, 222], hi: [166, 54, 3],   label: "pop. density (per 100×100 cell)" }
     };
     const BLOC_COLORS = { crown: "#6baed6", temple: "#9e9ac8", magnate: "#fd8d3c", contested: "#cccccc", ungoverned: "#f7f7f7" };
@@ -1022,6 +1113,7 @@
         view === "gap" ? reg.serviceGap / 100 :
         view === "bloc" ? 0 : // categorical — fill overridden below
         view === "market" ? reg.marketAccess / 100 :
+        view === "egap" ? reg.enforceGap / 100 :
         Math.sqrt(reg.popDensity / maxDensity);
       const cellValue = (reg) =>
         view === "wealth" ? reg.wealth :
@@ -1034,6 +1126,7 @@
         view === "gap" ? reg.serviceGap :
         view === "bloc" ? reg.bloc.slice(0, 3) :
         view === "market" ? reg.marketAccess :
+        view === "egap" ? reg.enforceGap :
         reg.popDensity.toFixed(1);
       const cellFill = (reg) => view === "bloc" ? BLOC_COLORS[reg.bloc] : rampColor(ramp, cellT(reg));
 
@@ -1060,6 +1153,11 @@
       // Sanctioned sites (Temple): violet triangles beside the settlement
       model.sanctionedSites.forEach(s => {
         parts.push(`<text class="sanct" x="${(s.x + 26).toFixed(1)}" y="${(fy(s.y) - 14).toFixed(1)}" font-size="18" text-anchor="middle" fill="#54278f" paint-order="stroke" stroke="#fff" stroke-width="3">▲</text>`);
+      });
+
+      // Garrisons (Crown force): dark-red G beside the settlement
+      model.garrisons.forEach(g => {
+        parts.push(`<text class="gar" x="${(g.x - 26).toFixed(1)}" y="${(fy(g.y) - 14).toFixed(1)}" font-size="16" font-weight="700" text-anchor="middle" fill="#a50f15" paint-order="stroke" stroke="#fff" stroke-width="3">G</text>`);
       });
 
       // Facility glyphs (H = healer, W = waterworks, D = wardstation)
@@ -1132,6 +1230,7 @@
         ["worst burden", Math.max(...model.regions.map(r => r.burden)).toFixed(1) + " /1k"],
         ["blocs", (() => { const c = model.regions.reduce((m, r) => { m[r.bloc] = (m[r.bloc] || 0) + 1; return m; }, {}); return ["crown", "temple", "magnate", "contested", "ungoverned"].map(b => `${c[b] || 0} ${b.slice(0, 3)}`).join(" / "); })()],
         ["roads", (() => { const c = model.roadEdges.reduce((m, e) => { m[e.cls] = (m[e.cls] || 0) + 1; return m; }, {}); return `${model.roadEdges.length} edges (${c.highway || 0} hwy / ${c.road || 0} road / ${c.track || 0} track)`; })()],
+        ["security", (() => { const c = model.regions.reduce((m, r) => { m[r.security] = (m[r.security] || 0) + 1; return m; }, {}); return `${model.garrisons.length} garrisons — ${c.secured || 0} sec / ${c.patrolled || 0} pat / ${c.contested || 0} con / ${c.ungoverned || 0} ung`; })()],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1000 (y-up)"]

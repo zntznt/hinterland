@@ -8,7 +8,28 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
-  SECOND WAVE, W4 (docs/attribute-model.md §7): social texture — who the map
+  THE DYNAMIC ENGINE (D1): time. The static model shows correlations; the
+  panel's key findings were all FEEDBACK LOOPS, and loops need epochs.
+    - An EPOCHS slider (neutral zero: 0 = the founding snapshot, byte-identical
+      to the static model). Each epoch runs coupled update rules:
+        depletion  — mined ore shrinks ~22%/epoch; dead lodes EMERGE in-run
+        wealth     — accumulates (0.6 x carried + 0.4 x fresh income): head
+                     starts compound for real (agglomeration runaway)
+        migration  — people flow along roads toward wealth, light, and clean
+                     land, capped per epoch (the drain spiral)
+        conduit    — re-evaluated each epoch with new population x wealth;
+                     infrastructure ratchets up, chasing the winners
+        blight     — dump-targeting recomputed from CURRENT wealth: the
+                     poison follows the poor wherever they end up
+    - Downstream layers (services, health, security, governance, texture)
+      read the FINAL state. Tiers re-rank by final population: a hub can
+      hollow to a holdfast; an outpost can boom.
+    - Trajectory columns: endowment_t0, wealth_t0, population_t0, peak_wealth,
+      ore_depleted, boom_bust (boom / stable / decline / collapse) — QGIS maps
+      not just who is poor but who was MADE poor, and when. abandonment_index
+      is now true hysteresis: peak wealth minus present wealth. Schema v12.
+
+  SECOND WAVE, W4 (retained): social texture — who the map
   serves, who routes around it, and who it cannot even see.
     - segregation_index: the enclave signature — wealth standing above its
       neighbors, refinery company districts, high tiers. Same place, two worlds.
@@ -259,6 +280,12 @@
       </div>
 
       <div class="row">
+        <label>Epochs <span class="val" id="epVal"></span></label>
+        <input type="range" id="ep" min="0" max="12" step="1" />
+        <div class="hint">Run the world forward: ore depletes, wealth compounds, people migrate, the grid chases the winners. 0 = the founding snapshot.</div>
+      </div>
+
+      <div class="row">
         <label>Capital</label>
         <div class="inline">
           <button id="diceCapital" class="wide" title="Random capital region">🎲 random capital</button>
@@ -281,6 +308,7 @@
         <label class="radio"><input type="radio" name="view" value="egap" /> enforcement gap</label>
         <label class="radio"><input type="radio" name="view" value="aband" /> abandonment</label>
         <label class="radio"><input type="radio" name="view" value="legib" /> legibility gap</label>
+        <label class="radio"><input type="radio" name="view" value="traj" /> trajectory (boom/bust)</label>
         <label class="radio"><input type="radio" name="view" value="density" /> population density</label>
         <div class="hint">Preview only — the export always carries all columns. ■ = refinery, gold lines = conduit, dashed = off-grid, H/W/D = healer/waterworks/wardstation.</div>
       </div>
@@ -316,7 +344,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 11;
+    const SCHEMA_VERSION = 12;
     const BLOC_TOL = 12;    // top-two reach gap below this => contested
     const BLOC_FLOOR = 25;  // all reaches below this => ungoverned
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
@@ -326,6 +354,7 @@
       we: 35, wf: 25, wt: 30, wg: 10,   // income-mix weights
       gt: 35,                            // grid threshold (0 = conduit reaches everyone)
       db: 60,                            // dump bias λ (0 = blight follows only wind/terrain)
+      ep: 0,                             // epochs (0 = founding snapshot, no dynamics)
       capital: null                      // null => seat derived from geology
     };
 
@@ -602,21 +631,73 @@
         ), 0, 100);
       });
 
+      // Roads: the travel network — pure geometry (MST + shortcuts), built
+      // BEFORE the dynamic loop because migration flows along it. Unlike the
+      // conduit, roads reach EVERYONE; connection is not rationed.
+      const candEdges = [];
+      regions.forEach((reg, i) => reg.neighbors.forEach(j => {
+        if (j > i) candEdges.push({ a: i, b: j, cost: edgeCost(reg, regions[j]) });
+      }));
+      candEdges.sort((e1, e2) => e1.cost - e2.cost || e1.a - e2.a || e1.b - e2.b);
+      const ekey = (a, b) => a < b ? a + ":" + b : b + ":" + a;
+      const uf = regions.map((_, i) => i);
+      const ufFind = (x) => { while (uf[x] !== x) { uf[x] = uf[uf[x]]; x = uf[x]; } return x; };
+      const roadEdges = [];
+      const inRoad = new Set();
+      for (const e of candEdges) { // Kruskal MST
+        const ra = ufFind(e.a), rb = ufFind(e.b);
+        if (ra !== rb) { uf[ra] = rb; roadEdges.push(e); inRoad.add(ekey(e.a, e.b)); }
+      }
+      const roadAdj = () => {
+        const adj = regions.map(() => []);
+        for (const e of roadEdges) { adj[e.a].push({ to: e.b, c: e.cost }); adj[e.b].push({ to: e.a, c: e.cost }); }
+        return adj;
+      };
+      const spFrom = (adj, s) => { // Dijkstra with parents over the road graph
+        const n = adj.length, dist = new Array(n).fill(Infinity), par = new Array(n).fill(-1), done = new Array(n).fill(false);
+        dist[s] = 0;
+        for (let it = 0; it < n; it++) {
+          let u = -1, best = Infinity;
+          for (let i = 0; i < n; i++) if (!done[i] && dist[i] < best) { best = dist[i]; u = i; }
+          if (u === -1) break;
+          done[u] = true;
+          for (const { to, c } of adj[u]) if (!done[to] && dist[u] + c < dist[to]) { dist[to] = dist[u] + c; par[to] = u; }
+        }
+        return { dist, par };
+      };
+      { // shortcuts: add a skipped adjacency edge when the MST detour is long
+        const adj = roadAdj();
+        const spCache = regions.map(() => null);
+        for (const e of candEdges) {
+          if (inRoad.has(ekey(e.a, e.b))) continue;
+          if (!spCache[e.a]) spCache[e.a] = spFrom(adj, e.a);
+          if (spCache[e.a].dist[e.b] > 1.6 * e.cost) { roadEdges.push(e); inRoad.add(ekey(e.a, e.b)); }
+        }
+      }
+
       // Wealth: three emergent income streams + the legacy gradient term.
+      // income() reads the CURRENT ore stock (reg.E), so it can be re-run
+      // per epoch as mines deplete. Epoch-0 wealth carries the seeded noise.
       const k = lerp(0.4, 3.0, params.bias / 100);
       const rNoise = sx("wealth");
       const total = params.we + params.wf + params.wt + params.wg;
-      regions.forEach(reg => {
+      const income = (reg) => {
         const t = maxD > 0 ? 1 - reg.dist / maxD : 1;
-        const legacy = lerp(5, 100, Math.pow(t, k)) / 100;       // == old formula
-        const ext = (reg.endowment / 100) * (reg.retention / 100); // what extraction leaves behind
+        const legacy = lerp(5, 100, Math.pow(t, k)) / 100;         // == old formula
+        const ext = (reg.E / 100) * (reg.retention / 100);         // what extraction leaves behind
         const ref = reg.refining / 100;
         const trade = reg.centrality / 100;
-        const blend = total > 0
+        return total > 0
           ? (params.we * ext + params.wf * ref + params.wt * trade + params.wg * legacy) / total
-          : 0.5; // all weights zero: no income model — flat + noise
+          : 0.5; // all weights zero: no income model — flat
+      };
+      regions.forEach(reg => {
+        reg.E = reg.endowment;           // current ore stock (depletes per epoch)
+        reg.endowment0 = reg.endowment;  // the geology as founded
         const noise = (rNoise() * 2 - 1) * 5;
-        reg.wealth = clamp(Math.round(100 * blend + noise), 0, 100);
+        reg.wealth = clamp(Math.round(100 * income(reg) + noise), 0, 100);
+        reg.wealthT0 = reg.wealth;
+        reg.peakWealth = reg.wealth;
         reg.isCapital = (reg === cap);
       });
 
@@ -638,8 +719,10 @@
         const rp = sx("pop#" + reg.id);
         const [lo, hi] = POP_BANDS[reg.tier];
         reg.settlementPop = Math.round(lo * Math.pow(hi / lo, rp())); // log-uniform in band
-        const rural = 0.15 + rp() * 0.45;
-        reg.population = Math.round(reg.settlementPop * (1 + rural));
+        reg.rural = 0.15 + rp() * 0.45;
+        reg.popT0 = reg.settlementPop;
+        reg.peakPop = reg.settlementPop;
+        reg.population = Math.round(reg.settlementPop * (1 + reg.rural));
         reg.area = Math.abs(signedArea(reg.ring));
         reg.popDensity = Math.round((reg.population / (reg.area / 10000)) * 10) / 10;
       });
@@ -668,36 +751,27 @@
         }
       });
       const thresh = Math.pow(params.gt / 40, 4);
-      for (;;) {
-        let best = null;
-        regions.forEach((reg, i) => {
-          if (onGrid[i]) return;
-          let cheapest = Infinity, via = -1;
-          for (const nb of reg.neighbors) if (onGrid[nb]) {
-            const c = edgeCost(reg, regions[nb]);
-            if (c < cheapest) { cheapest = c; via = nb; }
-          }
-          if (via === -1) return;
-          const score = (reg.population * (reg.wealth / 100)) / cheapest;
-          if (!best || score > best.score || (score === best.score && i < best.i))
-            best = { i, via, score };
-        });
-        if (!best || best.score < thresh) break;
-        onGrid[best.i] = true;
-        addEdge(best.i, best.via, "branch");
-      }
-
-      // Graded access (canister trade decays off the wire) + arcane services.
-      // Services need the grid AND the wealth to pay the meter; need is NOT an input.
-      const offCd = costDistances(regions, regions.map((_, i) => i).filter(i => onGrid[i])).dist;
-      regions.forEach((reg, i) => {
-        reg.onConduit = onGrid[i];
-        reg.conduitAccess = onGrid[i] ? 100
-          : Math.round(100 * Math.exp(-(isFinite(offCd[i]) ? offCd[i] : 1e9) / 250));
-        reg.arcaneServices = clamp(Math.round(
-          100 * Math.pow(reg.conduitAccess / 100, 1.2) * (0.35 + 0.65 * reg.wealth / 100)
-        ), 0, 100);
-      });
+      const expandConduit = () => { // greedy gated expansion (ratchet: adds only)
+        for (;;) {
+          let best = null;
+          regions.forEach((reg, i) => {
+            if (onGrid[i]) return;
+            let cheapest = Infinity, via = -1;
+            for (const nb of reg.neighbors) if (onGrid[nb]) {
+              const c = edgeCost(reg, regions[nb]);
+              if (c < cheapest) { cheapest = c; via = nb; }
+            }
+            if (via === -1) return;
+            const score = (reg.population * (reg.wealth / 100)) / cheapest;
+            if (!best || score > best.score || (score === best.score && i < best.i))
+              best = { i, via, score };
+          });
+          if (!best || best.score < thresh) break;
+          onGrid[best.i] = true;
+          addEdge(best.i, best.via, "branch");
+        }
+      };
+      expandConduit();
 
       // Blight. Two parts per refinery:
       //   PLUME (physics): leakage spread by a distance kernel, elongated
@@ -708,36 +782,104 @@
       //     poverty-seeking (hauled onto whoever is POOREST). Same mass either
       //     way: the λ-sweep compares identical contamination under different
       //     victims — the "policy share" experiment.
-      const windRad = geo.windDeg * Math.PI / 180;
-      const wvx = Math.cos(windRad), wvy = Math.sin(windRad);
-      const lam = params.db / 100;
-      const blightRaw = new Array(regions.length).fill(0);
-      regions.forEach(rf => {
-        if (rf.refining <= 0) return;
-        const C = rf.refining / 100;
+      const computeBlight = () => { // reads CURRENT wealth: dumping re-targets the poor
+        const windRad = geo.windDeg * Math.PI / 180;
+        const wvx = Math.cos(windRad), wvy = Math.sin(windRad);
+        const lam = params.db / 100;
+        const blightRaw = new Array(regions.length).fill(0);
+        regions.forEach(rf => {
+          if (rf.refining <= 0) return;
+          const C = rf.refining / 100;
+          regions.forEach((reg, i) => {
+            const dx = reg.c[0] - rf.c[0], dy = reg.c[1] - rf.c[1];
+            const d = Math.hypot(dx, dy);
+            const base = Math.exp(-(d * d) / (2 * 160 * 160));
+            const windBoost = d > 1 ? 1 + 0.8 * Math.max(0, (dx * wvx + dy * wvy) / d) : 1;
+            const hillBoost = 1 + 0.8 * Math.max(0, (rf.elevation - reg.elevation) / 100);
+            blightRaw[i] += 0.3 * C * base * windBoost * hillBoost;
+          });
+          const SPOIL = 5 * C;
+          let wsum = 0;
+          const wts = regions.map(reg => {
+            const d = Math.hypot(reg.c[0] - rf.c[0], reg.c[1] - rf.c[1]);
+            const w = Math.exp(-d / 800) * Math.pow(1 - reg.wealth / 100, 10 * lam);
+            wsum += w; return w;
+          });
+          if (wsum > 0) regions.forEach((_, i) => { blightRaw[i] += SPOIL * (wts[i] / wsum); });
+        });
+        let maxB = 0;
+        const rawB = blightRaw.map(v => { if (v > maxB) maxB = v; return v; });
         regions.forEach((reg, i) => {
-          const dx = reg.c[0] - rf.c[0], dy = reg.c[1] - rf.c[1];
-          const d = Math.hypot(dx, dy);
-          const base = Math.exp(-(d * d) / (2 * 160 * 160));
-          const windBoost = d > 1 ? 1 + 0.8 * Math.max(0, (dx * wvx + dy * wvy) / d) : 1;
-          const hillBoost = 1 + 0.8 * Math.max(0, (rf.elevation - reg.elevation) / 100);
-          blightRaw[i] += 0.3 * C * base * windBoost * hillBoost;
+          reg.blight = maxB > 0 ? Math.round(100 * (rawB[i] / maxB)) : 0;
+          // presentation column: the argument rests on the raw fields
+          reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
         });
-        const SPOIL = 5 * C;
-        let wsum = 0;
-        const wts = regions.map(reg => {
-          const d = Math.hypot(reg.c[0] - rf.c[0], reg.c[1] - rf.c[1]);
-          const w = Math.exp(-d / 800) * Math.pow(1 - reg.wealth / 100, 10 * lam);
-          wsum += w; return w;
+      };
+      computeBlight();
+
+      // ---- THE DYNAMIC LOOP (D1) --------------------------------------------
+      // Epoch 0 is the founding snapshot above (params.ep = 0 reproduces the
+      // static model exactly). Each further epoch: ore depletes, wealth
+      // accumulates, people migrate along roads, the grid ratchets outward
+      // chasing the winners, and the dumping re-targets the poor.
+      for (let e = 0; e < params.ep; e++) {
+        regions.forEach(reg => { reg.E = Math.round(reg.E * 0.78); }); // mines draw down
+        regions.forEach(reg => {
+          reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg)), 0, 100);
+          if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
         });
-        if (wsum > 0) regions.forEach((_, i) => { blightRaw[i] += SPOIL * (wts[i] / wsum); });
+        // migration: toward wealth, light, and clean land — capped at 15%/epoch out
+        const attract = regions.map((reg, i) =>
+          0.5 * reg.wealth + 25 * (onGrid[i] ? 1 : 0) + 0.25 * (100 - reg.blight));
+        const delta = new Array(regions.length).fill(0);
+        roadEdges.forEach(edge => {
+          const gA = attract[edge.b] - attract[edge.a];
+          if (gA > 0) { const m = 0.05 * regions[edge.a].settlementPop * gA / 100; delta[edge.a] -= m; delta[edge.b] += m; }
+          else if (gA < 0) { const m = 0.05 * regions[edge.b].settlementPop * (-gA) / 100; delta[edge.b] -= m; delta[edge.a] += m; }
+        });
+        regions.forEach((reg, i) => {
+          const d = Math.max(delta[i], -0.15 * reg.settlementPop);
+          reg.settlementPop = Math.max(20, Math.round(reg.settlementPop + d));
+          if (reg.settlementPop > reg.peakPop) reg.peakPop = reg.settlementPop;
+          reg.population = Math.round(reg.settlementPop * (1 + reg.rural));
+        });
+        expandConduit();   // the grid chases the winners (ratchet: once built, kept)
+        computeBlight();   // the poison follows the poor wherever they end up
+      }
+
+      // Final classification: trajectories recorded, tiers re-ranked by what
+      // the settlements have BECOME (a hub can hollow to a holdfast).
+      regions.forEach(reg => {
+        reg.endowment = reg.E; // exported endowment = what's left in the ground
+        reg.oreDepleted = reg.E < 15 && reg.endowment0 >= 40;
+        reg.boomBust = reg.settlementPop < 0.55 * reg.peakPop ? "collapse"
+          : reg.settlementPop > 1.5 * reg.popT0 ? "boom"
+          : reg.settlementPop < 0.8 * reg.popT0 ? "decline" : "stable";
       });
-      let maxB = 0;
-      const rawB = blightRaw.map(v => { if (v > maxB) maxB = v; return v; });
+      if (params.ep > 0) {
+        const others2 = regions.filter(reg => reg !== cap)
+          .sort((a, b) => b.settlementPop - a.settlementPop || a.id - b.id);
+        const nHub2 = Math.max(1, Math.round(others2.length * 0.2));
+        const nOut2 = Math.max(1, Math.round(others2.length * 0.4));
+        others2.forEach((reg, i) => {
+          reg.tier = i < nHub2 ? "hub" : (i < nHub2 + nOut2 ? "outpost" : "holdfast");
+        });
+      }
+      regions.forEach(reg => {
+        reg.popDensity = Math.round((reg.population / (reg.area / 10000)) * 10) / 10;
+      });
+
+      // Graded access (canister trade decays off the wire) + arcane services.
+      // Services need the grid AND the wealth to pay the meter; need is NOT an
+      // input. Computed from the FINAL state.
+      const offCd = costDistances(regions, regions.map((_, i) => i).filter(i => onGrid[i])).dist;
       regions.forEach((reg, i) => {
-        reg.blight = maxB > 0 ? Math.round(100 * (rawB[i] / maxB)) : 0;
-        // presentation column: the argument rests on the raw fields
-        reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
+        reg.onConduit = onGrid[i];
+        reg.conduitAccess = onGrid[i] ? 100
+          : Math.round(100 * Math.exp(-(isFinite(offCd[i]) ? offCd[i] : 1e9) / 250));
+        reg.arcaneServices = clamp(Math.round(
+          100 * Math.pow(reg.conduitAccess / 100, 1.2) * (0.35 + 0.65 * reg.wealth / 100)
+        ), 0, 100);
       });
 
       // Facilities: the planner's rationing rule — prime always served; hubs
@@ -812,51 +954,6 @@
         else if (fields[0][1] - fields[1][1] < BLOC_TOL) reg.bloc = "contested";
         else reg.bloc = fields[0][0];
       });
-
-      // Roads: the travel network. Unlike the conduit, roads reach EVERYONE —
-      // a friction-cost MST spans all settlements (people walk; connection is
-      // not rationed), plus shortcut edges where the direct hop beats a long
-      // detour. That universality is the point: compare it to the grid.
-      const candEdges = [];
-      regions.forEach((reg, i) => reg.neighbors.forEach(j => {
-        if (j > i) candEdges.push({ a: i, b: j, cost: edgeCost(reg, regions[j]) });
-      }));
-      candEdges.sort((e1, e2) => e1.cost - e2.cost || e1.a - e2.a || e1.b - e2.b);
-      const ekey = (a, b) => a < b ? a + ":" + b : b + ":" + a;
-      const uf = regions.map((_, i) => i);
-      const ufFind = (x) => { while (uf[x] !== x) { uf[x] = uf[uf[x]]; x = uf[x]; } return x; };
-      const roadEdges = [];
-      const inRoad = new Set();
-      for (const e of candEdges) { // Kruskal MST
-        const ra = ufFind(e.a), rb = ufFind(e.b);
-        if (ra !== rb) { uf[ra] = rb; roadEdges.push(e); inRoad.add(ekey(e.a, e.b)); }
-      }
-      const roadAdj = () => {
-        const adj = regions.map(() => []);
-        for (const e of roadEdges) { adj[e.a].push({ to: e.b, c: e.cost }); adj[e.b].push({ to: e.a, c: e.cost }); }
-        return adj;
-      };
-      const spFrom = (adj, s) => { // Dijkstra with parents over the road graph
-        const n = adj.length, dist = new Array(n).fill(Infinity), par = new Array(n).fill(-1), done = new Array(n).fill(false);
-        dist[s] = 0;
-        for (let it = 0; it < n; it++) {
-          let u = -1, best = Infinity;
-          for (let i = 0; i < n; i++) if (!done[i] && dist[i] < best) { best = dist[i]; u = i; }
-          if (u === -1) break;
-          done[u] = true;
-          for (const { to, c } of adj[u]) if (!done[to] && dist[u] + c < dist[to]) { dist[to] = dist[u] + c; par[to] = u; }
-        }
-        return { dist, par };
-      };
-      { // shortcuts: add a skipped adjacency edge when the MST detour is long
-        const adj = roadAdj();
-        const spCache = regions.map(() => null);
-        for (const e of candEdges) {
-          if (inRoad.has(ekey(e.a, e.b))) continue;
-          if (!spCache[e.a]) spCache[e.a] = spFrom(adj, e.a);
-          if (spCache[e.a].dist[e.b] > 1.6 * e.cost) { roadEdges.push(e); inRoad.add(ekey(e.a, e.b)); }
-        }
-      }
 
       // Traffic assignment: gravity flows between all pairs, routed along
       // least-cost road paths. Accumulated edge traffic IS flow betweenness —
@@ -989,7 +1086,7 @@
       const plagueCutoff = Math.max(60, blightSorted[Math.min(K_PLAGUE - 1, blightSorted.length - 1)]);
       regions.forEach((reg, i) => {
         const rh = sx("hist#" + reg.id);
-        reg.era = (reg.exhausted || reg.endowment >= 50) ? "relic_era"
+        reg.era = (reg.exhausted || reg.endowment0 >= 50) ? "relic_era"
           : reg.fertility >= 60 ? "first_settlement"
           : (trunkTouched.has(i) || reg.refining > 0) ? "conduit_boom"
           : "recent_frontier";
@@ -1005,8 +1102,10 @@
           : "none";
         reg.shockSeverity = reg.shock === "none" ? 0 : sevDraw;
         reg.legacy = Math.round(0.5 * reg.foundingAge + 0.3 * reg.conduitAccess + 0.2 * reg.centrality);
+        // TRUE hysteresis now that time exists: the gap between what a place
+        // was at its peak and what it is — plus the dead ore that explains it.
         reg.abandonment = clamp(Math.round(
-          0.6 * reg.foundingAge + (reg.exhausted ? 45 : 0) + (reg.shock === "refinery_collapse" ? 15 : 0) - reg.wealth
+          0.7 * (reg.peakWealth - reg.wealth) + ((reg.exhausted || reg.oreDepleted) ? 30 : 0)
         ), 0, 100);
         reg.tenureChurn = clamp(Math.round(
           60 * (reg.neighbors.length ? diffN / reg.neighbors.length : 0) +
@@ -1131,7 +1230,13 @@
             cultural_distance: reg.culturalDistance,
             tenure_regime: reg.tenure,
             legibility_gap: reg.legibility,
-            uncounted_population: reg.uncounted
+            uncounted_population: reg.uncounted,
+            endowment_t0: reg.endowment0,
+            wealth_t0: reg.wealthT0,
+            population_t0: Math.round(reg.popT0 * (1 + reg.rural)),
+            peak_wealth: reg.peakWealth,
+            ore_depleted: reg.oreDepleted ? 1 : 0,
+            boom_bust: reg.boomBust
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -1207,6 +1312,7 @@
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt,
           dump_bias: params.db,
+          epochs: params.ep,
           wind_deg: model.windDeg,
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
           space: "planar 0..1000, y-up (flat-plane CRS)"
@@ -1233,6 +1339,7 @@
       density:    { lo: [254, 237, 222], hi: [166, 54, 3],   label: "pop. density (per 100×100 cell)" }
     };
     const BLOC_COLORS = { crown: "#6baed6", temple: "#9e9ac8", magnate: "#fd8d3c", contested: "#cccccc", ungoverned: "#f7f7f7" };
+    const TRAJ_COLORS = { boom: "#2f9e44", stable: "#d9d9d9", decline: "#f08c00", collapse: "#7a1f1f" };
     function rampColor(ramp, t) {
       const m = (a, b) => Math.round(a + (b - a) * t);
       return `rgb(${m(ramp.lo[0], ramp.hi[0])},${m(ramp.lo[1], ramp.hi[1])},${m(ramp.lo[2], ramp.hi[2])})`;
@@ -1253,7 +1360,7 @@
         view === "injustice" ? reg.injustice / 100 :
         view === "burden" ? reg.burden / maxBurden :
         view === "gap" ? reg.serviceGap / 100 :
-        view === "bloc" ? 0 : // categorical — fill overridden below
+        view === "bloc" || view === "traj" ? 0 : // categorical — fill overridden below
         view === "market" ? reg.marketAccess / 100 :
         view === "egap" ? reg.enforceGap / 100 :
         view === "aband" ? reg.abandonment / 100 :
@@ -1269,12 +1376,15 @@
         view === "burden" ? reg.burden.toFixed(1) :
         view === "gap" ? reg.serviceGap :
         view === "bloc" ? reg.bloc.slice(0, 3) :
+        view === "traj" ? reg.boomBust.slice(0, 4) :
         view === "market" ? reg.marketAccess :
         view === "egap" ? reg.enforceGap :
         view === "aband" ? reg.abandonment :
         view === "legib" ? reg.legibility :
         reg.popDensity.toFixed(1);
-      const cellFill = (reg) => view === "bloc" ? BLOC_COLORS[reg.bloc] : rampColor(ramp, cellT(reg));
+      const cellFill = (reg) => view === "bloc" ? BLOC_COLORS[reg.bloc]
+        : view === "traj" ? TRAJ_COLORS[reg.boomBust]
+        : rampColor(ramp, cellT(reg));
 
       const parts = [`<svg id="map" width="${SVG}" height="${SVG}" viewBox="0 0 ${W} ${W}" xmlns="http://www.w3.org/2000/svg">`];
       model.regions.forEach(reg => {
@@ -1352,6 +1462,10 @@
         document.getElementById("legendLabel").textContent = "dominant bloc (crown / temple / magnate / contested / ungoverned)";
         document.getElementById("legendBar").style.background =
           `linear-gradient(to right, ${BLOC_COLORS.crown} 0 20%, ${BLOC_COLORS.temple} 20% 40%, ${BLOC_COLORS.magnate} 40% 60%, ${BLOC_COLORS.contested} 60% 80%, ${BLOC_COLORS.ungoverned} 80% 100%)`;
+      } else if (view === "traj") {
+        document.getElementById("legendLabel").textContent = "trajectory (boom / stable / decline / collapse)";
+        document.getElementById("legendBar").style.background =
+          `linear-gradient(to right, ${TRAJ_COLORS.boom} 0 25%, ${TRAJ_COLORS.stable} 25% 50%, ${TRAJ_COLORS.decline} 50% 75%, ${TRAJ_COLORS.collapse} 75% 100%)`;
       } else {
         document.getElementById("legendLabel").textContent = ramp.label + " (choropleth)";
         document.getElementById("legendBar").style.background =
@@ -1379,6 +1493,7 @@
         ["security", (() => { const c = model.regions.reduce((m, r) => { m[r.security] = (m[r.security] || 0) + 1; return m; }, {}); return `${model.garrisons.length} garrisons — ${c.secured || 0} sec / ${c.patrolled || 0} pat / ${c.contested || 0} con / ${c.ungoverned || 0} ung`; })()],
         ["deep time", (() => { const dead = model.regions.filter(r => r.exhausted).length; const shocked = model.regions.filter(r => r.shock !== "none").length; return `${dead} dead-lode regions · ${shocked} scarred by shocks`; })()],
         ["uncounted", model.regions.reduce((s, r) => s + r.uncounted, 0).toLocaleString("en-US") + " people the census misses"],
+        ["epochs", (() => { const c = model.regions.reduce((m, r) => { m[r.boomBust] = (m[r.boomBust] || 0) + 1; return m; }, {}); return `${params.ep} run — ${c.boom || 0} boom / ${c.stable || 0} stable / ${c.decline || 0} decline / ${c.collapse || 0} collapse`; })()],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1000 (y-up)"]
@@ -1415,6 +1530,7 @@
       p.set("wt", params.wt); p.set("wg", params.wg);
       p.set("gt", params.gt);
       p.set("db", params.db);
+      p.set("ep", params.ep);
       if (params.capital) { p.set("cx", round2(params.capital[0])); p.set("cy", round2(params.capital[1])); }
       history.replaceState(null, "", "#" + p.toString());
     }
@@ -1434,6 +1550,7 @@
         wt: w("wt", DEFAULTS.wt), wg: w("wg", DEFAULTS.wg),
         gt: w("gt", DEFAULTS.gt),
         db: w("db", DEFAULTS.db),
+        ep: clamp(Math.round(num("ep", DEFAULTS.ep)), 0, 12),
         capital: null
       };
       if (p.has("cx") && p.has("cy") && isFinite(+p.get("cx")) && isFinite(+p.get("cy")))
@@ -1446,11 +1563,11 @@
       const set = (id, v) => { document.getElementById(id).value = v; };
       set("seed", params.seed); set("regions", params.regions); set("relax", params.relax);
       set("bias", params.bias); set("we", params.we); set("wf", params.wf);
-      set("wt", params.wt); set("wg", params.wg); set("gt", params.gt); set("db", params.db);
+      set("wt", params.wt); set("wg", params.wg); set("gt", params.gt); set("db", params.db); set("ep", params.ep);
       document.getElementById("regionsVal").textContent = params.regions;
       document.getElementById("relaxVal").textContent = params.relax;
       document.getElementById("biasVal").textContent = params.bias + "%";
-      for (const kid of ["we", "wf", "wt", "wg", "gt", "db"])
+      for (const kid of ["we", "wf", "wt", "wg", "gt", "db", "ep"])
         document.getElementById(kid + "Val").textContent = params[kid];
     }
 
@@ -1482,7 +1599,7 @@
       $("regions").addEventListener("input", (e) => { params.regions = +e.target.value; $("regionsVal").textContent = params.regions; params.capital = null; regenerateTopology(); });
       $("relax").addEventListener("input", (e) => { params.relax = +e.target.value; $("relaxVal").textContent = params.relax; regenerateTopology(); });
       $("bias").addEventListener("input", (e) => { params.bias = +e.target.value; $("biasVal").textContent = params.bias + "%"; recomputeAttributes(); });
-      for (const kid of ["we", "wf", "wt", "wg", "gt", "db"]) {
+      for (const kid of ["we", "wf", "wt", "wg", "gt", "db", "ep"]) {
         $(kid).addEventListener("input", (e) => {
           params[kid] = +e.target.value;
           $(kid + "Val").textContent = params[kid];

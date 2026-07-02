@@ -15,12 +15,18 @@
 > around patrols, `predation_risk`, `black_market_index`, `enforcement_gap`).
 > **The second wave is complete** (W1 roads/flows, W2 security/shadow economy,
 > W3 deep time, W4 social texture) — every cluster of the original panel model
-> is now implemented, through schema v11. Notes: v1 deep time *reconstructs* a
-> past consistent with the present world (inverting the arrow — history as a
-> forcing term — remains future work), and the segregation index uses neighbor
-> contrast at region granularity (sub-region enclave texture would need a finer
-> spatial unit). This document decides which attributes exist, in what order
-> they land, and why.
+> is implemented. **The dynamic engine (D1) is live** through schema v12: an
+> epochs knob (neutral zero = the founding snapshot) runs the world forward
+> through coupled loops — ore depletes, wealth compounds, people migrate along
+> roads, the grid ratchets after the winners, the dumping re-targets the poor —
+> so the panel's feedback spirals (extraction, drain, agglomeration) now
+> actually RUN instead of being implied by correlations. With time real,
+> `abandonment_index` became true hysteresis (peak wealth − present wealth) and
+> dead lodes emerge in-run; the arrow-inversion caveat on deep time is thereby
+> partially resolved (founding-era/shock reconstruction remains). Remaining
+> note: the segregation index uses neighbor contrast at region granularity.
+> This document decides which attributes exist, in what order they land, and
+> why.
 >
 > Produced from a structured expert panel (≈20 disciplinary lenses) working off a
 > single binding setting frame. The full per-lens reasoning is in the appendix.

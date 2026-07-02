@@ -35,7 +35,16 @@ choropleth; the export always carries every column.
    (or `aetherstone_endowment`, `pop_density`) → Natural Breaks (Jenks), 5 classes.
 4. **Proportional symbols:** settlements layer → *Graduated* by **size** on
    `population` — or *Categorized* on `tier`.
-5. **The Phase 5 check (the payload — who gets sick, who gets care):**
+5. **The Phase 6 check (who governs whom):** categorize regions on
+   `dominant_bloc` (5 classes). The Crown holds the center, the magnates hold
+   the refinery districts, the Temple holds its sanctioned sites (▲ points,
+   `kind = 'sanctioned_site'`) out on the ore and the margins — and between
+   them lie `contested` seams and `ungoverned` hinterland. Overlay
+   `service_gap_idx` to ask the panel's question: *which bloc neglects most?*
+   The reach fields behind the classification (`centrality_to_seat`,
+   `temple_reach`, `magnate_reach`) are all exported, so the argmax is
+   auditable.
+6. **The Phase 5 check (the payload — who gets sick, who gets care):**
    choropleth `disease_burden_per_1k` (a rate — Jenks, 5 classes, sequential
    ramp) and overlay facility points filtered to `facility_type = 'healer'`.
    The burden concentrates exactly where `healing_reach` collapses — the
@@ -45,7 +54,7 @@ choropleth; the export always carries every column.
    unsafe water, or structural vulnerability as small multiples. For coverage:
    `service_gap_idx` choropleth, or buffer the healer points for a service-area
    view and see who falls outside.
-6. **The Phase 4 check (environmental injustice):** choropleth `blight_load`
+7. **The Phase 4 check (environmental injustice):** choropleth `blight_load`
    and bivariate it against `wealth` (or just map the precomputed
    `injustice_idx`). Under the default dump bias the blight–wealth correlation
    is strongly **negative** — the poison lands on the poor. Re-export at
@@ -53,14 +62,14 @@ choropleth; the export always carries every column.
    the spoil stays at the refineries and the centers eat their own waste. That
    sign flip, side by side in a print layout, is the measured *policy share*
    of the injustice.
-7. **The Phase 3 check (off-grid darkness):** style regions by
+8. **The Phase 3 check (off-grid darkness):** style regions by
    `arcane_service_index`, overlay the conduit lines, and categorize settlements
    by `on_conduit` — the dark periphery is exactly where the grid's economics
    said "not worth it" (`population × wealth` below the threshold), never a
    hand-picked list. Compute darkness as `100 - "conduit_access"` in the field
    calculator if you want the negative image. Sweep the grid-threshold slider
    (0 = everyone connected) and re-export to watch darkness spread.
-8. **The Phase 2 check (the resource curse):** scatter or bivariate
+9. **The Phase 2 check (the resource curse):** scatter or bivariate
    `aetherstone_endowment` × `wealth` — under default weights a visible share of
    high-endowment regions sits below median wealth: rich ground, poor people,
    and no layer was authored to produce it (ore is blind noise; the seat prefers
@@ -102,6 +111,9 @@ capital) — every file can reproduce its world.
 | `burden_env_per_1k` etc. | rate | disease-burden cause components (environmental / waterborne / unmet), each averted by healing reach |
 | `disease_burden_per_1k` | rate | **emergent** total = the three components exactly; never painted |
 | `service_gap_idx` | 0–100 | precomputed coverage gap: inverse reach + facility distance + off-grid |
+| `temple_reach` | 0–100 | decay from sanctioned sites (Temple presence) |
+| `magnate_reach` | 0–100 | decay from the refineries (magnate presence) |
+| `dominant_bloc` | enum | `crown` \| `temple` \| `magnate` \| `contested` \| `ungoverned` — argmax of the three reach fields (crown reach = `centrality_to_seat`); close top-two → contested, all weak → ungoverned |
 
 **Settlement features (Point):**
 
@@ -125,7 +137,13 @@ capital) — every file can reproduce its world.
 `wardstation`), `region_id`. Rationed by the planner's rule: prime always;
 hubs only when on-conduit; wardstations additionally guard refinery regions.
 
+**Sanctioned-site features (Point):** `region_id`. Temple holy places, planted
+where the sacred substance lies and the Crown's writ is thin (remote ore, deep
+periphery); the source points of `temple_reach`.
+
 **Schema history:**
+- **v7** added the governance overlay: `temple_reach`, `magnate_reach`,
+  `dominant_bloc` region columns and sanctioned-site Point features.
 - **v6** added facilities + health: facility Point features, region columns
   `healing_reach`, `safe_water`, `vulnerability_idx`, the three burden cause
   components, `disease_burden_per_1k`, `service_gap_idx`; settlement columns

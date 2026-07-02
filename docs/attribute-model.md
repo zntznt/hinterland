@@ -1,10 +1,11 @@
 # Hinterland — Attribute Model (design)
 
-> Status: authoritative design; **Phases 1–2 are implemented** (settlement
+> Status: authoritative design; **Phases 1–3 are implemented** (settlement
 > skeleton, population, blind geology, agrarian-core seat, cost-distance
-> centrality, refining, retention, three-stream emergent wealth). Later phases
-> (conduit/darkness, blight, facilities/health, governance) are pending. This
-> document decides which attributes exist, in what order they land, and why.
+> centrality, refining, retention, three-stream emergent wealth, and the
+> cost-gated conduit with off-grid darkness + arcane services). Later phases
+> (blight, facilities/health, governance) are pending. This document decides
+> which attributes exist, in what order they land, and why.
 >
 > Produced from a structured expert panel (≈20 disciplinary lenses) working off a
 > single binding setting frame. The full per-lens reasoning is in the appendix.

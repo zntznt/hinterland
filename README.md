@@ -24,8 +24,8 @@ choropleth; the export always carries every column.
 ## The QGIS bridge
 
 1. **Load:** drag `hinterland.geojson` into QGIS (or *Layer → Add Vector Layer*).
-   QGIS splits it into two layers by geometry: **regions** (polygons) and
-   **settlements** (points).
+   QGIS splits it into three layers by geometry: **regions** (polygons),
+   **settlements** (points), and the **conduit** (lines).
 2. **CRS:** coordinates are a **flat plane, 0–1000 in fictional units** — not
    Earth. QGIS will assume WGS84; that is fine as long as you measure planar:
    either set *Project Properties → General → measurements* to planimetric, or
@@ -34,7 +34,14 @@ choropleth; the export always carries every column.
    (or `aetherstone_endowment`, `pop_density`) → Natural Breaks (Jenks), 5 classes.
 4. **Proportional symbols:** settlements layer → *Graduated* by **size** on
    `population` — or *Categorized* on `tier`.
-5. **The Phase 2 check (the resource curse):** scatter or bivariate
+5. **The Phase 3 check (off-grid darkness):** style regions by
+   `arcane_service_index`, overlay the conduit lines, and categorize settlements
+   by `on_conduit` — the dark periphery is exactly where the grid's economics
+   said "not worth it" (`population × wealth` below the threshold), never a
+   hand-picked list. Compute darkness as `100 - "conduit_access"` in the field
+   calculator if you want the negative image. Sweep the grid-threshold slider
+   (0 = everyone connected) and re-export to watch darkness spread.
+6. **The Phase 2 check (the resource curse):** scatter or bivariate
    `aetherstone_endowment` × `wealth` — under default weights a visible share of
    high-endowment regions sits below median wealth: rich ground, poor people,
    and no layer was authored to produce it (ore is blind noise; the seat prefers
@@ -64,6 +71,9 @@ capital) — every file can reproduce its world.
 | `centrality_to_seat` | 0–100 | inverted cost-distance from the seat over the ruggedness-weighted adjacency graph (seat = 100) |
 | `refining_capacity` | 0–100 | 0 except the few refinery regions (sited by centrality + flat terrain, never by ore or wealth) |
 | `value_retention` | 0–100 | share of locally-generated value that stays local — low on the mining-only frontier |
+| `on_conduit` | 0/1 | wired to the lumen grid (trunk = refineries↔seat; branches only where population × wealth clears the threshold) |
+| `conduit_access` | 0–100 | 100 when wired; decays with cost-distance off the wire (canister trade) |
+| `arcane_service_index` | 0–100 | delivered metered magic — needs the grid AND the wealth to pay; **need is not an input** |
 
 **Settlement features (Point):**
 
@@ -74,8 +84,16 @@ capital) — every file can reproduce its world.
 | `region_id` | int | containing region |
 | `population` | int | settlement population (log-uniform within tier band) |
 | `wealth` | 0–100 | its region's wealth |
+| `on_conduit` | 0/1 | mirrors its region |
+| `arcane_service_index` | 0–100 | mirrors its region |
+
+**Conduit features (LineString):** `edge_class` (`trunk` \| `branch`),
+`from_region`, `to_region`.
 
 **Schema history:**
+- **v4** added the conduit: LineString features (`edge_class`, `from_region`,
+  `to_region`), region/settlement columns `on_conduit`, `conduit_access`,
+  `arcane_service_index`, and the `grid_threshold` knob in provenance.
 - **v3** made `wealth` emergent (three weighted income streams + legacy gradient
   term; weights recorded in the provenance member), added region columns
   `terrain_ruggedness`, `fertility`, `centrality_to_seat`, `refining_capacity`,

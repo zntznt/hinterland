@@ -8,7 +8,19 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
-  PHASE 2 of the attribute model (docs/attribute-model.md): make wealth emergent.
+  PHASE 3 of the attribute model (docs/attribute-model.md): off-grid darkness.
+    - Cost-gated conduit: trunk least-cost paths wire each refinery to the seat
+      (pass-through regions get tapped); then greedy expansion connects the best
+      benefit/cost settlement while (population x wealth) / build-cost clears the
+      grid-threshold knob. Thin, poor, far places stay OFF-GRID.
+    - conduit_access: 100 when wired, decaying with cost-distance off the wire
+      (canister trade); arcane_service_index needs the grid AND the wealth to
+      pay the meter — NEED is deliberately not an input.
+    - Conduit LineString features in the export (a third QGIS layer), a
+      grid-threshold slider with a neutral zero (0 = the conduit reaches
+      everyone), off-grid settlements drawn dark. Export schema v4.
+
+  PHASE 2 (retained): make wealth emergent.
     - Geology gains two more BLIND fields: terrain_ruggedness and fertility
       (independent smooth noise; seed + topology only).
     - Seat placement: the default (unpinned) capital is no longer a random
@@ -30,8 +42,8 @@
 
   Recompute pipeline is THREE stages: topology (seed/regions/relax) -> geology
   (endowment/ruggedness/fertility; seed + topology only) -> society (seat,
-  centrality, refining, retention, wealth, tiers, population). Moving the
-  capital or any slider never reshuffles geology.
+  centrality, refining, retention, wealth, tiers, population, conduit, arcane
+  services). Moving the capital or any slider never reshuffles geology.
 
   CRS (spec §5 option 1): FLAT PLANE, x,y in [0,1000], y-up in data/GeoJSON;
   the SVG preview flips y so it matches QGIS orientation.
@@ -89,8 +101,9 @@
     Procedural regions in flat-plane coords (0–1000). <code>wealth</code> is now an
     <b>emergent blend</b> of retained-extraction, refining, and trade income over blind
     geology (<code>aetherstone_endowment</code>, <code>fertility</code>, ruggedness) —
-    with the old capital-gradient surviving as one dialable term. Everything is seeded
-    and reproducible. Tune, then <b>Download GeoJSON</b> for QGIS.
+    with the old capital-gradient surviving as one dialable term. The cost-gated
+    <b>conduit</b> then decides who gets arcane services and who sits in darkness.
+    Everything is seeded and reproducible. Tune, then <b>Download GeoJSON</b> for QGIS.
   </p>
 
   <div class="layout">
@@ -136,6 +149,12 @@
       </div>
 
       <div class="row">
+        <label>Grid threshold <span class="val" id="gtVal"></span></label>
+        <input type="range" id="gt" min="0" max="100" step="1" />
+        <div class="hint">Grid economics: the benefit a settlement must promise before the conduit reaches it. 0 = everyone connected.</div>
+      </div>
+
+      <div class="row">
         <label>Capital</label>
         <div class="inline">
           <button id="diceCapital" class="wide" title="Random capital region">🎲 random capital</button>
@@ -148,8 +167,9 @@
         <label class="radio"><input type="radio" name="view" value="wealth" checked /> wealth</label>
         <label class="radio"><input type="radio" name="view" value="endowment" /> aetherstone endowment</label>
         <label class="radio"><input type="radio" name="view" value="centrality" /> centrality to seat</label>
+        <label class="radio"><input type="radio" name="view" value="services" /> arcane services</label>
         <label class="radio"><input type="radio" name="view" value="density" /> population density</label>
-        <div class="hint">Preview only — the export always carries all columns. ■ = refinery.</div>
+        <div class="hint">Preview only — the export always carries all columns. ■ = refinery, gold lines = conduit, dashed = off-grid.</div>
       </div>
 
       <div class="row">
@@ -183,12 +203,13 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 3;
+    const SCHEMA_VERSION = 4;
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
 
     const DEFAULTS = {
       seed: "hinterland", regions: 24, relax: 2, bias: 80,
       we: 35, wf: 25, wt: 30, wg: 10,   // income-mix weights
+      gt: 35,                            // grid threshold (0 = conduit reaches everyone)
       capital: null                      // null => seat derived from geology
     };
 
@@ -350,11 +371,18 @@
     // ---- Cost-distance over the adjacency graph (Dijkstra, O(n^2)) ----------
     // Edge cost = centroid distance x (1 + FRICTION x mean ruggedness). This is
     // the friction surface at region granularity: rugged country is "farther".
-    function costDistances(regions, fromIdx) {
+    function edgeCost(a, b) {
+      const d = Math.hypot(a.c[0] - b.c[0], a.c[1] - b.c[1]);
+      return d * (1 + FRICTION * ((a.ruggedness + b.ruggedness) / 200));
+    }
+    // Multi-source: every index in fromIdxs starts at 0. Returns parents too,
+    // so least-cost paths (the conduit trunk) can be reconstructed.
+    function costDistances(regions, fromIdxs) {
       const n = regions.length;
       const dist = new Array(n).fill(Infinity);
+      const parent = new Array(n).fill(-1);
       const done = new Array(n).fill(false);
-      dist[fromIdx] = 0;
+      for (const i of fromIdxs) dist[i] = 0;
       for (let it = 0; it < n; it++) {
         let u = -1, best = Infinity;
         for (let i = 0; i < n; i++) if (!done[i] && dist[i] < best) { best = dist[i]; u = i; }
@@ -362,14 +390,11 @@
         done[u] = true;
         for (const v of regions[u].neighbors) {
           if (done[v]) continue;
-          const a = regions[u], b = regions[v];
-          const d = Math.hypot(a.c[0] - b.c[0], a.c[1] - b.c[1]);
-          const rug = (a.ruggedness + b.ruggedness) / 200; // 0..1
-          const w = d * (1 + FRICTION * rug);
-          if (dist[u] + w < dist[v]) dist[v] = dist[u] + w;
+          const w = edgeCost(regions[u], regions[v]);
+          if (dist[u] + w < dist[v]) { dist[v] = dist[u] + w; parent[v] = u; }
         }
       }
-      return dist;
+      return { dist, parent };
     }
 
     // ---- Stage 3: society ----------------------------------------------------
@@ -399,7 +424,9 @@
       }
 
       // Centrality to seat: inverted, normalized cost-distance (0..100; seat = 100).
-      const cd = costDistances(regions, regions.indexOf(cap));
+      const seatIdx = regions.indexOf(cap);
+      const seatRun = costDistances(regions, [seatIdx]);
+      const cd = seatRun.dist;
       const maxCd = Math.max(...cd.filter(isFinite), 0);
       regions.forEach((reg, i) => {
         reg.centrality = !isFinite(cd[i]) ? 0
@@ -479,16 +506,73 @@
         reg.popDensity = Math.round((reg.population / (reg.area / 10000)) * 10) / 10;
       });
 
+      // Conduit (grid economics). Trunk: least-cost refinery->seat paths, with
+      // pass-through regions tapped. Then greedy gated expansion: repeatedly
+      // connect the best benefit/cost candidate while (population x wealth) /
+      // build-cost clears the threshold. Neutral zero: gt=0 connects everyone.
+      const onGrid = new Array(regions.length).fill(false);
+      const conduitEdges = []; // {a, b, cls} — indices into regions
+      const seenEdge = new Set();
+      const addEdge = (a, b, cls) => {
+        const k = a < b ? a + ":" + b : b + ":" + a;
+        if (!seenEdge.has(k)) { seenEdge.add(k); conduitEdges.push({ a, b, cls }); }
+      };
+      onGrid[seatIdx] = true;
+      regions.forEach((reg, i) => {
+        if (reg.refining <= 0) return;
+        onGrid[i] = true;
+        let cur = i;
+        while (cur !== seatIdx && seatRun.parent[cur] !== -1) {
+          const p = seatRun.parent[cur];
+          addEdge(cur, p, "trunk");
+          onGrid[p] = true;
+          cur = p;
+        }
+      });
+      const thresh = Math.pow(params.gt / 40, 4);
+      for (;;) {
+        let best = null;
+        regions.forEach((reg, i) => {
+          if (onGrid[i]) return;
+          let cheapest = Infinity, via = -1;
+          for (const nb of reg.neighbors) if (onGrid[nb]) {
+            const c = edgeCost(reg, regions[nb]);
+            if (c < cheapest) { cheapest = c; via = nb; }
+          }
+          if (via === -1) return;
+          const score = (reg.population * (reg.wealth / 100)) / cheapest;
+          if (!best || score > best.score || (score === best.score && i < best.i))
+            best = { i, via, score };
+        });
+        if (!best || best.score < thresh) break;
+        onGrid[best.i] = true;
+        addEdge(best.i, best.via, "branch");
+      }
+
+      // Graded access (canister trade decays off the wire) + arcane services.
+      // Services need the grid AND the wealth to pay the meter; need is NOT an input.
+      const offCd = costDistances(regions, regions.map((_, i) => i).filter(i => onGrid[i])).dist;
+      regions.forEach((reg, i) => {
+        reg.onConduit = onGrid[i];
+        reg.conduitAccess = onGrid[i] ? 100
+          : Math.round(100 * Math.exp(-(isFinite(offCd[i]) ? offCd[i] : 1e9) / 250));
+        reg.arcaneServices = clamp(Math.round(
+          100 * Math.pow(reg.conduitAccess / 100, 1.2) * (0.35 + 0.65 * reg.wealth / 100)
+        ), 0, 100);
+      });
+
       const settlements = regions.map(reg => ({
         name: makeName(sx("name#" + reg.id)),
         tier: reg.tier, regionId: reg.id,
         x: reg.c[0], y: reg.c[1],
         population: reg.settlementPop,
-        wealth: reg.wealth
+        wealth: reg.wealth,
+        onConduit: reg.onConduit,
+        arcaneServices: reg.arcaneServices
       }));
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, capital: cap, capPoint, capitalName };
+      return { regions, settlements, conduitEdges, capital: cap, capPoint, capitalName };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -509,9 +593,22 @@
             fertility: reg.fertility,
             centrality_to_seat: reg.centrality,
             refining_capacity: reg.refining,
-            value_retention: reg.retention
+            value_retention: reg.retention,
+            on_conduit: reg.onConduit ? 1 : 0,
+            conduit_access: reg.conduitAccess,
+            arcane_service_index: reg.arcaneServices
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
+        });
+      });
+      model.conduitEdges.forEach(e => {
+        const A = model.regions[e.a], B = model.regions[e.b];
+        features.push({
+          type: "Feature",
+          properties: { kind: "conduit", edge_class: e.cls, from_region: A.id, to_region: B.id },
+          geometry: { type: "LineString", coordinates: [
+            [round2(A.c[0]), round2(A.c[1])], [round2(B.c[0]), round2(B.c[1])]
+          ] }
         });
       });
       model.settlements.forEach(s => {
@@ -523,7 +620,9 @@
             tier: s.tier,
             region_id: s.regionId,
             population: s.population,
-            wealth: s.wealth
+            wealth: s.wealth,
+            on_conduit: s.onConduit ? 1 : 0,
+            arcane_service_index: s.arcaneServices
           },
           geometry: { type: "Point", coordinates: [round2(s.x), round2(s.y)] }
         });
@@ -536,6 +635,7 @@
           seed: String(params.seed), regions: params.regions, relax: params.relax,
           bias: params.bias,
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
+          grid_threshold: params.gt,
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
           space: "planar 0..1000, y-up (flat-plane CRS)"
         },
@@ -548,6 +648,7 @@
       wealth:     { lo: [237, 248, 233], hi: [0, 90, 50],    label: "wealth" },
       endowment:  { lo: [242, 240, 247], hi: [84, 39, 143],  label: "aetherstone endowment" },
       centrality: { lo: [239, 243, 255], hi: [8, 48, 107],   label: "centrality to seat" },
+      services:   { lo: [237, 248, 251], hi: [0, 109, 119],  label: "arcane services" },
       density:    { lo: [254, 237, 222], hi: [166, 54, 3],   label: "pop. density (per 100×100 cell)" }
     };
     function rampColor(ramp, t) {
@@ -564,11 +665,13 @@
         view === "wealth" ? reg.wealth / 100 :
         view === "endowment" ? reg.endowment / 100 :
         view === "centrality" ? reg.centrality / 100 :
+        view === "services" ? reg.arcaneServices / 100 :
         Math.sqrt(reg.popDensity / maxDensity);
       const cellValue = (reg) =>
         view === "wealth" ? reg.wealth :
         view === "endowment" ? reg.endowment :
         view === "centrality" ? reg.centrality :
+        view === "services" ? reg.arcaneServices :
         reg.popDensity.toFixed(1);
 
       const parts = [`<svg id="map" width="${SVG}" height="${SVG}" viewBox="0 0 ${W} ${W}" xmlns="http://www.w3.org/2000/svg">`];
@@ -583,12 +686,20 @@
         }
       });
 
+      // Conduit lines (drawn under settlement symbols)
+      model.conduitEdges.forEach(e => {
+        const A = model.regions[e.a], B = model.regions[e.b];
+        parts.push(`<line x1="${A.c[0].toFixed(1)}" y1="${fy(A.c[1]).toFixed(1)}" x2="${B.c[0].toFixed(1)}" y2="${fy(B.c[1]).toFixed(1)}" stroke="#b8860b" stroke-width="${e.cls === "trunk" ? 6 : 3}" opacity="0.85"/>`);
+      });
+
       const maxPop = Math.max(...model.settlements.map(s => s.population));
       model.settlements.forEach(s => {
         const cx = s.x, cy = fy(s.y), isPrime = s.tier === "prime";
         const r = 3 + 13 * Math.sqrt(s.population / maxPop);
-        const fill = isPrime ? "#d62728" : (s.tier === "hub" ? "#fff" : "#ccc");
-        parts.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${fill}" stroke="#000" stroke-width="${isPrime ? 2 : 1.2}"/>`);
+        const off = !s.onConduit;
+        const fill = off ? "#8a8a8a" : (isPrime ? "#d62728" : (s.tier === "hub" ? "#fff" : "#ccc"));
+        const dash = off ? ` stroke-dasharray="4 3"` : "";
+        parts.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${fill}" stroke="#000" stroke-width="${isPrime ? 2 : 1.2}"${dash}/>`);
         if (isPrime || s.tier === "hub") {
           parts.push(`<text x="${cx.toFixed(1)}" y="${(cy - r - 5).toFixed(1)}" font-size="${isPrime ? 21 : 14}" text-anchor="middle" fill="#000" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="4">${esc(s.name)}</text>`);
         }
@@ -614,6 +725,7 @@
         ["population", totalPop.toLocaleString("en-US")],
         ["tiers", `${tierCounts.prime || 0} prime / ${tierCounts.hub || 0} hub / ${tierCounts.outpost || 0} outpost / ${tierCounts.holdfast || 0} holdfast`],
         ["refineries", refineries],
+        ["on-conduit", `${model.settlements.filter(s => s.onConduit).length} of ${model.settlements.length} settlements (threshold ${params.gt})`],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1000 (y-up)"]
@@ -647,6 +759,7 @@
       p.set("bias", params.bias);
       p.set("we", params.we); p.set("wf", params.wf);
       p.set("wt", params.wt); p.set("wg", params.wg);
+      p.set("gt", params.gt);
       if (params.capital) { p.set("cx", round2(params.capital[0])); p.set("cy", round2(params.capital[1])); }
       history.replaceState(null, "", "#" + p.toString());
     }
@@ -664,6 +777,7 @@
         bias: w("bias", DEFAULTS.bias),
         we: w("we", DEFAULTS.we), wf: w("wf", DEFAULTS.wf),
         wt: w("wt", DEFAULTS.wt), wg: w("wg", DEFAULTS.wg),
+        gt: w("gt", DEFAULTS.gt),
         capital: null
       };
       if (p.has("cx") && p.has("cy") && isFinite(+p.get("cx")) && isFinite(+p.get("cy")))
@@ -676,11 +790,11 @@
       const set = (id, v) => { document.getElementById(id).value = v; };
       set("seed", params.seed); set("regions", params.regions); set("relax", params.relax);
       set("bias", params.bias); set("we", params.we); set("wf", params.wf);
-      set("wt", params.wt); set("wg", params.wg);
+      set("wt", params.wt); set("wg", params.wg); set("gt", params.gt);
       document.getElementById("regionsVal").textContent = params.regions;
       document.getElementById("relaxVal").textContent = params.relax;
       document.getElementById("biasVal").textContent = params.bias + "%";
-      for (const kid of ["we", "wf", "wt", "wg"])
+      for (const kid of ["we", "wf", "wt", "wg", "gt"])
         document.getElementById(kid + "Val").textContent = params[kid];
     }
 
@@ -712,7 +826,7 @@
       $("regions").addEventListener("input", (e) => { params.regions = +e.target.value; $("regionsVal").textContent = params.regions; params.capital = null; regenerateTopology(); });
       $("relax").addEventListener("input", (e) => { params.relax = +e.target.value; $("relaxVal").textContent = params.relax; regenerateTopology(); });
       $("bias").addEventListener("input", (e) => { params.bias = +e.target.value; $("biasVal").textContent = params.bias + "%"; recomputeAttributes(); });
-      for (const kid of ["we", "wf", "wt", "wg"]) {
+      for (const kid of ["we", "wf", "wt", "wg", "gt"]) {
         $(kid).addEventListener("input", (e) => {
           params[kid] = +e.target.value;
           $(kid + "Val").textContent = params[kid];

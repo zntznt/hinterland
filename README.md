@@ -284,6 +284,17 @@ fictional years per epoch), conduit edges stamped with the epoch they were
 built, roads from the founding. Built for the QGIS Temporal Controller; the
 last frame is exactly the main export, frame 0 is the founding.
 
+**A third artifact — the chronicle** (`hinterland-chronicle.md`): the same
+world, narrated. A deterministic written history composed from the facts the
+export carries — the founding (seat, works, shrines, the off-grid count), the
+event timeline told in order with dates and *the causal chains told as
+chains* (a war that followed a contested strike is narrated against it; a
+consecration names the wound it answers and the shrine's dedication), and
+the state of the realm at the record's close. Same seed, same story, same
+words — the on-page panel under the map shows exactly the downloadable text.
+Drop it beside the QGIS map as the qualitative companion: every name in the
+prose is a feature in the layers.
+
 **Schema history:**
 - **v17** (Markov toponymy E3): real procedural names — order-2 character
   chains over three invented registers replace the syllable placeholder;

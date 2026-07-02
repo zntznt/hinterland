@@ -48,7 +48,12 @@
 > the Temple's liturgical register), so the linguistic frontier tracks the ore
 > rather than the border and the entire toponymy is byte-stable across
 > capital moves, weights, and epochs (measured: ~97% of names are novel
-> compositions, not corpus quotes). With time real,
+> compositions, not corpus quotes). **The chronicle (E4)**: the world narrates
+> itself — a deterministic written history (downloadable markdown + on-page
+> panel) composed from the founding, the dated event timeline with the causal
+> chains told as chains, and the closing state of the realm; every event is
+> narrated by settlement name and date, and the prose references only what
+> the export carries. With time real,
 > `abandonment_index` became true hysteresis (peak wealth − present wealth) and
 > dead lodes emerge in-run; the arrow-inversion caveat on deep time is thereby
 > partially resolved (founding-era/shock reconstruction remains). Remaining

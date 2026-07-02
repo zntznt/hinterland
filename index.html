@@ -8,6 +8,25 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  IN-RUN EVENTS (D3): history with dates.
+    - Events FIRE during the run and change the trajectory afterward:
+        refinery_collapse — when the world's remaining ore falls below a
+          seeded threshold, the weakest refinery dies. Its income vanishes,
+          its blight emission stops, its wardstation closes, the magnates'
+          reach recedes — and its trunk conduit remains as ghost
+          infrastructure. Industry consolidates as the fields tire.
+        blight_plague — a region at maximum contamination with real
+          population loses ~35% of its people, once. The drain spiral takes
+          over from there.
+        relic_calamity — at a seeded epoch, the unexplained erupts at a
+          sanctioned site: a PERMANENT contamination scar enters the blight
+          field. Most worlds, not all.
+    - Recorded as region columns (event_type / event_epoch / event_severity)
+      AND as a timeline in the provenance member (hinterland.events) — the
+      epoch series shows the aftermath frame by frame. Deep-past shocks
+      (shock_legacy) remain the reconstructed pre-run history; events are
+      LIVED history. Schema v13.
+
   THE TEMPORAL BRIDGE (D2): watch it happen.
     - Per-epoch SNAPSHOTS captured during the run (wealth, population, ore
       stock, blight, grid membership, conduit growth).
@@ -366,7 +385,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 12;
+    const SCHEMA_VERSION = 13;
     const BLOC_TOL = 12;    // top-two reach gap below this => contested
     const BLOC_FLOOR = 25;  // all reaches below this => ungoverned
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
@@ -804,11 +823,12 @@
       //     poverty-seeking (hauled onto whoever is POOREST). Same mass either
       //     way: the λ-sweep compares identical contamination under different
       //     victims — the "policy share" experiment.
+      const scar = new Array(regions.length).fill(0); // permanent contamination (relic calamities)
       const computeBlight = () => { // reads CURRENT wealth: dumping re-targets the poor
         const windRad = geo.windDeg * Math.PI / 180;
         const wvx = Math.cos(windRad), wvy = Math.sin(windRad);
         const lam = params.db / 100;
-        const blightRaw = new Array(regions.length).fill(0);
+        const blightRaw = regions.map((_, i) => scar[i]);
         regions.forEach(rf => {
           if (rf.refining <= 0) return;
           const C = rf.refining / 100;
@@ -852,6 +872,33 @@
       });
       snapNow(); // the founding
 
+      // Sanctioned sites are ANCIENT: the Temple sanctified them where the
+      // sacred substance lay at the founding (endowment0) and where the
+      // Crown's writ was thin. Selected before the loop — sites do not move
+      // as mines deplete.
+      const S = Math.max(1, Math.round(regions.length / 12));
+      const sanctScored = regions.map(reg => {
+        const rj = sx("sanct#" + reg.id);
+        return { reg, s: 0.45 * (100 - reg.centrality) + 0.35 * reg.endowment0 + (rj() - 0.5) * 12 };
+      }).sort((a, b) => b.s - a.s || a.reg.id - b.reg.id);
+      const sanctIdxs = [], sanctionedSites = [];
+      for (let i = 0; i < S; i++) {
+        const reg = sanctScored[i].reg;
+        sanctIdxs.push(regions.indexOf(reg));
+        sanctionedSites.push({ regionId: reg.id, x: reg.c[0], y: reg.c[1] });
+      }
+
+      // D3 event machinery: seeded triggers, epoch-stamped consequences.
+      const events = [];
+      const rEv = sx("events");
+      const collapseThresh = 0.35 + rEv() * 0.2;          // ore share that breaks the industry
+      const calamityCoin = rEv() < 0.65;                   // most worlds, not all
+      const calamityEpoch = 1 + Math.floor(rEv() * Math.min(Math.max(params.ep, 1), 8));
+      const calamitySite = sanctIdxs.length ? sanctIdxs[Math.floor(rEv() * sanctIdxs.length)] : -1;
+      const E0sum = regions.reduce((s, r) => s + r.endowment, 0);
+      let collapsed = false;
+      regions.forEach(reg => { reg.eventType = "none"; reg.eventEpoch = -1; reg.eventSeverity = 0; reg.plagued = false; });
+
       // ---- THE DYNAMIC LOOP (D1) --------------------------------------------
       // Epoch 0 is the founding snapshot above (params.ep = 0 reproduces the
       // static model exactly). Each further epoch: ore depletes, wealth
@@ -879,7 +926,43 @@
           reg.population = Math.round(reg.settlementPop * (1 + reg.rural));
         });
         expandConduit();   // the grid chases the winners (ratchet: once built, kept)
+
+        // D3 events — lived history, epoch-stamped
+        if (!collapsed && E0sum > 0) { // industry consolidates as the fields tire
+          const Esum = regions.reduce((s, r) => s + r.E, 0);
+          if (Esum / E0sum < collapseThresh) {
+            let victim = null;
+            regions.forEach(r => {
+              if (r.refining > 0 && (!victim || r.refining < victim.refining ||
+                  (r.refining === victim.refining && r.id < victim.id))) victim = r;
+            });
+            if (victim) {
+              victim.refining = 0; collapsed = true;
+              victim.eventType = "refinery_collapse"; victim.eventEpoch = e + 1;
+              victim.eventSeverity = 70 + Math.round(rEv() * 20);
+              events.push({ epoch: e + 1, type: "refinery_collapse", region_id: victim.id });
+            }
+          }
+        }
         computeBlight();   // the poison follows the poor wherever they end up
+        regions.forEach(reg => { // plague: maximum contamination + real population, once per region
+          if (!reg.plagued && reg.blight >= 85 && reg.settlementPop >= 500) {
+            reg.plagued = true;
+            reg.settlementPop = Math.max(20, Math.round(reg.settlementPop * 0.65));
+            reg.population = Math.round(reg.settlementPop * (1 + reg.rural));
+            reg.eventType = "blight_plague"; reg.eventEpoch = e + 1; // latest event wins the columns
+            reg.eventSeverity = 60 + Math.round(rEv() * 30);
+            events.push({ epoch: e + 1, type: "blight_plague", region_id: reg.id });
+          }
+        });
+        if (calamityCoin && e + 1 === calamityEpoch && calamitySite >= 0) { // the unexplained erupts
+          const site = regions[calamitySite];
+          scar[calamitySite] = 3.5;
+          site.eventType = "relic_calamity"; site.eventEpoch = e + 1;
+          site.eventSeverity = 65 + Math.round(rEv() * 30);
+          events.push({ epoch: e + 1, type: "relic_calamity", region_id: site.id });
+          computeBlight(); // the scar shows immediately
+        }
         snapNow();
       }
 
@@ -964,21 +1047,10 @@
         ), 0, 100);
       });
 
-      // Governance overlay. The Temple plants sanctioned sites where the
-      // sacred substance lies and the Crown's writ is thin; the magnates
-      // reach outward from their refineries; the Crown's reach IS centrality.
-      // No region is assigned a ruler — rulers reach, or they don't.
-      const S = Math.max(1, Math.round(regions.length / 12));
-      const sanctScored = regions.map(reg => {
-        const rj = sx("sanct#" + reg.id);
-        return { reg, s: 0.45 * (100 - reg.centrality) + 0.35 * reg.endowment + (rj() - 0.5) * 12 };
-      }).sort((a, b) => b.s - a.s || a.reg.id - b.reg.id);
-      const sanctIdxs = [], sanctionedSites = [];
-      for (let i = 0; i < S; i++) {
-        const reg = sanctScored[i].reg;
-        sanctIdxs.push(regions.indexOf(reg));
-        sanctionedSites.push({ regionId: reg.id, x: reg.c[0], y: reg.c[1] });
-      }
+      // Governance overlay. Temple reach emanates from the ancient sanctioned
+      // sites (chosen pre-loop); the magnates reach outward from their
+      // surviving refineries; the Crown's reach IS centrality. No region is
+      // assigned a ruler — rulers reach, or they don't.
       const templeCd = costDistances(regions, sanctIdxs).dist;
       const magCd = costDistances(regions, regions.map((_, i) => i).filter(i => regions[i].refining > 0)).dist;
       regions.forEach((reg, i) => {
@@ -1203,7 +1275,7 @@
       }));
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, capital: cap, capPoint, capitalName, windDeg: geo.windDeg };
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -1272,7 +1344,10 @@
             population_t0: Math.round(reg.popT0 * (1 + reg.rural)),
             peak_wealth: reg.peakWealth,
             ore_depleted: reg.oreDepleted ? 1 : 0,
-            boom_bust: reg.boomBust
+            boom_bust: reg.boomBust,
+            event_type: reg.eventType,
+            event_epoch: reg.eventEpoch,
+            event_severity: reg.eventSeverity
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -1349,6 +1424,7 @@
           grid_threshold: params.gt,
           dump_bias: params.db,
           epochs: params.ep,
+          events: model.events,
           wind_deg: model.windDeg,
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
           space: "planar 0..1000, y-up (flat-plane CRS)"
@@ -1424,6 +1500,7 @@
           bias: params.bias,
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt, dump_bias: params.db,
+          events: model.events,
           wind_deg: model.windDeg,
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
           space: "planar 0..1000, y-up (flat-plane CRS)"
@@ -1532,6 +1609,13 @@
         parts.push(`<text class="sanct" x="${(s.x + 26).toFixed(1)}" y="${(fy(s.y) - 14).toFixed(1)}" font-size="18" text-anchor="middle" fill="#54278f" paint-order="stroke" stroke="#fff" stroke-width="3">▲</text>`);
       });
 
+      // Event markers: red ✱ where lived history struck (by the scrubbed epoch)
+      model.regions.forEach(reg => {
+        if (reg.eventType !== "none" && reg.eventEpoch <= Math.min(scrubEpoch, snaps.length - 1)) {
+          parts.push(`<text class="evt" x="${(reg.c[0] + 26).toFixed(1)}" y="${(fy(reg.c[1]) + 34).toFixed(1)}" font-size="22" text-anchor="middle" fill="#c1121f" paint-order="stroke" stroke="#fff" stroke-width="3">✱</text>`);
+        }
+      });
+
       // Garrisons (Crown force): dark-red G beside the settlement
       model.garrisons.forEach(g => {
         parts.push(`<text class="gar" x="${(g.x - 26).toFixed(1)}" y="${(fy(g.y) - 14).toFixed(1)}" font-size="16" font-weight="700" text-anchor="middle" fill="#a50f15" paint-order="stroke" stroke="#fff" stroke-width="3">G</text>`);
@@ -1619,6 +1703,9 @@
         ["deep time", (() => { const dead = model.regions.filter(r => r.exhausted).length; const shocked = model.regions.filter(r => r.shock !== "none").length; return `${dead} dead-lode regions · ${shocked} scarred by shocks`; })()],
         ["uncounted", model.regions.reduce((s, r) => s + r.uncounted, 0).toLocaleString("en-US") + " people the census misses"],
         ["epochs", (() => { const c = model.regions.reduce((m, r) => { m[r.boomBust] = (m[r.boomBust] || 0) + 1; return m; }, {}); return `${params.ep} run — ${c.boom || 0} boom / ${c.stable || 0} stable / ${c.decline || 0} decline / ${c.collapse || 0} collapse`; })()],
+        ["events", model.events.length
+          ? model.events.map(ev => `e${ev.epoch}: ${ev.type.replace("_", " ")} @ #${ev.region_id}`).join(" · ")
+          : "none — a quiet age"],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1000 (y-up)"]

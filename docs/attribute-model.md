@@ -33,7 +33,15 @@
 > each region's lived changes of ruler. **Conflict and fortune (D5)**: hidden
 > lodes surface as in-run ore strikes, and wars burn the most valuable
 > contested ground — permanently wounding its capacity — with the Crown
-> garrisoning the battlefield only after the blood. With time real,
+> garrisoning the battlefield only after the blood. **Causal chains + the faith
+> in motion (D6)**: events now cause events — an ore strike on contested ground
+> guarantees and accelerates the war (fortune turns the seam hot), and two
+> epochs after the run's first wound (plague or calamity) the Temple
+> consecrates the ground as a new sanctioned site, with temple reach, pilgrim
+> routing, and the political map all re-contesting around the live shrine set
+> (measured: consecration in ~72% of wounded worlds; every new shrine reaches
+> temple_reach 100; a pinned seed carries a war that would not exist without
+> the chain). With time real,
 > `abandonment_index` became true hysteresis (peak wealth − present wealth) and
 > dead lodes emerge in-run; the arrow-inversion caveat on deep time is thereby
 > partially resolved (founding-era/shock reconstruction remains). Remaining

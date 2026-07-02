@@ -8,6 +8,19 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  THE TEMPORAL BRIDGE (D2): watch it happen.
+    - Per-epoch SNAPSHOTS captured during the run (wealth, population, ore
+      stock, blight, grid membership, conduit growth).
+    - An EPOCH SCRUBBER in the preview: drag through history and watch the
+      stocks move — wealth compound, ore die, blight re-target, the grid
+      crawl outward, settlements swell and hollow.
+    - A second export, "Download epoch series": one GeoJSON where regions and
+      settlements repeat per epoch with epoch + epoch_date fields (one epoch =
+      25 fictional years), and conduit edges carry the epoch they were built.
+      Load in QGIS, enable the Temporal Controller (single field with
+      date/time, accumulate for the conduit), press play: the inequality
+      compounds as an ANIMATION. The strongest artifact the tool produces.
+
   THE DYNAMIC ENGINE (D1): time. The static model shows correlations; the
   panel's key findings were all FEEDBACK LOOPS, and loops need epochs.
     - An EPOCHS slider (neutral zero: 0 = the founding snapshot, byte-identical
@@ -285,6 +298,12 @@
         <div class="hint">Run the world forward: ore depletes, wealth compounds, people migrate, the grid chases the winners. 0 = the founding snapshot.</div>
       </div>
 
+      <div class="row" id="scrubRow" style="display:none">
+        <label>View epoch <span class="val" id="scrubVal"></span></label>
+        <input type="range" id="scrub" min="0" max="12" step="1" />
+        <div class="hint">Scrub history — animates wealth, ore, blight, injustice, density, the grid, and settlement size.</div>
+      </div>
+
       <div class="row">
         <label>Capital</label>
         <div class="inline">
@@ -315,6 +334,9 @@
 
       <div class="row">
         <button id="download" class="primary wide">⬇ Download GeoJSON</button>
+      </div>
+      <div class="row" style="margin-bottom:4px">
+        <button id="dlSeries" class="wide">⬇ Download epoch series (QGIS temporal)</button>
       </div>
       <div class="row" style="margin-bottom:4px">
         <button id="share" class="wide">🔗 Copy share link</button>
@@ -817,6 +839,19 @@
       };
       computeBlight();
 
+      // Per-epoch snapshots: the raw material of the scrubber and the
+      // QGIS temporal export.
+      const epochSnaps = [];
+      const snapNow = () => epochSnaps.push({
+        wealth: regions.map(r => r.wealth),
+        pop: regions.map(r => r.settlementPop),
+        E: regions.map(r => r.E),
+        blight: regions.map(r => r.blight),
+        onGrid: regions.map((_, i) => onGrid[i]),
+        edgeCount: conduitEdges.length
+      });
+      snapNow(); // the founding
+
       // ---- THE DYNAMIC LOOP (D1) --------------------------------------------
       // Epoch 0 is the founding snapshot above (params.ep = 0 reproduces the
       // static model exactly). Each further epoch: ore depletes, wealth
@@ -845,6 +880,7 @@
         });
         expandConduit();   // the grid chases the winners (ratchet: once built, kept)
         computeBlight();   // the poison follows the poor wherever they end up
+        snapNow();
       }
 
       // Final classification: trajectories recorded, tiers re-ranked by what
@@ -1167,7 +1203,7 @@
       }));
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, capital: cap, capPoint, capitalName, windDeg: geo.windDeg };
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, capital: cap, capPoint, capitalName, windDeg: geo.windDeg };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -1321,6 +1357,81 @@
       };
     }
 
+    // ---- Epoch-series export: QGIS Temporal Controller food -----------------
+    // Regions + settlements repeat per epoch with epoch/epoch_date fields
+    // (one epoch = 25 fictional years); conduit edges carry the epoch they
+    // were built; roads exist from the founding.
+    const epochDate = (e) => `${String(1000 + e * 25).padStart(4, "0")}-01-01`;
+    function toEpochSeries(model, params) {
+      const features = [];
+      const edgeEpoch = model.conduitEdges.map((_, idx) => {
+        for (let e = 0; e < model.epochSnaps.length; e++)
+          if (idx < model.epochSnaps[e].edgeCount) return e;
+        return model.epochSnaps.length - 1;
+      });
+      model.epochSnaps.forEach((S, e) => {
+        const date = epochDate(e);
+        model.regions.forEach((reg, i) => {
+          features.push({
+            type: "Feature",
+            properties: {
+              kind: "region", epoch: e, epoch_date: date, region_id: reg.id,
+              wealth: S.wealth[i],
+              population: Math.round(S.pop[i] * (1 + reg.rural)),
+              aetherstone_endowment: S.E[i],
+              blight_load: S.blight[i],
+              on_conduit: S.onGrid[i] ? 1 : 0,
+              injustice_idx: Math.round(100 * (S.blight[i] / 100) * (1 - S.wealth[i] / 100))
+            },
+            geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
+          });
+        });
+        model.settlements.forEach(s => {
+          features.push({
+            type: "Feature",
+            properties: {
+              kind: "settlement", epoch: e, epoch_date: date, region_id: s.regionId,
+              name: s.name, population: S.pop[s.regionId],
+              on_conduit: S.onGrid[s.regionId] ? 1 : 0
+            },
+            geometry: { type: "Point", coordinates: [round2(s.x), round2(s.y)] }
+          });
+        });
+      });
+      model.conduitEdges.forEach((e2, idx) => {
+        const A = model.regions[e2.a], B = model.regions[e2.b];
+        features.push({
+          type: "Feature",
+          properties: { kind: "conduit", edge_class: e2.cls, epoch: edgeEpoch[idx], epoch_date: epochDate(edgeEpoch[idx]), from_region: A.id, to_region: B.id },
+          geometry: { type: "LineString", coordinates: [[round2(A.c[0]), round2(A.c[1])], [round2(B.c[0]), round2(B.c[1])]] }
+        });
+      });
+      model.roadEdges.forEach(e2 => {
+        const A = model.regions[e2.a], B = model.regions[e2.b];
+        features.push({
+          type: "Feature",
+          properties: { kind: "road", road_class: e2.cls, epoch: 0, epoch_date: epochDate(0), from_region: A.id, to_region: B.id },
+          geometry: { type: "LineString", coordinates: [[round2(A.c[0]), round2(A.c[1])], [round2(B.c[0]), round2(B.c[1])]] }
+        });
+      });
+      return {
+        type: "FeatureCollection",
+        name: "hinterland_epochs",
+        hinterland: {
+          schema_version: SCHEMA_VERSION, series: true, epochs: params.ep,
+          years_per_epoch: 25,
+          seed: String(params.seed), regions: params.regions, relax: params.relax,
+          bias: params.bias,
+          weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
+          grid_threshold: params.gt, dump_bias: params.db,
+          wind_deg: model.windDeg,
+          capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
+          space: "planar 0..1000, y-up (flat-plane CRS)"
+        },
+        features
+      };
+    }
+
     // ---- Rendering (SVG, ugly on purpose) ----------------------------------
     const RAMPS = {
       wealth:     { lo: [237, 248, 233], hi: [0, 90, 50],    label: "wealth" },
@@ -1349,15 +1460,25 @@
 
     function render(model, params) {
       const ramp = RAMPS[view];
-      const maxDensity = Math.max(...model.regions.map(r => r.popDensity), 1e-9);
+      // Scrub-aware accessors: the stock fields read the selected epoch's
+      // snapshot; derived layers always show the final state.
+      const snaps = model.epochSnaps;
+      const live = snaps[Math.max(0, Math.min(scrubEpoch, snaps.length - 1))];
+      const RW = (reg) => live.wealth[reg.id];
+      const RE = (reg) => live.E[reg.id];
+      const RB = (reg) => live.blight[reg.id];
+      const RP = (reg) => live.pop[reg.id];
+      const RG = (reg) => live.onGrid[reg.id];
+      const dens = (reg) => (RP(reg) * (1 + reg.rural)) / (reg.area / 10000);
+      const maxDensity = Math.max(...model.regions.map(dens), 1e-9);
       const maxBurden = Math.max(...model.regions.map(r => r.burden), 1e-9);
       const cellT = (reg) =>
-        view === "wealth" ? reg.wealth / 100 :
-        view === "endowment" ? reg.endowment / 100 :
+        view === "wealth" ? RW(reg) / 100 :
+        view === "endowment" ? RE(reg) / 100 :
         view === "centrality" ? reg.centrality / 100 :
         view === "services" ? reg.arcaneServices / 100 :
-        view === "blight" ? reg.blight / 100 :
-        view === "injustice" ? reg.injustice / 100 :
+        view === "blight" ? RB(reg) / 100 :
+        view === "injustice" ? (RB(reg) / 100) * (1 - RW(reg) / 100) :
         view === "burden" ? reg.burden / maxBurden :
         view === "gap" ? reg.serviceGap / 100 :
         view === "bloc" || view === "traj" ? 0 : // categorical — fill overridden below
@@ -1365,14 +1486,14 @@
         view === "egap" ? reg.enforceGap / 100 :
         view === "aband" ? reg.abandonment / 100 :
         view === "legib" ? reg.legibility / 100 :
-        Math.sqrt(reg.popDensity / maxDensity);
+        Math.sqrt(dens(reg) / maxDensity);
       const cellValue = (reg) =>
-        view === "wealth" ? reg.wealth :
-        view === "endowment" ? reg.endowment :
+        view === "wealth" ? RW(reg) :
+        view === "endowment" ? RE(reg) :
         view === "centrality" ? reg.centrality :
         view === "services" ? reg.arcaneServices :
-        view === "blight" ? reg.blight :
-        view === "injustice" ? reg.injustice :
+        view === "blight" ? RB(reg) :
+        view === "injustice" ? Math.round(100 * (RB(reg) / 100) * (1 - RW(reg) / 100)) :
         view === "burden" ? reg.burden.toFixed(1) :
         view === "gap" ? reg.serviceGap :
         view === "bloc" ? reg.bloc.slice(0, 3) :
@@ -1381,7 +1502,7 @@
         view === "egap" ? reg.enforceGap :
         view === "aband" ? reg.abandonment :
         view === "legib" ? reg.legibility :
-        reg.popDensity.toFixed(1);
+        (Math.round(dens(reg) * 10) / 10).toFixed(1);
       const cellFill = (reg) => view === "bloc" ? BLOC_COLORS[reg.bloc]
         : view === "traj" ? TRAJ_COLORS[reg.boomBust]
         : rampColor(ramp, cellT(reg));
@@ -1423,17 +1544,18 @@
         parts.push(`<text class="fac" x="${(f.x + dx).toFixed(1)}" y="${(fy(f.y) + 58).toFixed(1)}" font-size="14" font-weight="700" text-anchor="middle" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="3">${ch}</text>`);
       });
 
-      // Conduit lines (drawn under settlement symbols)
-      model.conduitEdges.forEach(e => {
+      // Conduit lines (drawn under settlement symbols) — sliced to the epoch
+      model.conduitEdges.slice(0, live.edgeCount).forEach(e => {
         const A = model.regions[e.a], B = model.regions[e.b];
         parts.push(`<line x1="${A.c[0].toFixed(1)}" y1="${fy(A.c[1]).toFixed(1)}" x2="${B.c[0].toFixed(1)}" y2="${fy(B.c[1]).toFixed(1)}" stroke="#b8860b" stroke-width="${e.cls === "trunk" ? 6 : 3}" opacity="0.85"/>`);
       });
 
-      const maxPop = Math.max(...model.settlements.map(s => s.population));
+      const maxPop = Math.max(...model.regions.map(RP), 1);
       model.settlements.forEach(s => {
+        const sreg = model.regions[s.regionId];
         const cx = s.x, cy = fy(s.y), isPrime = s.tier === "prime";
-        const r = 3 + 13 * Math.sqrt(s.population / maxPop);
-        const off = !s.onConduit;
+        const r = 3 + 13 * Math.sqrt(RP(sreg) / maxPop);
+        const off = !RG(sreg);
         const fill = off ? "#8a8a8a" : (isPrime ? "#d62728" : (s.tier === "hub" ? "#fff" : "#ccc"));
         const dash = off ? ` stroke-dasharray="4 3"` : "";
         parts.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${fill}" stroke="#000" stroke-width="${isPrime ? 2 : 1.2}"${dash}/>`);
@@ -1452,6 +1574,9 @@
         parts.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#000" stroke-width="4" opacity="0.65"/>`);
         parts.push(`<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(x2 + hx + px * 8).toFixed(1)},${(y2 + hy + py * 8).toFixed(1)} ${(x2 + hx - px * 8).toFixed(1)},${(y2 + hy - py * 8).toFixed(1)}" fill="#000" opacity="0.65"/>`);
         parts.push(`<text x="${cx0}" y="${cy0 + 58}" font-size="16" text-anchor="middle" fill="#000" opacity="0.6" paint-order="stroke" stroke="#fff" stroke-width="3">wind</text>`);
+      }
+      if (params.ep > 0) {
+        parts.push(`<text x="960" y="46" font-size="26" text-anchor="end" fill="#000" opacity="0.65" paint-order="stroke" stroke="#fff" stroke-width="4">epoch ${Math.min(scrubEpoch, snaps.length - 1)}/${params.ep}</text>`);
       }
       parts.push(`</svg>`);
       const stage = document.getElementById("stage");
@@ -1507,6 +1632,7 @@
     let geo = null;        // world-level geology (wind)
     let model = null;
     let view = "wealth";   // preview-only; not a generation param
+    let scrubEpoch = 0;    // preview-only: which epoch the map shows
 
     function regenerateTopology() {
       topology = buildTopology(params);
@@ -1515,6 +1641,12 @@
     }
     function recomputeAttributes() {    // stage 3 only — geology untouched
       model = applyAttributes(topology, params, geo);
+      scrubEpoch = params.ep;           // land on the present
+      const row = document.getElementById("scrubRow");
+      row.style.display = params.ep > 0 ? "" : "none";
+      const sc = document.getElementById("scrub");
+      sc.max = params.ep; sc.value = params.ep;
+      document.getElementById("scrubVal").textContent = `${params.ep}/${params.ep}`;
       render(model, params);
       writeHash();
     }
@@ -1615,6 +1747,22 @@
 
       document.querySelectorAll('input[name="view"]').forEach(el =>
         el.addEventListener("change", (e) => { view = e.target.value; if (model) render(model, params); }));
+
+      $("scrub").addEventListener("input", (e) => {
+        scrubEpoch = +e.target.value;
+        $("scrubVal").textContent = `${scrubEpoch}/${params.ep}`;
+        if (model) render(model, params);
+      });
+
+      $("dlSeries").addEventListener("click", () => {
+        if (!model) return;
+        const blob = new Blob([JSON.stringify(toEpochSeries(model, params), null, 2)], { type: "application/geo+json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "hinterland-epochs.geojson";
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      });
 
       $("download").addEventListener("click", () => {
         if (!model) return;

@@ -20,7 +20,9 @@
 > through coupled loops — ore depletes, wealth compounds, people migrate along
 > roads, the grid ratchets after the winners, the dumping re-targets the poor —
 > so the panel's feedback spirals (extraction, drain, agglomeration) now
-> actually RUN instead of being implied by correlations. With time real,
+> actually RUN instead of being implied by correlations. **The temporal bridge
+> (D2)** exports the run as an epoch series for the QGIS Temporal Controller
+> and adds an in-browser epoch scrubber — the compounding is watchable. With time real,
 > `abandonment_index` became true hysteresis (peak wealth − present wealth) and
 > dead lodes emerge in-run; the arrow-inversion caveat on deep time is thereby
 > partially resolved (founding-era/shock reconstruction remains). Remaining

@@ -1,13 +1,14 @@
 # Hinterland — Attribute Model (design)
 
-> Status: authoritative design; **Phases 1–5 are implemented** (settlement
-> skeleton, population, blind geology incl. elevation + wind, agrarian-core
-> seat, cost-distance centrality, refining, retention, three-stream emergent
-> wealth, the cost-gated conduit with off-grid darkness + arcane services,
-> exported blight with the λ dump-bias sweep, and facilities/coverage/health
-> with the emergent cause-split disease burden). Phase 6 (governance overlay)
-> is pending. This document decides which attributes exist, in what order they
-> land, and why.
+> Status: authoritative design; **all six phases are implemented** — settlement
+> skeleton + population, blind geology (ore, terrain, fertility, elevation,
+> wind), agrarian-core seat, cost-distance centrality, refining, retention,
+> three-stream emergent wealth, the cost-gated conduit with off-grid darkness +
+> arcane services, exported blight with the λ dump-bias sweep,
+> facilities/coverage/health with the emergent cause-split disease burden, and
+> the governance overlay (dominant_bloc from three competing reach fields).
+> Remaining work is the deferred second wave (§7). This document decides which
+> attributes exist, in what order they land, and why.
 >
 > Produced from a structured expert panel (≈20 disciplinary lenses) working off a
 > single binding setting frame. The full per-lens reasoning is in the appendix.
@@ -281,8 +282,14 @@ chosen to (a) unblock the next and (b) produce at least one new headline map.
 
 - **Phase 6 — governance overlay.** `dominant_bloc` (+ the deferred institutional
   depth as appetite allows).
-  *Accept:* the bloc map has ≤5 categories and, under defaults, at least one
-  `contested` or `ungoverned` region exists.
+  *Accept (calibrated to measurement after implementation):* the bloc map has
+  exactly 5 categories; contested/ungoverned space exists in 30/30 default test
+  worlds; all five categories occur across seeds; the seat answers to the Crown
+  (or is contested by the magnates next door) in every test world. Temple reach
+  emanates from sanctioned sites planted on remote ore and deep periphery —
+  where the sacred substance lies and the Crown's writ is thin — so the
+  political map is emergent: no region is assigned a ruler; rulers reach, or
+  they don't.
 
 **Scale note:** correlation scatters, Jenks classes, and bivariate maps need sample
 size. When Phase 1 lands, raise the default region count to ~24 and the slider cap

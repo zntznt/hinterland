@@ -8,7 +8,22 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
-  SECOND WAVE, W2 (docs/attribute-model.md §7): security + the shadow economy.
+  SECOND WAVE, W3 (docs/attribute-model.md §7): deep time / path dependence.
+    - EXHAUSTED LODES: blind geology — ore fields mined out long ago, feeding
+      NO income today. Where they fall on poor ground, abandonment is
+      genuinely emergent: old ore country, now hollow.
+    - founding_era (relic_era / first_settlement / conduit_boom /
+      recent_frontier) + founding_age: settlement cohorts read off geology and
+      infrastructure — ore country was settled first, then the farmland, then
+      the trunk towns, and the frontier last.
+    - shock_legacy (refinery_collapse / blight_plague / relic_disaster / war /
+      none) + severity: the scars stamped where the world would have produced
+      them. legacy_advantage: head starts compound (age x conduit x
+      centrality). abandonment_index = past value minus present wealth (the
+      hysteresis gap). tenure_churn: bloc frontiers changed hands often.
+    - All formulas recomputable from exported columns. Schema v10.
+
+  SECOND WAVE, W2 (retained): security + the shadow economy.
     - GARRISONS at the seat and the busiest corridors near the core (score:
       road throughput + centrality) — protection follows the center's
       arteries, not the frontier. force_projection decays from them over
@@ -248,6 +263,7 @@
         <label class="radio"><input type="radio" name="view" value="bloc" /> dominant bloc</label>
         <label class="radio"><input type="radio" name="view" value="market" /> market access</label>
         <label class="radio"><input type="radio" name="view" value="egap" /> enforcement gap</label>
+        <label class="radio"><input type="radio" name="view" value="aband" /> abandonment</label>
         <label class="radio"><input type="radio" name="view" value="density" /> population density</label>
         <div class="hint">Preview only — the export always carries all columns. ■ = refinery, gold lines = conduit, dashed = off-grid, H/W/D = healer/waterworks/wardstation.</div>
       </div>
@@ -283,7 +299,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 9;
+    const SCHEMA_VERSION = 10;
     const BLOC_TOL = 12;    // top-two reach gap below this => contested
     const BLOC_FLOOR = 25;  // all reaches below this => ungoverned
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
@@ -430,6 +446,21 @@
         }
         if (v > maxRaw) maxRaw = v;
         return v;
+      });
+
+      // Exhausted lodes: ore fields mined out in the deep past. Blind geology
+      // that feeds NO income today — the raw material of abandonment.
+      const deadCount = 1 + Math.floor(rg() * 2); // 1–2 dead lodes
+      const dead = Array.from({ length: deadCount }, () => ({
+        x: rg() * W, y: rg() * W, radius: 80 + rg() * 120
+      }));
+      regions.forEach(reg => {
+        let e = 0;
+        for (const L of dead) {
+          const d = Math.hypot(reg.c[0] - L.x, reg.c[1] - L.y);
+          e = Math.max(e, Math.exp(-(d * d) / (2 * L.radius * L.radius)));
+        }
+        reg.exhausted = e > 0.5;
       });
 
       // Terrain ruggedness, fertility, elevation: independent smooth fields,
@@ -929,6 +960,43 @@
         reg.enforceGap = clamp(Math.round(pressure - capacity), 0, 100);
       });
 
+      // W3 deep time: the past reconstructed from blind geology + the present
+      // structures it would have produced. Exhausted lodes are real geology
+      // (no income today), so abandonment is genuinely emergent.
+      const trunkTouched = new Set();
+      conduitEdges.forEach(e => { if (e.cls === "trunk") { trunkTouched.add(e.a); trunkTouched.add(e.b); } });
+      // plagues scar the WORST-blighted few, not all contaminated land — a
+      // shock is an event, not weather (cutoff recomputable from the export)
+      const K_PLAGUE = Math.max(1, Math.round(regions.length / 12));
+      const blightSorted = regions.map(r => r.blight).sort((a, b) => b - a);
+      const plagueCutoff = Math.max(60, blightSorted[Math.min(K_PLAGUE - 1, blightSorted.length - 1)]);
+      regions.forEach((reg, i) => {
+        const rh = sx("hist#" + reg.id);
+        reg.era = (reg.exhausted || reg.endowment >= 50) ? "relic_era"
+          : reg.fertility >= 60 ? "first_settlement"
+          : (trunkTouched.has(i) || reg.refining > 0) ? "conduit_boom"
+          : "recent_frontier";
+        const base = { relic_era: 88, first_settlement: 68, conduit_boom: 40, recent_frontier: 12 }[reg.era];
+        reg.foundingAge = clamp(Math.round(base + (rh() - 0.5) * 20), 0, 100);
+        let diffN = 0;
+        reg.neighbors.forEach(nb => { if (regions[nb].bloc !== reg.bloc) diffN++; });
+        const coin1 = rh(), coin2 = rh(), sevDraw = Math.round(40 + rh() * 50);
+        reg.shock = reg.exhausted ? "refinery_collapse"
+          : reg.blight >= plagueCutoff ? "blight_plague"
+          : (sanctIdxs.includes(i) && coin1 >= 0.5) ? "relic_disaster"
+          : (diffN >= 2 && coin2 >= 0.4) ? "war"
+          : "none";
+        reg.shockSeverity = reg.shock === "none" ? 0 : sevDraw;
+        reg.legacy = Math.round(0.5 * reg.foundingAge + 0.3 * reg.conduitAccess + 0.2 * reg.centrality);
+        reg.abandonment = clamp(Math.round(
+          0.6 * reg.foundingAge + (reg.exhausted ? 45 : 0) + (reg.shock === "refinery_collapse" ? 15 : 0) - reg.wealth
+        ), 0, 100);
+        reg.tenureChurn = clamp(Math.round(
+          60 * (reg.neighbors.length ? diffN / reg.neighbors.length : 0) +
+          (reg.bloc === "contested" ? 25 : 0) + (reg.shock === "war" ? 15 : 0) + (rh() - 0.5) * 8
+        ), 0, 100);
+      });
+
       const settlements = regions.map(reg => ({
         name: makeName(sx("name#" + reg.id)),
         tier: reg.tier, regionId: reg.id,
@@ -991,7 +1059,15 @@
             smuggling_intensity: reg.smuggling,
             predation_risk: reg.predation,
             black_market_index: reg.blackMarket,
-            enforcement_gap: reg.enforceGap
+            enforcement_gap: reg.enforceGap,
+            exhausted_lode: reg.exhausted ? 1 : 0,
+            founding_era: reg.era,
+            founding_age: reg.foundingAge,
+            legacy_advantage: reg.legacy,
+            shock_legacy: reg.shock,
+            shock_severity: reg.shockSeverity,
+            abandonment_index: reg.abandonment,
+            tenure_churn: reg.tenureChurn
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -1088,6 +1164,7 @@
       bloc:       { lo: [247, 247, 247], hi: [37, 37, 37],   label: "dominant bloc" }, // categorical; colors below
       market:     { lo: [255, 255, 204], hi: [37, 52, 148],  label: "market access" },
       egap:       { lo: [255, 255, 229], hi: [102, 37, 6],   label: "enforcement gap (shadow > state)" },
+      aband:      { lo: [250, 246, 240], hi: [59, 40, 12],   label: "abandonment (hysteresis)" },
       density:    { lo: [254, 237, 222], hi: [166, 54, 3],   label: "pop. density (per 100×100 cell)" }
     };
     const BLOC_COLORS = { crown: "#6baed6", temple: "#9e9ac8", magnate: "#fd8d3c", contested: "#cccccc", ungoverned: "#f7f7f7" };
@@ -1114,6 +1191,7 @@
         view === "bloc" ? 0 : // categorical — fill overridden below
         view === "market" ? reg.marketAccess / 100 :
         view === "egap" ? reg.enforceGap / 100 :
+        view === "aband" ? reg.abandonment / 100 :
         Math.sqrt(reg.popDensity / maxDensity);
       const cellValue = (reg) =>
         view === "wealth" ? reg.wealth :
@@ -1127,6 +1205,7 @@
         view === "bloc" ? reg.bloc.slice(0, 3) :
         view === "market" ? reg.marketAccess :
         view === "egap" ? reg.enforceGap :
+        view === "aband" ? reg.abandonment :
         reg.popDensity.toFixed(1);
       const cellFill = (reg) => view === "bloc" ? BLOC_COLORS[reg.bloc] : rampColor(ramp, cellT(reg));
 
@@ -1231,6 +1310,7 @@
         ["blocs", (() => { const c = model.regions.reduce((m, r) => { m[r.bloc] = (m[r.bloc] || 0) + 1; return m; }, {}); return ["crown", "temple", "magnate", "contested", "ungoverned"].map(b => `${c[b] || 0} ${b.slice(0, 3)}`).join(" / "); })()],
         ["roads", (() => { const c = model.roadEdges.reduce((m, e) => { m[e.cls] = (m[e.cls] || 0) + 1; return m; }, {}); return `${model.roadEdges.length} edges (${c.highway || 0} hwy / ${c.road || 0} road / ${c.track || 0} track)`; })()],
         ["security", (() => { const c = model.regions.reduce((m, r) => { m[r.security] = (m[r.security] || 0) + 1; return m; }, {}); return `${model.garrisons.length} garrisons — ${c.secured || 0} sec / ${c.patrolled || 0} pat / ${c.contested || 0} con / ${c.ungoverned || 0} ung`; })()],
+        ["deep time", (() => { const dead = model.regions.filter(r => r.exhausted).length; const shocked = model.regions.filter(r => r.shock !== "none").length; return `${dead} dead-lode regions · ${shocked} scarred by shocks`; })()],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1000 (y-up)"]

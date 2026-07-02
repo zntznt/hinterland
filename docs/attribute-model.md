@@ -13,14 +13,14 @@
 > garrisons with `force_projection`, lumen-gated `wardline_strength`,
 > `security_status`, and the criminologist's set (`smuggling_intensity` routed
 > around patrols, `predation_risk`, `black_market_index`, `enforcement_gap`).
-> **W3 (deep time)** is implemented: blind exhausted lodes, founding eras and
-> ages, rank-based historical shocks, `legacy_advantage`, the emergent
-> `abandonment_index` (old ore country, now hollow), and `tenure_churn` on the
-> contested seams. Note: v1 deep time *reconstructs* a past consistent with
-> the present world; inverting the arrow (history as a forcing term on present
-> outcomes) remains future work. Remaining deferred depth (§7): social texture
-> (W4). This document decides which attributes exist, in what order they land,
-> and why.
+> **The second wave is complete** (W1 roads/flows, W2 security/shadow economy,
+> W3 deep time, W4 social texture) — every cluster of the original panel model
+> is now implemented, through schema v11. Notes: v1 deep time *reconstructs* a
+> past consistent with the present world (inverting the arrow — history as a
+> forcing term — remains future work), and the segregation index uses neighbor
+> contrast at region granularity (sub-region enclave texture would need a finer
+> spatial unit). This document decides which attributes exist, in what order
+> they land, and why.
 >
 > Produced from a structured expert panel (≈20 disciplinary lenses) working off a
 > single binding setting frame. The full per-lens reasoning is in the appendix.

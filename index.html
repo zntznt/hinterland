@@ -8,7 +8,23 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
-  SECOND WAVE, W3 (docs/attribute-model.md §7): deep time / path dependence.
+  SECOND WAVE, W4 (docs/attribute-model.md §7): social texture — who the map
+  serves, who routes around it, and who it cannot even see.
+    - segregation_index: the enclave signature — wealth standing above its
+      neighbors, refinery company districts, high tiers. Same place, two worlds.
+    - mobility_ceiling: chain-role value x services x market access. In a
+      refinery town you may rise; in an ore-only outpost you are born labor.
+    - social_trust (claiming the state) vs kinship_reliance (routing around
+      it): designed mirrors — bonding capital absorbs what institutions fail.
+    - cultural_distance, tenure_regime (titled / mixed / customary /
+      contested — magnates read customary ore country as empty title).
+    - legibility_gap + uncounted_population: the meta-attribute. The census
+      undercounts exactly where need is greatest, so every per-capita rate is
+      optimistic — QGIS can recompute corrected (worse) rates with
+      population + uncounted_population. The hinterland the Crown cannot see
+      is the hinterland it need not serve. Schema v11.
+
+  SECOND WAVE, W3 (retained): deep time / path dependence.
     - EXHAUSTED LODES: blind geology — ore fields mined out long ago, feeding
       NO income today. Where they fall on poor ground, abandonment is
       genuinely emergent: old ore country, now hollow.
@@ -264,6 +280,7 @@
         <label class="radio"><input type="radio" name="view" value="market" /> market access</label>
         <label class="radio"><input type="radio" name="view" value="egap" /> enforcement gap</label>
         <label class="radio"><input type="radio" name="view" value="aband" /> abandonment</label>
+        <label class="radio"><input type="radio" name="view" value="legib" /> legibility gap</label>
         <label class="radio"><input type="radio" name="view" value="density" /> population density</label>
         <div class="hint">Preview only — the export always carries all columns. ■ = refinery, gold lines = conduit, dashed = off-grid, H/W/D = healer/waterworks/wardstation.</div>
       </div>
@@ -299,7 +316,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 10;
+    const SCHEMA_VERSION = 11;
     const BLOC_TOL = 12;    // top-two reach gap below this => contested
     const BLOC_FLOOR = 25;  // all reaches below this => ungoverned
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
@@ -997,6 +1014,45 @@
         ), 0, 100);
       });
 
+      // W4 social texture: who the map serves, who routes around it, and who
+      // it cannot even see.
+      regions.forEach(reg => {
+        const rs = sx("soc#" + reg.id);
+        // enclave signature: wealth standing above its neighbors + company districts
+        const nbrW = reg.neighbors.length
+          ? reg.neighbors.reduce((s, nb) => s + regions[nb].wealth, 0) / reg.neighbors.length
+          : reg.wealth;
+        reg.segregation = clamp(Math.round(
+          1.2 * Math.max(0, reg.wealth - nbrW) + (reg.refining > 0 ? 30 : 0) +
+          (reg.tier === "prime" ? 15 : reg.tier === "hub" ? 8 : 0)
+        ), 0, 100);
+        // in a refinery town you may rise; in an ore-only outpost you are born labor
+        const chainVal = reg.refining > 0 ? 85 : reg.tier === "prime" ? 80 : reg.tier === "hub" ? 55
+          : (reg.endowment >= 50 ? 15 : 30);
+        reg.mobility = clamp(Math.round(0.4 * chainVal + 0.35 * reg.arcaneServices + 0.25 * reg.marketAccess), 0, 100);
+        reg.culturalDistance = clamp(Math.round(
+          0.55 * (100 - reg.centrality) + (reg.onConduit ? 0 : 20) + (rs() - 0.5) * 16
+        ), 0, 100);
+        // trust in institutions vs reliance on kin: designed mirrors
+        reg.socialTrust = clamp(Math.round(
+          20 + 0.4 * reg.centrality + (reg.onConduit ? 12 : 0) - 0.2 * reg.blight +
+          0.1 * reg.forceProjection + (reg.bloc === "crown" ? 8 : reg.bloc === "ungoverned" ? -8 : 0)
+        ), 0, 100);
+        reg.kinship = clamp(Math.round(
+          0.55 * (100 - reg.arcaneServices) + 0.25 * (100 - reg.forceProjection) + 0.2 * reg.culturalDistance
+        ), 0, 100);
+        // land the registry recognizes vs land the magnates read as empty title
+        reg.tenure = (reg.centrality < 60 && (reg.endowment >= 50 || reg.exhausted)) ? "contested"
+          : reg.centrality >= 60 ? "titled"
+          : reg.centrality < 30 ? "customary" : "mixed";
+        // the census undercounts exactly where need is greatest
+        reg.legibility = clamp(Math.round(
+          0.4 * reg.culturalDistance + 0.3 * (100 - reg.centrality) + (reg.onConduit ? 0 : 15) +
+          ((reg.tenure === "customary" || reg.tenure === "contested") ? 15 : 0)
+        ), 0, 100);
+        reg.uncounted = Math.round(reg.population * reg.legibility / 100 * 0.3);
+      });
+
       const settlements = regions.map(reg => ({
         name: makeName(sx("name#" + reg.id)),
         tier: reg.tier, regionId: reg.id,
@@ -1067,7 +1123,15 @@
             shock_legacy: reg.shock,
             shock_severity: reg.shockSeverity,
             abandonment_index: reg.abandonment,
-            tenure_churn: reg.tenureChurn
+            tenure_churn: reg.tenureChurn,
+            segregation_index: reg.segregation,
+            mobility_ceiling: reg.mobility,
+            social_trust: reg.socialTrust,
+            kinship_reliance: reg.kinship,
+            cultural_distance: reg.culturalDistance,
+            tenure_regime: reg.tenure,
+            legibility_gap: reg.legibility,
+            uncounted_population: reg.uncounted
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -1165,6 +1229,7 @@
       market:     { lo: [255, 255, 204], hi: [37, 52, 148],  label: "market access" },
       egap:       { lo: [255, 255, 229], hi: [102, 37, 6],   label: "enforcement gap (shadow > state)" },
       aband:      { lo: [250, 246, 240], hi: [59, 40, 12],   label: "abandonment (hysteresis)" },
+      legib:      { lo: [247, 247, 252], hi: [50, 48, 96],   label: "legibility gap (the uncounted)" },
       density:    { lo: [254, 237, 222], hi: [166, 54, 3],   label: "pop. density (per 100×100 cell)" }
     };
     const BLOC_COLORS = { crown: "#6baed6", temple: "#9e9ac8", magnate: "#fd8d3c", contested: "#cccccc", ungoverned: "#f7f7f7" };
@@ -1192,6 +1257,7 @@
         view === "market" ? reg.marketAccess / 100 :
         view === "egap" ? reg.enforceGap / 100 :
         view === "aband" ? reg.abandonment / 100 :
+        view === "legib" ? reg.legibility / 100 :
         Math.sqrt(reg.popDensity / maxDensity);
       const cellValue = (reg) =>
         view === "wealth" ? reg.wealth :
@@ -1206,6 +1272,7 @@
         view === "market" ? reg.marketAccess :
         view === "egap" ? reg.enforceGap :
         view === "aband" ? reg.abandonment :
+        view === "legib" ? reg.legibility :
         reg.popDensity.toFixed(1);
       const cellFill = (reg) => view === "bloc" ? BLOC_COLORS[reg.bloc] : rampColor(ramp, cellT(reg));
 
@@ -1311,6 +1378,7 @@
         ["roads", (() => { const c = model.roadEdges.reduce((m, e) => { m[e.cls] = (m[e.cls] || 0) + 1; return m; }, {}); return `${model.roadEdges.length} edges (${c.highway || 0} hwy / ${c.road || 0} road / ${c.track || 0} track)`; })()],
         ["security", (() => { const c = model.regions.reduce((m, r) => { m[r.security] = (m[r.security] || 0) + 1; return m; }, {}); return `${model.garrisons.length} garrisons — ${c.secured || 0} sec / ${c.patrolled || 0} pat / ${c.contested || 0} con / ${c.ungoverned || 0} ung`; })()],
         ["deep time", (() => { const dead = model.regions.filter(r => r.exhausted).length; const shocked = model.regions.filter(r => r.shock !== "none").length; return `${dead} dead-lode regions · ${shocked} scarred by shocks`; })()],
+        ["uncounted", model.regions.reduce((s, r) => s + r.uncounted, 0).toLocaleString("en-US") + " people the census misses"],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1000 (y-up)"]

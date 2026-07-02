@@ -8,7 +8,20 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
-  PHASE 6 of the attribute model (docs/attribute-model.md): the governance
+  SECOND WAVE, W1 (docs/attribute-model.md §7): the road network + flows.
+    - ROADS: a travel network over the region adjacency graph — friction-cost
+      MST (so EVERY settlement is connected: people walk; the contrast with
+      the rationed conduit is the point) plus detour-justified shortcuts.
+    - TRAFFIC: gravity flows (pop x pop / cost^2) between all settlement pairs,
+      routed over least-cost road paths and accumulated per edge; road_class
+      (highway / road / track) by traffic rank. Busy edges are chokepoints.
+    - market_access: Hansen gravity index over road-network costs.
+    - pilgrim_flux: every settlement's pilgrims routed to the nearest
+      sanctioned site; through-traffic accumulated per region — on-route
+      places harvest the pilgrim economy, bypassed places don't.
+    - Roads export as LineString features (kind="road"). Schema v8.
+
+  PHASE 6 (retained): the governance
   overlay — who actually rules each region.
     - Three independent reach fields: CROWN = centrality_to_seat (admin decays
       with cost-distance from the seat); TEMPLE = decay from sanctioned sites
@@ -218,6 +231,7 @@
         <label class="radio"><input type="radio" name="view" value="burden" /> disease burden /1k</label>
         <label class="radio"><input type="radio" name="view" value="gap" /> service gap</label>
         <label class="radio"><input type="radio" name="view" value="bloc" /> dominant bloc</label>
+        <label class="radio"><input type="radio" name="view" value="market" /> market access</label>
         <label class="radio"><input type="radio" name="view" value="density" /> population density</label>
         <div class="hint">Preview only — the export always carries all columns. ■ = refinery, gold lines = conduit, dashed = off-grid, H/W/D = healer/waterworks/wardstation.</div>
       </div>
@@ -253,7 +267,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 7;
+    const SCHEMA_VERSION = 8;
     const BLOC_TOL = 12;    // top-two reach gap below this => contested
     const BLOC_FLOOR = 25;  // all reaches below this => ungoverned
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
@@ -735,6 +749,110 @@
         else reg.bloc = fields[0][0];
       });
 
+      // Roads: the travel network. Unlike the conduit, roads reach EVERYONE —
+      // a friction-cost MST spans all settlements (people walk; connection is
+      // not rationed), plus shortcut edges where the direct hop beats a long
+      // detour. That universality is the point: compare it to the grid.
+      const candEdges = [];
+      regions.forEach((reg, i) => reg.neighbors.forEach(j => {
+        if (j > i) candEdges.push({ a: i, b: j, cost: edgeCost(reg, regions[j]) });
+      }));
+      candEdges.sort((e1, e2) => e1.cost - e2.cost || e1.a - e2.a || e1.b - e2.b);
+      const ekey = (a, b) => a < b ? a + ":" + b : b + ":" + a;
+      const uf = regions.map((_, i) => i);
+      const ufFind = (x) => { while (uf[x] !== x) { uf[x] = uf[uf[x]]; x = uf[x]; } return x; };
+      const roadEdges = [];
+      const inRoad = new Set();
+      for (const e of candEdges) { // Kruskal MST
+        const ra = ufFind(e.a), rb = ufFind(e.b);
+        if (ra !== rb) { uf[ra] = rb; roadEdges.push(e); inRoad.add(ekey(e.a, e.b)); }
+      }
+      const roadAdj = () => {
+        const adj = regions.map(() => []);
+        for (const e of roadEdges) { adj[e.a].push({ to: e.b, c: e.cost }); adj[e.b].push({ to: e.a, c: e.cost }); }
+        return adj;
+      };
+      const spFrom = (adj, s) => { // Dijkstra with parents over the road graph
+        const n = adj.length, dist = new Array(n).fill(Infinity), par = new Array(n).fill(-1), done = new Array(n).fill(false);
+        dist[s] = 0;
+        for (let it = 0; it < n; it++) {
+          let u = -1, best = Infinity;
+          for (let i = 0; i < n; i++) if (!done[i] && dist[i] < best) { best = dist[i]; u = i; }
+          if (u === -1) break;
+          done[u] = true;
+          for (const { to, c } of adj[u]) if (!done[to] && dist[u] + c < dist[to]) { dist[to] = dist[u] + c; par[to] = u; }
+        }
+        return { dist, par };
+      };
+      { // shortcuts: add a skipped adjacency edge when the MST detour is long
+        const adj = roadAdj();
+        const spCache = regions.map(() => null);
+        for (const e of candEdges) {
+          if (inRoad.has(ekey(e.a, e.b))) continue;
+          if (!spCache[e.a]) spCache[e.a] = spFrom(adj, e.a);
+          if (spCache[e.a].dist[e.b] > 1.6 * e.cost) { roadEdges.push(e); inRoad.add(ekey(e.a, e.b)); }
+        }
+      }
+
+      // Traffic assignment: gravity flows between all pairs, routed along
+      // least-cost road paths. Accumulated edge traffic IS flow betweenness —
+      // the busy edges are the chokepoints someone can tax.
+      const adjR = roadAdj();
+      const sp = regions.map((_, i) => spFrom(adjR, i));
+      const edgeTraffic = new Map();
+      for (let i = 0; i < regions.length; i++) {
+        for (let j = i + 1; j < regions.length; j++) {
+          if (!isFinite(sp[i].dist[j])) continue;
+          const flow = (regions[i].population * regions[j].population) / Math.pow(1 + sp[i].dist[j] / 100, 2) / 1e6;
+          let cur = j;
+          while (cur !== i && sp[i].par[cur] !== -1) {
+            const p = sp[i].par[cur];
+            const k = ekey(cur, p);
+            edgeTraffic.set(k, (edgeTraffic.get(k) || 0) + flow);
+            cur = p;
+          }
+        }
+      }
+      const maxTraffic = Math.max(...roadEdges.map(e => edgeTraffic.get(ekey(e.a, e.b)) || 0), 1e-9);
+      roadEdges.forEach(e => { e.traffic = Math.round(100 * (edgeTraffic.get(ekey(e.a, e.b)) || 0) / maxTraffic * 10) / 10; });
+      const byTraffic = [...roadEdges].sort((x, y) => y.traffic - x.traffic || x.a - y.a || x.b - y.b);
+      const nHwy = Math.max(1, Math.ceil(roadEdges.length * 0.2));
+      const nRoad = Math.ceil(roadEdges.length * 0.4);
+      byTraffic.forEach((e, i) => { e.cls = i < nHwy ? "highway" : (i < nHwy + nRoad ? "road" : "track"); });
+
+      // Market access: Hansen gravity over road-network costs (max = 100).
+      let maxMA = 0;
+      const maRaw = regions.map((reg, i) => {
+        let A = 0;
+        regions.forEach((o, j) => {
+          if (i !== j && isFinite(sp[i].dist[j])) A += o.population / Math.pow(1 + sp[i].dist[j] / 100, 2);
+        });
+        if (A > maxMA) maxMA = A;
+        return A;
+      });
+      regions.forEach((reg, i) => { reg.marketAccess = maxMA > 0 ? Math.round(100 * maRaw[i] / maxMA) : 0; });
+
+      // Pilgrim flux: every settlement's pilgrims travel the roads to the
+      // NEAREST sanctioned site; through-traffic accumulates on every region
+      // along the way (destination included, origin excluded). On-route
+      // places harvest the pilgrim economy; bypassed places don't.
+      const nodeFlux = new Array(regions.length).fill(0);
+      regions.forEach((reg, i) => {
+        let bestSite = -1, bestCost = Infinity;
+        for (const s of sanctIdxs) {
+          if (sp[s].dist[i] < bestCost) { bestCost = sp[s].dist[i]; bestSite = s; }
+        }
+        if (bestSite === -1 || !isFinite(bestCost)) return;
+        let cur = i;
+        while (cur !== bestSite && sp[bestSite].par[cur] !== -1) {
+          const p = sp[bestSite].par[cur];
+          nodeFlux[p] += reg.population;
+          cur = p;
+        }
+      });
+      const maxFlux = Math.max(...nodeFlux, 1e-9);
+      regions.forEach((reg, i) => { reg.pilgrimFlux = Math.round(100 * nodeFlux[i] / maxFlux); });
+
       const settlements = regions.map(reg => ({
         name: makeName(sx("name#" + reg.id)),
         tier: reg.tier, regionId: reg.id,
@@ -750,7 +868,7 @@
       }));
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, conduitEdges, capital: cap, capPoint, capitalName, windDeg: geo.windDeg };
+      return { regions, settlements, facilities, sanctionedSites, conduitEdges, roadEdges, capital: cap, capPoint, capitalName, windDeg: geo.windDeg };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -788,7 +906,9 @@
             service_gap_idx: reg.serviceGap,
             temple_reach: reg.templeReach,
             magnate_reach: reg.magnateReach,
-            dominant_bloc: reg.bloc
+            dominant_bloc: reg.bloc,
+            market_access: reg.marketAccess,
+            pilgrim_flux: reg.pilgrimFlux
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -798,6 +918,16 @@
         features.push({
           type: "Feature",
           properties: { kind: "conduit", edge_class: e.cls, from_region: A.id, to_region: B.id },
+          geometry: { type: "LineString", coordinates: [
+            [round2(A.c[0]), round2(A.c[1])], [round2(B.c[0]), round2(B.c[1])]
+          ] }
+        });
+      });
+      model.roadEdges.forEach(e => {
+        const A = model.regions[e.a], B = model.regions[e.b];
+        features.push({
+          type: "Feature",
+          properties: { kind: "road", road_class: e.cls, traffic: e.traffic, from_region: A.id, to_region: B.id },
           geometry: { type: "LineString", coordinates: [
             [round2(A.c[0]), round2(A.c[1])], [round2(B.c[0]), round2(B.c[1])]
           ] }
@@ -866,6 +996,7 @@
       burden:     { lo: [255, 247, 243], hi: [128, 0, 38],   label: "disease burden per 1k" },
       gap:        { lo: [247, 247, 247], hi: [37, 37, 37],   label: "service gap" },
       bloc:       { lo: [247, 247, 247], hi: [37, 37, 37],   label: "dominant bloc" }, // categorical; colors below
+      market:     { lo: [255, 255, 204], hi: [37, 52, 148],  label: "market access" },
       density:    { lo: [254, 237, 222], hi: [166, 54, 3],   label: "pop. density (per 100×100 cell)" }
     };
     const BLOC_COLORS = { crown: "#6baed6", temple: "#9e9ac8", magnate: "#fd8d3c", contested: "#cccccc", ungoverned: "#f7f7f7" };
@@ -890,6 +1021,7 @@
         view === "burden" ? reg.burden / maxBurden :
         view === "gap" ? reg.serviceGap / 100 :
         view === "bloc" ? 0 : // categorical — fill overridden below
+        view === "market" ? reg.marketAccess / 100 :
         Math.sqrt(reg.popDensity / maxDensity);
       const cellValue = (reg) =>
         view === "wealth" ? reg.wealth :
@@ -901,6 +1033,7 @@
         view === "burden" ? reg.burden.toFixed(1) :
         view === "gap" ? reg.serviceGap :
         view === "bloc" ? reg.bloc.slice(0, 3) :
+        view === "market" ? reg.marketAccess :
         reg.popDensity.toFixed(1);
       const cellFill = (reg) => view === "bloc" ? BLOC_COLORS[reg.bloc] : rampColor(ramp, cellT(reg));
 
@@ -914,6 +1047,14 @@
         if (reg.refining > 0) { // refinery glyph
           parts.push(`<rect x="${(reg.c[0] - 8).toFixed(1)}" y="${(fy(reg.c[1]) + 32).toFixed(1)}" width="16" height="16" fill="#111" stroke="#fff" stroke-width="2"/>`);
         }
+      });
+
+      // Roads (under everything else): width by class, tracks dashed
+      model.roadEdges.forEach(e => {
+        const A = model.regions[e.a], B = model.regions[e.b];
+        const w = e.cls === "highway" ? 3.5 : (e.cls === "road" ? 2 : 1.2);
+        const dash = e.cls === "track" ? ` stroke-dasharray="6 5"` : "";
+        parts.push(`<line class="road" x1="${A.c[0].toFixed(1)}" y1="${fy(A.c[1]).toFixed(1)}" x2="${B.c[0].toFixed(1)}" y2="${fy(B.c[1]).toFixed(1)}" stroke="#6b5844" stroke-width="${w}" opacity="0.8"${dash}/>`);
       });
 
       // Sanctioned sites (Temple): violet triangles beside the settlement
@@ -990,6 +1131,7 @@
         ["facilities", (() => { const c = model.facilities.reduce((m, f) => { m[f.type] = (m[f.type] || 0) + 1; return m; }, {}); return `${c.healer || 0} healer / ${c.waterworks || 0} water / ${c.wardstation || 0} ward`; })()],
         ["worst burden", Math.max(...model.regions.map(r => r.burden)).toFixed(1) + " /1k"],
         ["blocs", (() => { const c = model.regions.reduce((m, r) => { m[r.bloc] = (m[r.bloc] || 0) + 1; return m; }, {}); return ["crown", "temple", "magnate", "contested", "ungoverned"].map(b => `${c[b] || 0} ${b.slice(0, 3)}`).join(" / "); })()],
+        ["roads", (() => { const c = model.roadEdges.reduce((m, e) => { m[e.cls] = (m[e.cls] || 0) + 1; return m; }, {}); return `${model.roadEdges.length} edges (${c.highway || 0} hwy / ${c.road || 0} road / ${c.track || 0} track)`; })()],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1000 (y-up)"]

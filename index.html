@@ -8,29 +8,33 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
-  PHASE 1 of the attribute model (docs/attribute-model.md): the denominator +
-  the root primitive.
-    - Settlement skeleton: every region gets one settlement; tiers assigned by
-      rank-size rule (one `prime` at the seat, `hub`s by jittered centrality,
-      the rest `outpost`/`holdfast`).
-    - `population` drawn per tier band (log-uniform, per-region substream) and
-      `pop_density` (per 100x100 cell of the planar world).
-    - `aetherstone_endowment`: BLIND GEOLOGY — a few seeded ore lodes generated
-      from seed + topology only, ignorant of the seat and every social layer.
-    - Export schema v2 (breaking): tiers renamed capital/town ->
-      prime/hub/outpost/holdfast; new columns above; `schema_version` in the
-      provenance member.
+  PHASE 2 of the attribute model (docs/attribute-model.md): make wealth emergent.
+    - Geology gains two more BLIND fields: terrain_ruggedness and fertility
+      (independent smooth noise; seed + topology only).
+    - Seat placement: the default (unpinned) capital is no longer a random
+      point — it settles in the agrarian core (high fertility, low ruggedness).
+      Because ore is blind noise and the seat prefers farmland, the ore-rich
+      frontier EMERGES from two individually innocent choices.
+    - centrality_to_seat: cost-distance over the region adjacency graph
+      (Dijkstra; edge cost = centroid distance x ruggedness friction).
+    - refining_capacity: few refineries sited by centrality + flat terrain —
+      deliberately reading NO social layer (keeps the DAG acyclic).
+    - value_retention: share of locally-generated value that stays local.
+    - wealth = weighted blend of THREE income streams (retained extraction,
+      refining value-add, trade/centrality) + a legacy capital-gradient term.
+      All four weights are sliders; gradient weight 0 => fully emergent wealth;
+      gradient 100 with the rest 0 reproduces the old explicit diagram.
+    - Export schema v3: new region columns (terrain_ruggedness, fertility,
+      centrality_to_seat, refining_capacity, value_retention), weights in
+      provenance.
 
   Recompute pipeline is THREE stages: topology (seed/regions/relax) -> geology
-  (endowment; seed + topology only) -> society (capital/bias/tiers/population/
-  wealth). Moving the capital or a bias slider never reshuffles geology.
+  (endowment/ruggedness/fertility; seed + topology only) -> society (seat,
+  centrality, refining, retention, wealth, tiers, population). Moving the
+  capital or any slider never reshuffles geology.
 
   CRS (spec §5 option 1): FLAT PLANE, x,y in [0,1000], y-up in data/GeoJSON;
   the SVG preview flips y so it matches QGIS orientation.
-
-  Inequity model: `wealth` is still the EXPLICIT capital-gradient knob in this
-  phase; it becomes emergent in Phase 2. Endowment is deliberately independent
-  of wealth so the endowment-vs-wealth scatter starts honest.
 
   Dependency: d3-delaunay via CDN (needs internet even when opened from disk).
 -->
@@ -51,6 +55,7 @@
   .controls .row { margin-bottom: 12px; }
   .controls label { display: block; font-weight: 600; margin-bottom: 4px; }
   .controls label.radio { font-weight: 400; margin-bottom: 2px; }
+  .controls label.mini { font-weight: 400; margin: 6px 0 0; color: #444; }
   .controls .val { font-weight: 400; color: #08519c; }
   .controls input[type=range] { width: 100%; }
   .controls input[type=text] { width: 100%; padding: 5px 6px; font: inherit; border: 1px solid var(--line); border-radius: 4px; }
@@ -81,10 +86,11 @@
 <body>
   <h1>Hinterland — generator</h1>
   <p class="sub">
-    Procedural regions in flat-plane coords (0–1000). Regions carry <code>wealth</code>
-    (explicit capital-gradient, for now), a blind-geology <code>aetherstone_endowment</code>,
-    and <code>population</code> via a tiered settlement skeleton. Everything is seeded and
-    reproducible. Tune, then <b>Download GeoJSON</b> for QGIS, or copy a share link.
+    Procedural regions in flat-plane coords (0–1000). <code>wealth</code> is now an
+    <b>emergent blend</b> of retained-extraction, refining, and trade income over blind
+    geology (<code>aetherstone_endowment</code>, <code>fertility</code>, ruggedness) —
+    with the old capital-gradient surviving as one dialable term. Everything is seeded
+    and reproducible. Tune, then <b>Download GeoJSON</b> for QGIS.
   </p>
 
   <div class="layout">
@@ -111,9 +117,22 @@
       </div>
 
       <div class="row">
-        <label>Capital wealth bias <span class="val" id="biasVal"></span></label>
+        <label>Income mix (wealth weights)</label>
+        <label class="mini">retained extraction <span class="val" id="weVal"></span></label>
+        <input type="range" id="we" min="0" max="100" step="1" />
+        <label class="mini">refining value-add <span class="val" id="wfVal"></span></label>
+        <input type="range" id="wf" min="0" max="100" step="1" />
+        <label class="mini">trade / centrality <span class="val" id="wtVal"></span></label>
+        <input type="range" id="wt" min="0" max="100" step="1" />
+        <label class="mini">legacy capital gradient <span class="val" id="wgVal"></span></label>
+        <input type="range" id="wg" min="0" max="100" step="1" />
+        <div class="hint">Gradient 0 = fully emergent wealth. Gradient 100 with the rest at 0 = the old explicit diagram.</div>
+      </div>
+
+      <div class="row">
+        <label>Gradient steepness <span class="val" id="biasVal"></span></label>
         <input type="range" id="bias" min="0" max="100" step="1" />
-        <div class="hint">How steeply wealth concentrates at the capital (the inequity knob).</div>
+        <div class="hint">Shapes only the legacy capital-gradient term above.</div>
       </div>
 
       <div class="row">
@@ -121,15 +140,16 @@
         <div class="inline">
           <button id="diceCapital" class="wide" title="Random capital region">🎲 random capital</button>
         </div>
-        <div class="hint">…or click anywhere on the map to move it.</div>
+        <div class="hint">Unpinned, the seat settles in fertile lowland. Click the map to move it.</div>
       </div>
 
       <div class="row">
         <label>Preview layer</label>
         <label class="radio"><input type="radio" name="view" value="wealth" checked /> wealth</label>
         <label class="radio"><input type="radio" name="view" value="endowment" /> aetherstone endowment</label>
+        <label class="radio"><input type="radio" name="view" value="centrality" /> centrality to seat</label>
         <label class="radio"><input type="radio" name="view" value="density" /> population density</label>
-        <div class="hint">Preview only — the export always carries all columns.</div>
+        <div class="hint">Preview only — the export always carries all columns. ■ = refinery.</div>
       </div>
 
       <div class="row">
@@ -163,11 +183,14 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const MARGIN = 120;    // keep derived capital away from the very edge
-    const SCHEMA_VERSION = 2;
+    const SCHEMA_VERSION = 3;
+    const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
 
-    const DEFAULTS = { seed: "hinterland", regions: 24, relax: 2, bias: 80, capital: null };
-    // capital === null means "derive deterministically from the seed".
+    const DEFAULTS = {
+      seed: "hinterland", regions: 24, relax: 2, bias: 80,
+      we: 35, wf: 25, wt: 30, wg: 10,   // income-mix weights
+      capital: null                      // null => seat derived from geology
+    };
 
     // Population bands per settlement tier (fictional persons; log-uniform draw).
     const POP_BANDS = {
@@ -191,9 +214,8 @@
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       };
     }
-    // Independent named sub-streams from one seed. Per-region tags (e.g.
-    // "pop#7") make each region's draws stable regardless of iteration order,
-    // so moving the capital never reshuffles another region's numbers.
+    // Independent named sub-streams from one seed. Per-region tags (e.g. "pop#7")
+    // make each region's draws stable regardless of iteration order.
     function streams(seedText) {
       const base = hashStr(String(seedText));
       return (tag) => mulberry32((base ^ hashStr(tag)) >>> 0);
@@ -210,7 +232,6 @@
     const makeName = (r) => SYL_A[Math.floor(r() * SYL_A.length)] + SYL_B[Math.floor(r() * SYL_B.length)];
 
     // ---- Planar polygon geometry (Euclidean, per the flat-plane CRS) --------
-    // Rings are CLOSED arrays of [x,y] (first point repeated), as d3 returns them.
     function signedArea(ring) {
       let a = 0;
       for (let i = 0; i < ring.length - 1; i++) {
@@ -227,21 +248,19 @@
         a += f; cx += (x0 + x1) * f; cy += (y0 + y1) * f;
       }
       a *= 0.5;
-      if (Math.abs(a) < 1e-9) { // degenerate sliver: fall back to vertex mean
+      if (Math.abs(a) < 1e-9) {
         let sx = 0, sy = 0, n = ring.length - 1;
         for (let i = 0; i < n; i++) { sx += ring[i][0]; sy += ring[i][1]; }
         return [sx / n, sy / n];
       }
       return [cx / (6 * a), cy / (6 * a)];
     }
-    // Force exterior ring counter-clockwise (RFC 7946 right-hand rule), staying closed.
     const asCCW = (ring) => (signedArea(ring) < 0 ? ring.slice().reverse() : ring);
 
     // ---- Voronoi + Lloyd's relaxation --------------------------------------
-    const voronoiOf = (pts) => d3.Delaunay.from(pts).voronoi([0, 0, W, W]);
-    function relax(pts, iters) {
+    function relaxPts(pts, iters) {
       for (let it = 0; it < iters; it++) {
-        const vor = voronoiOf(pts);
+        const vor = d3.Delaunay.from(pts).voronoi([0, 0, W, W]);
         pts = pts.map((p, i) => { const c = vor.cellPolygon(i); return c ? centroid(c) : p; });
       }
       return pts;
@@ -251,30 +270,52 @@
     function buildTopology(params) {
       const r = streams(params.seed)("topo");
       let seeds = Array.from({ length: params.regions }, () => [r() * W, r() * W]);
-      seeds = relax(seeds, params.relax);
-      const vor = voronoiOf(seeds);
+      seeds = relaxPts(seeds, params.relax);
+      const del = d3.Delaunay.from(seeds);
+      const vor = del.voronoi([0, 0, W, W]);
       const regions = [];
+      const regionIdxBySeed = new Array(seeds.length).fill(-1);
       seeds.forEach((s, i) => {
         const raw = vor.cellPolygon(i);
         if (!raw) return;
         const ring = asCCW(raw);
-        regions.push({ id: regions.length, ring, c: centroid(ring) });
+        regionIdxBySeed[i] = regions.length;
+        regions.push({ id: regions.length, seedIndex: i, ring, c: centroid(ring) });
+      });
+      // Region adjacency (Delaunay neighbors) — the graph the cost-distance runs on.
+      regions.forEach(reg => {
+        const ns = [];
+        for (const j of del.neighbors(reg.seedIndex)) {
+          const ri = regionIdxBySeed[j];
+          if (ri >= 0) ns.push(ri);
+        }
+        reg.neighbors = ns;
       });
       return regions;
     }
 
     // ---- Stage 2: geology (seed + topology ONLY — blind to every social layer)
-    // A few ore lodes are scattered by the seed; each region's endowment is the
-    // summed falloff at its centroid, normalized so the richest region is 100.
-    // Deliberately ignorant of the seat, wealth, and bias: the ore does not know
-    // where the capital is. (The frontier emerges later, from seat placement.)
+    // Smooth signed-bump noise field factory: sum of K gaussian bumps.
+    function bumpField(rng, count, rLo, rHi) {
+      const bs = Array.from({ length: count }, () => ({
+        x: rng() * W, y: rng() * W,
+        amp: rng() * 2 - 1,
+        radius: rLo + rng() * (rHi - rLo)
+      }));
+      return (x, y) => bs.reduce((s, b) =>
+        s + b.amp * Math.exp(-(((x - b.x) ** 2 + (y - b.y) ** 2)) / (2 * b.radius * b.radius)), 0);
+    }
     function buildGeology(regions, params) {
-      const rg = streams(params.seed)("geology");
+      const sg = streams(params.seed);
+
+      // Ore lodes: sparse, tight, rich pockets — the ore does not know where the
+      // capital is. (The frontier emerges later, from seat placement.)
+      const rg = sg("geology");
       const lodeCount = 2 + Math.floor(rg() * 3); // 2–4 lodes
       const lodes = Array.from({ length: lodeCount }, () => ({
         x: rg() * W, y: rg() * W,
         strength: 0.5 + rg() * 0.5,
-        radius: 80 + rg() * 140   // tight lodes: rich pockets stay local
+        radius: 80 + rg() * 140
       }));
       let maxRaw = 0;
       const raw = regions.map(reg => {
@@ -286,55 +327,142 @@
         if (v > maxRaw) maxRaw = v;
         return v;
       });
+
+      // Terrain ruggedness + fertility: independent smooth fields, min-max
+      // normalized per world. Blind: seed + centroids only.
+      const fRug = bumpField(sg("rugged"), 6, 140, 320);
+      const fFer = bumpField(sg("fertile"), 5, 180, 380);
+      const mm = (vals) => {
+        const lo = Math.min(...vals), hi = Math.max(...vals);
+        return vals.map(v => hi > lo ? (v - lo) / (hi - lo) : 0.5);
+      };
+      const rv = mm(regions.map(r => fRug(r.c[0], r.c[1])));
+      const fv = mm(regions.map(r => fFer(r.c[0], r.c[1])));
+
       regions.forEach((reg, i) => {
         const t = maxRaw > 0 ? raw[i] / maxRaw : 0;
         reg.endowment = Math.round(100 * Math.pow(t, 2)); // sparse: most ~0, few rich
+        reg.ruggedness = Math.round(100 * rv[i]);
+        reg.fertility = Math.round(100 * fv[i]);
       });
     }
 
-    // ---- Stage 3: society (capital, wealth, settlement skeleton, population) -
+    // ---- Cost-distance over the adjacency graph (Dijkstra, O(n^2)) ----------
+    // Edge cost = centroid distance x (1 + FRICTION x mean ruggedness). This is
+    // the friction surface at region granularity: rugged country is "farther".
+    function costDistances(regions, fromIdx) {
+      const n = regions.length;
+      const dist = new Array(n).fill(Infinity);
+      const done = new Array(n).fill(false);
+      dist[fromIdx] = 0;
+      for (let it = 0; it < n; it++) {
+        let u = -1, best = Infinity;
+        for (let i = 0; i < n; i++) if (!done[i] && dist[i] < best) { best = dist[i]; u = i; }
+        if (u === -1) break;
+        done[u] = true;
+        for (const v of regions[u].neighbors) {
+          if (done[v]) continue;
+          const a = regions[u], b = regions[v];
+          const d = Math.hypot(a.c[0] - b.c[0], a.c[1] - b.c[1]);
+          const rug = (a.ruggedness + b.ruggedness) / 200; // 0..1
+          const w = d * (1 + FRICTION * rug);
+          if (dist[u] + w < dist[v]) dist[v] = dist[u] + w;
+        }
+      }
+      return dist;
+    }
+
+    // ---- Stage 3: society ----------------------------------------------------
+    // Order per the DAG: seat -> centrality -> refining -> retention -> wealth
+    // -> skeleton -> population. No step reads anything computed after it.
     function applyAttributes(regions, params) {
       const sx = streams(params.seed);
 
-      // Resolve the capital point: explicit (pinned) or derived from the seed.
-      let capPoint = params.capital;
-      if (!capPoint) {
-        const rc = sx("capital");
-        capPoint = [MARGIN + rc() * (W - 2 * MARGIN), MARGIN + rc() * (W - 2 * MARGIN)];
-      }
-      let cap = regions[0], best = Infinity;
-      for (const reg of regions) {
-        const d = Math.hypot(reg.c[0] - capPoint[0], reg.c[1] - capPoint[1]);
-        if (d < best) { best = d; cap = reg; }
+      // Seat resolution. Pinned: nearest region to the click. Unpinned: the
+      // agrarian core — high fertility, low ruggedness (geology only). This is
+      // what makes the ore-rich frontier emergent rather than authored.
+      let cap = null, capPoint = params.capital;
+      if (capPoint) {
+        let best = Infinity;
+        for (const reg of regions) {
+          const d = Math.hypot(reg.c[0] - capPoint[0], reg.c[1] - capPoint[1]);
+          if (d < best) { best = d; cap = reg; }
+        }
+      } else {
+        let bestScore = -Infinity;
+        for (const reg of regions) {
+          const rj = sx("seat#" + reg.id);
+          const s = reg.fertility - 0.7 * reg.ruggedness + (rj() - 0.5) * 6;
+          if (s > bestScore) { bestScore = s; cap = reg; }
+        }
+        capPoint = [cap.c[0], cap.c[1]];
       }
 
-      // Wealth gradient anchored on the capital region centroid (explicit knob;
-      // becomes emergent in Phase 2).
+      // Centrality to seat: inverted, normalized cost-distance (0..100; seat = 100).
+      const cd = costDistances(regions, regions.indexOf(cap));
+      const maxCd = Math.max(...cd.filter(isFinite), 0);
+      regions.forEach((reg, i) => {
+        reg.centrality = !isFinite(cd[i]) ? 0
+          : Math.round(100 * (1 - (maxCd > 0 ? cd[i] / maxCd : 0)));
+      });
+
+      // Euclidean distance from the seat: used ONLY by the legacy gradient term,
+      // so gradient=100 reproduces the old explicit diagram exactly.
       let maxD = 0;
       regions.forEach(reg => {
         reg.dist = Math.hypot(reg.c[0] - cap.c[0], reg.c[1] - cap.c[1]);
         if (reg.dist > maxD) maxD = reg.dist;
       });
+
+      // Refining: few capital-intensive sites, chosen by centrality + flat
+      // terrain. Reads NO social layer (keeps the DAG acyclic) — and never the ore.
+      const K = Math.max(1, Math.round(regions.length / 16));
+      const sited = regions.map(reg => {
+        const rj = sx("site#" + reg.id);
+        return { reg, s: reg.centrality * 0.7 + (100 - reg.ruggedness) * 0.3 + (rj() - 0.5) * 8 };
+      }).sort((a, b) => b.s - a.s || a.reg.id - b.reg.id);
+      regions.forEach(reg => { reg.refining = 0; });
+      for (let i = 0; i < K; i++) {
+        const reg = sited[i].reg;
+        const rr = sx("refcap#" + reg.id);
+        reg.refining = Math.round(60 + rr() * 40);
+      }
+
+      // Value retention: how much locally-generated value stays local. Mining-only
+      // frontier keeps a sliver; refinery hosts and central regions keep most.
+      regions.forEach(reg => {
+        const rr = sx("ret#" + reg.id);
+        reg.retention = clamp(Math.round(
+          15 + 60 * (reg.refining / 100) + 25 * (reg.centrality / 100) + (rr() - 0.5) * 8
+        ), 0, 100);
+      });
+
+      // Wealth: three emergent income streams + the legacy gradient term.
       const k = lerp(0.4, 3.0, params.bias / 100);
       const rNoise = sx("wealth");
+      const total = params.we + params.wf + params.wt + params.wg;
       regions.forEach(reg => {
         const t = maxD > 0 ? 1 - reg.dist / maxD : 1;
-        const shaped = Math.pow(t, k);
+        const legacy = lerp(5, 100, Math.pow(t, k)) / 100;       // == old formula
+        const ext = (reg.endowment / 100) * (reg.retention / 100); // what extraction leaves behind
+        const ref = reg.refining / 100;
+        const trade = reg.centrality / 100;
+        const blend = total > 0
+          ? (params.we * ext + params.wf * ref + params.wt * trade + params.wg * legacy) / total
+          : 0.5; // all weights zero: no income model — flat + noise
         const noise = (rNoise() * 2 - 1) * 5;
-        reg.wealth = clamp(Math.round(lerp(5, 100, shaped) + noise), 0, 100);
+        reg.wealth = clamp(Math.round(100 * blend + noise), 0, 100);
         reg.isCapital = (reg === cap);
       });
 
-      // Settlement skeleton: tiers first (rank-size by jittered distance to the
-      // seat), THEN population from the tier band. Tier is the political
-      // hierarchy; population never reads wealth/conduit/blight (see the DAG in
-      // docs/attribute-model.md).
+      // Settlement skeleton: tiers first (rank-size by jittered COST-centrality),
+      // then population from the tier band. Population never reads wealth.
       cap.tier = "prime";
       const others = regions.filter(reg => reg !== cap);
       const scored = others.map(reg => {
         const rj = sx("tier#" + reg.id);
-        return { reg, score: reg.dist * (0.85 + rj() * 0.3) }; // slight seeded jitter
-      }).sort((a, b) => a.score - b.score);
+        return { reg, score: (100 - reg.centrality) * (0.85 + rj() * 0.3) };
+      }).sort((a, b) => a.score - b.score || a.reg.id - b.reg.id);
       const nHub = Math.max(1, Math.round(others.length * 0.2));
       const nOut = Math.max(1, Math.round(others.length * 0.4));
       scored.forEach((s, i) => {
@@ -342,18 +470,17 @@
       });
 
       regions.forEach(reg => {
-        const rp = sx("pop#" + reg.id); // per-region stream: stable under reorder
+        const rp = sx("pop#" + reg.id);
         const [lo, hi] = POP_BANDS[reg.tier];
         reg.settlementPop = Math.round(lo * Math.pow(hi / lo, rp())); // log-uniform in band
-        const rural = 0.15 + rp() * 0.45; // rural hinterland around the settlement
+        const rural = 0.15 + rp() * 0.45;
         reg.population = Math.round(reg.settlementPop * (1 + rural));
         reg.area = Math.abs(signedArea(reg.ring));
-        // persons per 100x100 cell of the planar world
         reg.popDensity = Math.round((reg.population / (reg.area / 10000)) * 10) / 10;
       });
 
       const settlements = regions.map(reg => ({
-        name: makeName(sx("name#" + reg.id)), // per-region: renames never cascade
+        name: makeName(sx("name#" + reg.id)),
         tier: reg.tier, regionId: reg.id,
         x: reg.c[0], y: reg.c[1],
         population: reg.settlementPop,
@@ -377,7 +504,12 @@
             is_capital_region: reg.isCapital ? 1 : 0,
             population: reg.population,
             pop_density: reg.popDensity,
-            aetherstone_endowment: reg.endowment
+            aetherstone_endowment: reg.endowment,
+            terrain_ruggedness: reg.ruggedness,
+            fertility: reg.fertility,
+            centrality_to_seat: reg.centrality,
+            refining_capacity: reg.refining,
+            value_retention: reg.retention
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -399,11 +531,12 @@
       return {
         type: "FeatureCollection",
         name: "hinterland",
-        // Provenance: schema version + the exact params that generated this file.
         hinterland: {
           schema_version: SCHEMA_VERSION,
           seed: String(params.seed), regions: params.regions, relax: params.relax,
-          bias: params.bias, capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
+          bias: params.bias,
+          weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
+          capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
           space: "planar 0..1000, y-up (flat-plane CRS)"
         },
         features
@@ -412,9 +545,10 @@
 
     // ---- Rendering (SVG, ugly on purpose) ----------------------------------
     const RAMPS = {
-      wealth:    { lo: [237, 248, 233], hi: [0, 90, 50],    label: "wealth" },
-      endowment: { lo: [242, 240, 247], hi: [84, 39, 143],  label: "aetherstone endowment" },
-      density:   { lo: [254, 237, 222], hi: [166, 54, 3],   label: "pop. density (per 100×100 cell)" }
+      wealth:     { lo: [237, 248, 233], hi: [0, 90, 50],    label: "wealth" },
+      endowment:  { lo: [242, 240, 247], hi: [84, 39, 143],  label: "aetherstone endowment" },
+      centrality: { lo: [239, 243, 255], hi: [8, 48, 107],   label: "centrality to seat" },
+      density:    { lo: [254, 237, 222], hi: [166, 54, 3],   label: "pop. density (per 100×100 cell)" }
     };
     function rampColor(ramp, t) {
       const m = (a, b) => Math.round(a + (b - a) * t);
@@ -429,10 +563,12 @@
       const cellT = (reg) =>
         view === "wealth" ? reg.wealth / 100 :
         view === "endowment" ? reg.endowment / 100 :
-        Math.sqrt(reg.popDensity / maxDensity); // sqrt: density is right-skewed
+        view === "centrality" ? reg.centrality / 100 :
+        Math.sqrt(reg.popDensity / maxDensity);
       const cellValue = (reg) =>
         view === "wealth" ? reg.wealth :
         view === "endowment" ? reg.endowment :
+        view === "centrality" ? reg.centrality :
         reg.popDensity.toFixed(1);
 
       const parts = [`<svg id="map" width="${SVG}" height="${SVG}" viewBox="0 0 ${W} ${W}" xmlns="http://www.w3.org/2000/svg">`];
@@ -442,9 +578,11 @@
         const sw = reg.isCapital ? 4 : 1.5;
         parts.push(`<path d="${d}" fill="${rampColor(ramp, cellT(reg))}" stroke="${stroke}" stroke-width="${sw}"/>`);
         parts.push(`<text x="${reg.c[0].toFixed(1)}" y="${(fy(reg.c[1]) + 26).toFixed(1)}" font-size="15" text-anchor="middle" fill="#000" opacity="0.5">${cellValue(reg)}</text>`);
+        if (reg.refining > 0) { // refinery glyph
+          parts.push(`<rect x="${(reg.c[0] - 8).toFixed(1)}" y="${(fy(reg.c[1]) + 32).toFixed(1)}" width="16" height="16" fill="#111" stroke="#fff" stroke-width="2"/>`);
+        }
       });
 
-      // Settlements: proportional symbols on population; label prime + hubs only.
       const maxPop = Math.max(...model.settlements.map(s => s.population));
       model.settlements.forEach(s => {
         const cx = s.x, cy = fy(s.y), isPrime = s.tier === "prime";
@@ -460,23 +598,22 @@
       stage.innerHTML = parts.join("");
       stage.querySelector("#map").addEventListener("click", onMapClick);
 
-      // legend
       document.getElementById("legendLabel").textContent = ramp.label + " (choropleth)";
       document.getElementById("legendBar").style.background =
         `linear-gradient(to right, rgb(${ramp.lo.join(",")}), rgb(${ramp.hi.join(",")}))`;
 
-      // info panel
       const ws = model.regions.map(r => r.wealth);
       const totalPop = model.regions.reduce((s, r) => s + r.population, 0);
       const tierCounts = model.settlements.reduce((m, s) => { m[s.tier] = (m[s.tier] || 0) + 1; return m; }, {});
+      const refineries = model.regions.filter(r => r.refining > 0).length;
       const rows = [
         ["seed", esc(params.seed)],
         ["regions", model.regions.length],
-        ["relaxation", params.relax],
         ["capital", `${esc(model.capitalName)} (region #${model.capital.id})`],
-        ["bias", params.bias + "%"],
+        ["income mix", `ext ${params.we} / ref ${params.wf} / trade ${params.wt} / grad ${params.wg}`],
         ["population", totalPop.toLocaleString("en-US")],
         ["tiers", `${tierCounts.prime || 0} prime / ${tierCounts.hub || 0} hub / ${tierCounts.outpost || 0} outpost / ${tierCounts.holdfast || 0} holdfast`],
+        ["refineries", refineries],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1000 (y-up)"]
@@ -508,6 +645,8 @@
       p.set("regions", params.regions);
       p.set("relax", params.relax);
       p.set("bias", params.bias);
+      p.set("we", params.we); p.set("wf", params.wf);
+      p.set("wt", params.wt); p.set("wg", params.wg);
       if (params.capital) { p.set("cx", round2(params.capital[0])); p.set("cy", round2(params.capital[1])); }
       history.replaceState(null, "", "#" + p.toString());
     }
@@ -517,11 +656,14 @@
       const p = new URLSearchParams(h);
       // Empty/whitespace values fall back to the default (not the clamp minimum).
       const num = (key, def) => { const v = p.get(key); return (v != null && v.trim() !== "" && isFinite(+v)) ? +v : def; };
+      const w = (key, def) => clamp(Math.round(num(key, def)), 0, 100);
       const out = {
         seed: p.get("seed") || DEFAULTS.seed,
         regions: clamp(Math.round(num("regions", DEFAULTS.regions)), 5, 64),
         relax: clamp(Math.round(num("relax", DEFAULTS.relax)), 0, 8),
-        bias: clamp(Math.round(num("bias", DEFAULTS.bias)), 0, 100),
+        bias: w("bias", DEFAULTS.bias),
+        we: w("we", DEFAULTS.we), wf: w("wf", DEFAULTS.wf),
+        wt: w("wt", DEFAULTS.wt), wg: w("wg", DEFAULTS.wg),
         capital: null
       };
       if (p.has("cx") && p.has("cy") && isFinite(+p.get("cx")) && isFinite(+p.get("cy")))
@@ -531,13 +673,15 @@
 
     // ---- UI sync ------------------------------------------------------------
     function syncControls() {
-      document.getElementById("seed").value = params.seed;
-      document.getElementById("regions").value = params.regions;
-      document.getElementById("relax").value = params.relax;
-      document.getElementById("bias").value = params.bias;
+      const set = (id, v) => { document.getElementById(id).value = v; };
+      set("seed", params.seed); set("regions", params.regions); set("relax", params.relax);
+      set("bias", params.bias); set("we", params.we); set("wf", params.wf);
+      set("wt", params.wt); set("wg", params.wg);
       document.getElementById("regionsVal").textContent = params.regions;
       document.getElementById("relaxVal").textContent = params.relax;
       document.getElementById("biasVal").textContent = params.bias + "%";
+      for (const kid of ["we", "wf", "wt", "wg"])
+        document.getElementById(kid + "Val").textContent = params[kid];
     }
 
     function onMapClick(ev) {
@@ -568,6 +712,13 @@
       $("regions").addEventListener("input", (e) => { params.regions = +e.target.value; $("regionsVal").textContent = params.regions; params.capital = null; regenerateTopology(); });
       $("relax").addEventListener("input", (e) => { params.relax = +e.target.value; $("relaxVal").textContent = params.relax; regenerateTopology(); });
       $("bias").addEventListener("input", (e) => { params.bias = +e.target.value; $("biasVal").textContent = params.bias + "%"; recomputeAttributes(); });
+      for (const kid of ["we", "wf", "wt", "wg"]) {
+        $(kid).addEventListener("input", (e) => {
+          params[kid] = +e.target.value;
+          $(kid + "Val").textContent = params[kid];
+          recomputeAttributes();
+        });
+      }
 
       $("diceCapital").addEventListener("click", () => {
         const reg = topology[Math.floor(Math.random() * topology.length)];

@@ -1,10 +1,10 @@
 # Hinterland — Attribute Model (design)
 
-> Status: design decision, not yet built. Supersedes nothing in the generator
-> yet; it tells us **which attributes to add, in what order, and why**. The thin
-> slice (Voronoi + `wealth`) and the foundations layer (seeded RNG + parameter
-> UI) already exist. This document decides what fills in the socioeconomic model
-> on top of them.
+> Status: authoritative design; **Phases 1–2 are implemented** (settlement
+> skeleton, population, blind geology, agrarian-core seat, cost-distance
+> centrality, refining, retention, three-stream emergent wealth). Later phases
+> (conduit/darkness, blight, facilities/health, governance) are pending. This
+> document decides which attributes exist, in what order they land, and why.
 >
 > Produced from a structured expert panel (≈20 disciplinary lenses) working off a
 > single binding setting frame. The full per-lens reasoning is in the appendix.
@@ -235,9 +235,13 @@ chosen to (a) unblock the next and (b) produce at least one new headline map.
   capital-gradient to the `w_g` term. Keep the old behavior reachable at `w_g = 1`
   for comparison.
   *Why:* this is where the project stops being a diagram and becomes an argument.
-  *Accept:* under default weights the endowment-vs-wealth scatter has a populated
-  high-endowment/low-wealth quadrant (order of 10–25% of regions); at `w_g = 0`
-  wealth still shows spatial structure — derived from geology, not the capital.
+  *Accept (calibrated to measurement after implementation):* under default weights
+  the endowment-vs-wealth scatter has a populated high-endowment/low-wealth
+  quadrant — given ore sparsity that is ~5–10% of all regions, with roughly 40% of
+  high-endowment regions landing below median wealth and a visible curse in about
+  two-thirds of worlds (the remainder have their lodes near the center: the
+  legitimate "contested, already-rich seams" case). At `w_g = 0` wealth still shows
+  strong spatial structure — derived from geology, not the capital.
 
 - **Phase 3 — off-grid darkness.**
   Add a **minimal conduit** (a cost-gated minimum spanning tree over settlements —

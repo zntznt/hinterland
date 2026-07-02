@@ -24,8 +24,9 @@ choropleth; the export always carries every column.
 ## The QGIS bridge
 
 1. **Load:** drag `hinterland.geojson` into QGIS (or *Layer → Add Vector Layer*).
-   QGIS splits it into three layers by geometry: **regions** (polygons),
-   **settlements** (points), and the **conduit** (lines).
+   QGIS splits it by geometry: **regions** (polygons), the **conduit** (lines),
+   and one point layer holding both **settlements** and **facilities** — filter
+   on `kind` (or `facility_type`) to separate them.
 2. **CRS:** coordinates are a **flat plane, 0–1000 in fictional units** — not
    Earth. QGIS will assume WGS84; that is fine as long as you measure planar:
    either set *Project Properties → General → measurements* to planimetric, or
@@ -34,7 +35,17 @@ choropleth; the export always carries every column.
    (or `aetherstone_endowment`, `pop_density`) → Natural Breaks (Jenks), 5 classes.
 4. **Proportional symbols:** settlements layer → *Graduated* by **size** on
    `population` — or *Categorized* on `tier`.
-5. **The Phase 4 check (environmental injustice):** choropleth `blight_load`
+5. **The Phase 5 check (the payload — who gets sick, who gets care):**
+   choropleth `disease_burden_per_1k` (a rate — Jenks, 5 classes, sequential
+   ramp) and overlay facility points filtered to `facility_type = 'healer'`.
+   The burden concentrates exactly where `healing_reach` collapses — the
+   high-burden/low-care quadrant is the whole project's thesis in one map. The
+   cause components (`burden_env_per_1k`, `burden_water_per_1k`,
+   `burden_unmet_per_1k`) let you attribute each region's sickness to blight,
+   unsafe water, or structural vulnerability as small multiples. For coverage:
+   `service_gap_idx` choropleth, or buffer the healer points for a service-area
+   view and see who falls outside.
+6. **The Phase 4 check (environmental injustice):** choropleth `blight_load`
    and bivariate it against `wealth` (or just map the precomputed
    `injustice_idx`). Under the default dump bias the blight–wealth correlation
    is strongly **negative** — the poison lands on the poor. Re-export at
@@ -42,14 +53,14 @@ choropleth; the export always carries every column.
    the spoil stays at the refineries and the centers eat their own waste. That
    sign flip, side by side in a print layout, is the measured *policy share*
    of the injustice.
-6. **The Phase 3 check (off-grid darkness):** style regions by
+7. **The Phase 3 check (off-grid darkness):** style regions by
    `arcane_service_index`, overlay the conduit lines, and categorize settlements
    by `on_conduit` — the dark periphery is exactly where the grid's economics
    said "not worth it" (`population × wealth` below the threshold), never a
    hand-picked list. Compute darkness as `100 - "conduit_access"` in the field
    calculator if you want the negative image. Sweep the grid-threshold slider
    (0 = everyone connected) and re-export to watch darkness spread.
-7. **The Phase 2 check (the resource curse):** scatter or bivariate
+8. **The Phase 2 check (the resource curse):** scatter or bivariate
    `aetherstone_endowment` × `wealth` — under default weights a visible share of
    high-endowment regions sits below median wealth: rich ground, poor people,
    and no layer was authored to produce it (ore is blind noise; the seat prefers
@@ -85,6 +96,12 @@ capital) — every file can reproduce its world.
 | `elevation` | 0–100 | blind geology; blight flows downhill |
 | `blight_load` | 0–100 | refinery plumes (downwind/downhill physics) + spoil allocated by the dump-bias λ (nearest land at λ=0, poorest land at λ=1) |
 | `injustice_idx` | 0–100 | presentation column: `blight × poverty` — the argument rests on the raw fields |
+| `healing_reach` | 0–100 | decay over cost-distance to the nearest healer |
+| `safe_water` | 0–100 | waterworks/conduit/wealth minus a blight penalty |
+| `vulnerability_idx` | 0–100 | poverty + peripherality + tier |
+| `burden_env_per_1k` etc. | rate | disease-burden cause components (environmental / waterborne / unmet), each averted by healing reach |
+| `disease_burden_per_1k` | rate | **emergent** total = the three components exactly; never painted |
+| `service_gap_idx` | 0–100 | precomputed coverage gap: inverse reach + facility distance + off-grid |
 
 **Settlement features (Point):**
 
@@ -97,11 +114,22 @@ capital) — every file can reproduce its world.
 | `wealth` | 0–100 | its region's wealth |
 | `on_conduit` | 0/1 | mirrors its region |
 | `arcane_service_index` | 0–100 | mirrors its region |
+| `nearest_facility_distance` | cost-dist | to the closest facility of any type |
+| `nearest_healer_dist` | cost-dist | to the closest healer (0 if one is local) |
+| `disease_burden_per_1k` / `service_gap_idx` | rate / 0–100 | mirror their region |
 
 **Conduit features (LineString):** `edge_class` (`trunk` \| `branch`),
 `from_region`, `to_region`.
 
+**Facility features (Point):** `facility_type` (`healer` \| `waterworks` \|
+`wardstation`), `region_id`. Rationed by the planner's rule: prime always;
+hubs only when on-conduit; wardstations additionally guard refinery regions.
+
 **Schema history:**
+- **v6** added facilities + health: facility Point features, region columns
+  `healing_reach`, `safe_water`, `vulnerability_idx`, the three burden cause
+  components, `disease_burden_per_1k`, `service_gap_idx`; settlement columns
+  `nearest_facility_distance`, `nearest_healer_dist` + burden/gap mirrors.
 - **v5** added exported blight: region columns `elevation`, `blight_load`,
   `injustice_idx`; `dump_bias` (λ) and `wind_deg` in provenance.
 - **v4** added the conduit: LineString features (`edge_class`, `from_region`,

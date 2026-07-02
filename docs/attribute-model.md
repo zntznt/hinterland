@@ -22,7 +22,11 @@
 > so the panel's feedback spirals (extraction, drain, agglomeration) now
 > actually RUN instead of being implied by correlations. **The temporal bridge
 > (D2)** exports the run as an epoch series for the QGIS Temporal Controller
-> and adds an in-browser epoch scrubber — the compounding is watchable. With time real,
+> and adds an in-browser epoch scrubber — the compounding is watchable.
+> **In-run events (D3)** add lived history with dates: refinery collapses as
+> the ore economy tires (orphaning trunk conduit as ghost infrastructure),
+> plagues at maximum contamination, and relic calamities that scar the blight
+> field permanently — recorded per region and as a provenance timeline. With time real,
 > `abandonment_index` became true hysteresis (peak wealth − present wealth) and
 > dead lodes emerge in-run; the arrow-inversion caveat on deep time is thereby
 > partially resolved (founding-era/shock reconstruction remains). Remaining

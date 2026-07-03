@@ -8,6 +8,29 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  THE PHYSICAL WORLD (G4): geology as a causal chain of shapes.
+    - Before G4 the geology was three cheats on noise: a ridge was a line
+      with a toll, the sea was a box edge, and elevation/fertility/rugged
+      were three INDEPENDENT noise fields. Now it is one chain:
+      tectonics -> elevation -> climate -> biome -> fertility -> society.
+    - ELEVATION is a continuous surface: continental tilt rising off the
+      sea, tectonic UPLIFT along the ridge axes, noise texture, a shelving
+      shore. Contours are exported and drawn. Ruggedness = the SLOPE of
+      that surface plus grain, not its own random layer.
+    - THE SEA is a shape: a seeded sea level floods the low ground
+      connected to the ocean side (flood-fill + marching squares) — an
+      irregular coastline with bays and headlands, exported as polygons;
+      on_coast = the cell touches the water (exactly recomputable).
+    - CLIMATE: temperature = latitude minus mountain lapse; rainfall =
+      moisture marched in against the wind, drying with distance and
+      raining out on the windward slopes — the RAIN SHADOW: the mountain
+      that cuts you off from trade also decides whether you get rain.
+    - BIOMES (alpine/badland/moor/marsh/forest/steppe/grassland) classify
+      from temperature x rainfall x elevation x water — exported, mapped,
+      EXACTLY recomputable. Fertility is now DERIVED (rain + warmth +
+      floodplain − altitude), also exactly recomputable: any farm traces
+      back to a rainfall pattern, a mountain, a plate. Schema v28.
+
   DIVERGENT HISTORIES (V1): the counter-currents — no two rolls, one story.
     - The critique was fair: every loop we built amplified inequality, so
       every world converged to the same ending with different scenery. V1
@@ -691,6 +714,7 @@
           <label class="radio"><input type="radio" name="view" value="injustice" checked /> who bears the injustice</label>
           <label class="radio"><input type="radio" name="view" value="wealth" /> who holds the coin</label>
           <label class="radio"><input type="radio" name="view" value="endowment" /> where the ore lies</label>
+          <label class="radio"><input type="radio" name="view" value="biome" /> what the land is</label>
           <label class="radio"><input type="radio" name="view" value="centrality" /> who reaches the seat</label>
           <label class="radio"><input type="radio" name="view" value="services" /> who gets served</label>
           <label class="radio"><input type="radio" name="view" value="blight" /> who breathes the poison</label>
@@ -737,7 +761,7 @@
 
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
-    const SCHEMA_VERSION = 27;
+    const SCHEMA_VERSION = 28;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const SEA_L = 400;        // sea_access decay length over the cost graph
@@ -963,6 +987,16 @@
       if (t < 0 || t > 1 || u < 0 || u > 1) return null;
       return [p[0] + t * d1x, p[1] + t * d1y];
     }
+    // point-in-ring (ray cast) — same predicate in app and suite, run on the
+    // same rounded exported geometry
+    function pointInRing(x, y, ring) {
+      let inside = false;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+        if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+      }
+      return inside;
+    }
     function distPointSeg(px, py, a, b) {
       const dx = b[0] - a[0], dy = b[1] - a[1];
       const L2 = dx * dx + dy * dy;
@@ -1060,26 +1094,23 @@
         reg.exhausted = e > 0.5;
       });
 
-      // Terrain ruggedness, fertility, elevation: independent smooth fields,
-      // min-max normalized per world. Blind: seed + centroids only.
-      const fRug = bumpField(sg("rugged"), 6, 140, 320);
-      const fFer = bumpField(sg("fertile"), 5, 180, 380);
-      const fEle = bumpField(sg("elevation"), 5, 160, 360);
-      const mm = (vals) => {
-        const lo = Math.min(...vals), hi = Math.max(...vals);
-        return vals.map(v => hi > lo ? (v - lo) / (hi - lo) : 0.5);
-      };
-      const rv = mm(regions.map(r => fRug(r.c[0], r.c[1])));
-      const fv = mm(regions.map(r => fFer(r.c[0], r.c[1])));
-      const ev = mm(regions.map(r => fEle(r.c[0], r.c[1])));
-
+      // Ore is tectonic chance; everything else is DERIVED down the chain
+      // (tectonics -> elevation -> climate -> biome -> fertility).
       regions.forEach((reg, i) => {
         const t = maxRaw > 0 ? raw[i] / maxRaw : 0;
         reg.endowment = Math.round(100 * Math.pow(t, 2)); // sparse: most ~0, few rich
-        reg.ruggedness = Math.round(100 * rv[i]);
-        reg.fertility = Math.round(100 * fv[i]);
-        reg.elevation = Math.round(100 * ev[i]);
       });
+
+      // G4: the ocean's direction and the prevailing wind come first —
+      // the land tilts toward the water, and the rain rides the wind.
+      const rsSea = sg("sea");
+      const SIDES0 = ["west", "east", "south", "north"];
+      const seaSides = [SIDES0[Math.floor(rsSea() * 4)]];
+      if (rsSea() < 0.35) {
+        const adj0 = { west: ["south", "north"], east: ["south", "north"], south: ["west", "east"], north: ["west", "east"] };
+        seaSides.push(adj0[seaSides[0]][rsSea() < 0.5 ? 0 : 1]);
+      }
+      const windDeg = Math.floor(sg("wind")() * 360);
 
       // One HIDDEN lode: ore that was always there, not yet found. Blind
       // geology, revealed (maybe) by an in-run strike.
@@ -1126,20 +1157,39 @@
           passes.push({ ridgeId: R.id, x: round2(p[0]), y: round2(p[1]) });
         }
       }
-      // the ridge band: rock rises where the wall runs (on top of the noise)
+      // G4: THE ELEVATION SURFACE — one continuous field the whole physical
+      // world reads: continental tilt off the sea + tectonic uplift along
+      // the ridge axes + noise texture + a shelving shore.
       const distToRidge = (x, y) => {
         let best = Infinity;
         for (const R of ridges) for (let k = 0; k + 1 < R.pts.length; k++)
           best = Math.min(best, distPointSeg(x, y, R.pts[k], R.pts[k + 1]));
         return best;
       };
+      const distToSeaEdge = (x, y) => Math.min(...seaSides.map(side =>
+        side === "west" ? x : side === "east" ? W - x : side === "south" ? y : W - y));
+      const elevNoise = bumpField(sg("elevation"), 6, 120, 300);
+      const elevAt = (x, y) => {
+        const t = clamp(distToSeaEdge(x, y) / W, 0, 1);
+        let e = 12 + 58 * Math.pow(t, 1.15);                       // the land tilts off the water
+        const rd = distToRidge(x, y);
+        e += 52 * Math.exp(-(rd * rd) / (2 * 95 * 95));            // tectonic uplift
+        e += 14 * elevNoise(x, y);                                 // texture
+        const ds = distToSeaEdge(x, y);
+        if (ds < 26) e = Math.min(e, 3 + ds * 0.6);                // the shore shelves in below any sea level
+        return clamp(e, 0, 100);
+      };
+      // ruggedness is the SLOPE of the surface, plus surface grain
+      const rugNoise = sg("rugged");
       regions.forEach(reg => {
-        const d = distToRidge(reg.c[0], reg.c[1]);
-        if (d < 120) {
-          const b = 1 - d / 120;
-          reg.ruggedness = Math.max(reg.ruggedness, Math.round(50 + 45 * b));
-          reg.elevation = Math.max(reg.elevation, Math.round(55 + 40 * b));
-        }
+        const [ax, ay] = reg.c;
+        const e0 = elevAt(ax, ay);
+        reg.elevation = Math.round(e0);
+        const g4 = Math.max(
+          Math.abs(elevAt(ax + 30, ay) - e0), Math.abs(elevAt(ax - 30, ay) - e0),
+          Math.abs(elevAt(ax, ay + 30) - e0), Math.abs(elevAt(ax, ay - 30) - e0));
+        const crest = e0 > 60 ? (e0 - 60) * 0.7 : 0; // the high country is crag country
+        reg.ruggedness = clamp(Math.round(g4 * 4.6 + crest + rugNoise() * 26), 0, 100);
       });
       // each pass belongs to the region whose anchor point sits closest
       passes.forEach(p => {
@@ -1216,7 +1266,6 @@
         bestChain.forEach((ri, k) => {
           const reg = regions[ri];
           reg.onRiver = 1; reg.riverId = R.id; reg.riverPos = k;
-          reg.fertility = Math.min(100, reg.fertility + 18); // the floodplain feeds
         });
         // barge transport: consecutive river edges are cheap. Where the river
         // crosses a ridge it cuts a GORGE — passable, but pass-grade, not
@@ -1230,21 +1279,165 @@
         }
       }
 
-      // G3: the sea — 1-2 adjacent box edges, chosen blind. Coastal regions
-      // are the cells that touch the water.
-      const rs = sg("sea");
-      const SIDES = ["west", "east", "south", "north"];
-      const seaSides = [SIDES[Math.floor(rs() * 4)]];
-      if (rs() < 0.35) {
-        const adj = { west: ["south", "north"], east: ["south", "north"], south: ["west", "east"], north: ["west", "east"] };
-        seaSides.push(adj[seaSides[0]][rs() < 0.5 ? 0 : 1]);
+      // G4: THE SEA IS A SHAPE. A seeded sea level floods the low ground
+      // connected to the ocean side; marching squares traces the coastline.
+      const minAnchorElev = Math.min(...regions.map(r => r.elevation));
+      const seaLevel = Math.max(6, Math.min(16 + Math.round(rsSea() * 8), minAnchorElev - 1));
+      const GN = 64, CS = W / GN;
+      const nodeElev = [];
+      for (let gy = 0; gy <= GN; gy++) {
+        const row = [];
+        for (let gx = 0; gx <= GN; gx++) row.push(elevAt(gx * CS, gy * CS));
+        nodeElev.push(row);
       }
-      const touches = (ring, side) => ring.some(([x, y]) =>
-        side === "west" ? x <= 0.01 : side === "east" ? x >= W - 0.01 :
-        side === "south" ? y <= 0.01 : y >= W - 0.01);
+      const flooded = nodeElev.map(row => row.map(() => false));
+      const fq = [];
+      const floodSeed = (gx, gy) => {
+        if (gx < 0 || gy < 0 || gx > GN || gy > GN) return;
+        if (flooded[gy][gx] || nodeElev[gy][gx] >= seaLevel) return;
+        flooded[gy][gx] = true;
+        fq.push([gx, gy]);
+      };
+      for (let k = 0; k <= GN; k++) {
+        if (seaSides.includes("west")) floodSeed(0, k);
+        if (seaSides.includes("east")) floodSeed(GN, k);
+        if (seaSides.includes("south")) floodSeed(k, 0);
+        if (seaSides.includes("north")) floodSeed(k, GN);
+      }
+      while (fq.length) {
+        const [gx, gy] = fq.pop();
+        floodSeed(gx + 1, gy); floodSeed(gx - 1, gy); floodSeed(gx, gy + 1); floodSeed(gx, gy - 1);
+      }
+      // marching squares on the flood mask, PADDED with land outside the map
+      // so every coastline closes into a ring on its own
+      const F4 = (gx, gy) => (gx >= 0 && gy >= 0 && gx <= GN && gy <= GN && flooded[gy][gx]) ? 1 : 0;
+      const segs4 = [];
+      {
+        const mid = (x1, y1, x2, y2) => [(x1 + x2) / 2, (y1 + y2) / 2];
+        for (let gy = -1; gy <= GN; gy++) for (let gx = -1; gx <= GN; gx++) {
+          const tl = F4(gx, gy), tr = F4(gx + 1, gy), br = F4(gx + 1, gy + 1), bl = F4(gx, gy + 1);
+          const code = tl * 8 + tr * 4 + br * 2 + bl;
+          if (code === 0 || code === 15) continue;
+          const x0 = gx * CS, y0 = gy * CS, x1 = (gx + 1) * CS, y1 = (gy + 1) * CS;
+          const T = mid(x0, y0, x1, y0), R2 = mid(x1, y0, x1, y1), B = mid(x0, y1, x1, y1), L2 = mid(x0, y0, x0, y1);
+          const add = (a, b) => segs4.push([a, b]);
+          if (code === 1 || code === 14) add(L2, B);
+          else if (code === 2 || code === 13) add(B, R2);
+          else if (code === 3 || code === 12) add(L2, R2);
+          else if (code === 4 || code === 11) add(T, R2);
+          else if (code === 5 || code === 10) { add(L2, T); add(B, R2); }
+          else if (code === 6 || code === 9) add(T, B);
+          else if (code === 7 || code === 8) add(L2, T);
+        }
+      }
+      // stitch segments into rings (endpoints live on a snap lattice)
+      const seaShapes = [];
+      {
+        const key5 = (pt) => Math.round(pt[0] * 8) + ":" + Math.round(pt[1] * 8);
+        const atKey = new Map();
+        segs4.forEach((sg2, i) => {
+          for (const k of [key5(sg2[0]), key5(sg2[1])]) {
+            if (!atKey.has(k)) atKey.set(k, []);
+            atKey.get(k).push(i);
+          }
+        });
+        const usedSeg = new Array(segs4.length).fill(false);
+        for (let i = 0; i < segs4.length; i++) {
+          if (usedSeg[i]) continue;
+          usedSeg[i] = true;
+          const ring = [segs4[i][0].slice(), segs4[i][1].slice()];
+          let guard = segs4.length * 2 + 4;
+          while (guard-- > 0) {
+            const tk = key5(ring[ring.length - 1]);
+            const cands = (atKey.get(tk) || []).filter(j => !usedSeg[j]);
+            if (!cands.length) break;
+            const j = cands[0];
+            usedSeg[j] = true;
+            const nxt = key5(segs4[j][0]) === tk ? segs4[j][1] : segs4[j][0];
+            if (key5(nxt) === key5(ring[0])) { ring.push(ring[0].slice()); break; }
+            ring.push(nxt.slice());
+          }
+          if (ring.length >= 4 && key5(ring[0]) === key5(ring[ring.length - 1]))
+            seaShapes.push(ring.map(pt => [round2(clamp(pt[0], 0, W)), round2(clamp(pt[1], 0, W))]));
+        }
+      }
+      // coastal = the cell touches the water (recomputable from the exports)
+      const rRing4 = (ring) => ring.map(pt => [round2(pt[0]), round2(pt[1])]);
+      const coastTouch = (ring) => {
+        for (const sea of seaShapes) {
+          for (const v of ring) if (pointInRing(v[0], v[1], sea)) return true;
+          for (const v of sea) if (pointInRing(v[0], v[1], ring)) return true;
+          for (let a2 = 0; a2 + 1 < ring.length; a2++)
+            for (let b2 = 0; b2 + 1 < sea.length; b2++)
+              if (segInt(ring[a2], ring[a2 + 1], sea[b2], sea[b2 + 1])) return true;
+        }
+        return false;
+      };
+      regions.forEach(reg => { reg.onCoast = coastTouch(rRing4(reg.ring)) ? 1 : 0; });
+
+      // G4: CLIMATE — temperature falls with latitude and altitude; rainfall
+      // marches in against the wind, drying with distance and raining out on
+      // the windward slopes. The rain shadow is the mountain's second toll.
+      const rc4 = sg("climate");
+      const windRad4 = windDeg * Math.PI / 180;
+      const wvx4 = Math.cos(windRad4), wvy4 = Math.sin(windRad4);
       regions.forEach(reg => {
-        reg.onCoast = seaSides.some(side => touches(reg.ring, side)) ? 1 : 0;
+        const [ax, ay] = reg.c;
+        reg.temperature = clamp(Math.round(88 - 46 * (ay / W) - 0.35 * reg.elevation + (rc4() - 0.5) * 8), 0, 100);
+        let px = ax, py = ay, peak = 0, dist = 0;
+        while (px >= -25 && px <= W + 25 && py >= -25 && py <= W + 25 && dist < 2200) {
+          px -= wvx4 * 25; py -= wvy4 * 25; dist += 25;
+          if (px >= 0 && px <= W && py >= 0 && py <= W) peak = Math.max(peak, elevAt(px, py));
+        }
+        const exitSide = px < 0 ? "west" : px > W ? "east" : py < 0 ? "south" : "north";
+        const fromSea = seaSides.includes(exitSide);
+        const shadow = 0.5 * Math.max(0, peak - reg.elevation - 8);
+        reg.rainfall = clamp(Math.round((fromSea ? 92 : 50) - 0.028 * dist - shadow + (rc4() - 0.5) * 10), 2, 100);
       });
+
+      // G4: BIOME (ordered rules — exactly recomputable from the exports) and
+      // FERTILITY, now DERIVED: rain + warmth + floodplain − altitude.
+      regions.forEach(reg => {
+        reg.biome =
+          reg.elevation >= 78 ? "alpine" :
+          reg.rainfall < 25 ? "badland" :
+          reg.temperature < 32 ? "moor" :
+          (reg.onRiver === 1 && reg.elevation < 35) ? "marsh" :
+          reg.rainfall >= 68 ? "forest" :
+          reg.rainfall < 42 ? "steppe" : "grassland";
+        reg.fertility = clamp(Math.round(
+          0.5 * reg.rainfall + 0.3 * Math.max(0, 100 - 1.8 * Math.abs(reg.temperature - 55)) +
+          (reg.onRiver === 1 ? 18 : 0) - (reg.elevation >= 78 ? 25 : 0)
+        ), 0, 100);
+      });
+
+      // G4: contour lines for the map and the export (interpolated marching
+      // squares on the elevation surface)
+      const contours = [];
+      for (const level of [seaLevel, 35, 50, 65, 80]) {
+        const csegs = [];
+        const lerp2 = (a, b, va, vb) => {
+          const t = (level - va) / (vb - va || 1e-9);
+          return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+        };
+        for (let gy = 0; gy < GN; gy++) for (let gx = 0; gx < GN; gx++) {
+          const x0 = gx * CS, y0 = gy * CS, x1 = (gx + 1) * CS, y1 = (gy + 1) * CS;
+          const vtl = nodeElev[gy][gx], vtr = nodeElev[gy][gx + 1], vbr = nodeElev[gy + 1][gx + 1], vbl = nodeElev[gy + 1][gx];
+          const code = (vtl >= level ? 8 : 0) + (vtr >= level ? 4 : 0) + (vbr >= level ? 2 : 0) + (vbl >= level ? 1 : 0);
+          if (code === 0 || code === 15) continue;
+          const T = lerp2([x0, y0], [x1, y0], vtl, vtr), R3 = lerp2([x1, y0], [x1, y1], vtr, vbr),
+                B = lerp2([x0, y1], [x1, y1], vbl, vbr), L3 = lerp2([x0, y0], [x0, y1], vtl, vbl);
+          const add = (a, b) => csegs.push([[round2(a[0]), round2(a[1])], [round2(b[0]), round2(b[1])]]);
+          if (code === 1 || code === 14) add(L3, B);
+          else if (code === 2 || code === 13) add(B, R3);
+          else if (code === 3 || code === 12) add(L3, R3);
+          else if (code === 4 || code === 11) add(T, R3);
+          else if (code === 5 || code === 10) { add(L3, T); add(B, R3); }
+          else if (code === 6 || code === 9) add(T, B);
+          else if (code === 7 || code === 8) add(L3, T);
+        }
+        if (csegs.length) contours.push({ level: Math.round(level), segs: csegs });
+      }
 
       // P1: bridges & fords — the river as a barrier ACROSS. At region
       // granularity all bank-to-bank travel passes THROUGH a river town, so
@@ -1324,9 +1517,7 @@
           y: side === "south" ? 0 : side === "north" ? W : t };
       }
 
-      // Prevailing wind: one seeded direction per world (0° = +x/east, CCW).
-      const windDeg = Math.floor(sg("wind")() * 360);
-      return { windDeg, ridges, passes, rivers, seaSides, bridges, ruins, maelstrom };
+      return { windDeg, ridges, passes, rivers, seaSides, bridges, ruins, maelstrom, seaShapes, seaLevel, contours };
     }
 
     // ---- Cost-distance over the adjacency graph (Dijkstra, O(n^2)) ----------
@@ -1647,7 +1838,7 @@
             const d = Math.hypot(dx, dy);
             const base = Math.exp(-(d * d) / (2 * 160 * 160));
             const windBoost = d > 1 ? 1 + 0.8 * Math.max(0, (dx * wvx + dy * wvy) / d) : 1;
-            const hillBoost = 1 + 0.8 * Math.max(0, (rf.elevation - reg.elevation) / 100);
+            const hillBoost = 1 + 0.4 * Math.max(0, (rf.elevation - reg.elevation) / 100); // G4: tilt made downhill systematic; damped
             blightRaw[i] += 0.3 * C * base * windBoost * hillBoost;
           });
           const SPOIL = 5 * C;
@@ -2600,7 +2791,7 @@
       events.forEach(ev => { if (ev.type === "succession") ev.name = dynasties[ev.faction][ev.ruler].name; });
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties };
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, seaLevel: geo.seaLevel, contours: geo.contours };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -2683,6 +2874,9 @@
             on_coast: reg.onCoast,
             is_port: reg.isPort,
             sea_access: reg.seaAccess,
+            temperature: reg.temperature,
+            rainfall: reg.rainfall,
+            biome: reg.biome,
             delver_flux: reg.delverFlux,
             has_tower: reg.hasTower,
             has_bridge: reg.hasBridge,
@@ -2755,6 +2949,20 @@
           type: "Feature",
           properties: { kind: "coast", side },
           geometry: { type: "LineString", coordinates: SEA_LINES[side] }
+        });
+      });
+      model.seaShapes.forEach((ring, i) => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "sea", sea_id: i, sea_level: model.seaLevel },
+          geometry: { type: "Polygon", coordinates: [ring] }
+        });
+      });
+      model.contours.forEach(cl => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "contour", level: cl.level },
+          geometry: { type: "MultiLineString", coordinates: cl.segs }
         });
       });
       model.regions.filter(r => r.isPort === 1).forEach(reg => {
@@ -2838,6 +3046,7 @@
           events: model.events,
           wind_deg: model.windDeg,
           sea_sides: model.seaSides,
+          sea_level: model.seaLevel,
           treasuries: { crown: Math.round(model.treasuries.crown), temple: Math.round(model.treasuries.temple), magnate: Math.round(model.treasuries.magnate) },
           rulers: { crown: model.dynasties.crown.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })),
                     temple: model.dynasties.temple.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })),
@@ -2939,6 +3148,20 @@
           geometry: { type: "LineString", coordinates: SEA_LINES2[side] }
         });
       });
+      model.seaShapes.forEach((ring, i) => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "sea", sea_id: i, epoch: 0, epoch_date: epochDate(0) },
+          geometry: { type: "Polygon", coordinates: [ring] }
+        });
+      });
+      model.contours.forEach(cl => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "contour", level: cl.level, epoch: 0, epoch_date: epochDate(0) },
+          geometry: { type: "MultiLineString", coordinates: cl.segs }
+        });
+      });
       model.regions.filter(r => r.isPort === 1).forEach(reg => {
         features.push({
           type: "Feature",
@@ -2988,6 +3211,7 @@
           events: model.events,
           wind_deg: model.windDeg,
           sea_sides: model.seaSides,
+          sea_level: model.seaLevel,
           treasuries: { crown: Math.round(model.treasuries.crown), temple: Math.round(model.treasuries.temple), magnate: Math.round(model.treasuries.magnate) },
           rulers: { crown: model.dynasties.crown.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })),
                     temple: model.dynasties.temple.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })),
@@ -3019,6 +3243,7 @@
     };
     const BLOC_COLORS = { crown: "#6baed6", temple: "#9e9ac8", magnate: "#fd8d3c", contested: "#cccccc", ungoverned: "#f7f7f7" };
     const TRAJ_COLORS = { boom: "#2f9e44", stable: "#d9d9d9", decline: "#f08c00", collapse: "#7a1f1f" };
+    const BIOME_COLORS = { alpine: "#e8e6e1", badland: "#d9a066", moor: "#a8a58c", marsh: "#7fa88c", forest: "#4f7a4f", steppe: "#cfc06e", grassland: "#a3bd6b" };
     function rampColor(ramp, t) {
       const m = (a, b) => Math.round(a + (b - a) * t);
       return `rgb(${m(ramp.lo[0], ramp.hi[0])},${m(ramp.lo[1], ramp.hi[1])},${m(ramp.lo[2], ramp.hi[2])})`;
@@ -3085,7 +3310,23 @@
         return Math.round(g / (t.length * t.length * m) * 100) / 100;
       };
       const turn = model.events.find(ev => ev.type === "reform" || ev.type === "reaction" || ev.type === "revolt");
+      // G4: the rain split — median rainfall on either side of the first
+      // ridge's axis (recomputable: side = cross product against the exported
+      // ridge endpoints; wet = the higher median)
+      let rainSplit = null;
+      if (model.ridges.length) {
+        const pts = model.ridges[0].pts;
+        const A2 = pts[0], B2 = pts[pts.length - 1];
+        const sideOf = (r) => (B2[0] - A2[0]) * (round2(r.c[1]) - A2[1]) - (B2[1] - A2[1]) * (round2(r.c[0]) - A2[0]);
+        const left = R.filter(r => sideOf(r) > 0).map(r => r.rainfall);
+        const right = R.filter(r => sideOf(r) <= 0).map(r => r.rainfall);
+        if (left.length >= 3 && right.length >= 3) {
+          const ml = med(left), mr = med(right);
+          rainSplit = { wet: Math.max(ml, mr), dry: Math.min(ml, mr) };
+        }
+      }
       return {
+        rain_split: rainSplit,
         gini: giniOf(R.map(r => r.wealth)),
         gini_t0: giniOf(R.map(r => r.wealthT0)),
         turning: turn ? { type: turn.type, epoch: turn.epoch, measure: turn.measure || null, outcome: turn.outcome || null } : null,
@@ -3401,6 +3642,8 @@
           V.push(`${town(F.mouth_region).name} drinks ${F.mouth_downstream} points of other towns' poison for the crime of standing at the mouth.`);
         if (F.toll_paying_n > 0)
           V.push(`${F.toll_paying_n} regions pay tolls at gates whose holders they never chose.`);
+        if (F.rain_split && F.rain_split.wet - F.rain_split.dry >= 8 && model.ridges.length)
+          V.push(`The ${model.ridges[0].name} divides even the weather: the rain falls at ${F.rain_split.wet} on one side and ${F.rain_split.dry} in its lee, and no one on the dry side chose the wind.`);
         if (F.twins)
           V.push(`And ${town(F.twins.open).name} and ${town(F.twins.shadow).name} stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.`);
         L.push(`The chronicler is required to close with what the numbers say, and the numbers say this. ` + V.join(` `));
@@ -3451,6 +3694,8 @@
         L.push(`${esc(town(F.mouth_region).name)}, at the river's mouth, drinks <b>${F.mouth_downstream} points</b> of other towns' poison — an order set by the land before anyone built anything.`);
       if (F.toll_paying_n > 0)
         L.push(`<b>${F.toll_paying_n}</b> regions pay a toll at gates whose holders they never chose.`);
+      if (F.rain_split && F.rain_split.wet - F.rain_split.dry >= 8 && model.ridges.length)
+        L.push(`The ${esc(model.ridges[0].name)} splits the rain: median rainfall <b>${F.rain_split.wet}</b> on its wet side, <b>${F.rain_split.dry}</b> in its shadow — and the farms followed the rain.`);
       if (F.twins) {
         const a = reg(F.twins.shadow), b = reg(F.twins.open);
         L.push(`<span style="color:#d9b96c">THE TWINS:</span> <b>${esc(town(b.id).name)}</b> and <b>${esc(town(a.id).name)}</b> stand the same distance from the seat. ` +
@@ -3501,7 +3746,7 @@
         view === "injustice" ? (RB(reg) / 100) * (1 - RW(reg) / 100) :
         view === "burden" ? reg.burden / maxBurden :
         view === "gap" ? reg.serviceGap / 100 :
-        view === "bloc" || view === "traj" ? 0 : // categorical — fill overridden below
+        view === "bloc" || view === "traj" || view === "biome" ? 0 : // categorical — fill overridden below
         view === "market" ? reg.marketAccess / 100 :
         view === "egap" ? reg.enforceGap / 100 :
         view === "aband" ? reg.abandonment / 100 :
@@ -3518,6 +3763,7 @@
         view === "gap" ? reg.serviceGap :
         view === "bloc" ? reg.bloc.slice(0, 3) :
         view === "traj" ? reg.boomBust.slice(0, 4) :
+        view === "biome" ? reg.biome.slice(0, 5) :
         view === "market" ? reg.marketAccess :
         view === "egap" ? reg.enforceGap :
         view === "aband" ? reg.abandonment :
@@ -3525,6 +3771,7 @@
         (Math.round(dens(reg) * 10) / 10).toFixed(1);
       const cellFill = (reg) => view === "bloc" ? BLOC_COLORS[reg.bloc]
         : view === "traj" ? TRAJ_COLORS[reg.boomBust]
+        : view === "biome" ? BIOME_COLORS[reg.biome]
         : rampColor(ramp, cellT(reg));
 
       const parts = [`<svg id="map" viewBox="0 0 ${W} ${W}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`];
@@ -3537,6 +3784,17 @@
         if (reg.refining > 0) { // refinery glyph
           parts.push(`<rect x="${(reg.c[0] - 8).toFixed(1)}" y="${(fy(reg.c[1]) + 32).toFixed(1)}" width="16" height="16" fill="#111" stroke="#fff" stroke-width="2"/>`);
         }
+      });
+
+      // G4: the terrain — contour lines over the fills, then the sea itself
+      model.contours.forEach(cl => {
+        const d = cl.segs.map(sg2 => `M${sg2[0][0].toFixed(1)},${fy(sg2[0][1]).toFixed(1)}L${sg2[1][0].toFixed(1)},${fy(sg2[1][1]).toFixed(1)}`).join("");
+        const isShore = cl.level === model.seaLevel;
+        parts.push(`<path class="contour" d="${d}" fill="none" stroke="${isShore ? "#2b5f8a" : "#6d604c"}" stroke-width="${isShore ? 2 : 1}" opacity="${isShore ? 0.55 : 0.28}"/>`);
+      });
+      model.seaShapes.forEach(ring => {
+        const d = "M" + ring.map(pt => `${pt[0].toFixed(1)},${fy(pt[1]).toFixed(1)}`).join("L") + "Z";
+        parts.push(`<path class="sea" d="${d}" fill="#4a7fae" fill-opacity="0.55" stroke="#2b5f8a" stroke-width="2"/>`);
       });
 
       // Roads (under everything else): width by class, tracks dashed
@@ -3573,14 +3831,7 @@
         parts.push(`<text class="maelstrom" x="${mx.toFixed(1)}" y="${(fy(my) + 7).toFixed(1)}" font-size="20" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="3">◉</text>`);
       }
 
-      // G3: the sea — a blue band along the water's edge, ⚓ at the ports.
-      // fy flips y for display: "north" (y-up top) is the top of the screen.
-      model.seaSides.forEach(side => {
-        const b = 16;
-        const r2 = side === "west" ? [0, 0, b, W] : side === "east" ? [W - b, 0, b, W]
-          : side === "north" ? [0, 0, W, b] : [0, W - b, W, b];
-        parts.push(`<rect class="coast" x="${r2[0]}" y="${r2[1]}" width="${r2[2]}" height="${r2[3]}" fill="#3d7ab5" opacity="0.35"/>`);
-      });
+      // G3: the ports — ⚓ where the realm meets the water
       model.regions.filter(r => r.isPort === 1).forEach(reg => {
         parts.push(`<text class="port" x="${(reg.c[0] - 26).toFixed(1)}" y="${(fy(reg.c[1]) + 34).toFixed(1)}" font-size="18" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="3">⚓</text>`);
       });
@@ -3673,6 +3924,10 @@
         document.getElementById("legendLabel").textContent = "dominant bloc (crown / temple / magnate / contested / ungoverned)";
         document.getElementById("legendBar").style.background =
           `linear-gradient(to right, ${BLOC_COLORS.crown} 0 20%, ${BLOC_COLORS.temple} 20% 40%, ${BLOC_COLORS.magnate} 40% 60%, ${BLOC_COLORS.contested} 60% 80%, ${BLOC_COLORS.ungoverned} 80% 100%)`;
+      } else if (view === "biome") {
+        document.getElementById("legendLabel").textContent = "biome (alpine / badland / moor / marsh / forest / steppe / grassland)";
+        document.getElementById("legendBar").style.background =
+          `linear-gradient(to right, ${BIOME_COLORS.alpine} 0 14%, ${BIOME_COLORS.badland} 14% 28%, ${BIOME_COLORS.moor} 28% 42%, ${BIOME_COLORS.marsh} 42% 56%, ${BIOME_COLORS.forest} 56% 72%, ${BIOME_COLORS.steppe} 72% 86%, ${BIOME_COLORS.grassland} 86% 100%)`;
       } else if (view === "traj") {
         document.getElementById("legendLabel").textContent = "trajectory (boom / stable / decline / collapse)";
         document.getElementById("legendBar").style.background =

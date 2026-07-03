@@ -48,7 +48,18 @@
 > the Temple's liturgical register), so the linguistic frontier tracks the ore
 > rather than the border and the entire toponymy is byte-stable across
 > capital moves, weights, and epochs (measured: ~97% of names are novel
-> compositions, not corpus quotes). **Mountain ranges + passes (G1)**:
+> compositions, not corpus quotes). **The physical world (G4)**: geology
+> became a causal chain of shapes — elevation is a continuous surface
+> (tilt + tectonic uplift + shore), ruggedness its slope, the sea a flooded
+> polygon with a per-world level, climate real (temperature by latitude and
+> lapse; rainfall advected against the wind with orographic RAIN SHADOW),
+> biomes classified and exactly recomputable, fertility DERIVED from
+> climate (corr with rainfall 0.63; temperature–latitude corr −0.85; the
+> ridge splits the rain in 12/20 worlds; 7/7 biomes across the sweep).
+> Honest physics fallout, measured first: the coherent tilt began pouring
+> plumes into the wealthy lowlands (hill term damped; λ floor −0.15) and
+> the old popΔ↔wealth drain legitimately decorrelated — reframed onto the
+> attractiveness composite the mechanic actually reads. **Mountain ranges + passes (G1)**:
 > geography with SHAPE — 1–2 ridge polylines drawn blind per world raise the
 > rock in a band and WALL the cost graph (×4.5 to cross, ×1.4 at the 1–2
 > passes), so centrality, the conduit, roads, markets, and migration all

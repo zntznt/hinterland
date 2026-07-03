@@ -8,6 +8,22 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  DYNASTIES (E5): the powers have faces now.
+    - Three ruler lines — the Sovereign (Crown), the Hierarch (Temple),
+      the First Magnate (consortium) — with reigns of 3-7 epochs drawn
+      blind before time runs. Rulers are named post-loop in each power's
+      register (lowland / liturgical / frontier), keyed streams, unique
+      against every name in the world; the founding three are byte-stable
+      across epoch settings of a seed.
+    - SUCCESSIONS are courtly events: they carry a faction and a ruler,
+      not a region — power changes hands in a room, not on a map. ~30%
+      are CONTESTED: the faction takes no gates that year (a court
+      fighting itself watches nothing else) and tension with both rivals
+      rises 12 — the realm's neighbors circle a divided house.
+    - provenance carries the full lines (hinterland.rulers); the chronicle
+      is dated by the reigning Sovereign and narrates every succession.
+      Schema v25.
+
   PEACE TERMS (F3): defeat is an institution, not just a scar.
     - The winter after a war, TERMS are set at the battlefield. The winner
       is whichever of the two powers brings more to the table there — live
@@ -581,7 +597,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 24;
+    const SCHEMA_VERSION = 25;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const SEA_L = 400;        // sea_access decay length over the cost graph
@@ -1662,6 +1678,20 @@
       let warPair = null;
       // F3: the treaty that follows the war
       let warFactions = null, warEpochFired = -1, treatyDone = false;
+      // E5: the dynasty structure — reigns drawn blind before time runs;
+      // the names come later (after the world has taken all of its own)
+      const rD = sx("dynasty");
+      const dynasties = { crown: [], temple: [], magnate: [] };
+      for (const F of ["crown", "temple", "magnate"]) {
+        dynasties[F].push({ from: 0, contested: false });
+        let at = 0;
+        while (true) {
+          const reign = 3 + Math.floor(rD() * 5); // 3-7 epochs on the seat
+          at += reign;
+          if (at > params.ep) break;
+          dynasties[F].push({ from: at, contested: rD() < 0.3 });
+        }
+      }
       regions.forEach(reg => { reg.eventType = "none"; reg.eventEpoch = -1; reg.eventSeverity = 0; reg.plagued = false; });
 
       // ---- THE DYNAMIC LOOP (D1) --------------------------------------------
@@ -1794,6 +1824,18 @@
             events.push({ epoch: e + 1, type: "war", region_id: wreg.id, factions: warFactions });
           }
         }
+        // E5: successions — power changes hands in a room, not on a map.
+        // A contested court takes no gates this year, and the rivals circle.
+        for (const F of ["crown", "temple", "magnate"]) {
+          const idx = dynasties[F].findIndex(r => r.from === e + 1);
+          if (idx > 0) {
+            const R = dynasties[F][idx];
+            events.push({ epoch: e + 1, type: "succession", faction: F, ruler: idx, contested: R.contested });
+            if (R.contested)
+              for (const G of ["crown", "temple", "magnate"])
+                if (G !== F) tensions[pairKey(F, G)] += 12;
+          }
+        }
         // F1: THE FACTION TURN. Every faction scores every gate it does not
         // hold — live reach at the host, a taste for the asset type, minus
         // the holder's reach and an inertia bar. The single strongest claim
@@ -1804,6 +1846,7 @@
             treasuries[F] += 3 * holdings.filter(h => h.heldBy === F).length;
           let best = null;
           for (const F of ["crown", "temple", "magnate"]) {
+            if (dynasties[F].some(r => r.from === e + 1 && r.contested)) continue; // the court fights itself
             for (const h of holdings) {
               if (h.heldBy === F) continue;
               const host = regions[h.regionIdx];
@@ -2307,8 +2350,14 @@
       });
       if (geo.maelstrom) geo.maelstrom.name = markovName("temple", sx("maelstrom"), usedNames);
 
+      // E5: the rulers take their names last — in each power's register
+      const RULER_REG = { crown: "lowland", temple: "temple", magnate: "frontier" };
+      for (const F of ["crown", "temple", "magnate"])
+        dynasties[F].forEach((R, i) => { R.name = markovName(RULER_REG[F], sx("ruler#" + F + "#" + i), usedNames); });
+      events.forEach(ev => { if (ev.type === "succession") ev.name = dynasties[ev.faction][ev.ruler].name; });
+
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions };
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -2547,6 +2596,9 @@
           wind_deg: model.windDeg,
           sea_sides: model.seaSides,
           treasuries: { crown: Math.round(model.treasuries.crown), temple: Math.round(model.treasuries.temple), magnate: Math.round(model.treasuries.magnate) },
+          rulers: { crown: model.dynasties.crown.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })),
+                    temple: model.dynasties.temple.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })),
+                    magnate: model.dynasties.magnate.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })) },
           tensions: { crown_magnate: Math.round(model.tensions.crown_magnate), crown_temple: Math.round(model.tensions.crown_temple), magnate_temple: Math.round(model.tensions.magnate_temple) },
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
           space: "planar 0..1000, y-up (flat-plane CRS)"
@@ -2693,6 +2745,9 @@
           wind_deg: model.windDeg,
           sea_sides: model.seaSides,
           treasuries: { crown: Math.round(model.treasuries.crown), temple: Math.round(model.treasuries.temple), magnate: Math.round(model.treasuries.magnate) },
+          rulers: { crown: model.dynasties.crown.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })),
+                    temple: model.dynasties.temple.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })),
+                    magnate: model.dynasties.magnate.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })) },
           tensions: { crown_magnate: Math.round(model.tensions.crown_magnate), crown_temple: Math.round(model.tensions.crown_temple), magnate_temple: Math.round(model.tensions.magnate_temple) },
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
           space: "planar 0..1000, y-up (flat-plane CRS)"
@@ -2748,7 +2803,9 @@
       // -- the founding ------------------------------------------------------
       L.push(`# A Chronicle of the Hinterland`);
       L.push(``);
-      L.push(`*The world called "${params.seed}", as set down at ${model.capitalName} in the year ${closeY}.*`);
+      const crownLine = model.dynasties.crown;
+      const reigning = crownLine[crownLine.length - 1].name;
+      L.push(`*The world called "${params.seed}", as set down at ${model.capitalName} in the year ${closeY}, in the reign of ${reigning}.*`);
       L.push(``);
       L.push(`## The Founding — year 1000`);
       L.push(``);
@@ -2841,7 +2898,7 @@
         }
         const strikeEv = model.events.find(ev => ev.type === "ore_strike");
         for (const ev of model.events) {
-          const t = town(ev.region_id);
+          const t = ev.region_id !== undefined ? town(ev.region_id) : null;
           const y = year(ev.epoch);
           let line = "";
           if (ev.type === "refinery_collapse") line = pick([
@@ -2891,6 +2948,13 @@
           }
           else if (ev.type === "tower_raised") {
             line = `An apostate raised a tower at ${t.name}, out where no writ runs and the conduit never came. The neighbors did not report it for a season; the neighbors were its first customers.`;
+          }
+          else if (ev.type === "succession") {
+            const TITLE = { crown: "Sovereign", temple: "Hierarch", magnate: "First Magnate" };
+            const SEATW = { crown: "the seat", temple: "the censer", magnate: "the chair" };
+            line = ev.contested
+              ? `The old ${TITLE[ev.faction]} died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end ${ev.name} took ${SEATW[ev.faction]}, over objections not all of which were buried with their holders.`
+              : `The old ${TITLE[ev.faction]} died, and ${ev.name} took ${SEATW[ev.faction]} without incident — which the chronicle records precisely because it is rare.`;
           }
           else if (ev.type === "treaty") {
             const FN3 = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };

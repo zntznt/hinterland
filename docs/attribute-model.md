@@ -124,7 +124,14 @@
 > tribute, which then funds the winner's next seizure — victory compounds
 > through the ledger (measured: treaties follow 14/14 eligible wars; gates
 > ceded in 9/14 treaty worlds; the chronicle names the terms' author in
-> every one). **The
+> every one). **Dynasties (E5)**: the powers have faces — three ruler lines
+> (Sovereign/Hierarch/First Magnate) with blind-drawn reigns, named in each
+> power's register and unique against the whole world; successions are
+> courtly events (faction + ruler, no region), ~30% contested — a divided
+> court takes no gates that year and its rivals' tension rises (measured:
+> successions in 12/12 ep=10 worlds, crises in 11/12; every succession
+> narrated; the founding three byte-stable across the epoch knob; the
+> chronicle dated by the reigning Sovereign). **The
 > chronicle
 > (E4)**: the world narrates
 > itself — a deterministic written history (downloadable markdown + on-page

@@ -8,6 +8,28 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  THE SKYWAY (S1): geography is destiny only for those who can't afford
+  to leave it.
+    - The ground network prices everyone the same walls: ridge x4.5, ford
+      x2.2, pass tolls, held gates. S1 charters lift lanes between the
+      seat and the realm's richest hubs at the founding: flight costs
+      FLY_BOARD + FLY_COST x distance and ignores every multiplier the
+      ground ever had. The road below is for everyone; the sky is not.
+    - COLUMNS: seat_cost_ground (the walk to the seat over the friction
+      graph), seat_cost_sky (walk to the nearest aerie, then fly), and
+      sky_advantage = the share of your distance the lanes abolish IF you
+      may board — exactly recomputable from the two cost columns. The
+      catch is the boarding rule, and the boarding rule is CLASS.
+    - CLASS-CONDITIONAL GEOGRAPHY (findings.sky): the lanes are worth most
+      exactly where the ground is worst — the walled country's median
+      sky_advantage beats the open country's — so the mountain-shadow
+      finding splits by row: the owners' row of the shadow twin measures
+      the wall at twin_sky% less; its labor still walks the pass.
+    - THE LOOP: the skyway touches ONLY the class ledger (aeries accrue
+      +0.6 elite_share per epoch — absentee owners cluster at the lanes;
+      elite_pop_pct counts the aerie district) — wealth, migration, and
+      every event history are byte-identical to v29. Schema v30.
+
   THE STRATA (H1): class exists — within the walls, not only between them.
     - Before H1 every region was one people with one number: all the
       inequality this generator could speak of was BETWEEN places. But the
@@ -742,6 +764,7 @@
           <label class="radio"><input type="radio" name="view" value="injustice" checked /> who bears the injustice</label>
           <label class="radio"><input type="radio" name="view" value="wealth" /> who holds the coin</label>
           <label class="radio"><input type="radio" name="view" value="class" /> who owns the town</label>
+          <label class="radio"><input type="radio" name="view" value="sky" /> who escapes the ground</label>
           <label class="radio"><input type="radio" name="view" value="endowment" /> where the ore lies</label>
           <label class="radio"><input type="radio" name="view" value="biome" /> what the land is</label>
           <label class="radio"><input type="radio" name="view" value="centrality" /> who reaches the seat</label>
@@ -757,7 +780,7 @@
           <label class="radio"><input type="radio" name="view" value="traj" /> boom and bust</label>
           <label class="radio"><input type="radio" name="view" value="density" /> how many souls</label>
         </div>
-        <div class="glyphkey">Preview only &mdash; the export always carries every column. &#9632; refinery &middot; gold lines conduit (dashed = off-grid) &middot; H/W/D healer/waterworks/wardstation &middot; &#9650; shrine &middot; G garrison &middot; &#9875; port &middot; &#9670; ruin &middot; &#9820; tower &middot; &#9552; bridge &middot; &#8745; pass &middot; &#9673; maelstrom &middot; red dashes join the twins.</div>
+        <div class="glyphkey">Preview only &mdash; the export always carries every column. &#9632; refinery &middot; gold lines conduit (dashed = off-grid) &middot; H/W/D healer/waterworks/wardstation &middot; &#9650; shrine &middot; G garrison &middot; &#9875; port &middot; &#9670; ruin &middot; &#9820; tower &middot; &#9552; bridge &middot; &#8745; pass &middot; &#9673; maelstrom &middot; &#9055; aerie (violet dashes = the skyway) &middot; red dashes join the twins.</div>
       </div>
     </div>
 
@@ -790,9 +813,11 @@
 
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
-    const SCHEMA_VERSION = 29;
+    const SCHEMA_VERSION = 30;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
+    const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
+    const FLY_BOARD = 35;     // boarding the lift-barge: the fixed price of the sky
     const SEA_L = 400;        // sea_access decay length over the cost graph
     const FORD_MULT = 2.2;    // crossing a river off-bridge: wide water is a wall too
     const WILD_R = 220;       // euclidean reach of a ruin's peril / a tower's shadow
@@ -1805,6 +1830,56 @@
         ), 8, 92);
       });
 
+      // S1: THE SKYWAY — the elite bypass. Lift lanes are chartered by the
+      // same ledger logic that rations the conduit: an aerie goes where
+      // flight beats the ground by the MOST (the gain) and where there is
+      // value worth moving (wealth, ore, the works) — which is exactly the
+      // far, walled, rich country, because a lane to the easy lowland
+      // saves nothing. Flight ignores the walls, the fords, and the gates
+      // that price everyone else's distance; the ground below keeps every
+      // multiplier it ever had. Geography is destiny only for those who
+      // can't afford to leave it, and boarding is an owners' privilege.
+      const KS = regions.length >= 40 ? 4 : regions.length >= 16 ? 3 : 2;
+      regions.forEach(reg => { reg.isSkyport = 0; });
+      cap.isSkyport = 1;
+      {
+        const rpS = (c) => [round2(c[0]), round2(c[1])];
+        const sA = rpS(cap.c);
+        regions.map((reg, i) => {
+          if (reg === cap) return null;
+          const a = rpS(reg.c);
+          const gain = cd[i] - (FLY_BOARD + FLY_COST * Math.hypot(a[0] - sA[0], a[1] - sA[1]));
+          if (gain <= 0) return null; // a lane that saves nothing is never chartered
+          const rj = sx("skyport#" + reg.id);
+          const value = 0.5 * reg.wealthT0 + 0.3 * reg.endowment0 + 0.2 * reg.refining;
+          return { reg, s: gain * value / 100 + (rj() - 0.5) * 4 };
+        }).filter(Boolean)
+          .sort((a, b) => b.s - a.s || a.reg.id - b.reg.id)
+          .slice(0, KS - 1).forEach(x => { x.reg.isSkyport = 1; });
+      }
+      {
+        // the walk to the nearest aerie, then the flight to the seat —
+        // euclidean over ROUNDED anchors, so sky_advantage recomputes
+        // from the exported columns alone
+        const rp2 = (c) => [round2(c[0]), round2(c[1])];
+        const seatA = rp2(cap.c);
+        const skyIdxs = regions.map((reg, i) => reg.isSkyport === 1 ? i : -1).filter(i => i >= 0);
+        const runs = skyIdxs.map(si => {
+          const a = rp2(regions[si].c);
+          return { run: costDistances(regions, [si]).dist,
+            fly: FLY_BOARD + FLY_COST * Math.hypot(a[0] - seatA[0], a[1] - seatA[1]) };
+        });
+        const r1s = (v) => Math.round(v * 10) / 10;
+        regions.forEach((reg, i) => {
+          let best = cd[i];
+          for (const R of runs) best = Math.min(best, R.run[i] + R.fly);
+          reg.seatCostGround = r1s(cd[i]);
+          reg.seatCostSky = r1s(best);
+          reg.skyAdvantage = reg.seatCostGround > 0
+            ? Math.max(0, Math.round(100 * (1 - reg.seatCostSky / reg.seatCostGround))) : 0;
+        });
+      }
+
       // V1: the loop's own parameters are now history-mutable — reforms and
       // reactions shift them mid-run, and the free town escapes the tolls
       let dbShift = 0, gtShift = 0, tollScale = 1, freeTownIdx = -1, granaryOn = false;
@@ -2105,6 +2180,7 @@
             + 0.75 * gateIncome                    // the toll house pays the holder's men
             + (reg.refining > 0 ? 0.8 : 0)         // the works pay their masters
             + (reg.E >= 40 ? 0.5 : 0)              // live seams pay their charter-holders
+            + (reg.isSkyport === 1 ? 0.6 : 0)      // the aerie: absentee owners cluster at the lanes
             - 0.6 * Math.max(0, bread), 8, 92);    // bread reaches the bottom
         });
         // migration: toward wealth, light, and clean land — capped at 15%/epoch out
@@ -2519,12 +2595,12 @@
 
       // H1: the owners' headcount and the per-head gap — DERIVED columns,
       // exactly recomputable from the exported file alone: elite_pop_pct
-      // from final tier + works + harbor (the court, the company district,
-      // the quay masters); class_gap = the owners' coin per owner over
-      // labor's coin per laborer, in the same region.
+      // from final tier + works + harbor + aerie (the court, the company
+      // district, the quay masters, the lane's keepers); class_gap = the
+      // owners' coin per owner over labor's coin per laborer.
       regions.forEach(reg => {
         reg.elitePopPct = 2 + (reg.tier === "prime" ? 3 : reg.tier === "hub" ? 2 : 0)
-          + (reg.refining > 0 ? 2 : 0) + (reg.isPort === 1 ? 1 : 0);
+          + (reg.refining > 0 ? 2 : 0) + (reg.isPort === 1 ? 1 : 0) + (reg.isSkyport === 1 ? 1 : 0);
         reg.classGap = Math.round(
           ((reg.eliteShare / reg.elitePopPct) / ((100 - reg.eliteShare) / (100 - reg.elitePopPct))) * 10) / 10;
       });
@@ -2864,8 +2940,12 @@
         dynasties[F].forEach((R, i) => { R.name = markovName(RULER_REG[F], sx("ruler#" + F + "#" + i), usedNames); });
       events.forEach(ev => { if (ev.type === "succession") ev.name = dynasties[ev.faction][ev.ruler].name; });
 
+      // S1: the skyway is chartered in the court's own register — named
+      // LAST, so every place keeps the name it already had
+      const skywayName = markovName("lowland", sx("skyway"), usedNames);
+
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, seaLevel: geo.seaLevel, contours: geo.contours };
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, seaLevel: geo.seaLevel, contours: geo.contours, skywayName };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -2957,7 +3037,11 @@
             toll_burden: reg.tollBurden,
             elite_share: reg.eliteShare,
             elite_pop_pct: reg.elitePopPct,
-            class_gap: reg.classGap
+            class_gap: reg.classGap,
+            is_skyport: reg.isSkyport,
+            seat_cost_ground: reg.seatCostGround,
+            seat_cost_sky: reg.seatCostSky,
+            sky_advantage: reg.skyAdvantage
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -3050,6 +3134,26 @@
           geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
         });
       });
+      { // S1: the skyway — aeries, and a lane between every pair of them
+        const sp = model.regions.filter(r => r.isSkyport === 1);
+        sp.forEach(reg => {
+          const t = model.settlements.find(s => s.regionId === reg.id);
+          features.push({
+            type: "Feature",
+            properties: { kind: "skyport", region_id: reg.id, skyport_name: t.name + " Aerie" },
+            geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
+          });
+        });
+        for (let i = 0; i < sp.length; i++) for (let j = i + 1; j < sp.length; j++) {
+          const A = sp[i], B = sp[j];
+          features.push({
+            type: "Feature",
+            properties: { kind: "skylane", skyway_name: model.skywayName, from_region: A.id, to_region: B.id,
+              fly_cost: Math.round((FLY_BOARD + FLY_COST * Math.hypot(round2(A.c[0]) - round2(B.c[0]), round2(A.c[1]) - round2(B.c[1]))) * 10) / 10 },
+            geometry: { type: "LineString", coordinates: [[round2(A.c[0]), round2(A.c[1])], [round2(B.c[0]), round2(B.c[1])]] }
+          });
+        }
+      }
       model.ruins.forEach(r => {
         const reg = model.regions[r.regionIdx];
         features.push({
@@ -3128,6 +3232,7 @@
           rulers: { crown: model.dynasties.crown.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })),
                     temple: model.dynasties.temple.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })),
                     magnate: model.dynasties.magnate.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })) },
+          skyway: { name: model.skywayName, ports: model.regions.filter(r => r.isSkyport === 1).map(r => r.id) },
           findings: computeFindings(model),
           tensions: { crown_magnate: Math.round(model.tensions.crown_magnate), crown_temple: Math.round(model.tensions.crown_temple), magnate_temple: Math.round(model.tensions.magnate_temple) },
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
@@ -3247,6 +3352,23 @@
           geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
         });
       });
+      { // S1: the skyway is founding infrastructure — epoch 0, like the roads
+        const sp = model.regions.filter(r => r.isSkyport === 1);
+        sp.forEach(reg => {
+          features.push({
+            type: "Feature",
+            properties: { kind: "skyport", region_id: reg.id, epoch: 0, epoch_date: epochDate(0) },
+            geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
+          });
+        });
+        for (let i = 0; i < sp.length; i++) for (let j = i + 1; j < sp.length; j++) {
+          features.push({
+            type: "Feature",
+            properties: { kind: "skylane", from_region: sp[i].id, to_region: sp[j].id, epoch: 0, epoch_date: epochDate(0) },
+            geometry: { type: "LineString", coordinates: [[round2(sp[i].c[0]), round2(sp[i].c[1])], [round2(sp[j].c[0]), round2(sp[j].c[1])]] }
+          });
+        }
+      }
       model.ruins.forEach(r => {
         const reg = model.regions[r.regionIdx];
         features.push({
@@ -3281,6 +3403,7 @@
         name: "hinterland_epochs",
         hinterland: {
           schema_version: SCHEMA_VERSION, series: true, epochs: params.ep,
+          skyway: { name: model.skywayName, ports: model.regions.filter(r => r.isSkyport === 1).map(r => r.id) },
           years_per_epoch: 25,
           seed: String(params.seed), regions: params.regions, relax: params.relax,
           bias: params.bias,
@@ -3306,6 +3429,7 @@
     const RAMPS = {
       wealth:     { lo: [237, 248, 233], hi: [0, 90, 50],    label: "wealth" },
       class:      { lo: [246, 242, 250], hi: [63, 0, 125],   label: "elite share of wealth (who owns it)" },
+      sky:        { lo: [241, 246, 253], hi: [10, 60, 110],  label: "sky advantage (what flight abolishes)" },
       endowment:  { lo: [242, 240, 247], hi: [84, 39, 143],  label: "aetherstone endowment" },
       centrality: { lo: [239, 243, 255], hi: [8, 48, 107],   label: "centrality to seat" },
       services:   { lo: [237, 248, 251], hi: [0, 109, 119],  label: "arcane services" },
@@ -3440,7 +3564,21 @@
       const classGapRealm = coinAll - coinE > 0
         ? Math.round(((coinE / popE) / ((coinAll - coinE) / (popAll - popE))) * 10) / 10 : null;
       const compTown = R.reduce((a, b) => b.eliteShare > a.eliteShare ? b : a, R[0]);
+      // S1: the skyway abolishes geography — for those who may board. The
+      // lanes were chartered where flight beats the ground by the most, so
+      // the walled country's mean advantage beats the open country's; and
+      // the twin behind the wall measures the mountain at twin_sky% less —
+      // if it sits in the owners' row. Means over exported columns
+      // (medians collapse to zero: the lanes serve the tail, which is the
+      // point), plus the headcount the lanes actually reach.
+      const sky = {
+        shadow_adv: shadow.length >= 2 ? r1(mean(shadow.map(r => r.skyAdvantage))) : null,
+        open_adv: open.length >= 2 ? r1(mean(open.map(r => r.skyAdvantage))) : null,
+        reached_n: R.filter(r => r.skyAdvantage >= 10).length,
+        twin_sky: twins ? R.find(r => r.id === twins.shadow).skyAdvantage : null
+      };
       return {
+        sky,
         rain_split: rainSplit,
         gini_people: giniPeople,
         gini_between_people: giniBetween,
@@ -3507,6 +3645,15 @@
         (dark0 > 0
           ? `${dark0} of the realm's settlements sat off the conduit at the founding, in darkness: connected by road — everything is connected by road — but unserved, because the ledgers said serving them would not pay.`
           : `Every settlement of the realm sat on the conduit at the founding — a generosity of the ledgers the chronicle does not expect to last.`));
+      {
+        const aeries = model.regions.filter(r => r.isSkyport === 1).map(r => town(r.id).name);
+        L.push(``);
+        L.push(aeries.length >= 2
+          ? `In the founding charters too is the ${model.skywayName} Lane: lift-barges between ${list(aeries)}, above the walls, the fords, and every gate on the ground. ` +
+            `The lanes go where the ground is worst and the cargo richest — a lane to the easy lowland saves nothing — and passage is sold at the aerie door, at a price that is the point. ` +
+            `The road below is for everyone; the sky is not.`
+          : `No skyway was chartered in this realm: the ledgers found no lane worth the lift. The chronicle notes that even the sky is rationed by return.`);
+      }
       if (model.ridges.length) {
         const shadowN = model.regions.filter(r => r.rangeShadow === 1).length;
         const passNames = model.passes.map(p => `${town(model.regions[p.regionIdx].id).name} Pass`);
@@ -3778,6 +3925,8 @@
           V.push(`${F.toll_paying_n} regions pay tolls at gates whose holders they never chose.`);
         if (F.owners && F.class_gap !== null)
           V.push(`And within every wall the shares were already set: ${F.owners.pop_pct} in a hundred hold ${F.owners.coin_pct} of every hundred coins, and stand ${F.class_gap} times apart from the rest.`);
+        if (F.sky && F.sky.shadow_adv !== null && F.sky.open_adv !== null && F.sky.shadow_adv > F.sky.open_adv)
+          V.push(`The skyway would abolish ${F.sky.shadow_adv} parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.`);
         if (F.rain_split && F.rain_split.wet - F.rain_split.dry >= 8 && model.ridges.length)
           V.push(`The ${model.ridges[0].name} divides even the weather: the rain falls at ${F.rain_split.wet} on one side and ${F.rain_split.dry} in its lee, and no one on the dry side chose the wind.`);
         if (F.twins)
@@ -3845,6 +3994,10 @@
           `${esc(town(a.id).name)}, behind the wall: wealth ${a.wealth}, market ${a.marketAccess}, burden ${a.burden}. ` +
           `<b>The difference is the mountain</b> — the red line on the map joins them.`);
       }
+      if (F.sky && F.sky.shadow_adv !== null && F.sky.open_adv !== null && F.sky.shadow_adv >= F.sky.open_adv + 5)
+        L.push(`<span style="color:#8fa8d9">THE SKYWAY:</span> behind the wall the lanes would cut the road to the seat by <b>${F.sky.shadow_adv}%</b> (the open country gains ${F.sky.open_adv}%) — and boarding is an owners' privilege. ` +
+          (F.twins && F.sky.twin_sky !== null && F.sky.twin_sky > 0 ? `The owners' row of the shadow twin measures the wall at <b>${F.sky.twin_sky}% less</b>; its labor still walks the pass. ` : ``) +
+          `<b>Geography is destiny only for those who can't afford to leave it.</b>`);
       L.push(`<span style="opacity:0.75; font-size:13px">None of this was painted. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. Every number recomputes from the exported columns.</span>`);
       return L.join("<br>");
     }
@@ -3883,6 +4036,7 @@
       const cellT = (reg) =>
         view === "wealth" ? RW(reg) / 100 :
         view === "class" ? SE(reg) / 100 :
+        view === "sky" ? reg.skyAdvantage / 100 :
         view === "endowment" ? RE(reg) / 100 :
         view === "centrality" ? reg.centrality / 100 :
         view === "services" ? reg.arcaneServices / 100 :
@@ -3899,6 +4053,7 @@
       const cellValue = (reg) =>
         view === "wealth" ? RW(reg) :
         view === "class" ? SE(reg) :
+        view === "sky" ? reg.skyAdvantage :
         view === "endowment" ? RE(reg) :
         view === "centrality" ? reg.centrality :
         view === "services" ? reg.arcaneServices :
@@ -3974,6 +4129,17 @@
       if (model.maelstrom) {
         const mx = clamp(model.maelstrom.x, 22, W - 22), my = clamp(model.maelstrom.y, 22, W - 22);
         parts.push(`<text class="maelstrom" x="${mx.toFixed(1)}" y="${(fy(my) + 7).toFixed(1)}" font-size="20" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="3">◉</text>`);
+      }
+
+      // S1: the skyway — violet dashes between the aeries, above every wall
+      {
+        const sp = model.regions.filter(r => r.isSkyport === 1);
+        for (let i = 0; i < sp.length; i++) for (let j = i + 1; j < sp.length; j++) {
+          parts.push(`<line class="skylane" x1="${sp[i].c[0].toFixed(1)}" y1="${fy(sp[i].c[1]).toFixed(1)}" x2="${sp[j].c[0].toFixed(1)}" y2="${fy(sp[j].c[1]).toFixed(1)}" stroke="#3f007d" stroke-width="2.5" stroke-dasharray="2 7" opacity="0.6"/>`);
+        }
+        sp.forEach(reg => {
+          parts.push(`<text class="skyport" x="${(reg.c[0] + 26).toFixed(1)}" y="${(fy(reg.c[1]) + 34).toFixed(1)}" font-size="17" text-anchor="middle" fill="#3f007d" paint-order="stroke" stroke="#fff" stroke-width="3">⍟</text>`);
+        });
       }
 
       // G3: the ports — ⚓ where the realm meets the water
@@ -4110,6 +4276,7 @@
           : "none — a quiet age"],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["the owners", (() => { const FR = computeFindings(model); return FR.owners ? `${FR.owners.pop_pct}% of people hold ${FR.owners.coin_pct}% of the coin` : "\u2014"; })()],
+        ["the skyway", (() => { const sp = model.regions.filter(r => r.isSkyport === 1); return sp.length >= 2 ? `${esc(model.skywayName)} Lane — ${sp.length} aeries (${sp.map(r => esc(model.settlements.find(s => s.regionId === r.id).name)).join(", ")})` : "no lane worth the lift"; })()],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1000 (y-up)"]
       ];

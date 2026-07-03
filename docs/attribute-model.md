@@ -59,7 +59,21 @@
 > Honest physics fallout, measured first: the coherent tilt began pouring
 > plumes into the wealthy lowlands (hill term damped; λ floor −0.15) and
 > the old popΔ↔wealth drain legitimately decorrelated — reframed onto the
-> attractiveness composite the mechanic actually reads. **The strata (H1)**:
+> attractiveness composite the mechanic actually reads. **The skyway
+> (S1)**: geography is destiny only for those who can't afford to leave
+> it. Lift lanes are chartered at the founding by the same ledger logic
+> that rations the conduit — gain × value: an aerie goes where flight
+> beats the ground by the most (the walled, far country) and where there
+> is cargo worth moving (wealth, ore, the works) — a lane to the easy
+> lowland saves nothing. `sky_advantage` is exactly recomputable from the
+> two exported cost columns; the mean advantage behind the wall beats the
+> open country's in 27/29 worlds (median ~44–50%) while the MEDIAN region
+> gains nothing — the lanes serve the tail, which is the point. And the
+> boarding rule is class: aeries are owners' districts (the only loop
+> coupling is +0.6 elite share per epoch at the aerie; wealth, migration,
+> and every event history are byte-identical), so the twins finding
+> splits by row — the shadow twin's owners fly the wall its labor walks
+> (twin_sky > 0 in 25/29 twin worlds). **The strata (H1)**:
 > class exists. Before H1 every region was one people with one number, so
 > every inequality the generator could speak of was BETWEEN places — the
 > magnate who owns the works and the hauler who coughs in them were the

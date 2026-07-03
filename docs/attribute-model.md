@@ -48,7 +48,18 @@
 > the Temple's liturgical register), so the linguistic frontier tracks the ore
 > rather than the border and the entire toponymy is byte-stable across
 > capital moves, weights, and epochs (measured: ~97% of names are novel
-> compositions, not corpus quotes). **The chronicle (E4)**: the world narrates
+> compositions, not corpus quotes). **Mountain ranges + passes (G1)**:
+> geography with SHAPE — 1–2 ridge polylines drawn blind per world raise the
+> rock in a band and WALL the cost graph (×4.5 to cross, ×1.4 at the 1–2
+> passes), so centrality, the conduit, roads, markets, and migration all
+> react through the one graph they already run on. Measured: at matched
+> crow-flies distance from the seat, the region behind the wall is poorer in
+> ~93% of pairs and cut out of the market in ~98%; darkness pools in the
+> shadow in 25/25 worlds; ~98% of wall-crossing road traffic threads a pass.
+> `range_shadow` is exactly recomputable from exported geometry; ranges are
+> named in the frontier register and narrated by the chronicle. The drain
+> spiral is now measured per-side of the wall (geography legitimately
+> fragments the global correlation). **The chronicle (E4)**: the world narrates
 > itself — a deterministic written history (downloadable markdown + on-page
 > panel) composed from the founding, the dated event timeline with the causal
 > chains told as chains, and the closing state of the realm; every event is

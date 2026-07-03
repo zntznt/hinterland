@@ -8,6 +8,25 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  MOUNTAIN RANGES + PASSES (G1): geography with SHAPE.
+    - The old geology made gradients (smooth noise fields); real geography
+      makes STRUCTURES. Each world now draws 1-2 mountain ranges in the
+      blind-geology stage: connected ridge polylines that raise ruggedness
+      and elevation in a band, and — the part that matters — act as WALLS
+      in the cost graph. Adjacency edges crossing a ridge pay a x4.5
+      friction wall, EXCEPT within a pass (1-2 low gaps per ridge, x1.4).
+    - Everything downstream reacts for free, because every social outcome
+      already flows through cost-distance: centrality collapses behind the
+      wall, the conduit skips the shadow, roads thread the passes, traffic
+      concentrates at the chokepoints, darkness pools where the seat cannot
+      cheaply reach. "Put a mountain between a capital and a town and the
+      town becomes despondent" — now measurably true, and the acceptance
+      test is exactly that comparison at matched crow-flies distance.
+    - Regions export range_shadow (straight line to the seat crosses a
+      ridge — exactly recomputable from the exported geometry) and is_pass.
+      Ridges export as named LineStrings (frontier register), passes as
+      Points named after their towns. Schema v18.
+
   MARKOV TOPONYMY (E3): the world names itself.
     - Order-2 character chains learn three invented registers and walk novel
       names from per-region substreams: the settled core speaks LOWLAND, ore
@@ -442,7 +461,10 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 17;
+    const SCHEMA_VERSION = 18;
+    const RIDGE_WALL = 4.5;  // edge-cost multiplier for crossing a ridge off-pass
+    const PASS_MULT = 1.4;   // crossing at a pass: a climb, not a wall
+    const PASS_R = 90;       // how close a crossing must be to a pass to count as one
     const BLOC_TOL = 12;    // top-two reach gap below this => contested
     const BLOC_FLOOR = 25;  // all reaches below this => ungoverned
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
@@ -644,6 +666,67 @@
       return regions;
     }
 
+    // ---- Line geometry for ridges (G1) --------------------------------------
+    // Segment intersection: returns the crossing point or null. The SAME
+    // predicate runs on the rounded exported geometry in the app and in the
+    // verification suite, so range_shadow is exactly recomputable.
+    function segInt(p, q, a, b) {
+      const d1x = q[0] - p[0], d1y = q[1] - p[1], d2x = b[0] - a[0], d2y = b[1] - a[1];
+      const den = d1x * d2y - d1y * d2x;
+      if (den === 0) return null;
+      const t = ((a[0] - p[0]) * d2y - (a[1] - p[1]) * d2x) / den;
+      const u = ((a[0] - p[0]) * d1y - (a[1] - p[1]) * d1x) / den;
+      if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+      return [p[0] + t * d1x, p[1] + t * d1y];
+    }
+    function distPointSeg(px, py, a, b) {
+      const dx = b[0] - a[0], dy = b[1] - a[1];
+      const L2 = dx * dx + dy * dy;
+      const t = L2 === 0 ? 0 : clamp(((px - a[0]) * dx + (py - a[1]) * dy) / L2, 0, 1);
+      return Math.hypot(px - (a[0] + t * dx), py - (a[1] + t * dy));
+    }
+    // Liang-Barsky segment clip to the world box.
+    function clipSeg(P, Q, x0, y0, x1, y1) {
+      let t0 = 0, t1 = 1;
+      const dx = Q[0] - P[0], dy = Q[1] - P[1];
+      const edge = (p, q) => {
+        if (p === 0) return q >= 0;
+        const r = q / p;
+        if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; }
+        else { if (r < t0) return false; if (r < t1) t1 = r; }
+        return true;
+      };
+      if (edge(-dx, P[0] - x0) && edge(dx, x1 - P[0]) && edge(-dy, P[1] - y0) && edge(dy, y1 - P[1]) && t0 <= t1)
+        return [[P[0] + t0 * dx, P[1] + t0 * dy], [P[0] + t1 * dx, P[1] + t1 * dy]];
+      return null;
+    }
+    // Clip a polyline to the box; returns the visible pieces stitched back up.
+    function clipPolyline(pts, x0, y0, x1, y1) {
+      const out = [];
+      let cur = null;
+      for (let i = 0; i + 1 < pts.length; i++) {
+        const seg = clipSeg(pts[i], pts[i + 1], x0, y0, x1, y1);
+        if (!seg) { cur = null; continue; }
+        const [A, B] = seg;
+        if (cur && Math.hypot(cur[cur.length - 1][0] - A[0], cur[cur.length - 1][1] - A[1]) < 1e-9) cur.push(B);
+        else { cur = [A, B]; out.push(cur); }
+      }
+      return out;
+    }
+    const polyLen = (pts) => {
+      let L = 0;
+      for (let i = 0; i + 1 < pts.length; i++) L += Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+      return L;
+    };
+    const polyPointAt = (pts, s) => {
+      for (let i = 0; i + 1 < pts.length; i++) {
+        const L = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+        if (s <= L) { const t = L === 0 ? 0 : s / L; return [pts[i][0] + t * (pts[i + 1][0] - pts[i][0]), pts[i][1] + t * (pts[i + 1][1] - pts[i][1])]; }
+        s -= L;
+      }
+      return pts[pts.length - 1];
+    };
+
     // ---- Stage 2: geology (seed + topology ONLY — blind to every social layer)
     // Smooth signed-bump noise field factory: sum of K gaussian bumps.
     function bumpField(rng, count, rLo, rHi) {
@@ -723,9 +806,92 @@
         reg.hiddenOre = Math.round(100 * Math.pow(Math.min(1, v / (maxRaw || 1)), 2));
       });
 
+      // G1: mountain ranges — geography with SHAPE. Each ridge is a connected
+      // polyline drawn blind (seed only), clipped to the world box. It raises
+      // ruggedness/elevation in a band, and its real power is in the cost
+      // graph below: crossing it is a wall, except at the passes.
+      const rr = sg("ridges");
+      const NR = (params.regions >= 12 && rr() < 0.4) ? 2 : 1;
+      const ridges = [];
+      const passes = [];
+      for (let ri = 0; ri < NR; ri++) {
+        let main = null;
+        for (let attempt = 0; attempt < 6 && !main; attempt++) {
+          const cx = 250 + rr() * 500, cy = 250 + rr() * 500;
+          const th = rr() * Math.PI;
+          const dx = Math.cos(th), dy = Math.sin(th);
+          const pts = [];
+          for (let t = -800; t <= 800; t += 145) {
+            const j = (rr() - 0.5) * 130;
+            pts.push([cx + dx * t - dy * j, cy + dy * t + dx * j]);
+          }
+          const pieces = clipPolyline(pts, 0, 0, W, W);
+          for (const pl of pieces) if (!main || polyLen(pl) > polyLen(main)) main = pl;
+          if (main && polyLen(main) < 300) main = null; // degenerate corner clip: redraw
+        }
+        if (!main) continue;
+        const rounded = main.map(p => [round2(p[0]), round2(p[1])]);
+        const R = { id: ridges.length, pts: rounded };
+        ridges.push(R);
+        // passes: 1-2 low gaps, placed blind along the ridge's length
+        const nPass = 1 + (rr() < 0.5 ? 1 : 0);
+        const L = polyLen(rounded);
+        const ts = nPass === 1 ? [0.3 + rr() * 0.4] : [0.15 + rr() * 0.25, 0.6 + rr() * 0.25];
+        for (const t of ts) {
+          const p = polyPointAt(rounded, t * L);
+          passes.push({ ridgeId: R.id, x: round2(p[0]), y: round2(p[1]) });
+        }
+      }
+      // the ridge band: rock rises where the wall runs (on top of the noise)
+      const distToRidge = (x, y) => {
+        let best = Infinity;
+        for (const R of ridges) for (let k = 0; k + 1 < R.pts.length; k++)
+          best = Math.min(best, distPointSeg(x, y, R.pts[k], R.pts[k + 1]));
+        return best;
+      };
+      regions.forEach(reg => {
+        const d = distToRidge(reg.c[0], reg.c[1]);
+        if (d < 120) {
+          const b = 1 - d / 120;
+          reg.ruggedness = Math.max(reg.ruggedness, Math.round(50 + 45 * b));
+          reg.elevation = Math.max(reg.elevation, Math.round(55 + 40 * b));
+        }
+      });
+      // each pass belongs to the region whose anchor point sits closest
+      passes.forEach(p => {
+        let bi = 0, bd = Infinity;
+        regions.forEach((reg, i) => {
+          const d = Math.hypot(round2(reg.c[0]) - p.x, round2(reg.c[1]) - p.y);
+          if (d < bd) { bd = d; bi = i; }
+        });
+        p.regionIdx = bi;
+      });
+      regions.forEach(reg => { reg.isPass = 0; });
+      passes.forEach(p => { regions[p.regionIdx].isPass = 1; });
+      // precompute the wall: for every adjacency edge, does the centroid
+      // segment cross a ridge — and if so, does it cross AT a pass?
+      regions.forEach(reg => { reg.ridgeMult = new Map(); });
+      regions.forEach((A, i) => {
+        for (const j of A.neighbors) {
+          if (j <= i) continue;
+          const B = regions[j];
+          let mult = 1;
+          for (const R of ridges) {
+            for (let k = 0; k + 1 < R.pts.length; k++) {
+              const X = segInt(A.c, B.c, R.pts[k], R.pts[k + 1]);
+              if (!X) continue;
+              const atPass = passes.some(p => Math.hypot(X[0] - p.x, X[1] - p.y) < PASS_R);
+              mult = Math.max(mult, atPass ? PASS_MULT : RIDGE_WALL);
+            }
+          }
+          A.ridgeMult.set(B.id, mult);
+          B.ridgeMult.set(A.id, mult);
+        }
+      });
+
       // Prevailing wind: one seeded direction per world (0° = +x/east, CCW).
       const windDeg = Math.floor(sg("wind")() * 360);
-      return { windDeg };
+      return { windDeg, ridges, passes };
     }
 
     // ---- Cost-distance over the adjacency graph (Dijkstra, O(n^2)) ----------
@@ -733,7 +899,8 @@
     // the friction surface at region granularity: rugged country is "farther".
     function edgeCost(a, b) {
       const d = Math.hypot(a.c[0] - b.c[0], a.c[1] - b.c[1]);
-      return d * (1 + FRICTION * ((a.ruggedness + b.ruggedness) / 200));
+      const wall = a.ridgeMult ? (a.ridgeMult.get(b.id) || 1) : 1; // G1: the mountains are in the graph
+      return d * (1 + FRICTION * ((a.ruggedness + b.ruggedness) / 200)) * wall;
     }
     // Multi-source: every index in fromIdxs starts at 0. Returns parents too,
     // so least-cost paths (the conduit trunk) can be reconstructed.
@@ -781,6 +948,22 @@
           if (s > bestScore) { bestScore = s; cap = reg; }
         }
         capPoint = [cap.c[0], cap.c[1]];
+      }
+
+      // G1: the mountain's shadow — a pure geometric fact relative to the seat:
+      // does the straight line from a region's anchor to the seat cross a
+      // ridge? Computed on the SAME rounded geometry the export carries, so
+      // the column is exactly recomputable from the file alone.
+      {
+        const rp = (c) => [round2(c[0]), round2(c[1])];
+        const seatP = rp(cap.c);
+        regions.forEach(reg => {
+          const P = rp(reg.c);
+          let hit = false;
+          for (const R of geo.ridges) for (let k = 0; !hit && k + 1 < R.pts.length; k++)
+            if (segInt(P, seatP, R.pts[k], R.pts[k + 1])) hit = true;
+          reg.rangeShadow = (reg !== cap && hit) ? 1 : 0;
+        });
       }
 
       // Centrality to seat: inverted, normalized cost-distance (0..100; seat = 100).
@@ -1549,9 +1732,11 @@
       // site consecrated mid-run; its stream is keyed by region id, so the
       // dedication is stable however the site came to be)
       sanctionedSites.forEach(s => { s.name = markovName("temple", sx("shrine#" + s.regionId), usedNames); });
+      // mountains speak the frontier tongue
+      geo.ridges.forEach(R => { R.name = markovName("frontier", sx("ridge#" + R.id), usedNames); });
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg };
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -1624,7 +1809,9 @@
             event_type: reg.eventType,
             event_epoch: reg.eventEpoch,
             event_severity: reg.eventSeverity,
-            bloc_changes: reg.blocChanges
+            bloc_changes: reg.blocChanges,
+            range_shadow: reg.rangeShadow,
+            is_pass: reg.isPass
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -1661,6 +1848,21 @@
           type: "Feature",
           properties: { kind: "sanctioned_site", region_id: s.regionId, site_name: s.name },
           geometry: { type: "Point", coordinates: [round2(s.x), round2(s.y)] }
+        });
+      });
+      model.ridges.forEach(R => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "ridge", ridge_id: R.id, ridge_name: R.name },
+          geometry: { type: "LineString", coordinates: R.pts }
+        });
+      });
+      model.passes.forEach(p => {
+        const t = model.settlements.find(s => s.regionId === model.regions[p.regionIdx].id);
+        features.push({
+          type: "Feature",
+          properties: { kind: "pass", ridge_id: p.ridgeId, region_id: model.regions[p.regionIdx].id, pass_name: t.name + " Pass" },
+          geometry: { type: "Point", coordinates: [p.x, p.y] }
         });
       });
       model.garrisons.forEach(g => {
@@ -1768,6 +1970,20 @@
           geometry: { type: "LineString", coordinates: [[round2(A.c[0]), round2(A.c[1])], [round2(B.c[0]), round2(B.c[1])]] }
         });
       });
+      model.ridges.forEach(R => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "ridge", ridge_id: R.id, ridge_name: R.name, epoch: 0, epoch_date: epochDate(0) },
+          geometry: { type: "LineString", coordinates: R.pts }
+        });
+      });
+      model.passes.forEach(p => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "pass", ridge_id: p.ridgeId, region_id: model.regions[p.regionIdx].id, epoch: 0, epoch_date: epochDate(0) },
+          geometry: { type: "Point", coordinates: [p.x, p.y] }
+        });
+      });
       return {
         type: "FeatureCollection",
         name: "hinterland_epochs",
@@ -1855,6 +2071,15 @@
         (dark0 > 0
           ? `${dark0} of the realm's settlements sat off the conduit at the founding, in darkness: connected by road — everything is connected by road — but unserved, because the ledgers said serving them would not pay.`
           : `Every settlement of the realm sat on the conduit at the founding — a generosity of the ledgers the chronicle does not expect to last.`));
+      if (model.ridges.length) {
+        const shadowN = model.regions.filter(r => r.rangeShadow === 1).length;
+        const passNames = model.passes.map(p => `${town(model.regions[p.regionIdx].id).name} Pass`);
+        L.push(``);
+        L.push(`The ${list(model.ridges.map(R => R.name))} ${model.ridges.length > 1 ? "ranges wall" : "Range walls"} the country, and the roads over the rock go by ${list(passNames)}. ` +
+          (shadowN > 0
+            ? `${shadowN} of the realm's regions lie in the mountains' shadow, on the wrong side of the wall from ${model.capitalName} — and the chronicle will show what that costs.`
+            : `By the founding's luck, no region lies beyond the wall from ${model.capitalName}; the chronicle notes that such luck is geography, not justice.`));
+      }
 
       // -- the years ---------------------------------------------------------
       if (params.ep > 0) {
@@ -2017,6 +2242,17 @@
         const w = e.cls === "highway" ? 3.5 : (e.cls === "road" ? 2 : 1.2);
         const dash = e.cls === "track" ? ` stroke-dasharray="6 5"` : "";
         parts.push(`<line class="road" x1="${A.c[0].toFixed(1)}" y1="${fy(A.c[1]).toFixed(1)}" x2="${B.c[0].toFixed(1)}" y2="${fy(B.c[1]).toFixed(1)}" stroke="#6b5844" stroke-width="${w}" opacity="0.8"${dash}/>`);
+      });
+
+      // G1: the mountains — ridge polylines with a name label, passes as ∩
+      model.ridges.forEach(R => {
+        const pl = R.pts.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join(" ");
+        parts.push(`<polyline class="ridge" points="${pl}" fill="none" stroke="#4a3421" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" opacity="0.45"/>`);
+        const mid = R.pts[Math.floor(R.pts.length / 2)];
+        parts.push(`<text x="${mid[0].toFixed(1)}" y="${(fy(mid[1]) - 10).toFixed(1)}" font-size="13" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(R.name)} Range</text>`);
+      });
+      model.passes.forEach(p => {
+        parts.push(`<text class="pass" x="${p.x.toFixed(1)}" y="${(fy(p.y) + 6).toFixed(1)}" font-size="17" font-weight="700" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">∩</text>`);
       });
 
       // Sanctioned sites (Temple): violet triangles beside the settlement

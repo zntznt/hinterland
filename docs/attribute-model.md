@@ -131,7 +131,16 @@
 > court takes no gates that year and its rivals' tension rises (measured:
 > successions in 12/12 ep=10 worlds, crises in 11/12; every succession
 > narrated; the founding three byte-stable across the epoch knob; the
-> chronicle dated by the reigning Sovereign). **The
+> chronicle dated by the reigning Sovereign). **The argument surface (A1)**:
+> readers praised the fantasy and missed the point, so the app now SAYS what
+> it measures — a findings panel computed live from the exported columns
+> (quintile blight ratio, the shadow earnings gap, darkness and its burden,
+> who drinks last, who pays the gates), echoed in provenance as
+> `hinterland.findings` (exactly recomputable, stress-tested), a TWIN
+> exhibit drawing the world's sharpest same-distance pair across the wall,
+> an injustice default view with question-labels, and a chronicle that
+> closes with a verdict: "no villain wrote it, and it happened anyway."
+> **The
 > chronicle
 > (E4)**: the world narrates
 > itself — a deterministic written history (downloadable markdown + on-page

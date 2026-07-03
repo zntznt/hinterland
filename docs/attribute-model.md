@@ -59,7 +59,23 @@
 > Honest physics fallout, measured first: the coherent tilt began pouring
 > plumes into the wealthy lowlands (hill term damped; λ floor −0.15) and
 > the old popΔ↔wealth drain legitimately decorrelated — reframed onto the
-> attractiveness composite the mechanic actually reads. **The skyway
+> attractiveness composite the mechanic actually reads. **The Dominion
+> (X1)**: sovereignty is the last inequality. Every loop before X1 ran
+> inside the map; now the outside exists — an empire from beyond the sea
+> lands at the realm's best quay in ~half of the worlds with time and a
+> clear harbor (the door the ports opened: G3's second lottery is also
+> the vulnerability; landlocked and storm-guarded coasts are shielded).
+> The occupied zone keeps the smallest share of its own value (retention
+> ×0.6), carries the best wires in the realm (force-wired to the quay —
+> an enclave grid: the corridor connects the mine to the ship, not the
+> country to itself), and pays tribute whose incidence the Crown passes
+> to the politically weak (crown-bloc 1, others 2, occupied 3). The
+> occupation hires the local owners' row rather than replacing it
+> (comprador ratio 1.2–1.4), no faction can seize a garrisoned gate, no
+> domestic war burns occupied ground, and a rising that beats the
+> imperial garrison is a liberation. Measured: corridor fully wired in
+> 19/19 occupied worlds; free country keeps 1.4× the occupied share of
+> its own value; growth gap med 3 points. **The skyway
 > (S1)**: geography is destiny only for those who can't afford to leave
 > it. Lift lanes are chartered at the founding by the same ledger logic
 > that rations the conduit — gain × value: an aerie goes where flight
@@ -277,6 +293,9 @@ waste, and risk flow downhill to the periphery.
 | **the seat** | The dominant Crown center; apex of administration, grid, and services. |
 | **settlement tiers** | `prime` (large/prosperous) → `hub` → `outpost` → `holdfast` (bare frontier strongpoint). |
 | **the hinterland** | The neglected periphery: far from the seat, thin on conduit and wardline, near the blight, weak in governance. |
+| **the skyway / aerie** | Lift lanes above every ground multiplier, chartered where flight beats the ground by the most; an aerie is its port-district — an owners' quarter. The road below is for everyone; the sky is not. |
+| **the Dominion** | The power beyond the sea. Lands at the best quay, holds an occupied zone, assesses tribute, garrisons the gates, hires the local elite. Sovereignty inequality: the whole realm as someone else's hinterland. |
+| **the foothold / the occupied zone** | The harbor the Dominion landed at, and the cost-ball of country its garrison line encloses — force-wired to the quay (the extractive corridor). |
 
 **Mechanisms of neglect** (the design must make each visible in data): distance-decay
 of the state; extraction-without-retention; grid economics (skip thin/poor

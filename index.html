@@ -8,6 +8,39 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  THE DOMINION (X1): sovereignty is the last inequality — the whole realm
+  can be someone else's hinterland.
+    - Every loop so far ran INSIDE the map. X1 adds the outside: the
+      Dominion, the power beyond the sea, whose fleet arrives (a seeded
+      coin, epoch 2-6) at the realm's best quay. The door is the wound:
+      the same ports that made the realm rich (G3's second lottery) are
+      how an empire walks in — landlocked worlds and coasts inside the
+      maelstrom's reach are shielded, a geographic lottery at the scale
+      of the whole world.
+    - THE OCCUPIED ZONE: a cost-ball (OCC_R) around the foothold. At
+      arrival: retention x0.6 (the yield leaves the realm), every gate in
+      the zone re-tolls for the Dominion (held_by "dominion" — gates that
+      can never be seized back, banked by no one in the realm), and the
+      whole zone is FORCE-WIRED to the quay: the extractive corridor. The
+      conduit reaches you when someone else wants what you have.
+    - THE TRIBUTE: each epoch after arrival the occupied pay 3 at the
+      quay; the free realm pays the Crown's assessment — and the Crown
+      assesses its own bloc gently (crown-bloc 1, everyone else 2).
+      Sovereignty inequality reproduces the domestic hierarchy.
+    - THE COMPRADOR BARGAIN (H1 tie-in): occupation does not replace the
+      owners' row, it hires it — occupied elite_share +4 at arrival.
+    - LIBERATION (V1 tie-in): occupation stacks +18 on the revolt score
+      and +25 on the state's strength (the imperial garrison). A rising
+      that WINS on occupied ground throws the Dominion out of that region.
+    - The domestic machinery keeps its own lanes: no faction can seize a
+      garrisoned gate, no war burns occupied ground (the imperial peace),
+      no apostate tower rises under the garrison.
+    - Exported: occupied / occupied_epoch / tribute_burden columns,
+      dominant_bloc = "dominion" on occupied ground, hinterland.dominion
+      provenance, annexation event, findings.sovereignty (retention gap,
+      the corridor, the growth gap, the comprador ratio — all exactly
+      recomputable). Schema v31.
+
   THE SKYWAY (S1): geography is destiny only for those who can't afford
   to leave it.
     - The ground network prices everyone the same walls: ridge x4.5, ford
@@ -780,7 +813,7 @@
           <label class="radio"><input type="radio" name="view" value="traj" /> boom and bust</label>
           <label class="radio"><input type="radio" name="view" value="density" /> how many souls</label>
         </div>
-        <div class="glyphkey">Preview only &mdash; the export always carries every column. &#9632; refinery &middot; gold lines conduit (dashed = off-grid) &middot; H/W/D healer/waterworks/wardstation &middot; &#9650; shrine &middot; G garrison &middot; &#9875; port &middot; &#9670; ruin &middot; &#9820; tower &middot; &#9552; bridge &middot; &#8745; pass &middot; &#9673; maelstrom &middot; &#9055; aerie (violet dashes = the skyway) &middot; red dashes join the twins.</div>
+        <div class="glyphkey">Preview only &mdash; the export always carries every column. &#9632; refinery &middot; gold lines conduit (dashed = off-grid) &middot; H/W/D healer/waterworks/wardstation &middot; &#9650; shrine &middot; G garrison &middot; &#9875; port &middot; &#9670; ruin &middot; &#9820; tower &middot; &#9552; bridge &middot; &#8745; pass &middot; &#9673; maelstrom &middot; &#9055; aerie (violet dashes = the skyway) &middot; &#9873; the Dominion's foothold &middot; red dashes join the twins.</div>
       </div>
     </div>
 
@@ -813,11 +846,12 @@
 
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
-    const SCHEMA_VERSION = 30;
+    const SCHEMA_VERSION = 31;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
     const FLY_BOARD = 35;     // boarding the lift-barge: the fixed price of the sky
+    const OCC_R = 450;        // the Dominion's garrison line: cost-radius of the occupied zone
     const SEA_L = 400;        // sea_access decay length over the cost graph
     const FORD_MULT = 2.2;    // crossing a river off-bridge: wide water is a wall too
     const WILD_R = 220;       // euclidean reach of a ruin's peril / a tower's shadow
@@ -2001,6 +2035,7 @@
         E: regions.map(r => r.E),
         blight: regions.map(r => r.blight),
         eliteShare: regions.map(r => Math.round(r.eliteShare)),
+        occupied: regions.map(r => r.occupied ? 1 : 0),
         onGrid: regions.map((_, i) => onGrid[i]),
         edgeCount: conduitEdges.length
       });
@@ -2137,6 +2172,13 @@
       const rV = sx("revolt");
       const revoltBar = 95 + rV() * 25;
       let responded = false, revoltIdx = -1, revoltWon = false;
+      // X1: THE DOMINION — the power beyond the sea. The same door the
+      // trade leaves through is the door an empire can walk in.
+      const rX = sx("dominion");
+      const dominionCoin = rX() < 0.5;
+      const dominionEpoch = 2 + Math.floor(rX() * Math.min(Math.max(params.ep, 1), 5));
+      let dominionAt = -1, footholdIdx = -1;
+      regions.forEach(reg => { reg.occupied = false; reg.occupiedEpoch = -1; });
       // E5: the dynasty structure — reigns drawn blind before time runs;
       // the names come later (after the world has taken all of its own)
       const rD = sx("dynasty");
@@ -2169,9 +2211,13 @@
           // takes its cut before anything compounds — and the cut is not
           // burned, it is BANKED at the gate: the toll house enriches the
           // holder's town with money that was someone else's growth
-          const gateIncome = holdings.reduce((s2, h) => s2 + (h.regionIdx === ri && h.heldBy !== "none" ? 2 : 0), 0);
+          const gateIncome = holdings.reduce((s2, h) => s2 + (h.regionIdx === ri && h.heldBy !== "none" && h.heldBy !== "dominion" ? 2 : 0), 0);
           const bread = granaryOn ? clamp(Math.round(0.18 * (medW2 - reg.wealth)), -6, 6) : 0;
-          reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg) - 0.035 * reg.tollBurden + gateIncome + bread), 0, 100);
+          // X1: the tribute — the Dominion's column in the realm's ledger.
+          // The occupied pay at the quay; the free pay the Crown's
+          // assessment, and the Crown assesses its own bloc gently
+          const trib = dominionAt === -1 ? 0 : (reg.occupied ? 3 : (reg.bloc === "crown" ? 1 : 2));
+          reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg) - 0.035 * reg.tollBurden + gateIncome + bread - trib), 0, 100);
           if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
           // H1: the rents concentrate before anything trickles — the gate's
           // take and the works' profit land on the owners' row first; only
@@ -2273,7 +2319,7 @@
         if (warCoin && warIdx === -1 && e + 1 === warEpoch) {
           let wreg = null, wbest = -Infinity;
           regions.forEach(reg => {
-            if (reg.bloc !== "contested") return;
+            if (reg.bloc !== "contested" || reg.occupied) return; // the Dominion keeps its own peace
             // F2: the battlefield prefers ground where the warring pair meets
             const pairBonus = (warPair && reg.topTwo &&
               pairKey(reg.topTwo[0], reg.topTwo[1]) === pairKey(warPair[0], warPair[1])) ? 40 : 0;
@@ -2300,6 +2346,47 @@
             events.push({ epoch: e + 1, type: "war", region_id: wreg.id, factions: warFactions });
           }
         }
+        // X1: THE ARRIVAL — the Dominion's fleet stands off the realm's
+        // best quay. A coast inside the maelstrom's reach turns it back:
+        // the storm is a wall the empire cannot toll.
+        if (dominionCoin && dominionAt === -1 && e + 1 === dominionEpoch) {
+          let best = -1;
+          regions.forEach((reg, i) => {
+            if (reg.isPort !== 1 || !clearOfMael(reg)) return;
+            if (best === -1 || reg.wealth > regions[best].wealth ||
+                (reg.wealth === regions[best].wealth && i < best)) best = i;
+          });
+          if (best >= 0) {
+            footholdIdx = best; dominionAt = e + 1;
+            const occRun = costDistances(regions, [footholdIdx]);
+            regions.forEach((reg, i) => {
+              if (occRun.dist[i] > OCC_R) return;
+              reg.occupied = true; reg.occupiedEpoch = e + 1;
+              reg.retention = Math.round(reg.retention * 0.6);   // the yield leaves the realm
+              reg.eliteShare = Math.min(92, reg.eliteShare + 4); // the occupation hires the owners' row
+              // the extractive corridor: the zone is force-wired to the
+              // quay — the conduit reaches you when someone else wants
+              // what you have (Dijkstra prefix: the path stays in the ball)
+              onGrid[i] = true;
+              let cur = i;
+              while (cur !== footholdIdx && occRun.parent[cur] !== -1) {
+                addEdge(cur, occRun.parent[cur], "trunk");
+                onGrid[occRun.parent[cur]] = true;
+                cur = occRun.parent[cur];
+              }
+            });
+            // the quays and gates of the occupied country now toll for a
+            // power no one in the realm can even petition
+            holdings.forEach(h => {
+              if (regions[h.regionIdx].occupied) { h.heldBy = "dominion"; h.ref.heldBy = "dominion"; }
+            });
+            const fh = regions[footholdIdx];
+            fh.eventType = "annexation"; fh.eventEpoch = e + 1;
+            fh.eventSeverity = 75 + Math.round(rX() * 20);
+            events.push({ epoch: e + 1, type: "annexation", region_id: fh.id,
+              occupied: regions.filter(r => r.occupied).length });
+          }
+        }
         // E5: successions — power changes hands in a room, not on a map.
         // A contested court takes no gates this year, and the rivals circle.
         for (const F of ["crown", "temple", "magnate"]) {
@@ -2324,7 +2411,7 @@
           for (const F of ["crown", "temple", "magnate"]) {
             if (dynasties[F].some(r => r.from === e + 1 && r.contested)) continue; // the court fights itself
             for (const h of holdings) {
-              if (h.heldBy === F) continue;
+              if (h.heldBy === F || h.heldBy === "dominion") continue; // garrisoned gates are not for sale
               const host = regions[h.regionIdx];
               const mine = reachOf(F, host) * SEIZE_PREF[F][h.type];
               const theirs = h.heldBy === "none" ? 30 : reachOf(h.heldBy, host);
@@ -2379,7 +2466,7 @@
         if (raiseCoin && e + 1 === raiseEpoch && regions.filter(r => r.hasTower === 1).length < 2) {
           let bi = -1, bs = -Infinity;
           regions.forEach((reg, ri) => {
-            if (reg.hasTower === 1) return;
+            if (reg.hasTower === 1 || reg.occupied) return; // no tower rises under the garrison
             const s = (reg.bloc === "ungoverned" ? 40 : reg.bloc === "contested" ? 20 : reg.bloc === "crown" ? -30 : 0) +
               (onGrid[ri] ? 0 : 25) + (100 - reg.centrality) * 0.2 + (rF() - 0.5) * 8;
             if (s > bs || (s === bs && (bi === -1 || ri < bi))) { bs = s; bi = ri; }
@@ -2500,13 +2587,14 @@
           let ri = -1, rs = -Infinity;
           regions.forEach((reg, i) => {
             if (reg.isCapital || i === warIdx) return;
-            const sc = reg.injustice + 0.5 * reg.tollBurden + (onGrid[i] ? 0 : 15);
+            const sc = reg.injustice + 0.5 * reg.tollBurden + (onGrid[i] ? 0 : 15) + (reg.occupied ? 18 : 0);
             if (sc > rs || (sc === rs && (ri === -1 || i < ri))) { rs = sc; ri = i; }
           });
           if (ri >= 0 && rs >= revoltBar) {
             revoltIdx = ri;
             const reg = regions[ri];
-            const stateStr = 42 + 0.5 * reg.centrality + Math.min(40, treasuries.crown) + rV() * 25;
+            const stateStr = 42 + 0.5 * reg.centrality + Math.min(40, treasuries.crown) + rV() * 25
+              + (reg.occupied ? 25 : 0); // the imperial garrison stands behind the wardline
             revoltWon = rs > stateStr + 20;
             if (revoltWon) {
               freeTownIdx = ri;                       // tolls no one, ever again
@@ -2515,6 +2603,7 @@
               reg.wealth = clamp(reg.wealth + 10, 0, 100);
               if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
               holdings.forEach(h => { if (h.regionIdx === ri) { h.heldBy = "none"; h.ref.heldBy = "none"; } });
+              reg.occupied = false; // liberation: the factors are thrown into the harbor
               tollScale *= 0.7;                       // fear spreads: every holder softens
               reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
               if (!granaryOn && rV() < 0.5) {
@@ -2774,9 +2863,12 @@
         // is near-defenseless no matter how exposed it is
         const priority = clamp(0.4 * reg.centrality + 0.4 * reg.forceProjection + 0.2 * reg.refining, 0, 100);
         reg.wardline = Math.round(Math.pow(reg.conduitAccess / 100, 1.5) * priority);
+        // X1: occupied ground admits no domestic contest — the column
+        // measures the REALM's writ, and the realm's writ ends at the
+        // garrison line (reads the same bloc the export carries)
         reg.security = reg.forceProjection >= 65 ? "secured"
           : reg.forceProjection >= 35 ? "patrolled"
-          : (reg.bloc === "contested" ? "contested" : "ungoverned");
+          : ((reg.occupied ? "dominion" : reg.bloc) === "contested" ? "contested" : "ungoverned");
       });
 
       // W2 shadow economy: the negative image of the state. Smugglers move
@@ -2878,9 +2970,12 @@
           0.55 * (100 - reg.centrality) + (reg.onConduit ? 0 : 20) + (rs() - 0.5) * 16
         ), 0, 100);
         // trust in institutions vs reliance on kin: designed mirrors
+        // X1: reads the exported bloc (occupied = "dominion"): the Crown's
+        // civic bonus does not survive the Crown's abdication
+        const effBloc = reg.occupied ? "dominion" : reg.bloc;
         reg.socialTrust = clamp(Math.round(
           20 + 0.4 * reg.centrality + (reg.onConduit ? 12 : 0) - 0.2 * reg.blight +
-          0.1 * reg.forceProjection + (reg.bloc === "crown" ? 8 : reg.bloc === "ungoverned" ? -8 : 0) -
+          0.1 * reg.forceProjection + (effBloc === "crown" ? 8 : effBloc === "ungoverned" ? -8 : 0) -
           (reg.towerNear === 1 ? 12 : 0) // fear lives near the apostate's walls
         ), 0, 100);
         reg.kinship = clamp(Math.round(
@@ -2945,7 +3040,8 @@
       const skywayName = markovName("lowland", sx("skyway"), usedNames);
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, seaLevel: geo.seaLevel, contours: geo.contours, skywayName };
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, seaLevel: geo.seaLevel, contours: geo.contours, skywayName,
+        dominion: dominionAt !== -1 ? { arrived: dominionAt, foothold: footholdIdx } : null };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -2983,7 +3079,7 @@
             service_gap_idx: reg.serviceGap,
             temple_reach: reg.templeReach,
             magnate_reach: reg.magnateReach,
-            dominant_bloc: reg.bloc,
+            dominant_bloc: reg.occupied ? "dominion" : reg.bloc,
             market_access: reg.marketAccess,
             pilgrim_flux: reg.pilgrimFlux,
             force_projection: reg.forceProjection,
@@ -3041,7 +3137,10 @@
             is_skyport: reg.isSkyport,
             seat_cost_ground: reg.seatCostGround,
             seat_cost_sky: reg.seatCostSky,
-            sky_advantage: reg.skyAdvantage
+            sky_advantage: reg.skyAdvantage,
+            occupied: reg.occupied ? 1 : 0,
+            occupied_epoch: reg.occupiedEpoch,
+            tribute_burden: model.dominion ? (reg.occupied ? 3 : (reg.bloc === "crown" ? 1 : 2)) : 0
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -3233,6 +3332,7 @@
                     temple: model.dynasties.temple.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })),
                     magnate: model.dynasties.magnate.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })) },
           skyway: { name: model.skywayName, ports: model.regions.filter(r => r.isSkyport === 1).map(r => r.id) },
+          dominion: model.dominion ? { arrived_epoch: model.dominion.arrived, foothold: model.regions[model.dominion.foothold].id, occupied_n: model.regions.filter(r => r.occupied).length } : null,
           findings: computeFindings(model),
           tensions: { crown_magnate: Math.round(model.tensions.crown_magnate), crown_temple: Math.round(model.tensions.crown_temple), magnate_temple: Math.round(model.tensions.magnate_temple) },
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
@@ -3267,7 +3367,8 @@
               blight_load: S.blight[i],
               on_conduit: S.onGrid[i] ? 1 : 0,
               injustice_idx: Math.round(100 * (S.blight[i] / 100) * (1 - S.wealth[i] / 100)),
-              elite_share: S.eliteShare[i]
+              elite_share: S.eliteShare[i],
+              occupied: S.occupied[i]
             },
             geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
           });
@@ -3404,6 +3505,7 @@
         hinterland: {
           schema_version: SCHEMA_VERSION, series: true, epochs: params.ep,
           skyway: { name: model.skywayName, ports: model.regions.filter(r => r.isSkyport === 1).map(r => r.id) },
+          dominion: model.dominion ? { arrived_epoch: model.dominion.arrived, foothold: model.regions[model.dominion.foothold].id, occupied_n: model.regions.filter(r => r.occupied).length } : null,
           years_per_epoch: 25,
           seed: String(params.seed), regions: params.regions, relax: params.relax,
           bias: params.bias,
@@ -3444,7 +3546,7 @@
       legib:      { lo: [247, 247, 252], hi: [50, 48, 96],   label: "legibility gap (the uncounted)" },
       density:    { lo: [254, 237, 222], hi: [166, 54, 3],   label: "pop. density (per 100×100 cell)" }
     };
-    const BLOC_COLORS = { crown: "#6baed6", temple: "#9e9ac8", magnate: "#fd8d3c", contested: "#cccccc", ungoverned: "#f7f7f7" };
+    const BLOC_COLORS = { crown: "#6baed6", temple: "#9e9ac8", magnate: "#fd8d3c", contested: "#cccccc", ungoverned: "#f7f7f7", dominion: "#5a5550" };
     const TRAJ_COLORS = { boom: "#2f9e44", stable: "#d9d9d9", decline: "#f08c00", collapse: "#7a1f1f" };
     const BIOME_COLORS = { alpine: "#e8e6e1", badland: "#d9a066", moor: "#a8a58c", marsh: "#7fa88c", forest: "#4f7a4f", steppe: "#cfc06e", grassland: "#a3bd6b" };
     function rampColor(ramp, t) {
@@ -3577,8 +3679,23 @@
         reached_n: R.filter(r => r.skyAdvantage >= 10).length,
         twin_sky: twins ? R.find(r => r.id === twins.shadow).skyAdvantage : null
       };
+      // X1: sovereignty — the last inequality. The occupied country keeps
+      // less of its own value, is the ONLY fully-wired country (the
+      // extractive corridor), grows slower, and its owners' row does
+      // better than the free realm's (the comprador bargain). All exactly
+      // recomputable from the exported columns.
+      const occs = R.filter(r => r.occupied);
+      const freeR = R.filter(r => !r.occupied);
+      const sovereignty = occs.length && freeR.length ? {
+        occupied_n: occs.length,
+        corridor_wired: occs.filter(r => r.onConduit).length,
+        retent_ratio: r1(mean(freeR.map(r => r.retention)) / Math.max(1, mean(occs.map(r => r.retention)))),
+        growth_gap: med(freeR.map(r => r.wealth - r.wealthT0)) - med(occs.map(r => r.wealth - r.wealthT0)),
+        comprador_ratio: r1(mean(occs.map(r => r.eliteShare)) / Math.max(1, mean(freeR.map(r => r.eliteShare))))
+      } : null;
       return {
         sky,
+        sovereignty,
         rain_split: rainSplit,
         gini_people: giniPeople,
         gini_between_people: giniBetween,
@@ -3802,9 +3919,15 @@
             line = `The seat answered fear with fists: ${PROSE[ev.measure]}. The chronicle records no debate.`;
           }
           else if (ev.type === "revolt") {
-            line = ev.outcome === "won"
-              ? `${t.name} rose. The wardline broke before the mob — and the mob held. ${t.name} keeps what it makes now, and its gates toll no one; the ledgers record it as a dangerous precedent, and the town records it as the first good year.`
-              : `${t.name} rose, and was put down. The garrison came after the hangings, and the injustice that caused the rising was carefully recorded and carefully unaddressed.`;
+            const rr = model.regions.find(r => r.id === ev.region_id);
+            const underDominion = rr.occupiedEpoch !== -1 && rr.occupiedEpoch < ev.epoch;
+            line = underDominion
+              ? (ev.outcome === "won"
+                ? `${t.name} rose against the Dominion itself — and won. The factors were thrown into the harbor, the assessment tables burned, and the town keeps what it makes now. One region freed itself; the chronicle notes that the rest watched, and that the Dominion noted the same.`
+                : `${t.name} rose against the Dominion, and the imperial garrison did what imperial garrisons are kept for. The chronicle records the rising because the assessment tables do not.`)
+              : (ev.outcome === "won"
+                ? `${t.name} rose. The wardline broke before the mob — and the mob held. ${t.name} keeps what it makes now, and its gates toll no one; the ledgers record it as a dangerous precedent, and the town records it as the first good year.`
+                : `${t.name} rose, and was put down. The garrison came after the hangings, and the injustice that caused the rising was carefully recorded and carefully unaddressed.`);
           }
           else if (ev.type === "treaty") {
             const FN3 = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };
@@ -3813,6 +3936,11 @@
               (ev.tribute > 0 ? ` and paid ${ev.tribute} in tribute out of its ledger` : ` and kept its ledger, having little in it`);
             line = `In the winter after the fighting, terms were set at ${t.name}. ${W2.charAt(0).toUpperCase() + W2.slice(1)} wrote them: ${terms}. ` +
               `The chronicle observes that the terms were written by the party with the deeper ledger, as terms usually are.`;
+          }
+          else if (ev.type === "annexation") {
+            line = `The Dominion's sails stood off ${t.name} Harbor at first light, and by winter its writ ran over ${ev.occupied} regions. ` +
+              `There was no war to record: the fleet was the argument. The quays now toll for a power beyond the sea, the yield of the occupied country is assessed at the water, ` +
+              `and the wires came with the garrison — the first country in the realm to be wired entire, because its cargo is wanted elsewhere.`;
           }
           else if (ev.type === "consecration") {
             const shrine = model.sanctionedSites.find(s => s.regionId === ev.region_id);
@@ -3882,6 +4010,18 @@
             (FS.within_pct !== null && FS.within_pct >= 15 ? `; a map of regions, which knows towns but not rows, misses ${FS.within_pct} parts in a hundred of the whole spread` : ``) + `.`);
         }
       }
+      { // X1: the state of the realm counts its sovereign — or its master
+        const occN = model.regions.filter(r => r.occupied).length;
+        if (model.dominion && occN > 0) {
+          const fh = town(model.regions[model.dominion.foothold].id);
+          L.push(``);
+          L.push(`And over all of it stands the Dominion, which holds ${occN} regions from its foothold at ${fh.name} and calls the arrangement trade. ` +
+            `The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. ` +
+            `The Crown still reigns; the chronicle is required to note the difference between reigning and ruling.`);
+        } else if (model.dominion === null && params.ep > 0) {
+          // no clause: worlds the Dominion never reached tell no tale of it
+        }
+      }
       const darkNow = model.regions.filter(r => !r.onConduit).length;
       L.push(``);
       L.push(darkNow > 0
@@ -3927,6 +4067,8 @@
           V.push(`And within every wall the shares were already set: ${F.owners.pop_pct} in a hundred hold ${F.owners.coin_pct} of every hundred coins, and stand ${F.class_gap} times apart from the rest.`);
         if (F.sky && F.sky.shadow_adv !== null && F.sky.open_adv !== null && F.sky.shadow_adv > F.sky.open_adv)
           V.push(`The skyway would abolish ${F.sky.shadow_adv} parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.`);
+        if (F.sovereignty)
+          V.push(`And the realm's own ledger is a column in someone else's: ${F.sovereignty.occupied_n} regions occupied, the yield assessed at the quay, the free country keeping ${F.sovereignty.retent_ratio} times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others.`);
         if (F.rain_split && F.rain_split.wet - F.rain_split.dry >= 8 && model.ridges.length)
           V.push(`The ${model.ridges[0].name} divides even the weather: the rain falls at ${F.rain_split.wet} on one side and ${F.rain_split.dry} in its lee, and no one on the dry side chose the wind.`);
         if (F.twins)
@@ -3993,6 +4135,11 @@
           `${esc(town(b.id).name)}: wealth ${b.wealth}, market ${b.marketAccess}, burden ${b.burden}. ` +
           `${esc(town(a.id).name)}, behind the wall: wealth ${a.wealth}, market ${a.marketAccess}, burden ${a.burden}. ` +
           `<b>The difference is the mountain</b> — the red line on the map joins them.`);
+      }
+      if (F.sovereignty) {
+        L.push(`<span style="color:#8a7a68">THE DOMINION:</span> <b>${F.sovereignty.occupied_n}</b> regions are occupied ground, and every levy in them is paid to a power no one here can petition. ` +
+          `The free country keeps <b>${F.sovereignty.retent_ratio}×</b> the share of its own value that the occupied country keeps — yet the occupied zone is the realm's best-wired country (${F.sovereignty.corridor_wired}/${F.sovereignty.occupied_n} on the conduit): <b>the grid reaches you when someone else wants what you have</b>.` +
+          (F.sovereignty.comprador_ratio > 1 ? ` And the occupied owners' row holds ${F.sovereignty.comprador_ratio}× the free realm's share: the occupation did not replace the owners, it hired them.` : ``));
       }
       if (F.sky && F.sky.shadow_adv !== null && F.sky.open_adv !== null && F.sky.shadow_adv >= F.sky.open_adv + 5)
         L.push(`<span style="color:#8fa8d9">THE SKYWAY:</span> behind the wall the lanes would cut the road to the seat by <b>${F.sky.shadow_adv}%</b> (the open country gains ${F.sky.open_adv}%) — and boarding is an owners' privilege. ` +
@@ -4061,7 +4208,7 @@
         view === "injustice" ? Math.round(100 * (RB(reg) / 100) * (1 - RW(reg) / 100)) :
         view === "burden" ? reg.burden.toFixed(1) :
         view === "gap" ? reg.serviceGap :
-        view === "bloc" ? reg.bloc.slice(0, 3) :
+        view === "bloc" ? (reg.occupied ? "dominion" : reg.bloc).slice(0, 3) :
         view === "traj" ? reg.boomBust.slice(0, 4) :
         view === "biome" ? reg.biome.slice(0, 5) :
         view === "market" ? reg.marketAccess :
@@ -4069,7 +4216,7 @@
         view === "aband" ? reg.abandonment :
         view === "legib" ? reg.legibility :
         (Math.round(dens(reg) * 10) / 10).toFixed(1);
-      const cellFill = (reg) => view === "bloc" ? BLOC_COLORS[reg.bloc]
+      const cellFill = (reg) => view === "bloc" ? BLOC_COLORS[reg.occupied ? "dominion" : reg.bloc]
         : view === "traj" ? TRAJ_COLORS[reg.boomBust]
         : view === "biome" ? BIOME_COLORS[reg.biome]
         : rampColor(ramp, cellT(reg));
@@ -4140,6 +4287,12 @@
         sp.forEach(reg => {
           parts.push(`<text class="skyport" x="${(reg.c[0] + 26).toFixed(1)}" y="${(fy(reg.c[1]) + 34).toFixed(1)}" font-size="17" text-anchor="middle" fill="#3f007d" paint-order="stroke" stroke="#fff" stroke-width="3">⍟</text>`);
         });
+      }
+
+      // X1: the Dominion's standard flies at its foothold
+      if (model.dominion) {
+        const f = model.regions[model.dominion.foothold];
+        parts.push(`<text class="dominion" x="${(f.c[0] + 26).toFixed(1)}" y="${(fy(f.c[1]) - 34).toFixed(1)}" font-size="18" text-anchor="middle" fill="#3a2f2a" paint-order="stroke" stroke="#fff" stroke-width="3">⚑</text>`);
       }
 
       // G3: the ports — ⚓ where the realm meets the water
@@ -4232,7 +4385,7 @@
       stage.querySelector("#map").addEventListener("click", onMapClick);
 
       if (view === "bloc") {
-        document.getElementById("legendLabel").textContent = "dominant bloc (crown / temple / magnate / contested / ungoverned)";
+        document.getElementById("legendLabel").textContent = "dominant bloc (crown / temple / magnate / contested / ungoverned / dominion)";
         document.getElementById("legendBar").style.background =
           `linear-gradient(to right, ${BLOC_COLORS.crown} 0 20%, ${BLOC_COLORS.temple} 20% 40%, ${BLOC_COLORS.magnate} 40% 60%, ${BLOC_COLORS.contested} 60% 80%, ${BLOC_COLORS.ungoverned} 80% 100%)`;
       } else if (view === "biome") {
@@ -4265,7 +4418,7 @@
         ["wind / dump bias", `${model.windDeg}° / λ ${params.db}%`],
         ["facilities", (() => { const c = model.facilities.reduce((m, f) => { m[f.type] = (m[f.type] || 0) + 1; return m; }, {}); return `${c.healer || 0} healer / ${c.waterworks || 0} water / ${c.wardstation || 0} ward`; })()],
         ["worst burden", Math.max(...model.regions.map(r => r.burden)).toFixed(1) + " /1k"],
-        ["blocs", (() => { const c = model.regions.reduce((m, r) => { m[r.bloc] = (m[r.bloc] || 0) + 1; return m; }, {}); return ["crown", "temple", "magnate", "contested", "ungoverned"].map(b => `${c[b] || 0} ${b.slice(0, 3)}`).join(" / "); })()],
+        ["blocs", (() => { const c = model.regions.reduce((m, r) => { const b = r.occupied ? "dominion" : r.bloc; m[b] = (m[b] || 0) + 1; return m; }, {}); return ["crown", "temple", "magnate", "contested", "ungoverned"].map(b => `${c[b] || 0} ${b.slice(0, 3)}`).join(" / ") + (c.dominion ? ` / ${c.dominion} dom` : ``); })()],
         ["roads", (() => { const c = model.roadEdges.reduce((m, e) => { m[e.cls] = (m[e.cls] || 0) + 1; return m; }, {}); return `${model.roadEdges.length} edges (${c.highway || 0} hwy / ${c.road || 0} road / ${c.track || 0} track)`; })()],
         ["security", (() => { const c = model.regions.reduce((m, r) => { m[r.security] = (m[r.security] || 0) + 1; return m; }, {}); return `${model.garrisons.length} garrisons — ${c.secured || 0} sec / ${c.patrolled || 0} pat / ${c.contested || 0} con / ${c.ungoverned || 0} ung`; })()],
         ["deep time", (() => { const dead = model.regions.filter(r => r.exhausted).length; const shocked = model.regions.filter(r => r.shock !== "none").length; return `${dead} dead-lode regions · ${shocked} scarred by shocks`; })()],
@@ -4277,6 +4430,7 @@
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["the owners", (() => { const FR = computeFindings(model); return FR.owners ? `${FR.owners.pop_pct}% of people hold ${FR.owners.coin_pct}% of the coin` : "\u2014"; })()],
         ["the skyway", (() => { const sp = model.regions.filter(r => r.isSkyport === 1); return sp.length >= 2 ? `${esc(model.skywayName)} Lane — ${sp.length} aeries (${sp.map(r => esc(model.settlements.find(s => s.regionId === r.id).name)).join(", ")})` : "no lane worth the lift"; })()],
+        ["the dominion", model.dominion ? `arrived ${1000 + 25 * model.dominion.arrived} — ${model.regions.filter(r => r.occupied).length} regions occupied` : "beyond the horizon, this age"],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1000 (y-up)"]
       ];

@@ -8,6 +8,34 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  DIVERGENT HISTORIES (V1): the counter-currents — no two rolls, one story.
+    - The critique was fair: every loop we built amplified inequality, so
+      every world converged to the same ending with different scenery. V1
+      adds the forces that push BACK, and lets each history decide which
+      side wins.
+    - THE LEVELING PLAGUE: survivors charge more. A plagued region gains
+      +15 permanent value retention — the same shock that scars can also
+      compress, as it did in the world we live in.
+    - REFORM AND REACTION: two epochs after the run's first wound, the
+      seat RESPONDS (45% reform / 30% reaction / 25% nothing): a Dumping
+      Reform eases the spoil bias, a Grid Charter lowers the connection
+      bar, a Toll Amnesty caps the gates — or the reaction entrenches the
+      dumping and raises the tolls. The measure is chosen by what ails
+      the realm most. These change the LOOP'S OWN PARAMETERS mid-run:
+      identical geographies genuinely fork.
+    - THE REVOLT: the periphery gets agency. Once per run, the region
+      where injustice, tolls, and darkness stack highest can rise; its
+      strength against the seat's decides — CRUSHED (deeper scar, a
+      garrison after) or WON: a free town that keeps what it makes and
+      tolls no one.
+    - THE TRAJECTORY IS THE FINDING: gini at founding and at close are
+      exported (exactly recomputable from wealth_t0 / wealth); the panel
+      and the verdict LEAD with the direction and its turning point. The
+      acceptance test is the criticism inverted: across the sweep, both
+      gap-closing and gap-entrenching worlds must exist, revolts must win
+      somewhere and die somewhere, and twenty panels must not open with
+      the same sentence. Schema v27.
+
   THE ARGUMENT SURFACE (A1): the app finally SAYS what it measures.
     - Readers praised the fantasy map and missed the point: the argument
       lived in columns, tests, and docs while the surface showed scenery.
@@ -624,7 +652,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 26;
+    const SCHEMA_VERSION = 27;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const SEA_L = 400;        // sea_access decay length over the cost graph
@@ -1459,6 +1487,10 @@
         reg.popDensity = Math.round((reg.population / (reg.area / 10000)) * 10) / 10;
       });
 
+      // V1: the loop's own parameters are now history-mutable — reforms and
+      // reactions shift them mid-run, and the free town escapes the tolls
+      let dbShift = 0, gtShift = 0, tollScale = 1, freeTownIdx = -1, granaryOn = false;
+
       // Conduit (grid economics). Trunk: least-cost refinery->seat paths, with
       // pass-through regions tapped. Then greedy gated expansion: repeatedly
       // connect the best benefit/cost candidate while (population x wealth) /
@@ -1482,7 +1514,7 @@
           cur = p;
         }
       });
-      const thresh = Math.pow(params.gt / 40, 4);
+      const thresh = () => Math.pow(clamp(params.gt + gtShift, 0, 100) / 40, 4); // V1: charters move the bar
       const expandConduit = () => { // greedy gated expansion (ratchet: adds only)
         for (;;) {
           let best = null;
@@ -1498,7 +1530,7 @@
             if (!best || score > best.score || (score === best.score && i < best.i))
               best = { i, via, score };
           });
-          if (!best || best.score < thresh) break;
+          if (!best || best.score < thresh()) break;
           onGrid[best.i] = true;
           addEdge(best.i, best.via, "branch");
         }
@@ -1520,7 +1552,7 @@
       const computeBlight = () => { // reads CURRENT wealth: dumping re-targets the poor
         const windRad = geo.windDeg * Math.PI / 180;
         const wvx = Math.cos(windRad), wvy = Math.sin(windRad);
-        const lam = params.db / 100;
+        const lam = clamp(params.db + dbShift, 0, 100) / 100; // V1: reforms and reactions move the bias
         const blightRaw = regions.map((_, i) => scar[i]);
         regions.forEach(rf => {
           if (rf.refining <= 0) return;
@@ -1657,16 +1689,16 @@
           let cur = i;
           while (cur !== seatIdx && seatRun.parent[cur] !== -1) {
             cur = seatRun.parent[cur];
-            if (heldSet.has(cur)) t += TOLL_SEAT; // every held gate on the king's road
+            if (heldSet.has(cur)) t += TOLL_SEAT * tollScale; // every held gate on the king's road
           }
           if (seaRun) {
             cur = i;
             while (seaRun.parent[cur] !== -1) {
               cur = seaRun.parent[cur];
-              if (heldSet.has(cur)) t += TOLL_PORT; // and on the way to the water
+              if (heldSet.has(cur)) t += TOLL_PORT * tollScale; // and on the way to the water
             }
           }
-          reg.tollBurden = clamp(t, 0, 100);
+          reg.tollBurden = i === freeTownIdx ? 0 : clamp(Math.round(t), 0, 100); // the free town tolls no one
         });
       };
       computeTolls(); // the founding exposure: who WOULD pay, before time runs
@@ -1705,6 +1737,12 @@
       let warPair = null;
       // F3: the treaty that follows the war
       let warFactions = null, warEpochFired = -1, treatyDone = false;
+      // V1: institutions and the revolt — the counter-currents' dice
+      const rIns = sx("institutions");
+      const respCoin = rIns();                 // <0.45 reform, <0.75 reaction, else nothing
+      const rV = sx("revolt");
+      const revoltBar = 95 + rV() * 25;
+      let responded = false, revoltIdx = -1, revoltWon = false;
       // E5: the dynasty structure — reigns drawn blind before time runs;
       // the names come later (after the world has taken all of its own)
       const rD = sx("dynasty");
@@ -1728,13 +1766,18 @@
       // chasing the winners, and the dumping re-targets the poor.
       for (let e = 0; e < params.ep; e++) {
         regions.forEach(reg => { reg.E = Math.round(reg.E * 0.78); }); // mines draw down
+        // V1: the Crown Granary, where decreed — a levy on the fat years,
+        // bread in the lean ones; wealth is pulled toward the median, ±3 a year
+        const medW2 = granaryOn
+          ? regions.map(r => r.wealth).sort((a, b) => a - b)[Math.floor(regions.length / 2)] : 0;
         regions.forEach((reg, ri) => {
           // F1: connection itself is taxed — every held gate on the way out
           // takes its cut before anything compounds — and the cut is not
           // burned, it is BANKED at the gate: the toll house enriches the
           // holder's town with money that was someone else's growth
           const gateIncome = holdings.reduce((s2, h) => s2 + (h.regionIdx === ri && h.heldBy !== "none" ? 2 : 0), 0);
-          reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg) - 0.035 * reg.tollBurden + gateIncome), 0, 100);
+          const bread = granaryOn ? clamp(Math.round(0.18 * (medW2 - reg.wealth)), -6, 6) : 0;
+          reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg) - 0.035 * reg.tollBurden + gateIncome + bread), 0, 100);
           if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
         });
         // migration: toward wealth, light, and clean land — capped at 15%/epoch out
@@ -1978,6 +2021,9 @@
             reg.plagued = true;
             reg.settlementPop = Math.max(20, Math.round(reg.settlementPop * 0.65));
             reg.population = Math.round(reg.settlementPop * (1 + reg.rural));
+            // V1: the leveling plague — labor is scarce now, survivors charge
+            // more; the same shock that scars can also compress
+            reg.retention = Math.min(100, reg.retention + 15);
             reg.eventType = "blight_plague"; reg.eventEpoch = e + 1; // latest event wins the columns
             reg.eventSeverity = 60 + Math.round(rEv() * 30);
             events.push({ epoch: e + 1, type: "blight_plague", region_id: reg.id });
@@ -1992,6 +2038,89 @@
           events.push({ epoch: e + 1, type: "relic_calamity", region_id: site.id });
           computeBlight(); // the scar shows immediately
           if (firstWoundIdx === -1) { firstWoundIdx = calamitySite; firstWoundEpoch = e + 1; }
+        }
+        // V1: REFORM AND REACTION — two epochs after the run's first wound,
+        // the seat responds (or does not). The measure is chosen by what
+        // ails the realm most, and it changes the loop's own parameters.
+        if (!responded && firstWoundEpoch !== -1 && e + 1 >= firstWoundEpoch + 2) {
+          responded = true;
+          if (respCoin < 0.45) {
+            const darkShare = onGrid.filter(v => !v).length / regions.length;
+            const meanToll = regions.reduce((a, r) => a + r.tollBurden, 0) / regions.length;
+            // the spread of fortunes is itself an ailment the seat can read
+            const ws = regions.map(r => r.wealth).sort((a, b) => a - b);
+            const mw = ws.reduce((a, b) => a + b, 0) / ws.length;
+            let gsum = 0;
+            for (let gi = 0; gi < ws.length; gi++) gsum += (2 * (gi + 1) - ws.length - 1) * ws[gi];
+            const giniNow = mw > 0 ? gsum / (ws.length * ws.length * mw) : 0;
+            let measure;
+            if (giniNow >= 0.42) { measure = "crown_granary"; granaryOn = true; }
+            else if (darkShare >= 0.55) { measure = "grid_charter"; gtShift = -18; expandConduit(); }
+            else if (meanToll >= 12) { measure = "toll_amnesty"; tollScale = 0.4; }
+            else if (params.db > 0 && rIns() < 0.5) { measure = "dumping_reform"; dbShift = -35; }
+            else {
+              const medW = regions.map(r => r.wealth).sort((a, b) => a - b)[Math.floor(regions.length / 2)];
+              const bottom = regions.filter(reg => reg.wealth < medW);
+              const bottomOre = bottom.reduce((a, r) => a + r.E, 0) / Math.max(1, bottom.length);
+              if (bottomOre >= 18) {
+                // the Retention Act: an ore price floor — the bottom half
+                // keeps more of what its own ground produces
+                measure = "retention_act";
+                bottom.forEach(reg => { reg.retention = Math.min(100, reg.retention + 15); });
+              } else {
+                // the Crown Granary: the bottom half has no ore to retain,
+                // so the seat taxes the fat years and breads the lean ones
+                measure = "crown_granary";
+                granaryOn = true;
+              }
+            }
+            events.push({ epoch: e + 1, type: "reform", measure });
+          } else if (respCoin < 0.75) {
+            let measure;
+            if (rIns() < 0.5 && params.db > 0) { measure = "dumping_entrenched"; dbShift = 25; }
+            else { measure = "toll_crackdown"; tollScale = 1.6; }
+            events.push({ epoch: e + 1, type: "reaction", measure });
+          }
+        }
+        // V1: THE REVOLT — once per run, the region where injustice, tolls,
+        // and darkness stack highest can rise. Its strength against the
+        // seat's decides: crushed, or a free town.
+        if (revoltIdx === -1 && e + 1 >= 4) {
+          let ri = -1, rs = -Infinity;
+          regions.forEach((reg, i) => {
+            if (reg.isCapital || i === warIdx) return;
+            const sc = reg.injustice + 0.5 * reg.tollBurden + (onGrid[i] ? 0 : 15);
+            if (sc > rs || (sc === rs && (ri === -1 || i < ri))) { rs = sc; ri = i; }
+          });
+          if (ri >= 0 && rs >= revoltBar) {
+            revoltIdx = ri;
+            const reg = regions[ri];
+            const stateStr = 42 + 0.5 * reg.centrality + Math.min(40, treasuries.crown) + rV() * 25;
+            revoltWon = rs > stateStr + 20;
+            if (revoltWon) {
+              freeTownIdx = ri;                       // tolls no one, ever again
+              reg.retention = 100;                    // keeps what it makes
+              reg.wealth = clamp(reg.wealth + 10, 0, 100);
+              if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
+              holdings.forEach(h => { if (h.regionIdx === ri) { h.heldBy = "none"; h.ref.heldBy = "none"; } });
+              tollScale *= 0.7;                       // fear spreads: every holder softens
+              reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
+              if (!granaryOn && rV() < 0.5) {
+                // THE CONCESSION: the seat reads the fires on the horizon
+                // and opens the granary before the next town rises
+                granaryOn = true;
+                events.push({ epoch: e + 1, type: "reform", measure: "crown_granary", concession: true });
+              }
+            } else {
+              reg.settlementPop = Math.max(20, Math.round(reg.settlementPop * 0.85));
+              reg.population = Math.round(reg.settlementPop * (1 + reg.rural));
+              reg.wealth = Math.round(reg.wealth * 0.85);
+              reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
+            }
+            reg.eventType = "revolt"; reg.eventEpoch = e + 1;
+            reg.eventSeverity = 70 + Math.round(rV() * 25);
+            events.push({ epoch: e + 1, type: "revolt", region_id: reg.id, outcome: revoltWon ? "won" : "crushed" });
+          }
         }
         // D6: the faith arrives where the suffering is — two epochs after the
         // run's first wound, the Temple consecrates the ground.
@@ -2203,12 +2332,14 @@
       roadEdges.forEach(e => { thr[e.a] += e.traffic; thr[e.b] += e.traffic; });
       const maxThr = Math.max(...thr, 1e-9);
       const KG = Math.max(1, Math.round(regions.length / 12));
+      const crushedIdx = (revoltIdx >= 0 && !revoltWon) ? revoltIdx : -1;
       const garScored = regions.map((reg, i) => {
         const rj = sx("gar#" + reg.id);
         return { i, s: 0.6 * (100 * thr[i] / maxThr) + 0.4 * reg.centrality + (rj() - 0.5) * 8 };
-      }).filter(o => o.i !== seatIdx && o.i !== warIdx).sort((a, b) => b.s - a.s || a.i - b.i);
-      // the Crown fortifies the war region AFTER the blood — security arrives late
-      const garrisonIdxs = [seatIdx, ...(warIdx >= 0 ? [warIdx] : []), ...garScored.slice(0, KG).map(o => o.i)];
+      }).filter(o => o.i !== seatIdx && o.i !== warIdx && o.i !== crushedIdx).sort((a, b) => b.s - a.s || a.i - b.i);
+      // the Crown fortifies the war region AFTER the blood — and the crushed
+      // revolt after the hangings; security arrives late either way
+      const garrisonIdxs = [seatIdx, ...(warIdx >= 0 ? [warIdx] : []), ...(crushedIdx >= 0 ? [crushedIdx] : []), ...garScored.slice(0, KG).map(o => o.i)];
       const garrisons = garrisonIdxs.map(i => ({ regionId: regions[i].id, x: regions[i].c[0], y: regions[i].c[1] }));
       const garCd = costDistances(regions, garrisonIdxs).dist;
       regions.forEach((reg, i) => {
@@ -2858,7 +2989,21 @@
           twins = { shadow: sh.id, open: mate.id };
         }
       }
+      // V1: the trajectory is the finding — gini at founding and at close
+      // (both exactly recomputable: wealth_t0 and wealth columns)
+      const giniOf = (xs) => {
+        const t = xs.slice().sort((a, b) => a - b);
+        const m = mean(t);
+        if (m === 0) return 0;
+        let g = 0;
+        for (let i = 0; i < t.length; i++) g += (2 * (i + 1) - t.length - 1) * t[i];
+        return Math.round(g / (t.length * t.length * m) * 100) / 100;
+      };
+      const turn = model.events.find(ev => ev.type === "reform" || ev.type === "reaction" || ev.type === "revolt");
       return {
+        gini: giniOf(R.map(r => r.wealth)),
+        gini_t0: giniOf(R.map(r => r.wealthT0)),
+        turning: turn ? { type: turn.type, epoch: turn.epoch, measure: turn.measure || null, outcome: turn.outcome || null } : null,
         blight_ratio: blightRatio,
         shadow_gap_pct: shadowGap,
         dark_n: dark.length,
@@ -3044,6 +3189,28 @@
               ? `The old ${TITLE[ev.faction]} died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end ${ev.name} took ${SEATW[ev.faction]}, over objections not all of which were buried with their holders.`
               : `The old ${TITLE[ev.faction]} died, and ${ev.name} took ${SEATW[ev.faction]} without incident — which the chronicle records precisely because it is rare.`;
           }
+          else if (ev.type === "reform") {
+            const PROSE = {
+              dumping_reform: "a Dumping Reform: the spoil trains go where the land is empty now, not where the people are poor",
+              grid_charter: "a Grid Charter: the bar for connection dropped, and the wires crept further out than the ledgers alone would ever have carried them",
+              toll_amnesty: "a Toll Amnesty: the gates still stand, but the levies are capped by decree",
+              retention_act: "a Retention Act: an ore price floor, fixed at the seat — the bottom half of the realm keeps more of what its own ground produces",
+              crown_granary: "the Crown Granary: a levy on the fat years and bread in the lean ones — the first decree in the realm's history to move coin downhill"
+            };
+            line = `The seat, chastened by the years behind it, decreed ${PROSE[ev.measure]}. The chronicle notes that it took a wound to buy a mercy.`;
+          }
+          else if (ev.type === "reaction") {
+            const PROSE = {
+              dumping_entrenched: "the dumping was entrenched in law, and the spoil sought out the poor with new confidence",
+              toll_crackdown: "the tolls rose by decree — the gates' holders had paid for their privileges, and the seat had debts"
+            };
+            line = `The seat answered fear with fists: ${PROSE[ev.measure]}. The chronicle records no debate.`;
+          }
+          else if (ev.type === "revolt") {
+            line = ev.outcome === "won"
+              ? `${t.name} rose. The wardline broke before the mob — and the mob held. ${t.name} keeps what it makes now, and its gates toll no one; the ledgers record it as a dangerous precedent, and the town records it as the first good year.`
+              : `${t.name} rose, and was put down. The garrison came after the hangings, and the injustice that caused the rising was carefully recorded and carefully unaddressed.`;
+          }
           else if (ev.type === "treaty") {
             const FN3 = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };
             const W2 = FN3[ev.winner], L2 = FN3[ev.factions.find(f => f !== ev.winner)];
@@ -3120,6 +3287,26 @@
         L.push(`## What the Record Shows`);
         L.push(``);
         const V = [];
+        {
+          const dG = F.gini - F.gini_t0;
+          const rev = model.events.find(ev => ev.type === "revolt");
+          const MEAS = { dumping_reform: "the Dumping Reform", grid_charter: "the Grid Charter", toll_amnesty: "the Toll Amnesty",
+            retention_act: "the Retention Act", crown_granary: "the Crown Granary", dumping_entrenched: "the entrenchment of the dumping", toll_crackdown: "the toll crackdown" };
+          let tsent = dG <= -0.04
+            ? `This world closed some of its gap: the spread of fortunes measured ${F.gini_t0.toFixed(2)} at the founding and ${F.gini.toFixed(2)} at the close`
+            : dG >= 0.04
+            ? `This world entrenched: the spread of fortunes measured ${F.gini_t0.toFixed(2)} at the founding and ${F.gini.toFixed(2)} at the close`
+            : `This world held its shape, the spread of fortunes standing at ${F.gini.toFixed(2)}`;
+          if (F.turning) {
+            const y = 1000 + 25 * F.turning.epoch;
+            tsent += F.turning.type === "revolt" && rev
+              ? `, and the turning point was the rising at ${town(rev.region_id).name} in ${y}${F.turning.outcome === "won" ? ", which won" : ", which was put down"}.`
+              : `, and the turning point was ${MEAS[F.turning.measure]} of ${y}.`;
+          } else {
+            tsent += `; no reform came, no rising came, and the loops ran unopposed.`;
+          }
+          V.push(tsent);
+        }
         V.push(`The poorest fifth of the realm carries ${F.blight_ratio} times the blight of the richest fifth.`);
         if (F.shadow_gap_pct !== null && F.shadow_gap_pct > 0 && model.ridges.length)
           V.push(`Behind the ${model.ridges[0].name} wall, the median settlement earns ${F.shadow_gap_pct} in the hundred less than the open country at the same remove.`);
@@ -3147,6 +3334,29 @@
       const town = (id) => model.settlements.find(st => st.regionId === id);
       const reg = (id) => model.regions.find(r => r.id === id);
       const L = [];
+      {
+        const dG = F.gini - F.gini_t0;
+        const EP = model.epochSnaps.length - 1;
+        const MEASURES = { dumping_reform: "a Dumping Reform", grid_charter: "a Grid Charter", toll_amnesty: "a Toll Amnesty",
+          retention_act: "a Retention Act", crown_granary: "the Crown Granary", dumping_entrenched: "the dumping entrenched in law", toll_crackdown: "a toll crackdown" };
+        let lead = dG <= -0.04
+          ? `<span style="color:#8fbf7f; font-weight:700">THIS WORLD CLOSED THE GAP</span> — gini ${F.gini_t0.toFixed(2)} at the founding, ${F.gini.toFixed(2)} at the close.`
+          : dG >= 0.04
+          ? `<span style="color:#e08268; font-weight:700">THIS WORLD ENTRENCHED</span> — gini ${F.gini_t0.toFixed(2)} at the founding, ${F.gini.toFixed(2)} at the close.`
+          : `<b>This world held its shape</b> — gini ${F.gini.toFixed(2)}` +
+            (F.gini < 0.35 ? ", unusually level as worlds go." : F.gini > 0.62 ? ", among the most unequal the dice can roll." : ", near the middle of all possible worlds.");
+        if (F.turning) {
+          const y = 1000 + 25 * F.turning.epoch;
+          lead += F.turning.type === "revolt"
+            ? ` The turning point: the revolt of ${y} — ${F.turning.outcome === "won" ? "<b>and it won</b>." : "crushed."}`
+            : F.turning.type === "reform"
+            ? ` The turning point: ${MEASURES[F.turning.measure]}, ${y}.`
+            : ` The turning point: reaction — ${MEASURES[F.turning.measure]}, ${y}.`;
+        } else if (EP > 0) {
+          lead += ` No reform, no revolt: the loops ran unopposed.`;
+        }
+        L.push(lead);
+      }
       L.push(`The poorest fifth of this realm carries <b>${F.blight_ratio}×</b> the blight of the richest fifth.`);
       if (F.shadow_gap_pct !== null && F.shadow_gap_pct > 0 && model.ridges.length)
         L.push(`Behind the ${esc(model.ridges[0].name)} wall, the median settlement earns <b>${F.shadow_gap_pct}% less</b> than the open country at the same remove from the seat.`);

@@ -140,7 +140,18 @@
 > exhibit drawing the world's sharpest same-distance pair across the wall,
 > an injustice default view with question-labels, and a chronicle that
 > closes with a verdict: "no villain wrote it, and it happened anyway."
-> **The
+> **Divergent histories (V1)**: the deepest critique — every loop amplified
+> inequality, so every world converged to one story — answered with real
+> counter-currents: the leveling plague (survivors charge more), reform and
+> reaction (measures that mutate the loop's own parameters mid-run: dumping
+> eased/entrenched, grid charters, toll amnesties/crackdowns, retention
+> acts, and the Crown Granary — a bounded transfer toward the median), and
+> the revolt (once per run; won = a free town + softened tolls + possible
+> granary concession, crushed = a garrison after the hangings). Measured
+> across 24 worlds: 7 closed their gap, 9 entrenched, 8 held; revolts won
+> 14 and died 7; 24/24 findings panels open with distinct claims. The
+> sharpest finding of the phase: the only measure that ever closed a gap
+> was the one that moved coin downhill. **The
 > chronicle
 > (E4)**: the world narrates
 > itself — a deterministic written history (downloadable markdown + on-page

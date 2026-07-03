@@ -8,6 +8,26 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  RIVERS + DOWNSTREAM BLIGHT (G2): the conductors.
+    - Ranges are barriers; rivers are the opposite — connected paths that
+      make movement CHEAPER along them. Each world traces 1-2 rivers in the
+      blind-geology stage: a strictly-downhill walk on the region adjacency
+      graph from high ground (usually the ridge flanks) toward the border.
+      The chain order IS the downstream order.
+    - Three effects, all through existing machinery: river valleys gain
+      fertility (so the seat is drawn to the water — emergent, never
+      authored), consecutive river edges cost x0.6 (barge transport: roads
+      and centrality hug the valley), and — the payload — the blight
+      CARRIES DOWNSTREAM: inside computeBlight, after the plume/spoil field
+      settles, every riverine region ships 30% of its load down the chain
+      with 0.75 decay per step. Who drinks first is who stays clean; the
+      mouth drinks what every town and works upstream let fall in.
+    - Regions export on_river / river_id / river_pos / downstream_blight
+      (exactly recomputable: blight_load minus downstream_blight is the
+      pre-river field; re-run the carriage from the exported chain order).
+      Rivers export as named LineStrings (lowland register) through the
+      settlement anchors. The chronicle knows who drinks last. Schema v19.
+
   MOUNTAIN RANGES + PASSES (G1): geography with SHAPE.
     - The old geology made gradients (smooth noise fields); real geography
       makes STRUCTURES. Each world now draws 1-2 mountain ranges in the
@@ -461,7 +481,10 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 18;
+    const SCHEMA_VERSION = 19;
+    const RIVER_EDGE = 0.6;   // barge transport: river edges are cheap
+    const RIVER_CARRY = 0.3;  // share of a riverine region's blight shipped downstream
+    const RIVER_DECAY = 0.75; // per-step decay of the carried load
     const RIDGE_WALL = 4.5;  // edge-cost multiplier for crossing a ridge off-pass
     const PASS_MULT = 1.4;   // crossing at a pass: a climb, not a wall
     const PASS_R = 90;       // how close a crossing must be to a pass to count as one
@@ -889,9 +912,66 @@
         }
       });
 
+      // G2: rivers — the conductors. A strictly-downhill walk on the region
+      // adjacency graph from high ground toward the border. Runs AFTER the
+      // ridge boost, so rivers rise on the mountain flanks and flow away
+      // from the wall. The chain order IS the downstream order.
+      const rv2 = sg("rivers");
+      const isBorder = regions.map(reg =>
+        reg.ring.some(([x, y]) => x <= 0.01 || x >= W - 0.01 || y <= 0.01 || y >= W - 0.01));
+      const rivers = [];
+      regions.forEach(reg => { reg.onRiver = 0; reg.riverId = -1; reg.riverPos = -1; });
+      const NRIV = (params.regions >= 16 && rv2() < 0.45) ? 2 : 1;
+      // sources: high INTERIOR ground (a source on the border is a one-step
+      // river); descent is GENTLEST-first — water meanders, it does not dive
+      const interior = regions.map((_, i) => i).filter(i => !isBorder[i]);
+      const srcPool = (interior.length ? interior : regions.map((_, i) => i)).sort((a, b) =>
+        regions[b].elevation - regions[a].elevation || a - b);
+      for (let vi = 0; vi < NRIV; vi++) {
+        let bestChain = null;
+        for (let attempt = 0; attempt < 8; attempt++) {
+          const src = srcPool[Math.floor(rv2() * Math.min(8, srcPool.length))];
+          if (regions[src].onRiver) continue;
+          const chain = [src];
+          let cur = src;
+          while (!isBorder[cur]) {
+            let nxt = -1; // highest neighbor that is still strictly lower
+            for (const j of regions[cur].neighbors) {
+              if (regions[j].onRiver || chain.includes(j)) continue;
+              if (regions[j].elevation >= regions[cur].elevation) continue;
+              if (nxt === -1 || regions[j].elevation > regions[nxt].elevation ||
+                  (regions[j].elevation === regions[nxt].elevation && j < nxt)) nxt = j;
+            }
+            if (nxt === -1) break; // inland basin: the river ends in a marsh
+            chain.push(nxt);
+            cur = nxt;
+          }
+          if (!bestChain || chain.length > bestChain.length) bestChain = chain;
+          if (bestChain.length >= 5) break;
+        }
+        if (!bestChain || bestChain.length < 2) continue;
+        const R = { id: rivers.length, chain: bestChain };
+        rivers.push(R);
+        bestChain.forEach((ri, k) => {
+          const reg = regions[ri];
+          reg.onRiver = 1; reg.riverId = R.id; reg.riverPos = k;
+          reg.fertility = Math.min(100, reg.fertility + 18); // the floodplain feeds
+        });
+        // barge transport: consecutive river edges are cheap. Where the river
+        // crosses a ridge it cuts a GORGE — passable, but pass-grade, not
+        // barge-grade: the wall multiplier relaxes to the pass rate.
+        for (let k = 0; k + 1 < bestChain.length; k++) {
+          const A = regions[bestChain[k]], B = regions[bestChain[k + 1]];
+          const prev = A.ridgeMult.get(B.id) || 1;
+          const m = prev > 1 ? PASS_MULT : RIVER_EDGE;
+          A.ridgeMult.set(B.id, m);
+          B.ridgeMult.set(A.id, m);
+        }
+      }
+
       // Prevailing wind: one seeded direction per world (0° = +x/east, CCW).
       const windDeg = Math.floor(sg("wind")() * 360);
-      return { windDeg, ridges, passes };
+      return { windDeg, ridges, passes, rivers };
     }
 
     // ---- Cost-distance over the adjacency graph (Dijkstra, O(n^2)) ----------
@@ -1188,8 +1268,23 @@
         });
         let maxB = 0;
         const rawB = blightRaw.map(v => { if (v > maxB) maxB = v; return v; });
+        const pre = regions.map((_, i) => maxB > 0 ? Math.round(100 * (rawB[i] / maxB)) : 0);
+        // G2: the river carries it — every riverine region ships RIVER_CARRY
+        // of its (pre-carriage) load down the chain, decaying per step. The
+        // mouth drinks what everyone upstream let fall in. Computed from the
+        // pre-carriage field only, so the export is exactly recomputable:
+        // blight_load - downstream_blight IS the pre-river field.
+        regions.forEach(reg => { reg.downstreamBlight = 0; });
+        for (const RV of geo.rivers) {
+          RV.chain.forEach((ri, k) => {
+            let extra = 0;
+            for (let u = 0; u < k; u++) extra += pre[RV.chain[u]] * RIVER_CARRY * Math.pow(RIVER_DECAY, k - u);
+            const fin = clamp(Math.round(pre[ri] + extra), 0, 100);
+            regions[ri].downstreamBlight = fin - pre[ri];
+          });
+        }
         regions.forEach((reg, i) => {
-          reg.blight = maxB > 0 ? Math.round(100 * (rawB[i] / maxB)) : 0;
+          reg.blight = clamp(pre[i] + reg.downstreamBlight, 0, 100);
           // presentation column: the argument rests on the raw fields
           reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
         });
@@ -1484,6 +1579,8 @@
         const wwHere = reg.tier === "prime" || (reg.tier === "hub" && reg.onConduit);
         reg.safeWater = clamp(Math.round(
           (wwHere ? 85 : (reg.onConduit ? 45 : 15)) + 0.25 * reg.wealth - 0.35 * reg.blight
+          // G2: the river gives water — unless upstream already fouled it
+          + (reg.onRiver ? Math.max(0, 12 - 0.25 * reg.downstreamBlight) : 0)
         ), 0, 100);
         const tierF = { prime: 0, hub: 30, outpost: 60, holdfast: 85 }[reg.tier];
         reg.vulnerability = clamp(Math.round(
@@ -1732,11 +1829,12 @@
       // site consecrated mid-run; its stream is keyed by region id, so the
       // dedication is stable however the site came to be)
       sanctionedSites.forEach(s => { s.name = markovName("temple", sx("shrine#" + s.regionId), usedNames); });
-      // mountains speak the frontier tongue
+      // mountains speak the frontier tongue; rivers the valley's
       geo.ridges.forEach(R => { R.name = markovName("frontier", sx("ridge#" + R.id), usedNames); });
+      geo.rivers.forEach(RV => { RV.name = markovName("lowland", sx("river#" + RV.id), usedNames); });
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes };
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -1811,7 +1909,11 @@
             event_severity: reg.eventSeverity,
             bloc_changes: reg.blocChanges,
             range_shadow: reg.rangeShadow,
-            is_pass: reg.isPass
+            is_pass: reg.isPass,
+            on_river: reg.onRiver,
+            river_id: reg.riverId,
+            river_pos: reg.riverPos,
+            downstream_blight: reg.downstreamBlight
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -1863,6 +1965,15 @@
           type: "Feature",
           properties: { kind: "pass", ridge_id: p.ridgeId, region_id: model.regions[p.regionIdx].id, pass_name: t.name + " Pass" },
           geometry: { type: "Point", coordinates: [p.x, p.y] }
+        });
+      });
+      model.rivers.forEach(RV => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "river", river_id: RV.id, river_name: RV.name },
+          geometry: { type: "LineString", coordinates: RV.chain.map(ri => {
+            const c = model.regions[ri].c; return [round2(c[0]), round2(c[1])];
+          }) }
         });
       });
       model.garrisons.forEach(g => {
@@ -1984,6 +2095,15 @@
           geometry: { type: "Point", coordinates: [p.x, p.y] }
         });
       });
+      model.rivers.forEach(RV => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "river", river_id: RV.id, river_name: RV.name, epoch: 0, epoch_date: epochDate(0) },
+          geometry: { type: "LineString", coordinates: RV.chain.map(ri => {
+            const c = model.regions[ri].c; return [round2(c[0]), round2(c[1])];
+          }) }
+        });
+      });
       return {
         type: "FeatureCollection",
         name: "hinterland_epochs",
@@ -2079,6 +2199,14 @@
           (shadowN > 0
             ? `${shadowN} of the realm's regions lie in the mountains' shadow, on the wrong side of the wall from ${model.capitalName} — and the chronicle will show what that costs.`
             : `By the founding's luck, no region lies beyond the wall from ${model.capitalName}; the chronicle notes that such luck is geography, not justice.`));
+      }
+      for (const RV of model.rivers) {
+        const head = town(model.regions[RV.chain[0]].id).name;
+        const mouth = town(model.regions[RV.chain[RV.chain.length - 1]].id).name;
+        L.push(``);
+        L.push(`The ${RV.name} comes down off the high ground by ${head} and runs through ${RV.chain.length} regions to the border. ` +
+          `The towns along it drink in order: ${head} drinks it clean, and ${mouth}, at the mouth, drinks whatever every town and works upstream let fall into the water. ` +
+          `The order was set by the land before anyone built anything, and no one who lives at the mouth chose it.`);
       }
 
       // -- the years ---------------------------------------------------------
@@ -2242,6 +2370,16 @@
         const w = e.cls === "highway" ? 3.5 : (e.cls === "road" ? 2 : 1.2);
         const dash = e.cls === "track" ? ` stroke-dasharray="6 5"` : "";
         parts.push(`<line class="road" x1="${A.c[0].toFixed(1)}" y1="${fy(A.c[1]).toFixed(1)}" x2="${B.c[0].toFixed(1)}" y2="${fy(B.c[1]).toFixed(1)}" stroke="#6b5844" stroke-width="${w}" opacity="0.8"${dash}/>`);
+      });
+
+      // G2: the rivers — blue polylines through the valley anchors
+      model.rivers.forEach(RV => {
+        const pl = RV.chain.map(ri => {
+          const c = model.regions[ri].c; return `${c[0].toFixed(1)},${fy(c[1]).toFixed(1)}`;
+        }).join(" ");
+        parts.push(`<polyline class="river" points="${pl}" fill="none" stroke="#3d7ab5" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.65"/>`);
+        const mc = model.regions[RV.chain[Math.floor(RV.chain.length / 2)]].c;
+        parts.push(`<text x="${mc[0].toFixed(1)}" y="${(fy(mc[1]) + 18).toFixed(1)}" font-size="12" font-style="italic" text-anchor="middle" fill="#3d7ab5" paint-order="stroke" stroke="#fff" stroke-width="3">the ${esc(RV.name)}</text>`);
       });
 
       // G1: the mountains — ridge polylines with a name label, passes as ∩

@@ -454,195 +454,281 @@
   Dependency: d3-delaunay via CDN (needs internet even when opened from disk).
 -->
 <style>
-  :root { --ink:#222; --line:#444; --paper:#f4f1ea; }
+  :root {
+    --paper:#efe9dd; --card:#fbf8f1; --ink:#221d16; --muted:#6d6459; --line:#d8cfbe;
+    --dark:#26221c; --dark2:#332d24; --gold:#d9b96c; --oxblood:#7a1f1f; --blue:#2b5f8a;
+    --serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --shadow: 0 1px 2px rgba(34,29,22,.08), 0 4px 14px rgba(34,29,22,.07);
+  }
   * { box-sizing: border-box; }
-  body {
-    margin: 0; font: 14px/1.4 system-ui, sans-serif; color: var(--ink);
-    background: var(--paper); padding: 16px;
-  }
-  h1 { font-size: 18px; margin: 0 0 4px; }
-  p.sub { margin: 0 0 12px; color: #666; max-width: 78ch; }
-  .layout { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
-  .controls {
-    width: 260px; background: #fff; border: 1px solid var(--line); border-radius: 6px;
-    padding: 12px; font-size: 13px;
-  }
-  .controls .row { margin-bottom: 12px; }
-  .controls label { display: block; font-weight: 600; margin-bottom: 4px; }
-  .controls label.radio { font-weight: 400; margin-bottom: 2px; }
-  .controls label.mini { font-weight: 400; margin: 6px 0 0; color: #444; }
-  .controls .val { font-weight: 400; color: #08519c; }
-  .controls input[type=range] { width: 100%; }
-  .controls input[type=text] { width: 100%; padding: 5px 6px; font: inherit; border: 1px solid var(--line); border-radius: 4px; }
-  .controls .inline { display: flex; gap: 6px; }
-  .hint { color: #888; font-size: 12px; margin-top: 3px; }
-  button {
-    font: inherit; padding: 6px 10px; cursor: pointer;
-    border: 1px solid var(--line); background: #fff; border-radius: 4px;
-  }
-  button:hover { background: #eee; }
-  button.primary { background: #08519c; color: #fff; border-color: #063a6e; }
-  button.primary:hover { background: #063a6e; }
-  button.wide { width: 100%; }
-  #stage { background: #fff; border: 1px solid var(--line); border-radius: 6px; }
-  #stage svg { display: block; cursor: crosshair; }
-  .side { font-size: 13px; min-width: 220px; }
-  .side table { border-collapse: collapse; width: 100%; }
-  .side td { padding: 2px 6px; border-bottom: 1px solid #e2ddd1; }
-  .side td:first-child { color: #666; }
-  .legend { margin-top: 12px; }
-  .legend .bar { height: 14px; width: 200px; border: 1px solid var(--line); }
-  .legend .ends { display: flex; justify-content: space-between; width: 200px; color: #666; }
-  .err { color: #a00; font-weight: 600; }
-  code { background: #e8e4da; padding: 1px 4px; border-radius: 3px; }
-  .toast { color: #2a7a2a; font-size: 12px; min-height: 14px; margin-top: 4px; }
+  html { scroll-behavior: smooth; }
+  body { margin:0; font:14px/1.45 var(--sans); color:var(--ink); background:var(--paper); }
+
+  /* ---- masthead ---- */
+  .masthead { background:var(--dark); color:#f0ead9; border-bottom:3px solid var(--gold); }
+  .masthead-inner { max-width:1340px; margin:0 auto; padding:22px 24px 18px; display:flex; gap:28px; align-items:flex-end; flex-wrap:wrap; }
+  .brand { flex:1 1 480px; min-width:300px; }
+  .eyebrow { font:600 11px/1 var(--sans); letter-spacing:.22em; color:var(--gold); margin-bottom:8px; }
+  h1 { font:700 clamp(22px, 3.2vw, 32px)/1.15 var(--serif); margin:0 0 8px; letter-spacing:-0.01em; }
+  p.sub { margin:0; color:#c9c0ac; max-width:76ch; font-size:13.5px; }
+  p.sub b { color:#f0ead9; }
+  .actions { display:flex; flex-direction:column; gap:7px; min-width:250px; }
+  .actions .toast { min-height:14px; margin:0; text-align:right; color:#9ecb8f; }
+
+  /* ---- findings band ---- */
+  #findingsBox { background:var(--dark2); color:#f4efe2; border-bottom:1px solid rgba(217,185,108,.35); }
+  .findings-inner { max-width:1340px; margin:0 auto; padding:16px 24px 18px; }
+  .findings-title { font:700 11px/1 var(--sans); letter-spacing:.2em; color:var(--gold); margin-bottom:8px; }
+  #findingsText { font:15px/1.65 var(--serif); max-width:110ch; }
+  #findingsText b { color:var(--gold); font-weight:700; }
+
+  /* ---- layout ---- */
+  .layout { max-width:1340px; margin:20px auto 0; padding:0 24px; display:grid;
+    grid-template-columns: 280px minmax(0,1fr) 260px; gap:18px; align-items:start; }
+  @media (max-width:1080px) { .layout { grid-template-columns: 280px minmax(0,1fr); } .side { grid-column:1 / -1; } }
+  @media (max-width:760px)  { .layout { grid-template-columns: 1fr; } .controls { position:static; } }
+
+  /* ---- control rail ---- */
+  .controls { position:sticky; top:14px; max-height:calc(100vh - 28px); overflow-y:auto;
+    background:var(--card); border:1px solid var(--line); border-radius:10px; padding:4px 14px 14px; font-size:13px; box-shadow:var(--shadow); }
+  .controls::-webkit-scrollbar { width:8px; } .controls::-webkit-scrollbar-thumb { background:var(--line); border-radius:4px; }
+  .sec { border-top:1px solid var(--line); padding-top:10px; margin-top:12px; }
+  .sec:first-child { border-top:none; margin-top:8px; }
+  .sec-title { font:700 10.5px/1 var(--sans); letter-spacing:.18em; color:var(--muted); margin-bottom:10px; }
+  .controls .row { margin-bottom:11px; }
+  .controls label { display:block; font-weight:600; margin-bottom:4px; }
+  .controls label.mini { font-weight:400; margin:7px 0 2px; color:#4d463c; }
+  .controls .val { font-weight:600; color:var(--blue); float:right; }
+  .controls input[type=text] { width:100%; padding:7px 9px; font:inherit; border:1px solid var(--line); border-radius:6px; background:#fff; }
+  .controls input[type=text]:focus { outline:2px solid var(--gold); outline-offset:-1px; }
+  .controls .inline { display:flex; gap:6px; }
+  .hint { color:#93887a; font-size:11.5px; margin-top:4px; line-height:1.4; }
+  input[type=range] { width:100%; height:4px; -webkit-appearance:none; appearance:none; background:var(--line); border-radius:2px; margin:8px 0 2px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--dark); border:2px solid var(--gold); cursor:pointer; }
+  input[type=range]::-moz-range-thumb { width:11px; height:11px; border-radius:50%; background:var(--dark); border:2px solid var(--gold); cursor:pointer; }
+
+  button { font:600 12.5px var(--sans); padding:8px 12px; cursor:pointer; color:var(--ink);
+    border:1px solid var(--line); background:var(--card); border-radius:7px; transition:background .12s, transform .06s; }
+  button:hover { background:#f1ecdf; } button:active { transform:translateY(1px); }
+  button.primary { background:var(--gold); color:#241d10; border-color:#b3924a; }
+  button.primary:hover { background:#e2c67f; }
+  button.ghost { background:transparent; color:#e9e1cd; border-color:#5a5142; }
+  button.ghost:hover { background:#3a342a; }
+  button.wide { width:100%; }
+
+  /* ---- map column ---- */
+  .mapcol { min-width:0; }
+  .mapcard { background:var(--card); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); overflow:hidden; }
+  .mapbar { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:9px 14px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  #legendLabel { font:600 12px var(--sans); color:var(--muted); }
+  .legend .bar { height:10px; width:170px; border:1px solid var(--line); border-radius:5px; }
+  .legend-wrap { width:170px; }
+  .legend-wrap .ends { display:flex; justify-content:space-between; color:var(--muted); font-size:10.5px; margin-top:2px; }
+  #stage { background:#f6f2e8; }
+  #stage svg { display:block; width:100%; height:auto; cursor:crosshair; }
+  .viewgrid { margin-top:14px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px 10px; box-shadow:var(--shadow); }
+  .viewgrid .sec-title { margin-bottom:9px; }
+  .chips { display:grid; grid-template-columns:repeat(auto-fill, minmax(215px, 1fr)); gap:5px; }
+  label.radio { display:flex; align-items:center; gap:7px; font-size:12.5px; padding:6px 9px; border:1px solid transparent;
+    border-radius:6px; cursor:pointer; color:#4d463c; }
+  label.radio:hover { background:#f1ecdf; }
+  label.radio:has(input:checked) { background:var(--dark); color:#f0ead9; border-color:var(--gold); }
+  label.radio input { accent-color:var(--gold); margin:0; flex:none; }
+  .glyphkey { color:#93887a; font-size:11.5px; margin-top:9px; line-height:1.5; }
+
+  /* ---- side rail ---- */
+  .side { font-size:12.5px; }
+  .sidecard { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; box-shadow:var(--shadow); }
+  .side table { border-collapse:collapse; width:100%; }
+  .side td { padding:4px 6px 4px 0; border-bottom:1px solid #e7e0d0; vertical-align:top; }
+  .side tr:last-child td { border-bottom:none; }
+  .side td:first-child { color:var(--muted); white-space:nowrap; padding-right:10px; }
+
+  /* ---- chronicle ---- */
+  #chronBox { max-width:900px; margin:26px auto 20px; padding:0 24px; }
+  #chronBox summary { cursor:pointer; font:700 15px var(--serif); padding:12px 16px; background:var(--card);
+    border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); list-style-position:inside; }
+  #chronBox summary:hover { background:#f1ecdf; }
+  #chronBox[open] summary { border-radius:10px 10px 0 0; border-bottom:none; }
+  #chronText { font:14.5px/1.7 var(--serif); padding:20px 34px 28px; background:var(--card);
+    border:1px solid var(--line); border-top:1px dashed var(--line); border-radius:0 0 10px 10px; box-shadow:var(--shadow); }
+
+  footer { max-width:1340px; margin:8px auto 34px; padding:14px 24px 0; border-top:1px solid var(--line);
+    color:var(--muted); font-size:12px; display:flex; gap:18px; flex-wrap:wrap; }
+  footer a { color:var(--blue); text-decoration:none; } footer a:hover { text-decoration:underline; }
+  .err { color:var(--oxblood); font-weight:600; }
+  code { background:#e6dfd0; padding:1px 5px; border-radius:4px; font-size:12px; }
+  .toast { color:#2a7a2a; font-size:12px; min-height:14px; margin-top:4px; }
 </style>
 </head>
 <body>
-  <h1>Hinterland — a generator of unequal worlds</h1>
-  <p class="sub">
-    Every map this makes is an <b>argument about inequality</b>: who gets served and who
-    sits in darkness, who breathes the poison and who ships it downstream, who holds the
-    gates and who pays the toll — none of it painted, all of it <b>emergent</b> from blind
-    geology, a cost-gated grid, and factions that seize, tax, and go to war. The findings
-    below are computed from this world's own exported columns; the fantasy is the carrier,
-    the attribute table is the argument. Seeded, reproducible, QGIS-ready.
-  </p>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="brand">
+        <div class="eyebrow">HINTERLAND &middot; A PROCEDURAL ATLAS OF WHO PAYS</div>
+        <h1>A generator of unequal worlds</h1>
+        <p class="sub">
+          Every map this makes is an <b>argument about inequality</b>: who gets served and who sits in
+          darkness, who breathes the poison and who ships it downstream, who holds the gates and who pays
+          the toll — none of it painted, all of it <b>emergent</b> from blind geology, a cost-gated grid,
+          and factions that seize, tax, and go to war. The fantasy is the carrier; the attribute table is
+          the argument. Seeded, reproducible, QGIS-ready.
+        </p>
+      </div>
+      <div class="actions">
+        <button id="download" class="primary wide">&#8681; Download GeoJSON</button>
+        <button id="dlSeries" class="ghost wide">&#8681; Epoch series (QGIS temporal)</button>
+        <button id="dlChron" class="ghost wide">&#8681; The chronicle (.md)</button>
+        <button id="share" class="ghost wide">&#128279; Copy share link</button>
+        <div class="toast" id="toast"></div>
+      </div>
+    </div>
+  </header>
 
   <!-- The findings: the same world, argued -->
-  <div id="findingsBox" style="margin:0 auto 14px; max-width:1200px; background:#26221c; color:#f4f1ea; border-radius:6px; padding:14px 18px">
-    <div style="font-weight:700; letter-spacing:0.04em; font-size:13px; color:#d9b96c; margin-bottom:6px">WHAT THIS WORLD SHOWS — computed from its own exported columns</div>
-    <div id="findingsText" style="font-family:Georgia,'Times New Roman',serif; font-size:14px; line-height:1.6"></div>
-  </div>
-
-  <div class="layout">
-    <!-- Controls -->
-    <div class="controls">
-      <div class="row">
-        <label for="seed">Seed</label>
-        <div class="inline">
-          <input type="text" id="seed" inputmode="text" />
-          <button id="diceSeed" title="Random seed">🎲</button>
-        </div>
-        <div class="hint">Any text or number. Drives the whole world.</div>
-      </div>
-
-      <div class="row">
-        <label>Regions <span class="val" id="regionsVal"></span></label>
-        <input type="range" id="regions" min="5" max="64" step="1" />
-      </div>
-
-      <div class="row">
-        <label>Relaxation <span class="val" id="relaxVal"></span></label>
-        <input type="range" id="relax" min="0" max="8" step="1" />
-        <div class="hint">Lloyd passes: 0 = chaotic/organic, 8 = even/regular.</div>
-      </div>
-
-      <div class="row">
-        <label>Income mix (wealth weights)</label>
-        <label class="mini">retained extraction <span class="val" id="weVal"></span></label>
-        <input type="range" id="we" min="0" max="100" step="1" />
-        <label class="mini">refining value-add <span class="val" id="wfVal"></span></label>
-        <input type="range" id="wf" min="0" max="100" step="1" />
-        <label class="mini">trade / connectivity (seat + sea) <span class="val" id="wtVal"></span></label>
-        <input type="range" id="wt" min="0" max="100" step="1" />
-        <label class="mini">legacy capital gradient <span class="val" id="wgVal"></span></label>
-        <input type="range" id="wg" min="0" max="100" step="1" />
-        <div class="hint">Gradient 0 = fully emergent wealth. Gradient 100 with the rest at 0 = the old explicit diagram.</div>
-      </div>
-
-      <div class="row">
-        <label>Gradient steepness <span class="val" id="biasVal"></span></label>
-        <input type="range" id="bias" min="0" max="100" step="1" />
-        <div class="hint">Shapes only the legacy capital-gradient term above.</div>
-      </div>
-
-      <div class="row">
-        <label>Grid threshold <span class="val" id="gtVal"></span></label>
-        <input type="range" id="gt" min="0" max="100" step="1" />
-        <div class="hint">Grid economics: the benefit a settlement must promise before the conduit reaches it. 0 = everyone connected.</div>
-      </div>
-
-      <div class="row">
-        <label>Dump bias λ <span class="val" id="dbVal"></span></label>
-        <input type="range" id="db" min="0" max="100" step="1" />
-        <div class="hint">How much refinery spoil is hauled onto poor land. 0 = blight follows only wind and terrain.</div>
-      </div>
-
-      <div class="row">
-        <label>Epochs <span class="val" id="epVal"></span></label>
-        <input type="range" id="ep" min="0" max="12" step="1" />
-        <div class="hint">Run the world forward: ore depletes, wealth compounds, people migrate, the grid chases the winners. 0 = the founding snapshot.</div>
-      </div>
-
-      <div class="row" id="scrubRow" style="display:none">
-        <label>View epoch <span class="val" id="scrubVal"></span></label>
-        <input type="range" id="scrub" min="0" max="12" step="1" />
-        <div class="hint">Scrub history — animates wealth, ore, blight, injustice, density, the grid, and settlement size.</div>
-      </div>
-
-      <div class="row">
-        <label>Capital</label>
-        <div class="inline">
-          <button id="diceCapital" class="wide" title="Random capital region">🎲 random capital</button>
-        </div>
-        <div class="hint">Unpinned, the seat settles in fertile lowland. Click the map to move it.</div>
-      </div>
-
-      <div class="row">
-        <label>The question on the map</label>
-        <label class="radio"><input type="radio" name="view" value="injustice" checked /> who bears the injustice (poison × poverty)</label>
-        <label class="radio"><input type="radio" name="view" value="wealth" /> who holds the coin (wealth)</label>
-        <label class="radio"><input type="radio" name="view" value="endowment" /> where the ore lies (endowment)</label>
-        <label class="radio"><input type="radio" name="view" value="centrality" /> who reaches the seat (centrality)</label>
-        <label class="radio"><input type="radio" name="view" value="services" /> who gets served (arcane services)</label>
-        <label class="radio"><input type="radio" name="view" value="blight" /> who breathes the poison (blight)</label>
-        <label class="radio"><input type="radio" name="view" value="burden" /> who gets sick (burden /1k)</label>
-        <label class="radio"><input type="radio" name="view" value="gap" /> who was left unserved (service gap)</label>
-        <label class="radio"><input type="radio" name="view" value="bloc" /> who rules here (dominant bloc)</label>
-        <label class="radio"><input type="radio" name="view" value="market" /> who reaches the market</label>
-        <label class="radio"><input type="radio" name="view" value="egap" /> where the law runs out (enforcement gap)</label>
-        <label class="radio"><input type="radio" name="view" value="aband" /> who was left behind (abandonment)</label>
-        <label class="radio"><input type="radio" name="view" value="legib" /> who goes uncounted (legibility gap)</label>
-        <label class="radio"><input type="radio" name="view" value="traj" /> boom and bust (trajectory)</label>
-        <label class="radio"><input type="radio" name="view" value="density" /> how many souls (density)</label>
-        <div class="hint">Preview only — the export always carries all columns. ■ = refinery, gold lines = conduit, dashed = off-grid, H/W/D = healer/waterworks/wardstation.</div>
-      </div>
-
-      <div class="row">
-        <button id="download" class="primary wide">⬇ Download GeoJSON</button>
-      </div>
-      <div class="row" style="margin-bottom:4px">
-        <button id="dlSeries" class="wide">⬇ Download epoch series (QGIS temporal)</button>
-      </div>
-      <div class="row" style="margin-bottom:4px">
-        <button id="dlChron" class="wide">⬇ Download chronicle (.md)</button>
-      </div>
-      <div class="row" style="margin-bottom:4px">
-        <button id="share" class="wide">🔗 Copy share link</button>
-      </div>
-      <div class="toast" id="toast"></div>
+  <section id="findingsBox">
+    <div class="findings-inner">
+      <div class="findings-title">WHAT THIS WORLD SHOWS &mdash; COMPUTED FROM ITS OWN EXPORTED COLUMNS</div>
+      <div id="findingsText"></div>
     </div>
+  </section>
+
+  <main class="layout">
+    <!-- Controls -->
+    <aside class="controls">
+      <div class="sec">
+        <div class="sec-title">THE WORLD</div>
+        <div class="row">
+          <label for="seed">Seed</label>
+          <div class="inline">
+            <input type="text" id="seed" inputmode="text" />
+            <button id="diceSeed" title="Random seed">&#127922;</button>
+          </div>
+          <div class="hint">Any text or number. Drives the whole world.</div>
+        </div>
+        <div class="row">
+          <label>Regions <span class="val" id="regionsVal"></span></label>
+          <input type="range" id="regions" min="5" max="64" step="1" />
+        </div>
+        <div class="row">
+          <label>Relaxation <span class="val" id="relaxVal"></span></label>
+          <input type="range" id="relax" min="0" max="8" step="1" />
+          <div class="hint">Lloyd passes: 0 = organic, 8 = even.</div>
+        </div>
+        <div class="row">
+          <label>Capital</label>
+          <button id="diceCapital" class="wide" title="Random capital region">&#127922; random capital</button>
+          <div class="hint">Unpinned, the seat settles in fertile lowland. Click the map to move it.</div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">THE ECONOMY</div>
+        <div class="row">
+          <label>Income mix (wealth weights)</label>
+          <label class="mini">retained extraction <span class="val" id="weVal"></span></label>
+          <input type="range" id="we" min="0" max="100" step="1" />
+          <label class="mini">refining value-add <span class="val" id="wfVal"></span></label>
+          <input type="range" id="wf" min="0" max="100" step="1" />
+          <label class="mini">trade / connectivity (seat + sea) <span class="val" id="wtVal"></span></label>
+          <input type="range" id="wt" min="0" max="100" step="1" />
+          <label class="mini">legacy capital gradient <span class="val" id="wgVal"></span></label>
+          <input type="range" id="wg" min="0" max="100" step="1" />
+          <div class="hint">Gradient 0 = fully emergent wealth. Gradient 100 with the rest at 0 = the old explicit diagram.</div>
+        </div>
+        <div class="row">
+          <label>Gradient steepness <span class="val" id="biasVal"></span></label>
+          <input type="range" id="bias" min="0" max="100" step="1" />
+          <div class="hint">Shapes only the legacy gradient term above.</div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">POLICY</div>
+        <div class="row">
+          <label>Grid threshold <span class="val" id="gtVal"></span></label>
+          <input type="range" id="gt" min="0" max="100" step="1" />
+          <div class="hint">The benefit a settlement must promise before the conduit reaches it. 0 = everyone connected.</div>
+        </div>
+        <div class="row">
+          <label>Dump bias &lambda; <span class="val" id="dbVal"></span></label>
+          <input type="range" id="db" min="0" max="100" step="1" />
+          <div class="hint">How much refinery spoil is hauled onto poor land. 0 = blight follows only wind and terrain.</div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">TIME</div>
+        <div class="row">
+          <label>Epochs <span class="val" id="epVal"></span></label>
+          <input type="range" id="ep" min="0" max="12" step="1" />
+          <div class="hint">Run the world forward: ore depletes, wealth compounds, people migrate, the grid chases the winners, the seat decrees, towns rise. 0 = the founding snapshot.</div>
+        </div>
+        <div class="row" id="scrubRow" style="display:none">
+          <label>View epoch <span class="val" id="scrubVal"></span></label>
+          <input type="range" id="scrub" min="0" max="12" step="1" />
+          <div class="hint">Scrub history &mdash; 25 years per step.</div>
+        </div>
+      </div>
+    </aside>
 
     <!-- Map -->
-    <div id="stage"></div>
-
-    <!-- Readout -->
-    <div class="side">
-      <table id="info"></table>
-      <div class="legend">
-        <div style="margin-bottom:4px;color:#666" id="legendLabel"></div>
-        <div class="bar" id="legendBar"></div>
-        <div class="ends"><span>low</span><span>high</span></div>
+    <div class="mapcol">
+      <div class="mapcard">
+        <div class="mapbar">
+          <span id="legendLabel"></span>
+          <div class="legend-wrap">
+            <div class="bar" id="legendBar"></div>
+            <div class="ends"><span>low</span><span>high</span></div>
+          </div>
+        </div>
+        <div id="stage"></div>
+      </div>
+      <div class="viewgrid">
+        <div class="sec-title">THE QUESTION ON THE MAP</div>
+        <div class="chips">
+          <label class="radio"><input type="radio" name="view" value="injustice" checked /> who bears the injustice</label>
+          <label class="radio"><input type="radio" name="view" value="wealth" /> who holds the coin</label>
+          <label class="radio"><input type="radio" name="view" value="endowment" /> where the ore lies</label>
+          <label class="radio"><input type="radio" name="view" value="centrality" /> who reaches the seat</label>
+          <label class="radio"><input type="radio" name="view" value="services" /> who gets served</label>
+          <label class="radio"><input type="radio" name="view" value="blight" /> who breathes the poison</label>
+          <label class="radio"><input type="radio" name="view" value="burden" /> who gets sick</label>
+          <label class="radio"><input type="radio" name="view" value="gap" /> who was left unserved</label>
+          <label class="radio"><input type="radio" name="view" value="bloc" /> who rules here</label>
+          <label class="radio"><input type="radio" name="view" value="market" /> who reaches the market</label>
+          <label class="radio"><input type="radio" name="view" value="egap" /> where the law runs out</label>
+          <label class="radio"><input type="radio" name="view" value="aband" /> who was left behind</label>
+          <label class="radio"><input type="radio" name="view" value="legib" /> who goes uncounted</label>
+          <label class="radio"><input type="radio" name="view" value="traj" /> boom and bust</label>
+          <label class="radio"><input type="radio" name="view" value="density" /> how many souls</label>
+        </div>
+        <div class="glyphkey">Preview only &mdash; the export always carries every column. &#9632; refinery &middot; gold lines conduit (dashed = off-grid) &middot; H/W/D healer/waterworks/wardstation &middot; &#9650; shrine &middot; G garrison &middot; &#9875; port &middot; &#9670; ruin &middot; &#9820; tower &middot; &#9552; bridge &middot; &#8745; pass &middot; &#9673; maelstrom &middot; red dashes join the twins.</div>
       </div>
     </div>
-  </div>
+
+    <!-- Readout -->
+    <aside class="side">
+      <div class="sidecard">
+        <div class="sec-title">THIS WORLD</div>
+        <table id="info"></table>
+      </div>
+    </aside>
+  </main>
 
   <!-- The chronicle: the same world, narrated -->
-  <details id="chronBox" style="margin:14px auto 40px; max-width:860px; padding:0 16px">
-    <summary style="cursor:pointer; font-weight:600">📜 The Chronicle — the world narrating itself</summary>
-    <div id="chronText" style="white-space:pre-wrap; font-family:Georgia,'Times New Roman',serif; font-size:14px; line-height:1.55; padding:14px 18px; background:#faf8f2; border:1px solid #ddd; border-radius:6px; margin-top:8px"></div>
+  <details id="chronBox">
+    <summary>&#128220; The Chronicle &mdash; the world narrating itself</summary>
+    <div id="chronText"></div>
   </details>
+
+  <footer>
+    <span>Hinterland &mdash; every number on this page recomputes from the exported columns.</span>
+    <a href="docs/atlas.md">The Atlas: 80 worlds, measured</a>
+    <a href="docs/attribute-model.md">The attribute model</a>
+    <a href="https://github.com/zntznt/hinterland">Source</a>
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/d3-delaunay@6"></script>
   <script>
@@ -651,7 +737,6 @@
 
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
-    const SVG = 640;       // preview size in px
     const SCHEMA_VERSION = 27;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
@@ -2915,7 +3000,7 @@
       };
     }
 
-    // ---- Rendering (SVG, ugly on purpose) ----------------------------------
+    // ---- Rendering (SVG, responsive) ----------------------------------------
     const RAMPS = {
       wealth:     { lo: [237, 248, 233], hi: [0, 90, 50],    label: "wealth" },
       endowment:  { lo: [242, 240, 247], hi: [84, 39, 143],  label: "aetherstone endowment" },
@@ -3377,8 +3462,22 @@
       return L.join("<br>");
     }
 
+    // U1: the chronicle reader renders its own minimal markdown (the
+    // downloaded artifact stays byte-exact; this is presentation only)
+    function chronHTML(md) {
+      const e2 = esc(md);
+      return e2.split(/\n\n+/).map(block => {
+        let b = block;
+        if (b.startsWith("## ")) return `<h3 style="font-family:var(--serif); margin:18px 0 4px">${b.slice(3)}</h3>`;
+        if (b.startsWith("# ")) return `<h2 style="font-family:var(--serif); margin:4px 0 6px">${b.slice(2)}</h2>`;
+        b = b.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+        b = b.replace(/^\*([^*]+)\*$/gm, "<i>$1</i>");
+        return `<p style="margin:8px 0">${b}</p>`;
+      }).join("");
+    }
+
     function render(model, params) {
-      document.getElementById("chronText").textContent = composeChronicle(model, params);
+      document.getElementById("chronText").innerHTML = chronHTML(composeChronicle(model, params));
       document.getElementById("findingsText").innerHTML = findingsHTML(model);
       const ramp = RAMPS[view];
       // Scrub-aware accessors: the stock fields read the selected epoch's
@@ -3428,7 +3527,7 @@
         : view === "traj" ? TRAJ_COLORS[reg.boomBust]
         : rampColor(ramp, cellT(reg));
 
-      const parts = [`<svg id="map" width="${SVG}" height="${SVG}" viewBox="0 0 ${W} ${W}" xmlns="http://www.w3.org/2000/svg">`];
+      const parts = [`<svg id="map" viewBox="0 0 ${W} ${W}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`];
       model.regions.forEach(reg => {
         const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
         const stroke = reg.isCapital ? "#d62728" : "#333";
@@ -3607,7 +3706,7 @@
         ["uncounted", model.regions.reduce((s, r) => s + r.uncounted, 0).toLocaleString("en-US") + " people the census misses"],
         ["epochs", (() => { const c = model.regions.reduce((m, r) => { m[r.boomBust] = (m[r.boomBust] || 0) + 1; return m; }, {}); return `${params.ep} run — ${c.boom || 0} boom / ${c.stable || 0} stable / ${c.decline || 0} decline / ${c.collapse || 0} collapse`; })()],
         ["events", model.events.length
-          ? model.events.map(ev => `e${ev.epoch}: ${ev.type.replace("_", " ")} @ #${ev.region_id}`).join(" · ")
+          ? model.events.map(ev => `e${ev.epoch}: ${ev.type.replace("_", " ")}${ev.region_id !== undefined ? " @ #" + ev.region_id : ev.measure ? " (" + ev.measure.replace("_", " ") + ")" : ev.name ? " (" + ev.name + ")" : ""}`).join(" · ")
           : "none — a quiet age"],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],

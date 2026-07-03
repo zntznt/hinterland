@@ -8,6 +8,27 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  THE ARGUMENT SURFACE (A1): the app finally SAYS what it measures.
+    - Readers praised the fantasy map and missed the point: the argument
+      lived in columns, tests, and docs while the surface showed scenery.
+      A1 makes the thesis the first thing on screen.
+    - THE FINDINGS PANEL: computed live per world from the SAME exported
+      columns (and echoed in provenance as hinterland.findings, exactly
+      recomputable from the file): the poorest fifth's blight against the
+      richest fifth's, the mountain-shadow earnings gap, the darkness
+      count and its burden ratio, who drinks the river last, who pays
+      the gates. The map is the evidence; the panel is the argument.
+    - THE TWIN EXHIBIT: the world's sharpest matched pair — two towns at
+      the same crow-flies distance from the seat, one behind the wall —
+      drawn as a line on the map with a side-by-side card. Same distance,
+      different fate, no genre to hide in.
+    - First contact reframed: the page states its mission, the default
+      view boots into injustice, and the view labels became questions
+      (who breathes the poison, who was left in the dark, who pays the
+      toll). The chronicle now CONCLUDES: a final section, "What the
+      Record Shows," states the world's structural findings in the
+      chronicler's voice. Schema v26.
+
   DYNASTIES (E5): the powers have faces now.
     - Three ruler lines — the Sovereign (Crown), the Hierarch (Temple),
       the First Magnate (consortium) — with reigns of 3-7 epochs drawn
@@ -450,15 +471,21 @@
 </style>
 </head>
 <body>
-  <h1>Hinterland — generator</h1>
+  <h1>Hinterland — a generator of unequal worlds</h1>
   <p class="sub">
-    Procedural regions in flat-plane coords (0–1000). <code>wealth</code> is now an
-    <b>emergent blend</b> of retained-extraction, refining, and trade income over blind
-    geology (<code>aetherstone_endowment</code>, <code>fertility</code>, ruggedness) —
-    with the old capital-gradient surviving as one dialable term. The cost-gated
-    <b>conduit</b> then decides who gets arcane services and who sits in darkness.
-    Everything is seeded and reproducible. Tune, then <b>Download GeoJSON</b> for QGIS.
+    Every map this makes is an <b>argument about inequality</b>: who gets served and who
+    sits in darkness, who breathes the poison and who ships it downstream, who holds the
+    gates and who pays the toll — none of it painted, all of it <b>emergent</b> from blind
+    geology, a cost-gated grid, and factions that seize, tax, and go to war. The findings
+    below are computed from this world's own exported columns; the fantasy is the carrier,
+    the attribute table is the argument. Seeded, reproducible, QGIS-ready.
   </p>
+
+  <!-- The findings: the same world, argued -->
+  <div id="findingsBox" style="margin:0 auto 14px; max-width:1200px; background:#26221c; color:#f4f1ea; border-radius:6px; padding:14px 18px">
+    <div style="font-weight:700; letter-spacing:0.04em; font-size:13px; color:#d9b96c; margin-bottom:6px">WHAT THIS WORLD SHOWS — computed from its own exported columns</div>
+    <div id="findingsText" style="font-family:Georgia,'Times New Roman',serif; font-size:14px; line-height:1.6"></div>
+  </div>
 
   <div class="layout">
     <!-- Controls -->
@@ -535,22 +562,22 @@
       </div>
 
       <div class="row">
-        <label>Preview layer</label>
-        <label class="radio"><input type="radio" name="view" value="wealth" checked /> wealth</label>
-        <label class="radio"><input type="radio" name="view" value="endowment" /> aetherstone endowment</label>
-        <label class="radio"><input type="radio" name="view" value="centrality" /> centrality to seat</label>
-        <label class="radio"><input type="radio" name="view" value="services" /> arcane services</label>
-        <label class="radio"><input type="radio" name="view" value="blight" /> blight</label>
-        <label class="radio"><input type="radio" name="view" value="injustice" /> injustice (blight × poverty)</label>
-        <label class="radio"><input type="radio" name="view" value="burden" /> disease burden /1k</label>
-        <label class="radio"><input type="radio" name="view" value="gap" /> service gap</label>
-        <label class="radio"><input type="radio" name="view" value="bloc" /> dominant bloc</label>
-        <label class="radio"><input type="radio" name="view" value="market" /> market access</label>
-        <label class="radio"><input type="radio" name="view" value="egap" /> enforcement gap</label>
-        <label class="radio"><input type="radio" name="view" value="aband" /> abandonment</label>
-        <label class="radio"><input type="radio" name="view" value="legib" /> legibility gap</label>
-        <label class="radio"><input type="radio" name="view" value="traj" /> trajectory (boom/bust)</label>
-        <label class="radio"><input type="radio" name="view" value="density" /> population density</label>
+        <label>The question on the map</label>
+        <label class="radio"><input type="radio" name="view" value="injustice" checked /> who bears the injustice (poison × poverty)</label>
+        <label class="radio"><input type="radio" name="view" value="wealth" /> who holds the coin (wealth)</label>
+        <label class="radio"><input type="radio" name="view" value="endowment" /> where the ore lies (endowment)</label>
+        <label class="radio"><input type="radio" name="view" value="centrality" /> who reaches the seat (centrality)</label>
+        <label class="radio"><input type="radio" name="view" value="services" /> who gets served (arcane services)</label>
+        <label class="radio"><input type="radio" name="view" value="blight" /> who breathes the poison (blight)</label>
+        <label class="radio"><input type="radio" name="view" value="burden" /> who gets sick (burden /1k)</label>
+        <label class="radio"><input type="radio" name="view" value="gap" /> who was left unserved (service gap)</label>
+        <label class="radio"><input type="radio" name="view" value="bloc" /> who rules here (dominant bloc)</label>
+        <label class="radio"><input type="radio" name="view" value="market" /> who reaches the market</label>
+        <label class="radio"><input type="radio" name="view" value="egap" /> where the law runs out (enforcement gap)</label>
+        <label class="radio"><input type="radio" name="view" value="aband" /> who was left behind (abandonment)</label>
+        <label class="radio"><input type="radio" name="view" value="legib" /> who goes uncounted (legibility gap)</label>
+        <label class="radio"><input type="radio" name="view" value="traj" /> boom and bust (trajectory)</label>
+        <label class="radio"><input type="radio" name="view" value="density" /> how many souls (density)</label>
         <div class="hint">Preview only — the export always carries all columns. ■ = refinery, gold lines = conduit, dashed = off-grid, H/W/D = healer/waterworks/wardstation.</div>
       </div>
 
@@ -597,7 +624,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 25;
+    const SCHEMA_VERSION = 26;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const SEA_L = 400;        // sea_access decay length over the cost graph
@@ -2599,6 +2626,7 @@
           rulers: { crown: model.dynasties.crown.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })),
                     temple: model.dynasties.temple.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })),
                     magnate: model.dynasties.magnate.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })) },
+          findings: computeFindings(model),
           tensions: { crown_magnate: Math.round(model.tensions.crown_magnate), crown_temple: Math.round(model.tensions.crown_temple), magnate_temple: Math.round(model.tensions.magnate_temple) },
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
           space: "planar 0..1000, y-up (flat-plane CRS)"
@@ -2781,6 +2809,66 @@
     }
     const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     const fy = (y) => W - y; // flip y for display so preview matches QGIS (y-up)
+
+    // ---- The findings (A1): the world argued -------------------------------
+    // Every number here is computed from the SAME fields the export carries
+    // (rounded anchors included), so the panel, the chronicle's verdict, and
+    // hinterland.findings in the file are all exactly recomputable by anyone.
+    function computeFindings(model) {
+      const R = model.regions;
+      const n = R.length;
+      const mean = (xs) => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
+      const med = (xs) => { const t = xs.slice().sort((a, b) => a - b); return t.length ? t[Math.floor(t.length / 2)] : 0; };
+      const r1 = (v) => Math.round(v * 10) / 10;
+      // the poorest fifth against the richest fifth
+      const k = Math.max(1, Math.floor(n / 5));
+      const byWealth = R.slice().sort((a, b) => a.wealth - b.wealth || a.id - b.id);
+      const blightRatio = r1(mean(byWealth.slice(0, k).map(r => r.blight)) /
+        Math.max(1, mean(byWealth.slice(-k).map(r => r.blight))));
+      // the mountain-shadow earnings gap (medians; seat excluded from the open side)
+      const shadow = R.filter(r => r.rangeShadow === 1);
+      const open = R.filter(r => r.rangeShadow === 0 && !r.isCapital);
+      const shadowGap = (shadow.length >= 2 && open.length >= 2 && med(open.map(r => r.wealth)) > 0)
+        ? Math.round(100 * (1 - med(shadow.map(r => r.wealth)) / med(open.map(r => r.wealth)))) : null;
+      // darkness and its burden
+      const dark = R.filter(r => !r.onConduit), lit = R.filter(r => r.onConduit);
+      const darkBurden = (dark.length && lit.length)
+        ? r1(mean(dark.map(r => r.burden)) / Math.max(0.1, mean(lit.map(r => r.burden)))) : null;
+      // who drinks last
+      const mouth = R.reduce((a, b) => b.downstreamBlight > a.downstreamBlight ? b : a, R[0]);
+      // who pays the gates
+      const paying = R.filter(r => r.tollBurden > 0).length;
+      // THE TWINS: the sharpest same-distance pair across the wall (rounded
+      // anchors, so the pick is reproducible from the exported points)
+      const seat = R.find(r => r.isCapital);
+      const A = (r) => [round2(r.c[0]), round2(r.c[1])];
+      const sp2 = A(seat);
+      const dSeat = (r) => { const a = A(r); return Math.hypot(a[0] - sp2[0], a[1] - sp2[1]); };
+      let twins = null, bestGap = 0;
+      for (const sh of shadow) {
+        let mate = null, bd = Infinity;
+        for (const o of open) {
+          const dd = Math.abs(dSeat(o) - dSeat(sh));
+          if (dd < bd || (dd === bd && mate && o.id < mate.id)) { bd = dd; mate = o; }
+        }
+        if (!mate || bd > 80) continue;
+        const gap = mate.wealth - sh.wealth;
+        if (gap > bestGap || (gap === bestGap && twins && sh.id < twins.shadow)) {
+          bestGap = gap;
+          twins = { shadow: sh.id, open: mate.id };
+        }
+      }
+      return {
+        blight_ratio: blightRatio,
+        shadow_gap_pct: shadowGap,
+        dark_n: dark.length,
+        dark_burden_ratio: darkBurden,
+        mouth_region: mouth.downstreamBlight > 0 ? mouth.id : null,
+        mouth_downstream: mouth.downstreamBlight,
+        toll_paying_n: paying,
+        twins
+      };
+    }
 
     // ---- The chronicle (E4): the world narrating itself ---------------------
     // A deterministic written history composed from the SAME facts the export
@@ -3025,6 +3113,28 @@
       L.push(darkNow > 0
         ? `${darkNow} of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.`
         : `At the record's close the conduit reaches every settlement of the realm. The chronicle notes it without comment, so that later readers may check whether it lasted.`);
+      // A1: the chronicler is required to close with what the numbers say
+      {
+        const F = computeFindings(model);
+        L.push(``);
+        L.push(`## What the Record Shows`);
+        L.push(``);
+        const V = [];
+        V.push(`The poorest fifth of the realm carries ${F.blight_ratio} times the blight of the richest fifth.`);
+        if (F.shadow_gap_pct !== null && F.shadow_gap_pct > 0 && model.ridges.length)
+          V.push(`Behind the ${model.ridges[0].name} wall, the median settlement earns ${F.shadow_gap_pct} in the hundred less than the open country at the same remove.`);
+        V.push(`${F.dark_n} regions sit off the conduit because the ledgers said serving them would not pay` +
+          (F.dark_burden_ratio !== null && F.dark_burden_ratio > 1 ? `, and sickness runs ${F.dark_burden_ratio} times heavier there than in the lit core.` : `.`));
+        if (F.mouth_region !== null)
+          V.push(`${town(F.mouth_region).name} drinks ${F.mouth_downstream} points of other towns' poison for the crime of standing at the mouth.`);
+        if (F.toll_paying_n > 0)
+          V.push(`${F.toll_paying_n} regions pay tolls at gates whose holders they never chose.`);
+        if (F.twins)
+          V.push(`And ${town(F.twins.open).name} and ${town(F.twins.shadow).name} stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.`);
+        L.push(`The chronicler is required to close with what the numbers say, and the numbers say this. ` + V.join(` `));
+        L.push(``);
+        L.push(`None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.`);
+      }
       if (params.ep === 0) {
         L.push(``);
         L.push(`*Here the record ends at its beginning: the world is newly founded, and its years are still to run.*`);
@@ -3032,8 +3142,34 @@
       return L.join("\n").replace(/\n{3,}/g, "\n\n") + "\n";
     }
 
+    function findingsHTML(model) {
+      const F = computeFindings(model);
+      const town = (id) => model.settlements.find(st => st.regionId === id);
+      const reg = (id) => model.regions.find(r => r.id === id);
+      const L = [];
+      L.push(`The poorest fifth of this realm carries <b>${F.blight_ratio}×</b> the blight of the richest fifth.`);
+      if (F.shadow_gap_pct !== null && F.shadow_gap_pct > 0 && model.ridges.length)
+        L.push(`Behind the ${esc(model.ridges[0].name)} wall, the median settlement earns <b>${F.shadow_gap_pct}% less</b> than the open country at the same remove from the seat.`);
+      L.push(`<b>${F.dark_n}</b> of ${model.regions.length} regions sit off the grid because serving them would not pay` +
+        (F.dark_burden_ratio !== null && F.dark_burden_ratio > 1 ? ` — and they carry <b>${F.dark_burden_ratio}×</b> the disease burden of the lit core.` : `.`));
+      if (F.mouth_region !== null)
+        L.push(`${esc(town(F.mouth_region).name)}, at the river's mouth, drinks <b>${F.mouth_downstream} points</b> of other towns' poison — an order set by the land before anyone built anything.`);
+      if (F.toll_paying_n > 0)
+        L.push(`<b>${F.toll_paying_n}</b> regions pay a toll at gates whose holders they never chose.`);
+      if (F.twins) {
+        const a = reg(F.twins.shadow), b = reg(F.twins.open);
+        L.push(`<span style="color:#d9b96c">THE TWINS:</span> <b>${esc(town(b.id).name)}</b> and <b>${esc(town(a.id).name)}</b> stand the same distance from the seat. ` +
+          `${esc(town(b.id).name)}: wealth ${b.wealth}, market ${b.marketAccess}, burden ${b.burden}. ` +
+          `${esc(town(a.id).name)}, behind the wall: wealth ${a.wealth}, market ${a.marketAccess}, burden ${a.burden}. ` +
+          `<b>The difference is the mountain</b> — the red line on the map joins them.`);
+      }
+      L.push(`<span style="opacity:0.75; font-size:13px">None of this was painted. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. Every number recomputes from the exported columns.</span>`);
+      return L.join("<br>");
+    }
+
     function render(model, params) {
       document.getElementById("chronText").textContent = composeChronicle(model, params);
+      document.getElementById("findingsText").innerHTML = findingsHTML(model);
       const ramp = RAMPS[view];
       // Scrub-aware accessors: the stock fields read the selected epoch's
       // snapshot; derived layers always show the final state.
@@ -3101,6 +3237,16 @@
         const dash = e.cls === "track" ? ` stroke-dasharray="6 5"` : "";
         parts.push(`<line class="road" x1="${A.c[0].toFixed(1)}" y1="${fy(A.c[1]).toFixed(1)}" x2="${B.c[0].toFixed(1)}" y2="${fy(B.c[1]).toFixed(1)}" stroke="#6b5844" stroke-width="${w}" opacity="0.8"${dash}/>`);
       });
+
+      // A1: the twins — same distance, different fate; the line is the argument
+      {
+        const F2 = computeFindings(model);
+        if (F2.twins) {
+          const a = model.regions.find(r => r.id === F2.twins.shadow);
+          const b = model.regions.find(r => r.id === F2.twins.open);
+          parts.push(`<line class="twin" x1="${a.c[0].toFixed(1)}" y1="${fy(a.c[1]).toFixed(1)}" x2="${b.c[0].toFixed(1)}" y2="${fy(b.c[1]).toFixed(1)}" stroke="#c1121f" stroke-width="2.5" stroke-dasharray="8 5" opacity="0.85"/>`);
+        }
+      }
 
       // P1: the wild layer — ◆ ruins, ♜ towers, ═ bridges, ◉ the maelstrom
       model.ruins.forEach(r => {
@@ -3265,7 +3411,7 @@
     let topology = null;   // regions with geology baked in (stages 1+2)
     let geo = null;        // world-level geology (wind)
     let model = null;
-    let view = "wealth";   // preview-only; not a generation param
+    let view = "injustice";   // boot into the argument, not the scenery
     let scrubEpoch = 0;    // preview-only: which epoch the map shows
 
     function regenerateTopology() {

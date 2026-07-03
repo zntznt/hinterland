@@ -117,7 +117,14 @@
 > contested ground where that pair meets, every war event carries its two
 > factions, and the grievance is spent in blood (tension resets). Wars are
 > policy, not weather; the chronicle names the powers, not just the ground
-> (14/14 war worlds). **The
+> (14/14 war worlds). **Peace terms (F3)**: defeat is an institution — the
+> winter after a war with room in the record, terms are set at the
+> battlefield: the winner (live reach at the ground + ledger depth) takes up
+> to two of the loser's gates nearest the field and half its treasury in
+> tribute, which then funds the winner's next seizure — victory compounds
+> through the ledger (measured: treaties follow 14/14 eligible wars; gates
+> ceded in 9/14 treaty worlds; the chronicle names the terms' author in
+> every one). **The
 > chronicle
 > (E4)**: the world narrates
 > itself — a deterministic written history (downloadable markdown + on-page

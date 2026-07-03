@@ -8,6 +8,22 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  PEACE TERMS (F3): defeat is an institution, not just a scar.
+    - The winter after a war, TERMS are set at the battlefield. The winner
+      is whichever of the two powers brings more to the table there — live
+      reach at the ground plus the depth of its ledger (up to 40): wars
+      are decided the way they are started, by money and presence.
+    - The treaty REDRAWS the map: the loser cedes up to two of its held
+      gates nearest the battlefield to the winner, and pays half its
+      treasury in tribute — which the winner's ledger then spends on the
+      next seizure. Victory compounds: the oligarchy loop runs through
+      war as well as commerce.
+    - New event type "treaty" (epoch = war + 1, carries factions, winner,
+      ceded count, tribute). No treaty if the war burns in the record's
+      last year — history continues beyond the page. The chronicle notes
+      that the terms were written by the party with the deeper ledger,
+      as terms usually are. Schema v24.
+
   ESCALATION + THE OLIGARCHY LOOP (F2): money begets reach begets money.
     - TREASURIES: each faction's held gates pay into a toll ledger every
       epoch (3 per gate). The ledger BUYS: a fat treasury lowers the
@@ -565,7 +581,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 23;
+    const SCHEMA_VERSION = 24;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const SEA_L = 400;        // sea_access decay length over the cost graph
@@ -1644,6 +1660,8 @@
       const tensions = { crown_magnate: 0, crown_temple: 0, magnate_temple: 0 };
       const T_WAR = 55 + rF() * 20;
       let warPair = null;
+      // F3: the treaty that follows the war
+      let warFactions = null, warEpochFired = -1, treatyDone = false;
       regions.forEach(reg => { reg.eventType = "none"; reg.eventEpoch = -1; reg.eventSeverity = 0; reg.plagued = false; });
 
       // ---- THE DYNAMIC LOOP (D1) --------------------------------------------
@@ -1771,7 +1789,9 @@
             wreg.eventType = "war"; wreg.eventEpoch = e + 1;
             wreg.eventSeverity = 70 + Math.round(rEv() * 25);
             const facs = warPair || wreg.topTwo || ["crown", "magnate"];
-            events.push({ epoch: e + 1, type: "war", region_id: wreg.id, factions: facs.slice().sort() });
+            warFactions = facs.slice().sort();
+            warEpochFired = e + 1;
+            events.push({ epoch: e + 1, type: "war", region_id: wreg.id, factions: warFactions });
           }
         }
         // F1: THE FACTION TURN. Every faction scores every gate it does not
@@ -1851,6 +1871,35 @@
             reg.eventSeverity = 60 + Math.round(rF() * 20);
             events.push({ epoch: e + 1, type: "tower_raised", region_id: reg.id, faction: "apostate" });
           }
+        }
+        // F3: PEACE TERMS — the winter after the war, terms are set at the
+        // battlefield. The winner brings more to the table: live reach at
+        // the ground plus the depth of its ledger. The loser cedes its
+        // nearest gates and pays tribute — and the winner's fattened ledger
+        // buys the next seizure. Victory compounds.
+        if (warIdx !== -1 && !treatyDone && warEpochFired > 0 && e + 1 === warEpochFired + 1) {
+          treatyDone = true;
+          const field = regions[warIdx];
+          const strength = (F) => reachOf(F, field) + Math.min(treasuries[F], 40);
+          const [a, b] = warFactions;
+          const winner = strength(a) >= strength(b) ? a : b;
+          const loser = winner === a ? b : a;
+          const trib = Math.round(treasuries[loser] * 0.5);
+          treasuries[loser] -= trib;
+          treasuries[winner] += trib;
+          const fp2 = [round2(field.c[0]), round2(field.c[1])];
+          const ceded = holdings
+            .filter(h => h.heldBy === loser)
+            .sort((x, y) => {
+              const dx = Math.hypot(round2(regions[x.regionIdx].c[0]) - fp2[0], round2(regions[x.regionIdx].c[1]) - fp2[1]);
+              const dy = Math.hypot(round2(regions[y.regionIdx].c[0]) - fp2[0], round2(regions[y.regionIdx].c[1]) - fp2[1]);
+              return dx - dy || x.regionIdx - y.regionIdx;
+            })
+            .slice(0, 2);
+          ceded.forEach(h => { h.heldBy = winner; h.ref.heldBy = winner; });
+          field.eventType = "treaty"; field.eventEpoch = e + 1;
+          field.eventSeverity = 60 + Math.round(rF() * 20);
+          events.push({ epoch: e + 1, type: "treaty", region_id: field.id, factions: warFactions, winner, ceded: ceded.length, tribute: trib });
         }
         computeTolls(); // next epoch pays whoever holds the gates NOW
         computeBlight();   // the poison follows the poor wherever they end up
@@ -2842,6 +2891,14 @@
           }
           else if (ev.type === "tower_raised") {
             line = `An apostate raised a tower at ${t.name}, out where no writ runs and the conduit never came. The neighbors did not report it for a season; the neighbors were its first customers.`;
+          }
+          else if (ev.type === "treaty") {
+            const FN3 = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };
+            const W2 = FN3[ev.winner], L2 = FN3[ev.factions.find(f => f !== ev.winner)];
+            const terms = (ev.ceded > 0 ? `${L2} ceded ${ev.ceded === 1 ? "a gate" : ev.ceded + " gates"}` : `${L2} ceded nothing but its claim`) +
+              (ev.tribute > 0 ? ` and paid ${ev.tribute} in tribute out of its ledger` : ` and kept its ledger, having little in it`);
+            line = `In the winter after the fighting, terms were set at ${t.name}. ${W2.charAt(0).toUpperCase() + W2.slice(1)} wrote them: ${terms}. ` +
+              `The chronicle observes that the terms were written by the party with the deeper ledger, as terms usually are.`;
           }
           else if (ev.type === "consecration") {
             const shrine = model.sanctionedSites.find(s => s.regionId === ev.region_id);

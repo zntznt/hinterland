@@ -68,7 +68,19 @@
 > exactly recomputable from the exported chain order). Measured: the lower
 > river carries the heavier load in 23/23 chains; riverine regions out-earn
 > dry ones in 16/20 worlds — the river gives before it takes, and who drinks
-> first was set by the land before anyone built anything. **The chronicle
+> first was set by the land before anyone built anything. **The sea + ports
+> (G3)**: the edge of the world is a market — 1–2 adjacent box edges become
+> sea (blind), ports are sited on geology alone (flat, low coast, river-mouth
+> bonus: the town that drinks last often ships first), and `sea_access`
+> (exp-decayed cost-distance from the harbors over the same friction graph)
+> joins centrality inside the trade stream (0.65/0.35) — TWO geographic
+> poles. Measured: mean corr(sea_access, wealth) 0.29 beside centrality's
+> 0.81; the DOUBLE LOTTERY holds in 13/14 worlds (open-and-coastal out-earns
+> walled-and-inland); river-mouth harbors in 6/20 worlds. Two honest
+> recalibrations, measured first: the λ-sweep floor eases to −0.20 (the sea
+> is a blight-independent wealth pole; the policy gap is unchanged) and the
+> resource-curse ratio to 28% (the coast is an escape route from the curse;
+> it still holds inland). **The chronicle
 > (E4)**: the world narrates
 > itself — a deterministic written history (downloadable markdown + on-page
 > panel) composed from the founding, the dated event timeline with the causal

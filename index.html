@@ -8,6 +8,24 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  THE SEA + PORTS (G3): the edge of the world is a market.
+    - Each world's geology chooses 1-2 adjacent box edges as SEA (blind).
+      Regions whose cells touch that water are coastal (on_coast — exactly
+      recomputable from the ring + the exported sea_sides). Ports are sited
+      on geology alone: flat, low coast, with a heavy bonus for a river
+      mouth — so the town that drinks last often ships first: the poisoned
+      mouth becomes the harbor.
+    - sea_access = exp-decayed cost-distance from the ports over the SAME
+      friction graph (mountains block the way to the water too). The trade
+      income stream becomes 0.65 centrality + 0.35 sea_access: the realm now
+      has TWO geographic poles — the seat and the sea — and a region's fate
+      is the sum of its lotteries. The composite acceptance test is the
+      DOUBLE LOTTERY: behind the wall AND far from the water is the poorest
+      country on the map.
+    - Coast LineStrings, port Points (named), region columns on_coast /
+      is_port / sea_access; ports and sea sides are knob-stable (geology
+      anchors). The chronicle knows where the sea lies. Schema v20.
+
   RIVERS + DOWNSTREAM BLIGHT (G2): the conductors.
     - Ranges are barriers; rivers are the opposite — connected paths that
       make movement CHEAPER along them. Each world traces 1-2 rivers in the
@@ -373,7 +391,7 @@
         <input type="range" id="we" min="0" max="100" step="1" />
         <label class="mini">refining value-add <span class="val" id="wfVal"></span></label>
         <input type="range" id="wf" min="0" max="100" step="1" />
-        <label class="mini">trade / centrality <span class="val" id="wtVal"></span></label>
+        <label class="mini">trade / connectivity (seat + sea) <span class="val" id="wtVal"></span></label>
         <input type="range" id="wt" min="0" max="100" step="1" />
         <label class="mini">legacy capital gradient <span class="val" id="wgVal"></span></label>
         <input type="range" id="wg" min="0" max="100" step="1" />
@@ -481,7 +499,8 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 19;
+    const SCHEMA_VERSION = 20;
+    const SEA_L = 400;        // sea_access decay length over the cost graph
     const RIVER_EDGE = 0.6;   // barge transport: river edges are cheap
     const RIVER_CARRY = 0.3;  // share of a riverine region's blight shipped downstream
     const RIVER_DECAY = 0.75; // per-step decay of the carried load
@@ -969,9 +988,25 @@
         }
       }
 
+      // G3: the sea — 1-2 adjacent box edges, chosen blind. Coastal regions
+      // are the cells that touch the water.
+      const rs = sg("sea");
+      const SIDES = ["west", "east", "south", "north"];
+      const seaSides = [SIDES[Math.floor(rs() * 4)]];
+      if (rs() < 0.35) {
+        const adj = { west: ["south", "north"], east: ["south", "north"], south: ["west", "east"], north: ["west", "east"] };
+        seaSides.push(adj[seaSides[0]][rs() < 0.5 ? 0 : 1]);
+      }
+      const touches = (ring, side) => ring.some(([x, y]) =>
+        side === "west" ? x <= 0.01 : side === "east" ? x >= W - 0.01 :
+        side === "south" ? y <= 0.01 : y >= W - 0.01);
+      regions.forEach(reg => {
+        reg.onCoast = seaSides.some(side => touches(reg.ring, side)) ? 1 : 0;
+      });
+
       // Prevailing wind: one seeded direction per world (0° = +x/east, CCW).
       const windDeg = Math.floor(sg("wind")() * 360);
-      return { windDeg, ridges, passes, rivers };
+      return { windDeg, ridges, passes, rivers, seaSides };
     }
 
     // ---- Cost-distance over the adjacency graph (Dijkstra, O(n^2)) ----------
@@ -1131,6 +1166,32 @@
         }
       }
 
+      // G3: ports — the sea's gates, sited on geology ALONE (flat, low coast,
+      // heavy bonus for a river mouth), so the harbor set is stable across
+      // every society knob. sea_access decays with cost-distance from the
+      // ports over the same friction graph: the mountains block the way to
+      // the water exactly as they block the way to the seat.
+      const coastal = regions.filter(reg => reg.onCoast === 1);
+      const KP = coastal.length === 0 ? 0 : (coastal.length >= 8 ? 2 : 1);
+      const mouths = new Set();
+      geo.rivers.forEach(RV => {
+        const m = RV.chain[RV.chain.length - 1];
+        if (regions[m].onCoast === 1) mouths.add(m);
+      });
+      regions.forEach(reg => { reg.isPort = 0; });
+      const portScore = coastal.map(reg => {
+        const rj = sx("port#" + reg.id);
+        return { reg, s: 0.45 * (100 - reg.ruggedness) + 0.2 * (100 - reg.elevation) +
+          (mouths.has(regions.indexOf(reg)) ? 25 : 0) + (rj() - 0.5) * 8 };
+      }).sort((a, b) => b.s - a.s || a.reg.id - b.reg.id);
+      portScore.slice(0, KP).forEach(x => { x.reg.isPort = 1; });
+      const portIdxs = regions.map((reg, i) => reg.isPort ? i : -1).filter(i => i >= 0);
+      const seaCd = portIdxs.length ? costDistances(regions, portIdxs).dist : null;
+      regions.forEach((reg, i) => {
+        reg.seaAccess = seaCd
+          ? Math.round(100 * Math.exp(-(isFinite(seaCd[i]) ? seaCd[i] : 1e9) / SEA_L)) : 0;
+      });
+
       // Wealth: three emergent income streams + the legacy gradient term.
       // income() reads the CURRENT ore stock (reg.E), so it can be re-run
       // per epoch as mines deplete. Epoch-0 wealth carries the seeded noise.
@@ -1142,7 +1203,7 @@
         const legacy = lerp(5, 100, Math.pow(t, k)) / 100;         // == old formula
         const ext = (reg.E / 100) * (reg.retention / 100);         // what extraction leaves behind
         const ref = reg.refining / 100;
-        const trade = reg.centrality / 100;
+        const trade = (0.65 * reg.centrality + 0.35 * reg.seaAccess) / 100; // two poles: the seat and the sea
         const base = total > 0
           ? (params.we * ext + params.wf * ref + params.wt * trade + params.wg * legacy) / total
           : 0.5; // all weights zero: no income model — flat
@@ -1834,7 +1895,7 @@
       geo.rivers.forEach(RV => { RV.name = markovName("lowland", sx("river#" + RV.id), usedNames); });
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers };
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -1913,7 +1974,10 @@
             on_river: reg.onRiver,
             river_id: reg.riverId,
             river_pos: reg.riverPos,
-            downstream_blight: reg.downstreamBlight
+            downstream_blight: reg.downstreamBlight,
+            on_coast: reg.onCoast,
+            is_port: reg.isPort,
+            sea_access: reg.seaAccess
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -1976,6 +2040,22 @@
           }) }
         });
       });
+      const SEA_LINES = { west: [[0, 0], [0, 1000]], east: [[1000, 0], [1000, 1000]], south: [[0, 0], [1000, 0]], north: [[0, 1000], [1000, 1000]] };
+      model.seaSides.forEach(side => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "coast", side },
+          geometry: { type: "LineString", coordinates: SEA_LINES[side] }
+        });
+      });
+      model.regions.filter(r => r.isPort === 1).forEach(reg => {
+        const t = model.settlements.find(s => s.regionId === reg.id);
+        features.push({
+          type: "Feature",
+          properties: { kind: "port", region_id: reg.id, port_name: t.name + " Harbor" },
+          geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
+        });
+      });
       model.garrisons.forEach(g => {
         features.push({
           type: "Feature",
@@ -2017,6 +2097,7 @@
           epochs: params.ep,
           events: model.events,
           wind_deg: model.windDeg,
+          sea_sides: model.seaSides,
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
           space: "planar 0..1000, y-up (flat-plane CRS)"
         },
@@ -2104,6 +2185,21 @@
           }) }
         });
       });
+      const SEA_LINES2 = { west: [[0, 0], [0, 1000]], east: [[1000, 0], [1000, 1000]], south: [[0, 0], [1000, 0]], north: [[0, 1000], [1000, 1000]] };
+      model.seaSides.forEach(side => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "coast", side, epoch: 0, epoch_date: epochDate(0) },
+          geometry: { type: "LineString", coordinates: SEA_LINES2[side] }
+        });
+      });
+      model.regions.filter(r => r.isPort === 1).forEach(reg => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "port", region_id: reg.id, epoch: 0, epoch_date: epochDate(0) },
+          geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
+        });
+      });
       return {
         type: "FeatureCollection",
         name: "hinterland_epochs",
@@ -2116,6 +2212,7 @@
           grid_threshold: params.gt, dump_bias: params.db,
           events: model.events,
           wind_deg: model.windDeg,
+          sea_sides: model.seaSides,
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
           space: "planar 0..1000, y-up (flat-plane CRS)"
         },
@@ -2207,6 +2304,20 @@
         L.push(`The ${RV.name} comes down off the high ground by ${head} and runs through ${RV.chain.length} regions to the border. ` +
           `The towns along it drink in order: ${head} drinks it clean, and ${mouth}, at the mouth, drinks whatever every town and works upstream let fall into the water. ` +
           `The order was set by the land before anyone built anything, and no one who lives at the mouth chose it.`);
+      }
+      if (model.seaSides.length) {
+        const ports = model.regions.filter(r => r.isPort === 1);
+        const portBits = ports.map(reg => {
+          const t = town(reg.id);
+          const riverPort = reg.onRiver === 1 && reg.downstreamBlight > 0;
+          return `${t.name} Harbor` + (riverPort ? ` (which drinks the river last and ships it first)` : ``);
+        });
+        L.push(``);
+        L.push(`The sea lies to the ${list(model.seaSides)}. ` +
+          (ports.length
+            ? `The realm's ${ports.length > 1 ? "gates are" : "gate is"} ${list(portBits)}: whatever the mines raise and the works refine leaves the country there, and whoever holds the quay holds the toll. ` +
+              `Distance to the water is the realm's second lottery, drawn at the founding like the first.`
+            : `No harbor was raised at the founding; the water waits.`));
       }
 
       // -- the years ---------------------------------------------------------
@@ -2370,6 +2481,18 @@
         const w = e.cls === "highway" ? 3.5 : (e.cls === "road" ? 2 : 1.2);
         const dash = e.cls === "track" ? ` stroke-dasharray="6 5"` : "";
         parts.push(`<line class="road" x1="${A.c[0].toFixed(1)}" y1="${fy(A.c[1]).toFixed(1)}" x2="${B.c[0].toFixed(1)}" y2="${fy(B.c[1]).toFixed(1)}" stroke="#6b5844" stroke-width="${w}" opacity="0.8"${dash}/>`);
+      });
+
+      // G3: the sea — a blue band along the water's edge, ⚓ at the ports.
+      // fy flips y for display: "north" (y-up top) is the top of the screen.
+      model.seaSides.forEach(side => {
+        const b = 16;
+        const r2 = side === "west" ? [0, 0, b, W] : side === "east" ? [W - b, 0, b, W]
+          : side === "north" ? [0, 0, W, b] : [0, W - b, W, b];
+        parts.push(`<rect class="coast" x="${r2[0]}" y="${r2[1]}" width="${r2[2]}" height="${r2[3]}" fill="#3d7ab5" opacity="0.35"/>`);
+      });
+      model.regions.filter(r => r.isPort === 1).forEach(reg => {
+        parts.push(`<text class="port" x="${(reg.c[0] - 26).toFixed(1)}" y="${(fy(reg.c[1]) + 34).toFixed(1)}" font-size="18" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="3">⚓</text>`);
       });
 
       // G2: the rivers — blue polylines through the valley anchors

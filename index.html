@@ -8,6 +8,32 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  THE WILD LAYER (P1): anomalies — objects the ledger did not order.
+    - Everything on the map so far was infrastructure obeying some ledger
+      (the planner's, the Crown's, the Temple's, the magnates'). P1 adds
+      the objects that DON'T serve the economy but warp it.
+    - BRIDGES & FORDS: rivers finally become barriers ACROSS as well as
+      conductors along — adjacency edges crossing a river polyline (between
+      two non-riverine regions) pay a x2.2 ford penalty, except at 1-2
+      bridges per river (sited blind at the flattest crossings). Bridge
+      towns are chokepoints exactly like pass towns.
+    - RELIC RUINS: the old world's structures, drawn blind in the deep
+      past — a DELVE in the old ore workings, a TOMB in the barrens, and
+      sometimes a DEADHOLD: a city killed in the old cataclysm whose ground
+      still poisons (it seeds a founding blight scar). Each has peril and
+      yield. The poor walk to them: delver_flux routes every settlement's
+      delvers to the nearest ruin (poverty-weighted — risk is a wage), and
+      ruins feed the shadow: black markets fence the yield, predation rises
+      in the peril's reach.
+    - APOSTATE TOWERS: 0-2 rogue arcanists squatting where governance and
+      the grid both fail (sited on the founding political map, NOT geology —
+      the tower is a symptom). Nearby trust falls (exactly recomputable:
+      euclidean 220 of the exported tower point), black markets rise.
+    - THE MAELSTROM: half of worlds carry a turning of the sea on one
+      coast; port siting shuns its reach.
+    - All exported as point layers with names; the chronicle tells the wild
+      map. Schema v21.
+
   THE SEA + PORTS (G3): the edge of the world is a market.
     - Each world's geology chooses 1-2 adjacent box edges as SEA (blind).
       Regions whose cells touch that water are coastal (on_coast — exactly
@@ -499,8 +525,10 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 20;
+    const SCHEMA_VERSION = 21;
     const SEA_L = 400;        // sea_access decay length over the cost graph
+    const FORD_MULT = 2.2;    // crossing a river off-bridge: wide water is a wall too
+    const WILD_R = 220;       // euclidean reach of a ruin's peril / a tower's shadow
     const RIVER_EDGE = 0.6;   // barge transport: river edges are cheap
     const RIVER_CARRY = 0.3;  // share of a riverine region's blight shipped downstream
     const RIVER_DECAY = 0.75; // per-step decay of the carried load
@@ -1004,9 +1032,87 @@
         reg.onCoast = seaSides.some(side => touches(reg.ring, side)) ? 1 : 0;
       });
 
+      // P1: bridges & fords — the river as a barrier ACROSS. At region
+      // granularity all bank-to-bank travel passes THROUGH a river town, so
+      // the crossing lives there: reaching a riverine region from dry land
+      // means marsh, levee, and water — a ford (x2.2) — unless the town
+      // carries a bridge (1-2 per river, sited blind at the flattest chain
+      // towns; mid-chain preferred). Along the water the barge rules hold.
+      const rb = sg("bridges");
+      const bridges = [];
+      const allChain = new Set();
+      rivers.forEach(RV => RV.chain.forEach(ri => allChain.add(ri)));
+      regions.forEach(reg => { reg.hasBridge = 0; });
+      rivers.forEach(RV => {
+        const nB = Math.min(RV.chain.length, 1 + (rb() < 0.4 ? 1 : 0));
+        const scored = RV.chain.map((ri, k) => ({
+          ri, s: 100 - regions[ri].ruggedness +
+            (k > 0 && k < RV.chain.length - 1 ? 10 : 0) + (rb() - 0.5) * 10
+        })).sort((x, y) => y.s - x.s || x.ri - y.ri);
+        const bridgeSet = new Set(scored.slice(0, nB).map(o => o.ri));
+        bridgeSet.forEach(ri => {
+          regions[ri].hasBridge = 1;
+          bridges.push({ id: bridges.length, riverId: RV.id, regionIdx: ri,
+            x: round2(regions[ri].c[0]), y: round2(regions[ri].c[1]) });
+        });
+        RV.chain.forEach(ri => {
+          if (bridgeSet.has(ri)) return;
+          const A = regions[ri];
+          for (const j of A.neighbors) {
+            if (allChain.has(j)) continue; // along the water: barge rules
+            const B = regions[j];
+            const m = Math.max(A.ridgeMult.get(B.id) || 1, FORD_MULT);
+            A.ridgeMult.set(B.id, m);
+            B.ridgeMult.set(A.id, m);
+          }
+        });
+      });
+
+      // P1: relic ruins — the old world's structures, drawn in the deep
+      // past. A DELVE in the old workings (dead lodes, ore country), a TOMB
+      // in the high barrens, and sometimes a DEADHOLD: a city the old
+      // cataclysm killed, whose ground still poisons.
+      const ru = sg("ruins");
+      const ruins = [];
+      const takenR = new Set();
+      const pickRuin = (scoreFn) => {
+        let bi = -1, bs = -Infinity;
+        regions.forEach((reg, i) => {
+          if (takenR.has(i)) return;
+          const s = scoreFn(reg);
+          if (s > bs || (s === bs && (bi === -1 || i < bi))) { bs = s; bi = i; }
+        });
+        if (bi >= 0) takenR.add(bi);
+        return bi;
+      };
+      const addRuin = (type, idx, perilLo, perilW, yieldLo, yieldW) => {
+        if (idx < 0) return;
+        ruins.push({ id: ruins.length, type, regionIdx: idx,
+          peril: perilLo + Math.round(ru() * perilW), yield: yieldLo + Math.round(ru() * yieldW) });
+      };
+      addRuin("delve", pickRuin(reg => (reg.exhausted ? 60 : 0) + reg.endowment * 0.4 + (ru() - 0.5) * 8), 40, 30, 50, 40);
+      addRuin("tomb", pickRuin(reg => reg.ruggedness * 0.3 + (100 - reg.fertility) * 0.3 + (ru() - 0.5) * 8), 55, 35, 40, 40);
+      const third = ru();
+      if (third < 0.4) {
+        addRuin("delve", pickRuin(reg => (reg.exhausted ? 60 : 0) + reg.endowment * 0.4 + (ru() - 0.5) * 8), 40, 30, 50, 40);
+      } else if (third < 0.75) {
+        addRuin("deadhold", pickRuin(reg => (100 - reg.fertility) * 0.25 + (100 - reg.elevation) * 0.15 + (ru() - 0.5) * 10), 75, 20, 60, 30);
+      }
+
+      // P1: the maelstrom — half of worlds carry a turning of the sea
+      const rm = sg("maelstrom");
+      let maelstrom = null;
+      if (rm() < 0.5) {
+        const side = seaSides[Math.floor(rm() * seaSides.length)];
+        const t = round2(200 + rm() * 600);
+        maelstrom = { side,
+          x: side === "west" ? 0 : side === "east" ? W : t,
+          y: side === "south" ? 0 : side === "north" ? W : t };
+      }
+
       // Prevailing wind: one seeded direction per world (0° = +x/east, CCW).
       const windDeg = Math.floor(sg("wind")() * 360);
-      return { windDeg, ridges, passes, rivers, seaSides };
+      return { windDeg, ridges, passes, rivers, seaSides, bridges, ruins, maelstrom };
     }
 
     // ---- Cost-distance over the adjacency graph (Dijkstra, O(n^2)) ----------
@@ -1179,7 +1285,12 @@
         if (regions[m].onCoast === 1) mouths.add(m);
       });
       regions.forEach(reg => { reg.isPort = 0; });
-      const portScore = coastal.map(reg => {
+      // P1: sailors shun the maelstrom — port siting avoids its reach
+      // (unless the whole coast is inside it and a harbor must exist)
+      const clearOfMael = (reg) => !geo.maelstrom ||
+        Math.hypot(round2(reg.c[0]) - geo.maelstrom.x, round2(reg.c[1]) - geo.maelstrom.y) >= 180;
+      const portPool = coastal.filter(clearOfMael).length ? coastal.filter(clearOfMael) : coastal;
+      const portScore = portPool.map(reg => {
         const rj = sx("port#" + reg.id);
         return { reg, s: 0.45 * (100 - reg.ruggedness) + 0.2 * (100 - reg.elevation) +
           (mouths.has(regions.indexOf(reg)) ? 25 : 0) + (rj() - 0.5) * 8 };
@@ -1302,6 +1413,8 @@
       //     way: the λ-sweep compares identical contamination under different
       //     victims — the "policy share" experiment.
       const scar = new Array(regions.length).fill(0); // permanent contamination (relic calamities)
+      // P1: the deadhold's ground was poisoned before anyone alive was born
+      geo.ruins.filter(r => r.type === "deadhold").forEach(r => { scar[r.regionIdx] = Math.max(scar[r.regionIdx], 1.8); });
       const computeBlight = () => { // reads CURRENT wealth: dumping re-targets the poor
         const windRad = geo.windDeg * Math.PI / 180;
         const wvx = Math.cos(windRad), wvy = Math.sin(windRad);
@@ -1402,6 +1515,38 @@
         });
       };
       computeBlocs(); // the founding politics
+
+      // P1: apostate towers — 0-2 rogue arcanists squatting where governance
+      // and the grid both fail. Sited on the founding POLITICAL map, not
+      // geology: the tower is a symptom of state failure, and it moves when
+      // the state does.
+      const rT = sx("towers");
+      const nTower = (() => { const c = rT(); return c < 0.15 ? 0 : c < 0.75 ? 1 : 2; })();
+      const towerIdxs = [];
+      if (nTower > 0) {
+        const tCands = regions.map((reg, i) => ({
+          i, s: (reg.bloc === "ungoverned" ? 40 : reg.bloc === "contested" ? 20 : reg.bloc === "crown" ? -30 : 0) +
+            (onGrid[i] ? 0 : 25) + (100 - reg.centrality) * 0.2 + (rT() - 0.5) * 8
+        })).sort((a, b) => b.s - a.s || a.i - b.i);
+        tCands.slice(0, nTower).forEach(c => towerIdxs.push(c.i));
+      }
+      regions.forEach((reg, i) => { reg.hasTower = towerIdxs.includes(i) ? 1 : 0; });
+      // the wild layer's reach: euclidean over the exported (rounded) points,
+      // so every downstream column that reads it stays exactly recomputable
+      regions.forEach(reg => {
+        const P = [round2(reg.c[0]), round2(reg.c[1])];
+        reg.ruinPerilNear = 0; reg.ruinYieldNear = 0; reg.towerNear = 0;
+        geo.ruins.forEach(r => {
+          const R = regions[r.regionIdx];
+          if (Math.hypot(P[0] - round2(R.c[0]), P[1] - round2(R.c[1])) < WILD_R) {
+            reg.ruinPerilNear = Math.max(reg.ruinPerilNear, r.peril);
+            reg.ruinYieldNear = Math.max(reg.ruinYieldNear, r.yield);
+          }
+        });
+        regions.forEach(T => {
+          if (T.hasTower === 1 && Math.hypot(P[0] - round2(T.c[0]), P[1] - round2(T.c[1])) < WILD_R) reg.towerNear = 1;
+        });
+      });
 
       // D3 event machinery: seeded triggers, epoch-stamped consequences.
       const events = [];
@@ -1723,6 +1868,28 @@
       const maxFlux = Math.max(...nodeFlux, 1e-9);
       regions.forEach((reg, i) => { reg.pilgrimFlux = Math.round(100 * nodeFlux[i] / maxFlux); });
 
+      // P1 delver flux: the poor walk to the ruins — risk is a wage. Every
+      // settlement's delvers route to the NEAREST ruin, poverty-weighted;
+      // through-traffic accumulates like the pilgrims' (destination in,
+      // origin out). The towns on the delvers' roads get the trade — and
+      // the bodies.
+      const ruinIdxs = geo.ruins.map(r => r.regionIdx);
+      const delFlux = new Array(regions.length).fill(0);
+      regions.forEach((reg, i) => {
+        let best = -1, bc = Infinity;
+        for (const rI of ruinIdxs) if (sp[rI].dist[i] < bc) { bc = sp[rI].dist[i]; best = rI; }
+        if (best === -1 || !isFinite(bc)) return;
+        const mass = reg.population * (1 - reg.wealth / 100); // poverty pushes
+        let cur = i;
+        while (cur !== best && sp[best].par[cur] !== -1) {
+          const p = sp[best].par[cur];
+          delFlux[p] += mass;
+          cur = p;
+        }
+      });
+      const maxDel = Math.max(...delFlux, 1e-9);
+      regions.forEach((reg, i) => { reg.delverFlux = Math.round(100 * delFlux[i] / maxDel); });
+
       // W2 security: garrisons guard the seat and the busiest corridors near
       // the core — protection follows the center's arteries, not the frontier.
       const thr = new Array(regions.length).fill(0);
@@ -1773,12 +1940,14 @@
       const maxSmug = Math.max(...smugFlux, 1e-9);
       regions.forEach((reg, i) => {
         reg.smuggling = Math.round(100 * smugFlux[i] / maxSmug);
-        // banditry: where traffic and pilgrims are worth robbing and nobody guards them
-        const preyN = 0.7 * (thr[i] / maxThr) + 0.3 * reg.pilgrimFlux / 100;
+        // banditry: where traffic, pilgrims, and delvers are worth robbing,
+        // where the ruins breed peril, and nobody guards any of it
+        const preyN = 0.55 * (thr[i] / maxThr) + 0.25 * reg.pilgrimFlux / 100 + 0.2 * reg.ruinPerilNear / 100;
         reg.predation = Math.round(100 * preyN * (1 - reg.forceProjection / 100));
-        // the black market prices the underservice: a per-capita RELIANCE index
-        // (rates not counts — multiply by population in QGIS for volume)
-        reg.blackMarket = Math.round(0.6 * (100 - reg.arcaneServices) + 0.4 * (100 - reg.forceProjection));
+        // the black market prices the underservice — and fences what the
+        // delvers carry out and what the apostate sells off-grid
+        reg.blackMarket = clamp(Math.round(0.55 * (100 - reg.arcaneServices) + 0.35 * (100 - reg.forceProjection) +
+          (reg.towerNear === 1 ? 12 : 0) + 0.12 * reg.ruinYieldNear), 0, 100);
         const pressure = 0.4 * reg.smuggling + 0.35 * reg.predation + 0.25 * reg.blackMarket;
         const capacity = 0.6 * reg.forceProjection + 0.4 * reg.wardline;
         reg.enforceGap = clamp(Math.round(pressure - capacity), 0, 100);
@@ -1847,7 +2016,8 @@
         // trust in institutions vs reliance on kin: designed mirrors
         reg.socialTrust = clamp(Math.round(
           20 + 0.4 * reg.centrality + (reg.onConduit ? 12 : 0) - 0.2 * reg.blight +
-          0.1 * reg.forceProjection + (reg.bloc === "crown" ? 8 : reg.bloc === "ungoverned" ? -8 : 0)
+          0.1 * reg.forceProjection + (reg.bloc === "crown" ? 8 : reg.bloc === "ungoverned" ? -8 : 0) -
+          (reg.towerNear === 1 ? 12 : 0) // fear lives near the apostate's walls
         ), 0, 100);
         reg.kinship = clamp(Math.round(
           0.55 * (100 - reg.arcaneServices) + 0.25 * (100 - reg.forceProjection) + 0.2 * reg.culturalDistance
@@ -1890,12 +2060,18 @@
       // site consecrated mid-run; its stream is keyed by region id, so the
       // dedication is stable however the site came to be)
       sanctionedSites.forEach(s => { s.name = markovName("temple", sx("shrine#" + s.regionId), usedNames); });
-      // mountains speak the frontier tongue; rivers the valley's
+      // mountains speak the frontier tongue; rivers the valley's; the old
+      // world's places keep the old registers (delves in the miners' tongue,
+      // tombs and deadholds in the liturgy; the maelstrom has a dread-name)
       geo.ridges.forEach(R => { R.name = markovName("frontier", sx("ridge#" + R.id), usedNames); });
       geo.rivers.forEach(RV => { RV.name = markovName("lowland", sx("river#" + RV.id), usedNames); });
+      geo.ruins.forEach(r => {
+        r.name = markovName(r.type === "delve" ? "frontier" : "temple", sx("ruin#" + r.id + "#" + regions[r.regionIdx].id), usedNames);
+      });
+      if (geo.maelstrom) geo.maelstrom.name = markovName("temple", sx("maelstrom"), usedNames);
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides };
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -1977,7 +2153,10 @@
             downstream_blight: reg.downstreamBlight,
             on_coast: reg.onCoast,
             is_port: reg.isPort,
-            sea_access: reg.seaAccess
+            sea_access: reg.seaAccess,
+            delver_flux: reg.delverFlux,
+            has_tower: reg.hasTower,
+            has_bridge: reg.hasBridge
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -2056,6 +2235,37 @@
           geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
         });
       });
+      model.ruins.forEach(r => {
+        const reg = model.regions[r.regionIdx];
+        features.push({
+          type: "Feature",
+          properties: { kind: "ruin", ruin_type: r.type, region_id: reg.id, peril: r.peril, yield: r.yield, ruin_name: r.name },
+          geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
+        });
+      });
+      model.bridges.forEach(b => {
+        const t = model.settlements.find(s => s.regionId === model.regions[b.regionIdx].id);
+        features.push({
+          type: "Feature",
+          properties: { kind: "bridge", river_id: b.riverId, region_id: model.regions[b.regionIdx].id, bridge_name: t.name + " Bridge" },
+          geometry: { type: "Point", coordinates: [b.x, b.y] }
+        });
+      });
+      model.regions.filter(r => r.hasTower === 1).forEach(reg => {
+        const t = model.settlements.find(s => s.regionId === reg.id);
+        features.push({
+          type: "Feature",
+          properties: { kind: "tower", region_id: reg.id, tower_name: t.name + " Tower" },
+          geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
+        });
+      });
+      if (model.maelstrom) {
+        features.push({
+          type: "Feature",
+          properties: { kind: "maelstrom", side: model.maelstrom.side, maelstrom_name: model.maelstrom.name },
+          geometry: { type: "Point", coordinates: [model.maelstrom.x, model.maelstrom.y] }
+        });
+      }
       model.garrisons.forEach(g => {
         features.push({
           type: "Feature",
@@ -2200,6 +2410,35 @@
           geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
         });
       });
+      model.ruins.forEach(r => {
+        const reg = model.regions[r.regionIdx];
+        features.push({
+          type: "Feature",
+          properties: { kind: "ruin", ruin_type: r.type, region_id: reg.id, epoch: 0, epoch_date: epochDate(0) },
+          geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
+        });
+      });
+      model.bridges.forEach(b => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "bridge", river_id: b.riverId, epoch: 0, epoch_date: epochDate(0) },
+          geometry: { type: "Point", coordinates: [b.x, b.y] }
+        });
+      });
+      model.regions.filter(r => r.hasTower === 1).forEach(reg => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "tower", region_id: reg.id, epoch: 0, epoch_date: epochDate(0) },
+          geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
+        });
+      });
+      if (model.maelstrom) {
+        features.push({
+          type: "Feature",
+          properties: { kind: "maelstrom", side: model.maelstrom.side, epoch: 0, epoch_date: epochDate(0) },
+          geometry: { type: "Point", coordinates: [model.maelstrom.x, model.maelstrom.y] }
+        });
+      }
       return {
         type: "FeatureCollection",
         name: "hinterland_epochs",
@@ -2317,7 +2556,35 @@
           (ports.length
             ? `The realm's ${ports.length > 1 ? "gates are" : "gate is"} ${list(portBits)}: whatever the mines raise and the works refine leaves the country there, and whoever holds the quay holds the toll. ` +
               `Distance to the water is the realm's second lottery, drawn at the founding like the first.`
-            : `No harbor was raised at the founding; the water waits.`));
+            : `No harbor was raised at the founding; the water waits.`) +
+          (model.maelstrom ? ` Sailors give a wide berth to the ${model.maelstrom.name}, where the sea turns on itself; no quay was ever raised in its reach.` : ``));
+      }
+      if (model.ruins.length) {
+        const ruinBits = model.ruins.map(r => {
+          const t = town(model.regions[r.regionIdx].id).name;
+          return r.type === "delve" ? `the delve called ${r.name} gapes in the old workings by ${t}`
+            : r.type === "tomb" ? `the tomb of ${r.name} keeps its silence in the barrens by ${t}`
+            : `the deadhold of ${r.name} stands empty by ${t}, and its ground is poisoned yet`;
+        });
+        const busiest = model.regions.reduce((a, b) => a.delverFlux >= b.delverFlux ? a : b);
+        L.push(``);
+        L.push(`The old world is not gone: ${list(ruinBits)}. ` +
+          `Delvers walk the ${town(busiest.id).name} road every season, because risk is a wage where nothing else pays one; not all of them walk back, and what they carry out is sold in no sanctioned market.`);
+      }
+      {
+        const towers = model.regions.filter(r => r.hasTower === 1);
+        if (towers.length) {
+          const bits = towers.map(reg => `${town(reg.id).name} Tower`);
+          L.push(``);
+          L.push(`${towers.length > 1 ? "Apostates keep" : "An apostate keeps"} ${list(bits)}, out where the wardline fails and the conduit never came — selling in the darkness what the grid will not carry. ` +
+            `The Temple calls it heresy; the magnates call it competition; the people it heals call it the only healer who ever came.`);
+        }
+      }
+      if (model.bridges.length) {
+        const bits = model.bridges.map(b => `${town(model.regions[b.regionIdx].id).name} Bridge`);
+        L.push(``);
+        L.push(`The rivers are crossed at ${list(bits)}${model.bridges.length > 1 ? "" : " alone"}; everywhere else the banks are marsh and the water must be forded, and the fords are where the wagons drown. ` +
+          `Whoever holds a bridge holds a queue of people who cannot go around.`);
       }
 
       // -- the years ---------------------------------------------------------
@@ -2482,6 +2749,22 @@
         const dash = e.cls === "track" ? ` stroke-dasharray="6 5"` : "";
         parts.push(`<line class="road" x1="${A.c[0].toFixed(1)}" y1="${fy(A.c[1]).toFixed(1)}" x2="${B.c[0].toFixed(1)}" y2="${fy(B.c[1]).toFixed(1)}" stroke="#6b5844" stroke-width="${w}" opacity="0.8"${dash}/>`);
       });
+
+      // P1: the wild layer — ◆ ruins, ♜ towers, ═ bridges, ◉ the maelstrom
+      model.ruins.forEach(r => {
+        const reg = model.regions[r.regionIdx];
+        parts.push(`<text class="ruin" x="${(reg.c[0] + 26).toFixed(1)}" y="${(fy(reg.c[1]) - 14).toFixed(1)}" font-size="16" text-anchor="middle" fill="#4c4c4c" paint-order="stroke" stroke="#fff" stroke-width="3">◆</text>`);
+      });
+      model.regions.filter(r => r.hasTower === 1).forEach(reg => {
+        parts.push(`<text class="tower" x="${(reg.c[0] - 26).toFixed(1)}" y="${(fy(reg.c[1]) + 14).toFixed(1)}" font-size="17" text-anchor="middle" fill="#3b1f4e" paint-order="stroke" stroke="#fff" stroke-width="3">♜</text>`);
+      });
+      model.bridges.forEach(b => {
+        parts.push(`<text class="bridge" x="${b.x.toFixed(1)}" y="${(fy(b.y) + 6).toFixed(1)}" font-size="15" font-weight="700" text-anchor="middle" fill="#6b5844" paint-order="stroke" stroke="#fff" stroke-width="3">═</text>`);
+      });
+      if (model.maelstrom) {
+        const mx = clamp(model.maelstrom.x, 22, W - 22), my = clamp(model.maelstrom.y, 22, W - 22);
+        parts.push(`<text class="maelstrom" x="${mx.toFixed(1)}" y="${(fy(my) + 7).toFixed(1)}" font-size="20" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="3">◉</text>`);
+      }
 
       // G3: the sea — a blue band along the water's edge, ⚓ at the ports.
       // fy flips y for display: "north" (y-up top) is the top of the screen.

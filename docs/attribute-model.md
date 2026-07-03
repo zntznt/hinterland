@@ -80,7 +80,20 @@
 > recalibrations, measured first: the λ-sweep floor eases to −0.20 (the sea
 > is a blight-independent wealth pole; the policy gap is unchanged) and the
 > resource-curse ratio to 28% (the coast is an escape route from the curse;
-> it still holds inland). **The chronicle
+> it still holds inland). **The wild layer
+> (P1)**: anomalies — objects the ledger did not order. Relic ruins drawn
+> blind in the deep past (a delve in the old workings, a tomb in the
+> barrens, sometimes a deadhold whose ground seeds a founding blight scar),
+> each with peril and yield; `delver_flux` routes the poor to them (risk is
+> a wage) and the shadow economy fences what they carry out (ruin hosts in
+> the high-predation/high-black-market quadrant ~70%). River banks become
+> fords (×2.2) except at 1–2 bridge towns per river — bridge towns out-earn
+> their bridgeless river peers in ~88% of worlds. Apostate towers (0–2)
+> squat where governance and the grid both fail — sited on the founding
+> political map, NOT geology, because state failure is a social fact —
+> suppressing trust (exactly recomputable) and feeding the black market
+> (21/21 tower hosts low-trust/high-black-market). Half of worlds carry a
+> maelstrom that port siting shuns. **The chronicle
 > (E4)**: the world narrates
 > itself — a deterministic written history (downloadable markdown + on-page
 > panel) composed from the founding, the dated event timeline with the causal

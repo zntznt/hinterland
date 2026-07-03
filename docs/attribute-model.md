@@ -59,7 +59,17 @@
 > `range_shadow` is exactly recomputable from exported geometry; ranges are
 > named in the frontier register and narrated by the chronicle. The drain
 > spiral is now measured per-side of the wall (geography legitimately
-> fragments the global correlation). **The chronicle (E4)**: the world narrates
+> fragments the global correlation). **Rivers + downstream blight (G2)**: the
+> conductors — 1–2 rivers per world traced blind, gentlest-descent, from high
+> interior ground to the border; floodplains gain fertility (the seat is
+> drawn to the water, emergent), river edges cost ×0.6 (ridge crossings
+> become pass-grade gorges), and the blight CARRIES DOWNSTREAM inside
+> computeBlight (30% shipped, ×0.75 decay per step; `downstream_blight`
+> exactly recomputable from the exported chain order). Measured: the lower
+> river carries the heavier load in 23/23 chains; riverine regions out-earn
+> dry ones in 16/20 worlds — the river gives before it takes, and who drinks
+> first was set by the land before anyone built anything. **The chronicle
+> (E4)**: the world narrates
 > itself — a deterministic written history (downloadable markdown + on-page
 > panel) composed from the founding, the dated event timeline with the causal
 > chains told as chains, and the closing state of the realm; every event is

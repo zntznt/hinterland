@@ -8,6 +8,29 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  THE FACTION TURN (F1): the blocs become agents.
+    - HOLDINGS: the chokepoint assets — bridges, passes, ports — are now
+      OWNED. At the founding each belongs to its host region's dominant
+      bloc (or to no one, where the ground is contested/ungoverned).
+    - SEIZURES: each epoch, every faction scores every asset it does not
+      hold (its live reach at the host, a per-faction preference — the
+      magnates want quays and spans, the Crown wants passes — minus the
+      holder's reach and an inertia term). The single best case above
+      threshold acts: the asset changes hands, a "seizure" event with a
+      faction lands in the timeline, and the map's ownership history
+      becomes real. bloc_changes was a statistic; held_by is a deed.
+    - TOLLS: every region's least-cost paths to the seat and to its port
+      are walked; each HELD chokepoint on the way levies. toll_burden is
+      exported, and each epoch it drags wealth — connection itself is
+      taxed, and the tax is set by whoever seized the road.
+    - THE TOWER LIFECYCLE: when Crown force or Temple reach at an apostate
+      tower climbs high enough, the stronger of the two BURNS it (the
+      healer the darkness had is gone, and nothing replaced it); and
+      where governance keeps failing, apostates RAISE new towers mid-run.
+      tower_burned / tower_raised events; exports carry the final state.
+    - New event types: seizure, tower_burned, tower_raised (with a faction
+      field in the timeline). Schema v22.
+
   THE WILD LAYER (P1): anomalies — objects the ledger did not order.
     - Everything on the map so far was infrastructure obeying some ledger
       (the planner's, the Crown's, the Temple's, the magnates'). P1 adds
@@ -525,7 +548,9 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 21;
+    const SCHEMA_VERSION = 22;
+    const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
+    const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const SEA_L = 400;        // sea_access decay length over the cost graph
     const FORD_MULT = 2.2;    // crossing a river off-bridge: wide water is a wall too
     const WILD_R = 220;       // euclidean reach of a ruin's peril / a tower's shadow
@@ -1297,7 +1322,8 @@
       }).sort((a, b) => b.s - a.s || a.reg.id - b.reg.id);
       portScore.slice(0, KP).forEach(x => { x.reg.isPort = 1; });
       const portIdxs = regions.map((reg, i) => reg.isPort ? i : -1).filter(i => i >= 0);
-      const seaCd = portIdxs.length ? costDistances(regions, portIdxs).dist : null;
+      const seaRun = portIdxs.length ? costDistances(regions, portIdxs) : null;
+      const seaCd = seaRun ? seaRun.dist : null;
       regions.forEach((reg, i) => {
         reg.seaAccess = seaCd
           ? Math.round(100 * Math.exp(-(isFinite(seaCd[i]) ? seaCd[i] : 1e9) / SEA_L)) : 0;
@@ -1531,22 +1557,41 @@
         tCands.slice(0, nTower).forEach(c => towerIdxs.push(c.i));
       }
       regions.forEach((reg, i) => { reg.hasTower = towerIdxs.includes(i) ? 1 : 0; });
-      // the wild layer's reach: euclidean over the exported (rounded) points,
-      // so every downstream column that reads it stays exactly recomputable
-      regions.forEach(reg => {
-        const P = [round2(reg.c[0]), round2(reg.c[1])];
-        reg.ruinPerilNear = 0; reg.ruinYieldNear = 0; reg.towerNear = 0;
-        geo.ruins.forEach(r => {
-          const R = regions[r.regionIdx];
-          if (Math.hypot(P[0] - round2(R.c[0]), P[1] - round2(R.c[1])) < WILD_R) {
-            reg.ruinPerilNear = Math.max(reg.ruinPerilNear, r.peril);
-            reg.ruinYieldNear = Math.max(reg.ruinYieldNear, r.yield);
-          }
-        });
-        regions.forEach(T => {
-          if (T.hasTower === 1 && Math.hypot(P[0] - round2(T.c[0]), P[1] - round2(T.c[1])) < WILD_R) reg.towerNear = 1;
-        });
+
+      // F1 HOLDINGS: the chokepoint assets are owned. At the founding each
+      // belongs to its host's dominant bloc; contested or ungoverned ground
+      // holds its own tolls for no one.
+      const holdings = [];
+      geo.bridges.forEach(b => holdings.push({ type: "bridge", regionIdx: b.regionIdx, ref: b }));
+      geo.passes.forEach(p => holdings.push({ type: "pass", regionIdx: p.regionIdx, ref: p }));
+      portIdxs.forEach(i => holdings.push({ type: "port", regionIdx: i, ref: regions[i] }));
+      holdings.forEach(h => {
+        const b = regions[h.regionIdx].bloc;
+        h.heldBy = (b === "crown" || b === "temple" || b === "magnate") ? b : "none";
+        h.ref.heldBy = h.heldBy;
       });
+      // tolls: walk each region's least-cost paths to the seat and to its
+      // port; every HELD chokepoint along the way (self excluded) levies
+      const computeTolls = () => {
+        const heldSet = new Set(holdings.filter(h => h.heldBy !== "none").map(h => h.regionIdx));
+        regions.forEach((reg, i) => {
+          let t = 0;
+          let cur = i;
+          while (cur !== seatIdx && seatRun.parent[cur] !== -1) {
+            cur = seatRun.parent[cur];
+            if (heldSet.has(cur)) t += TOLL_SEAT; // every held gate on the king's road
+          }
+          if (seaRun) {
+            cur = i;
+            while (seaRun.parent[cur] !== -1) {
+              cur = seaRun.parent[cur];
+              if (heldSet.has(cur)) t += TOLL_PORT; // and on the way to the water
+            }
+          }
+          reg.tollBurden = clamp(t, 0, 100);
+        });
+      };
+      computeTolls(); // the founding exposure: who WOULD pay, before time runs
 
       // D3 event machinery: seeded triggers, epoch-stamped consequences.
       const events = [];
@@ -1562,6 +1607,18 @@
       const E0sum = regions.reduce((s, r) => s + r.endowment, 0);
       let collapsed = false, collapseEpoch = -1, refounded = false, warIdx = -1;
       let firstWoundIdx = -1, firstWoundEpoch = -1, consecrated = false;
+      // F1 faction machinery: its own stream, so the older histories only
+      // shift where the new mechanics genuinely touch them
+      const rF = sx("factions");
+      const SEIZE_PREF = {
+        crown: { pass: 1.25, bridge: 1.0, port: 0.9 },
+        temple: { pass: 0.95, bridge: 0.95, port: 0.9 },
+        magnate: { pass: 0.85, bridge: 1.15, port: 1.3 }
+      };
+      const reachOf = (F, reg) => F === "crown" ? reg.centrality : F === "temple" ? reg.templeReach : reg.magnateReach;
+      const towerBurnT = 42 + rF() * 15;   // the bar past which the strong burn the strange
+      const raiseCoin = rF() < 0.6;
+      const raiseEpoch = 3 + Math.floor(rF() * Math.min(Math.max(params.ep, 1), 6));
       regions.forEach(reg => { reg.eventType = "none"; reg.eventEpoch = -1; reg.eventSeverity = 0; reg.plagued = false; });
 
       // ---- THE DYNAMIC LOOP (D1) --------------------------------------------
@@ -1571,8 +1628,13 @@
       // chasing the winners, and the dumping re-targets the poor.
       for (let e = 0; e < params.ep; e++) {
         regions.forEach(reg => { reg.E = Math.round(reg.E * 0.78); }); // mines draw down
-        regions.forEach(reg => {
-          reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg)), 0, 100);
+        regions.forEach((reg, ri) => {
+          // F1: connection itself is taxed — every held gate on the way out
+          // takes its cut before anything compounds — and the cut is not
+          // burned, it is BANKED at the gate: the toll house enriches the
+          // holder's town with money that was someone else's growth
+          const gateIncome = holdings.reduce((s2, h) => s2 + (h.regionIdx === ri && h.heldBy !== "none" ? 2 : 0), 0);
+          reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg) - 0.035 * reg.tollBurden + gateIncome), 0, 100);
           if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
         });
         // migration: toward wealth, light, and clean land — capped at 15%/epoch out
@@ -1683,6 +1745,61 @@
             events.push({ epoch: e + 1, type: "war", region_id: wreg.id });
           }
         }
+        // F1: THE FACTION TURN. Every faction scores every gate it does not
+        // hold — live reach at the host, a taste for the asset type, minus
+        // the holder's reach and an inertia bar. The single strongest claim
+        // in the realm is pressed this epoch, if any clears zero.
+        {
+          let best = null;
+          for (const F of ["crown", "temple", "magnate"]) {
+            for (const h of holdings) {
+              if (h.heldBy === F) continue;
+              const host = regions[h.regionIdx];
+              const mine = reachOf(F, host) * SEIZE_PREF[F][h.type];
+              const theirs = h.heldBy === "none" ? 30 : reachOf(h.heldBy, host);
+              const s = mine - theirs * 0.9 - 22 + rF() * 8;
+              if (s > 0 && (!best || s > best.s)) best = { F, h, s };
+            }
+          }
+          if (best) {
+            const host = regions[best.h.regionIdx];
+            best.h.heldBy = best.F;
+            best.h.ref.heldBy = best.F;
+            host.eventType = "seizure"; host.eventEpoch = e + 1;
+            host.eventSeverity = 60 + Math.round(rF() * 25);
+            events.push({ epoch: e + 1, type: "seizure", region_id: host.id, faction: best.F });
+          }
+        }
+        // F1: the strong burn the strange — when Crown or Temple reach at a
+        // tower clears the bar, the stronger of the two puts it to fire.
+        // Tolerance decays as the realm consolidates: the bar drops with time.
+        regions.forEach(reg => {
+          if (reg.hasTower !== 1) return;
+          if (Math.max(reg.centrality, reg.templeReach) + 2.2 * (e + 1) >= towerBurnT) {
+            reg.hasTower = 0;
+            reg.eventType = "tower_burned"; reg.eventEpoch = e + 1;
+            reg.eventSeverity = 65 + Math.round(rF() * 25);
+            events.push({ epoch: e + 1, type: "tower_burned", region_id: reg.id, faction: reg.centrality >= reg.templeReach ? "crown" : "temple" });
+          }
+        });
+        // F1: and where governance keeps failing, apostates raise new walls
+        if (raiseCoin && e + 1 === raiseEpoch && regions.filter(r => r.hasTower === 1).length < 2) {
+          let bi = -1, bs = -Infinity;
+          regions.forEach((reg, ri) => {
+            if (reg.hasTower === 1) return;
+            const s = (reg.bloc === "ungoverned" ? 40 : reg.bloc === "contested" ? 20 : reg.bloc === "crown" ? -30 : 0) +
+              (onGrid[ri] ? 0 : 25) + (100 - reg.centrality) * 0.2 + (rF() - 0.5) * 8;
+            if (s > bs || (s === bs && (bi === -1 || ri < bi))) { bs = s; bi = ri; }
+          });
+          if (bi >= 0 && bs > 30) {
+            const reg = regions[bi];
+            reg.hasTower = 1;
+            reg.eventType = "tower_raised"; reg.eventEpoch = e + 1;
+            reg.eventSeverity = 60 + Math.round(rF() * 20);
+            events.push({ epoch: e + 1, type: "tower_raised", region_id: reg.id, faction: "apostate" });
+          }
+        }
+        computeTolls(); // next epoch pays whoever holds the gates NOW
         computeBlight();   // the poison follows the poor wherever they end up
         regions.forEach(reg => { // plague: maximum contamination + real population, once per region
           if (!reg.plagued && reg.blight >= 85 && reg.settlementPop >= 500) {
@@ -1729,6 +1846,24 @@
         reg.boomBust = reg.settlementPop < 0.55 * reg.peakPop ? "collapse"
           : reg.settlementPop > 1.5 * reg.popT0 ? "boom"
           : reg.settlementPop < 0.8 * reg.popT0 ? "decline" : "stable";
+      });
+
+      // The wild layer's reach, read from the FINAL state (towers burn and
+      // rise mid-run): euclidean over the exported (rounded) points, so
+      // every downstream column that reads it stays exactly recomputable.
+      regions.forEach(reg => {
+        const P = [round2(reg.c[0]), round2(reg.c[1])];
+        reg.ruinPerilNear = 0; reg.ruinYieldNear = 0; reg.towerNear = 0;
+        geo.ruins.forEach(r => {
+          const R = regions[r.regionIdx];
+          if (Math.hypot(P[0] - round2(R.c[0]), P[1] - round2(R.c[1])) < WILD_R) {
+            reg.ruinPerilNear = Math.max(reg.ruinPerilNear, r.peril);
+            reg.ruinYieldNear = Math.max(reg.ruinYieldNear, r.yield);
+          }
+        });
+        regions.forEach(T => {
+          if (T.hasTower === 1 && Math.hypot(P[0] - round2(T.c[0]), P[1] - round2(T.c[1])) < WILD_R) reg.towerNear = 1;
+        });
       });
       if (params.ep > 0) {
         const others2 = regions.filter(reg => reg !== cap)
@@ -2071,7 +2206,7 @@
       if (geo.maelstrom) geo.maelstrom.name = markovName("temple", sx("maelstrom"), usedNames);
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom };
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -2156,7 +2291,8 @@
             sea_access: reg.seaAccess,
             delver_flux: reg.delverFlux,
             has_tower: reg.hasTower,
-            has_bridge: reg.hasBridge
+            has_bridge: reg.hasBridge,
+            toll_burden: reg.tollBurden
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -2206,7 +2342,7 @@
         const t = model.settlements.find(s => s.regionId === model.regions[p.regionIdx].id);
         features.push({
           type: "Feature",
-          properties: { kind: "pass", ridge_id: p.ridgeId, region_id: model.regions[p.regionIdx].id, pass_name: t.name + " Pass" },
+          properties: { kind: "pass", ridge_id: p.ridgeId, region_id: model.regions[p.regionIdx].id, pass_name: t.name + " Pass", held_by: p.heldBy },
           geometry: { type: "Point", coordinates: [p.x, p.y] }
         });
       });
@@ -2231,7 +2367,7 @@
         const t = model.settlements.find(s => s.regionId === reg.id);
         features.push({
           type: "Feature",
-          properties: { kind: "port", region_id: reg.id, port_name: t.name + " Harbor" },
+          properties: { kind: "port", region_id: reg.id, port_name: t.name + " Harbor", held_by: reg.heldBy },
           geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
         });
       });
@@ -2247,7 +2383,7 @@
         const t = model.settlements.find(s => s.regionId === model.regions[b.regionIdx].id);
         features.push({
           type: "Feature",
-          properties: { kind: "bridge", river_id: b.riverId, region_id: model.regions[b.regionIdx].id, bridge_name: t.name + " Bridge" },
+          properties: { kind: "bridge", river_id: b.riverId, region_id: model.regions[b.regionIdx].id, bridge_name: t.name + " Bridge", held_by: b.heldBy },
           geometry: { type: "Point", coordinates: [b.x, b.y] }
         });
       });
@@ -2633,6 +2769,21 @@
               : `War came to ${t.name}, as it comes to ground that three powers claim and none can hold. `) +
               `When the fighting burned out, ${tierWord[t.tier]} was the poorer by a third of its people and a quarter of its wealth, and the mines and works were ruined ground. The Crown's garrison arrived after the blood, and stayed.`;
           }
+          else if (ev.type === "seizure") {
+            const F = ev.faction === "crown" ? "the Crown" : ev.faction === "temple" ? "the Temple" : "the magnates";
+            const what = t.name; // the gate is named for its town
+            line = pick([
+              `In this year ${F} took the gate at ${what} — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the toll was posted by winter.`,
+              `${F.charAt(0).toUpperCase() + F.slice(1)} pressed ${F === "the magnates" ? "their" : "its"} claim on the crossing at ${what}. No blood is recorded; the ledger did the taking, and the toll did the keeping.`,
+            ]);
+          }
+          else if (ev.type === "tower_burned") {
+            const F = ev.faction === "crown" ? "the Crown's soldiers" : "the Temple's censors";
+            line = `${F.charAt(0).toUpperCase() + F.slice(1)} burned the tower at ${t.name}. The chronicle is obliged to note what the writs do not: the healer the darkness had is gone, and nothing came to replace it.`;
+          }
+          else if (ev.type === "tower_raised") {
+            line = `An apostate raised a tower at ${t.name}, out where no writ runs and the conduit never came. The neighbors did not report it for a season; the neighbors were its first customers.`;
+          }
           else if (ev.type === "consecration") {
             const shrine = model.sanctionedSites.find(s => s.regionId === ev.region_id);
             line = `The Temple came to ${t.name}, to the ground of its suffering, and consecrated it as ${shrine ? shrine.name : "holy ground"}. ` +
@@ -2668,6 +2819,14 @@
       model.regions.forEach(r => { bc[r.bloc]++; });
       L.push(`The Crown holds ${bc.crown} regions, the Temple ${bc.temple}, the magnates ${bc.magnate}; ` +
         `${bc.contested} are contested between them, and ${bc.ungoverned} answer to no one at all.`);
+      if (model.holdings.length) {
+        const hc = { crown: 0, temple: 0, magnate: 0, none: 0 };
+        model.holdings.forEach(h => { hc[h.heldBy]++; });
+        L.push(``);
+        L.push(`Of the realm's ${model.holdings.length} gates — the bridges, the passes, the quays — ` +
+          `the Crown keeps ${hc.crown}, the Temple ${hc.temple}, and the magnates ${hc.magnate}; ${hc.none} stand untolled. ` +
+          `Every levy on the list is paid by people who did not choose the road.`);
+      }
       const darkNow = model.regions.filter(r => !r.onConduit).length;
       L.push(``);
       L.push(darkNow > 0

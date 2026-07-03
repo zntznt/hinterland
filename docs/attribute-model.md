@@ -93,7 +93,20 @@
 > political map, NOT geology, because state failure is a social fact —
 > suppressing trust (exactly recomputable) and feeding the black market
 > (21/21 tower hosts low-trust/high-black-market). Half of worlds carry a
-> maelstrom that port siting shuns. **The chronicle
+> maelstrom that port siting shuns. **The faction turn (F1)**: the blocs
+> become agents. The chokepoint assets — bridges, passes, ports — are
+> holdings (founding owner = the host's founding bloc); each epoch every
+> faction scores every gate it does not hold (live reach × a per-faction
+> taste — the magnates want quays and spans, the Crown wants passes — minus
+> the holder's reach and inertia) and the single strongest claim above the
+> bar seizes it. `toll_burden` walks each region's least-cost paths to the
+> seat and its port, drags wealth each epoch, and is banked by the gate
+> town (measured: seizures in 13/20 worlds, magnates the most acquisitive;
+> corr(toll_burden, wealth growth) ≈ −0.19). Apostate towers are raised
+> mid-run where governance keeps failing and burned when Crown or Temple
+> reach closes in (raise 12/20, burn 5/20 worlds) — and the burned region's
+> shadow economy heals, because every column reads the final state. **The
+> chronicle
 > (E4)**: the world narrates
 > itself — a deterministic written history (downloadable markdown + on-page
 > panel) composed from the founding, the dated event timeline with the causal

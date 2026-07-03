@@ -8,6 +8,23 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  ESCALATION + THE OLIGARCHY LOOP (F2): money begets reach begets money.
+    - TREASURIES: each faction's held gates pay into a toll ledger every
+      epoch (3 per gate). The ledger BUYS: a fat treasury lowers the
+      seizure bar (up to +15 on the claim score) and each taking debits
+      it (12). Gates fund the next gate — the full oligarchy loop, and it
+      is measurable: the top treasury ends holding the most gates.
+    - TENSIONS: the three faction pairs accrue grievance — +25 when one
+      seizes from the other, +1.2 per epoch for every contested region
+      where the two are the top claims — and decay by 8% per epoch (old
+      grudges fade if not fed). Exported in provenance.
+    - WARS BECOME POLICY: when a pair's tension clears a seeded bar, the
+      war machinery fires within two epochs, and the battlefield PREFERS
+      contested ground where THAT pair meets. Every war event now carries
+      its two factions — the chronicle names the powers, not just the
+      ground. Tension resets when the war triggers: the grievance is
+      spent in blood. Schema v23.
+
   THE FACTION TURN (F1): the blocs become agents.
     - HOLDINGS: the chokepoint assets — bridges, passes, ports — are now
       OWNED. At the founding each belongs to its host region's dominant
@@ -548,7 +565,7 @@
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
     const SVG = 640;       // preview size in px
-    const SCHEMA_VERSION = 22;
+    const SCHEMA_VERSION = 23;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const SEA_L = 400;        // sea_access decay length over the cost graph
@@ -1538,6 +1555,8 @@
             : (fields[0][1] - fields[1][1] < BLOC_TOL ? "contested" : fields[0][0]);
           if (reg.bloc !== undefined && reg.bloc !== b) reg.blocChanges++;
           reg.bloc = b;
+          // F2: on contested ground, remember WHICH two claims meet there
+          reg.topTwo = b === "contested" ? [fields[0][0], fields[1][0]] : null;
         });
       };
       computeBlocs(); // the founding politics
@@ -1619,6 +1638,12 @@
       const towerBurnT = 42 + rF() * 15;   // the bar past which the strong burn the strange
       const raiseCoin = rF() < 0.6;
       const raiseEpoch = 3 + Math.floor(rF() * Math.min(Math.max(params.ep, 1), 6));
+      // F2: treasuries, tensions, and the war bar
+      const treasuries = { crown: 0, temple: 0, magnate: 0 };
+      const pairKey = (a, b) => [a, b].sort().join("_");
+      const tensions = { crown_magnate: 0, crown_temple: 0, magnate_temple: 0 };
+      const T_WAR = 55 + rF() * 20;
+      let warPair = null;
       regions.forEach(reg => { reg.eventType = "none"; reg.eventEpoch = -1; reg.eventSeverity = 0; reg.plagued = false; });
 
       // ---- THE DYNAMIC LOOP (D1) --------------------------------------------
@@ -1726,7 +1751,10 @@
           let wreg = null, wbest = -Infinity;
           regions.forEach(reg => {
             if (reg.bloc !== "contested") return;
-            const v = 0.5 * reg.E + 0.5 * reg.wealth;
+            // F2: the battlefield prefers ground where the warring pair meets
+            const pairBonus = (warPair && reg.topTwo &&
+              pairKey(reg.topTwo[0], reg.topTwo[1]) === pairKey(warPair[0], warPair[1])) ? 40 : 0;
+            const v = 0.5 * reg.E + 0.5 * reg.wealth + pairBonus;
             if (v > wbest || (v === wbest && wreg && reg.id < wreg.id)) { wbest = v; wreg = reg; }
           });
           if (wreg) {
@@ -1742,7 +1770,8 @@
             wreg.warTorn = true;
             wreg.eventType = "war"; wreg.eventEpoch = e + 1;
             wreg.eventSeverity = 70 + Math.round(rEv() * 25);
-            events.push({ epoch: e + 1, type: "war", region_id: wreg.id });
+            const facs = warPair || wreg.topTwo || ["crown", "magnate"];
+            events.push({ epoch: e + 1, type: "war", region_id: wreg.id, factions: facs.slice().sort() });
           }
         }
         // F1: THE FACTION TURN. Every faction scores every gate it does not
@@ -1750,6 +1779,9 @@
         // the holder's reach and an inertia bar. The single strongest claim
         // in the realm is pressed this epoch, if any clears zero.
         {
+          // F2: the toll ledgers fill — every held gate pays its holder
+          for (const F of ["crown", "temple", "magnate"])
+            treasuries[F] += 3 * holdings.filter(h => h.heldBy === F).length;
           let best = null;
           for (const F of ["crown", "temple", "magnate"]) {
             for (const h of holdings) {
@@ -1757,17 +1789,38 @@
               const host = regions[h.regionIdx];
               const mine = reachOf(F, host) * SEIZE_PREF[F][h.type];
               const theirs = h.heldBy === "none" ? 30 : reachOf(h.heldBy, host);
-              const s = mine - theirs * 0.9 - 22 + rF() * 8;
+              // the ledger buys: a fat treasury lowers the bar
+              const s = mine - theirs * 0.9 - 22 + rF() * 8 + Math.min(treasuries[F], 30) * 0.5;
               if (s > 0 && (!best || s > best.s)) best = { F, h, s };
             }
           }
           if (best) {
             const host = regions[best.h.regionIdx];
+            const victim = best.h.heldBy;
             best.h.heldBy = best.F;
             best.h.ref.heldBy = best.F;
+            treasuries[best.F] = Math.max(0, treasuries[best.F] - 12); // takings cost
+            if (victim !== "none") tensions[pairKey(best.F, victim)] += 25; // grievance
             host.eventType = "seizure"; host.eventEpoch = e + 1;
             host.eventSeverity = 60 + Math.round(rF() * 25);
             events.push({ epoch: e + 1, type: "seizure", region_id: host.id, faction: best.F });
+          }
+          // grievance accrues wherever two claims meet, and old grudges fade
+          regions.forEach(reg => {
+            if (reg.topTwo) tensions[pairKey(reg.topTwo[0], reg.topTwo[1])] += 1.2;
+          });
+          for (const k of Object.keys(tensions)) tensions[k] *= 0.92;
+          // F2: war becomes policy — a pair past the bar spends its grievance
+          if (warIdx === -1) {
+            let hot = null;
+            for (const k of Object.keys(tensions))
+              if (tensions[k] >= T_WAR && (!hot || tensions[k] > tensions[hot])) hot = k;
+            if (hot) {
+              warCoin = true;
+              warEpoch = warEpoch >= e + 1 ? Math.min(warEpoch, e + 2) : e + 2;
+              warPair = hot.split("_");
+              tensions[hot] = 0; // the grievance is spent in blood
+            }
           }
         }
         // F1: the strong burn the strange — when Crown or Temple reach at a
@@ -2206,7 +2259,7 @@
       if (geo.maelstrom) geo.maelstrom.name = markovName("temple", sx("maelstrom"), usedNames);
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings };
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -2444,6 +2497,8 @@
           events: model.events,
           wind_deg: model.windDeg,
           sea_sides: model.seaSides,
+          treasuries: { crown: Math.round(model.treasuries.crown), temple: Math.round(model.treasuries.temple), magnate: Math.round(model.treasuries.magnate) },
+          tensions: { crown_magnate: Math.round(model.tensions.crown_magnate), crown_temple: Math.round(model.tensions.crown_temple), magnate_temple: Math.round(model.tensions.magnate_temple) },
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
           space: "planar 0..1000, y-up (flat-plane CRS)"
         },
@@ -2588,6 +2643,8 @@
           events: model.events,
           wind_deg: model.windDeg,
           sea_sides: model.seaSides,
+          treasuries: { crown: Math.round(model.treasuries.crown), temple: Math.round(model.treasuries.temple), magnate: Math.round(model.treasuries.magnate) },
+          tensions: { crown_magnate: Math.round(model.tensions.crown_magnate), crown_temple: Math.round(model.tensions.crown_temple), magnate_temple: Math.round(model.tensions.magnate_temple) },
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
           space: "planar 0..1000, y-up (flat-plane CRS)"
         },
@@ -2764,9 +2821,11 @@
           }
           else if (ev.type === "war") {
             const chained = strikeEv && ev.epoch > strikeEv.epoch && ev.epoch <= strikeEv.epoch + 2;
+            const FN = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };
+            const powers = ev.factions ? ` The powers that met there were ${FN[ev.factions[0]]} and ${FN[ev.factions[1]]}; the ground was merely where they met.` : ``;
             line = (chained
-              ? `War came to ${t.name}, ${25 * (ev.epoch - strikeEv.epoch)} years after the strike — armies follow ore. `
-              : `War came to ${t.name}, as it comes to ground that three powers claim and none can hold. `) +
+              ? `War came to ${t.name}, ${25 * (ev.epoch - strikeEv.epoch)} years after the strike — armies follow ore.${powers} `
+              : `War came to ${t.name}, as it comes to ground that great powers claim and none can hold.${powers} `) +
               `When the fighting burned out, ${tierWord[t.tier]} was the poorer by a third of its people and a quarter of its wealth, and the mines and works were ruined ground. The Crown's garrison arrived after the blood, and stayed.`;
           }
           else if (ev.type === "seizure") {
@@ -2826,6 +2885,19 @@
         L.push(`Of the realm's ${model.holdings.length} gates — the bridges, the passes, the quays — ` +
           `the Crown keeps ${hc.crown}, the Temple ${hc.temple}, and the magnates ${hc.magnate}; ${hc.none} stand untolled. ` +
           `Every levy on the list is paid by people who did not choose the road.`);
+        const tr = model.treasuries;
+        if (tr.crown + tr.temple + tr.magnate > 0) {
+          const FN2 = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };
+          const richest = ["crown", "temple", "magnate"].reduce((a, b) => tr[a] >= tr[b] ? a : b);
+          const tn = model.tensions;
+          const pairs = [["crown_magnate", "the Crown and the magnates"], ["crown_temple", "the Crown and the Temple"], ["magnate_temple", "the magnates and the Temple"]];
+          const worst = pairs.reduce((a, b) => tn[a[0]] >= tn[b[0]] ? a : b);
+          L.push(``);
+          L.push(`The toll ledgers run deepest with ${FN2[richest]}, and the ledger buys the next gate — money begets reach begets money. ` +
+            (tn[worst[0]] >= 20
+              ? `Between the powers, the chronicle records ${worst[1]} standing nearest to blows.`
+              : `Between the powers the chronicle records no grievance worth the ink — this year.`));
+        }
       }
       const darkNow = model.regions.filter(r => !r.onConduit).length;
       L.push(``);

@@ -105,7 +105,19 @@
 > corr(toll_burden, wealth growth) ≈ −0.19). Apostate towers are raised
 > mid-run where governance keeps failing and burned when Crown or Temple
 > reach closes in (raise 12/20, burn 5/20 worlds) — and the burned region's
-> shadow economy heals, because every column reads the final state. **The
+> shadow economy heals, because every column reads the final state.
+> **Escalation + the oligarchy loop (F2)**: money begets reach begets money —
+> every held gate pays its faction's treasury 3/epoch, the ledger lowers the
+> next seizure's bar (up to +15) and each taking debits it (12), so gates
+> fund the next gate (measured: the deepest ledger holds the most gates in
+> 11/14 acquisitive worlds). The three faction pairs accrue tension (+25 per
+> rival taking, +1.2 per epoch per contested region where the two claims
+> meet, 8%/epoch decay; exported in provenance) and a pair past a seeded bar
+> FIRES the war machinery within two epochs — the battlefield prefers
+> contested ground where that pair meets, every war event carries its two
+> factions, and the grievance is spent in blood (tension resets). Wars are
+> policy, not weather; the chronicle names the powers, not just the ground
+> (14/14 war worlds). **The
 > chronicle
 > (E4)**: the world narrates
 > itself — a deterministic written history (downloadable markdown + on-page

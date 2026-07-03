@@ -8,6 +8,34 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  THE STRATA (H1): class exists — within the walls, not only between them.
+    - Before H1 every region was one people with one number: all the
+      inequality this generator could speak of was BETWEEN places. But the
+      magnate who owns the works and the hauler who coughs in them live in
+      the same region, and the model could not tell them apart. H1 splits
+      every region into two rows: the owners and the labor.
+    - elite_share (simulated, like wealth): the owners' slice of the
+      region's coin. Founded on pure structure — the works, the claimed
+      seams, the court (company towns concentrate; smallholder valleys
+      spread) — then moved by the SAME history as everything else, with
+      NO NEW DICE (every seeded world is unchanged): gate rents and the
+      works' profits accrue to the owners' row; the granary's bread lands
+      on labor's; the plague makes labor scarce and dear (-8); a won
+      revolt burns the charters (-25), a crushed one expropriates under
+      the garrison (+10); war spares property more than people (+5); the
+      company arriving/quitting moves its owners in/out (+12/-10); a
+      seized gate installs the holder's men (+3).
+    - elite_pop_pct and class_gap: DERIVED columns, exactly recomputable
+      from the exported file alone (tier + works + harbor; owners' coin
+      per owner over labor's coin per laborer).
+    - THE TWO-LEVEL GINI (findings): gini_people = population-weighted
+      gini over the 2N class rows; gini_between_people collapses each
+      region to one people. within_pct = the share of the realm's
+      inequality a region map CANNOT SEE. owners = who owns the realm
+      (pop_pct of the people hold coin_pct of the coin, class_gap x
+      apart), and the sharpest company town is named. All exactly
+      recomputable from exported columns. Schema v29.
+
   THE PHYSICAL WORLD (G4): geology as a causal chain of shapes.
     - Before G4 the geology was three cheats on noise: a ridge was a line
       with a toll, the sea was a box edge, and elevation/fertility/rugged
@@ -713,6 +741,7 @@
         <div class="chips">
           <label class="radio"><input type="radio" name="view" value="injustice" checked /> who bears the injustice</label>
           <label class="radio"><input type="radio" name="view" value="wealth" /> who holds the coin</label>
+          <label class="radio"><input type="radio" name="view" value="class" /> who owns the town</label>
           <label class="radio"><input type="radio" name="view" value="endowment" /> where the ore lies</label>
           <label class="radio"><input type="radio" name="view" value="biome" /> what the land is</label>
           <label class="radio"><input type="radio" name="view" value="centrality" /> who reaches the seat</label>
@@ -761,7 +790,7 @@
 
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
-    const SCHEMA_VERSION = 28;
+    const SCHEMA_VERSION = 29;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const SEA_L = 400;        // sea_access decay length over the cost graph
@@ -1763,6 +1792,19 @@
         reg.popDensity = Math.round((reg.population / (reg.area / 10000)) * 10) / 10;
       });
 
+      // H1: THE STRATA — every region is two peoples under one name: the
+      // owners' row (the charter-holders, the works' masters, the court)
+      // and the labor it hires. The founding split is pure structure —
+      // the company town concentrates, the smallholder valley spreads —
+      // and history moves it from there. No new dice: every seeded world
+      // keeps its exact old history, with a class ledger written under it.
+      regions.forEach(reg => {
+        reg.eliteShare = clamp(Math.round(
+          24 + 0.32 * reg.refining + 0.12 * reg.endowment0 +
+          (reg.tier === "prime" ? 8 : reg.tier === "hub" ? 4 : 0)
+        ), 8, 92);
+      });
+
       // V1: the loop's own parameters are now history-mutable — reforms and
       // reactions shift them mid-run, and the free town escapes the tolls
       let dbShift = 0, gtShift = 0, tollScale = 1, freeTownIdx = -1, granaryOn = false;
@@ -1883,6 +1925,7 @@
         pop: regions.map(r => r.settlementPop),
         E: regions.map(r => r.E),
         blight: regions.map(r => r.blight),
+        eliteShare: regions.map(r => Math.round(r.eliteShare)),
         onGrid: regions.map((_, i) => onGrid[i]),
         edgeCount: conduitEdges.length
       });
@@ -2055,6 +2098,14 @@
           const bread = granaryOn ? clamp(Math.round(0.18 * (medW2 - reg.wealth)), -6, 6) : 0;
           reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg) - 0.035 * reg.tollBurden + gateIncome + bread), 0, 100);
           if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
+          // H1: the rents concentrate before anything trickles — the gate's
+          // take and the works' profit land on the owners' row first; only
+          // the granary's bread lands on labor's
+          reg.eliteShare = clamp(reg.eliteShare
+            + 0.75 * gateIncome                    // the toll house pays the holder's men
+            + (reg.refining > 0 ? 0.8 : 0)         // the works pay their masters
+            + (reg.E >= 40 ? 0.5 : 0)              // live seams pay their charter-holders
+            - 0.6 * Math.max(0, bread), 8, 92);    // bread reaches the bottom
         });
         // migration: toward wealth, light, and clean land — capped at 15%/epoch out
         const attract = regions.map((reg, i) =>
@@ -2084,6 +2135,7 @@
             });
             if (victim) {
               victim.refining = 0; collapsed = true; collapseEpoch = e + 1;
+              victim.eliteShare = Math.max(8, victim.eliteShare - 10); // the owners' row leaves with the company
               victim.eventType = "refinery_collapse"; victim.eventEpoch = e + 1;
               victim.eventSeverity = 70 + Math.round(rEv() * 20);
               events.push({ epoch: e + 1, type: "refinery_collapse", region_id: victim.id });
@@ -2103,6 +2155,7 @@
           if (site) {
             refounded = true;
             site.refining = Math.round(60 + rEv() * 40);
+            site.eliteShare = Math.min(92, site.eliteShare + 12); // the company arrives, owners first
             const siteIdx = regions.indexOf(site);
             onGrid[siteIdx] = true; // trunk hookup to the seat
             let cur = siteIdx;
@@ -2162,6 +2215,7 @@
             wreg.E = Math.round(wreg.E * 0.7);
             wreg.retention = Math.round(wreg.retention * 0.7);
             wreg.warTorn = true;
+            wreg.eliteShare = Math.min(92, wreg.eliteShare + 5); // property survives people
             wreg.eventType = "war"; wreg.eventEpoch = e + 1;
             wreg.eventSeverity = 70 + Math.round(rEv() * 25);
             const facs = warPair || wreg.topTwo || ["crown", "magnate"];
@@ -2209,6 +2263,7 @@
             best.h.heldBy = best.F;
             best.h.ref.heldBy = best.F;
             treasuries[best.F] = Math.max(0, treasuries[best.F] - 12); // takings cost
+            host.eliteShare = Math.min(92, host.eliteShare + 3); // the new holder installs its own men
             if (victim !== "none") tensions[pairKey(best.F, victim)] += 25; // grievance
             host.eventType = "seizure"; host.eventEpoch = e + 1;
             host.eventSeverity = 60 + Math.round(rF() * 25);
@@ -2300,6 +2355,7 @@
             // V1: the leveling plague — labor is scarce now, survivors charge
             // more; the same shock that scars can also compress
             reg.retention = Math.min(100, reg.retention + 15);
+            reg.eliteShare = Math.max(8, reg.eliteShare - 8); // scarce labor bargains up
             reg.eventType = "blight_plague"; reg.eventEpoch = e + 1; // latest event wins the columns
             reg.eventSeverity = 60 + Math.round(rEv() * 30);
             events.push({ epoch: e + 1, type: "blight_plague", region_id: reg.id });
@@ -2342,7 +2398,10 @@
                 // the Retention Act: an ore price floor — the bottom half
                 // keeps more of what its own ground produces
                 measure = "retention_act";
-                bottom.forEach(reg => { reg.retention = Math.min(100, reg.retention + 15); });
+                bottom.forEach(reg => {
+                  reg.retention = Math.min(100, reg.retention + 15);
+                  reg.eliteShare = Math.max(8, reg.eliteShare - 4); // the price floor pays the digger
+                });
               } else {
                 // the Crown Granary: the bottom half has no ore to retain,
                 // so the seat taxes the fat years and breads the lean ones
@@ -2376,6 +2435,7 @@
             if (revoltWon) {
               freeTownIdx = ri;                       // tolls no one, ever again
               reg.retention = 100;                    // keeps what it makes
+              reg.eliteShare = Math.max(8, reg.eliteShare - 25); // the charters burn with the manor
               reg.wealth = clamp(reg.wealth + 10, 0, 100);
               if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
               holdings.forEach(h => { if (h.regionIdx === ri) { h.heldBy = "none"; h.ref.heldBy = "none"; } });
@@ -2391,6 +2451,7 @@
               reg.settlementPop = Math.max(20, Math.round(reg.settlementPop * 0.85));
               reg.population = Math.round(reg.settlementPop * (1 + reg.rural));
               reg.wealth = Math.round(reg.wealth * 0.85);
+              reg.eliteShare = Math.min(92, reg.eliteShare + 10); // expropriation under the garrison
               reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
             }
             reg.eventType = "revolt"; reg.eventEpoch = e + 1;
@@ -2418,6 +2479,7 @@
       // Final classification: trajectories recorded, tiers re-ranked by what
       // the settlements have BECOME (a hub can hollow to a holdfast).
       regions.forEach(reg => {
+        reg.eliteShare = clamp(Math.round(reg.eliteShare), 8, 92); // the ledger closes in whole coins
         reg.endowment = reg.E; // exported endowment = what's left in the ground
         reg.oreDepleted = reg.E < 15 && reg.endowment0 >= 40;
         reg.boomBust = reg.settlementPop < 0.55 * reg.peakPop ? "collapse"
@@ -2453,6 +2515,18 @@
       }
       regions.forEach(reg => {
         reg.popDensity = Math.round((reg.population / (reg.area / 10000)) * 10) / 10;
+      });
+
+      // H1: the owners' headcount and the per-head gap — DERIVED columns,
+      // exactly recomputable from the exported file alone: elite_pop_pct
+      // from final tier + works + harbor (the court, the company district,
+      // the quay masters); class_gap = the owners' coin per owner over
+      // labor's coin per laborer, in the same region.
+      regions.forEach(reg => {
+        reg.elitePopPct = 2 + (reg.tier === "prime" ? 3 : reg.tier === "hub" ? 2 : 0)
+          + (reg.refining > 0 ? 2 : 0) + (reg.isPort === 1 ? 1 : 0);
+        reg.classGap = Math.round(
+          ((reg.eliteShare / reg.elitePopPct) / ((100 - reg.eliteShare) / (100 - reg.elitePopPct))) * 10) / 10;
       });
 
       // Graded access (canister trade decays off the wire) + arcane services.
@@ -2880,7 +2954,10 @@
             delver_flux: reg.delverFlux,
             has_tower: reg.hasTower,
             has_bridge: reg.hasBridge,
-            toll_burden: reg.tollBurden
+            toll_burden: reg.tollBurden,
+            elite_share: reg.eliteShare,
+            elite_pop_pct: reg.elitePopPct,
+            class_gap: reg.classGap
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -3084,7 +3161,8 @@
               aetherstone_endowment: S.E[i],
               blight_load: S.blight[i],
               on_conduit: S.onGrid[i] ? 1 : 0,
-              injustice_idx: Math.round(100 * (S.blight[i] / 100) * (1 - S.wealth[i] / 100))
+              injustice_idx: Math.round(100 * (S.blight[i] / 100) * (1 - S.wealth[i] / 100)),
+              elite_share: S.eliteShare[i]
             },
             geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
           });
@@ -3227,6 +3305,7 @@
     // ---- Rendering (SVG, responsive) ----------------------------------------
     const RAMPS = {
       wealth:     { lo: [237, 248, 233], hi: [0, 90, 50],    label: "wealth" },
+      class:      { lo: [246, 242, 250], hi: [63, 0, 125],   label: "elite share of wealth (who owns it)" },
       endowment:  { lo: [242, 240, 247], hi: [84, 39, 143],  label: "aetherstone endowment" },
       centrality: { lo: [239, 243, 255], hi: [8, 48, 107],   label: "centrality to seat" },
       services:   { lo: [237, 248, 251], hi: [0, 109, 119],  label: "arcane services" },
@@ -3325,8 +3404,51 @@
           rainSplit = { wet: Math.max(ml, mr), dry: Math.min(ml, mr) };
         }
       }
+      // H1: the two-level ledger. A region map can only see inequality
+      // BETWEEN places; the class ledger lives within them. Each region
+      // contributes its owners' row and its labor row (per-head wealth
+      // from elite_share and elite_pop_pct; the population-weighted mean
+      // of the two rows is the region's wealth exactly), and the weighted
+      // gini over the 2N rows is set against the same gini computed as if
+      // each region were one people. Collapsing rows to their mean can
+      // only lower a gini, so within_pct >= 0 always. All exactly
+      // recomputable from the exported columns.
+      const wgini = (gs) => {
+        const P = gs.reduce((a, g) => a + g.p, 0);
+        const mu = P > 0 ? gs.reduce((a, g) => a + g.p * g.v, 0) / P : 0;
+        if (!(mu > 0)) return 0;
+        let s = 0;
+        for (const a of gs) for (const b of gs) s += a.p * b.p * Math.abs(a.v - b.v);
+        return Math.round(s / (2 * P * P * mu) * 100) / 100;
+      };
+      const rows = [];
+      R.forEach(r => {
+        const pe = r.population * r.elitePopPct / 100;
+        rows.push({ p: pe, v: r.wealth * (r.eliteShare / r.elitePopPct) });
+        rows.push({ p: r.population - pe, v: r.wealth * ((100 - r.eliteShare) / (100 - r.elitePopPct)) });
+      });
+      const giniPeople = wgini(rows);
+      const giniBetween = wgini(R.map(r => ({ p: r.population, v: r.wealth })));
+      const popAll = R.reduce((a, r) => a + r.population, 0);
+      const popE = R.reduce((a, r) => a + r.population * r.elitePopPct / 100, 0);
+      const coinAll = R.reduce((a, r) => a + r.population * r.wealth, 0);
+      const coinE = R.reduce((a, r) => a + r.population * r.wealth * r.eliteShare / 100, 0);
+      const owners = coinAll > 0 ? {
+        pop_pct: Math.round(popE / popAll * 1000) / 10,
+        coin_pct: Math.round(coinE / coinAll * 1000) / 10
+      } : null;
+      const classGapRealm = coinAll - coinE > 0
+        ? Math.round(((coinE / popE) / ((coinAll - coinE) / (popAll - popE))) * 10) / 10 : null;
+      const compTown = R.reduce((a, b) => b.eliteShare > a.eliteShare ? b : a, R[0]);
       return {
         rain_split: rainSplit,
+        gini_people: giniPeople,
+        gini_between_people: giniBetween,
+        within_pct: giniPeople > 0 ? Math.round(100 * (1 - giniBetween / giniPeople)) : null,
+        owners,
+        class_gap: classGapRealm,
+        company_town: compTown.id,
+        company_share: compTown.eliteShare,
         gini: giniOf(R.map(r => r.wealth)),
         gini_t0: giniOf(R.map(r => r.wealthT0)),
         turning: turn ? { type: turn.type, epoch: turn.epoch, measure: turn.measure || null, outcome: turn.outcome || null } : null,
@@ -3601,6 +3723,18 @@
               : `Between the powers the chronicle records no grievance worth the ink — this year.`));
         }
       }
+      { // H1: the chronicle counts the owners' row (no phrasing dice:
+        // the older histories keep their exact words)
+        const FS = computeFindings(model);
+        if (FS.owners && FS.class_gap !== null) {
+          const ct0 = town(FS.company_town);
+          L.push(``);
+          L.push(`And in every town the record counts two peoples under one name: the owners' row and the labor it hires. ` +
+            `Taken together, ${FS.owners.pop_pct} in every hundred of the realm's people hold ${FS.owners.coin_pct} of every hundred coins, and live ${FS.class_gap} times better than those who work for them. ` +
+            `Nowhere is the ledger sharper than at ${ct0.name}, where ${FS.company_share} coins in the hundred belong to the few` +
+            (FS.within_pct !== null && FS.within_pct >= 15 ? `; a map of regions, which knows towns but not rows, misses ${FS.within_pct} parts in a hundred of the whole spread` : ``) + `.`);
+        }
+      }
       const darkNow = model.regions.filter(r => !r.onConduit).length;
       L.push(``);
       L.push(darkNow > 0
@@ -3642,6 +3776,8 @@
           V.push(`${town(F.mouth_region).name} drinks ${F.mouth_downstream} points of other towns' poison for the crime of standing at the mouth.`);
         if (F.toll_paying_n > 0)
           V.push(`${F.toll_paying_n} regions pay tolls at gates whose holders they never chose.`);
+        if (F.owners && F.class_gap !== null)
+          V.push(`And within every wall the shares were already set: ${F.owners.pop_pct} in a hundred hold ${F.owners.coin_pct} of every hundred coins, and stand ${F.class_gap} times apart from the rest.`);
         if (F.rain_split && F.rain_split.wet - F.rain_split.dry >= 8 && model.ridges.length)
           V.push(`The ${model.ridges[0].name} divides even the weather: the rain falls at ${F.rain_split.wet} on one side and ${F.rain_split.dry} in its lee, and no one on the dry side chose the wind.`);
         if (F.twins)
@@ -3684,6 +3820,12 @@
           lead += ` No reform, no revolt: the loops ran unopposed.`;
         }
         L.push(lead);
+      }
+      if (F.owners && F.class_gap !== null) {
+        const ct = town(F.company_town);
+        L.push(`Within the walls, not between them: <b>${F.owners.pop_pct}%</b> of this realm's people hold <b>${F.owners.coin_pct}%</b> of its coin — the owners' row lives <b>${F.class_gap}×</b> better than the labor it hires` +
+          (F.within_pct !== null && F.within_pct >= 15 ? `, and <b>${F.within_pct}%</b> of the inequality is invisible on any map of regions` : ``) +
+          `. The sharpest company town is <b>${esc(ct.name)}</b>: ${F.company_share} of every 100 coins under its roofs belong to its owners' row.`);
       }
       L.push(`The poorest fifth of this realm carries <b>${F.blight_ratio}×</b> the blight of the richest fifth.`);
       if (F.shadow_gap_pct !== null && F.shadow_gap_pct > 0 && model.ridges.length)
@@ -3734,11 +3876,13 @@
       const RB = (reg) => live.blight[reg.id];
       const RP = (reg) => live.pop[reg.id];
       const RG = (reg) => live.onGrid[reg.id];
+      const SE = (reg) => live.eliteShare[reg.id];
       const dens = (reg) => (RP(reg) * (1 + reg.rural)) / (reg.area / 10000);
       const maxDensity = Math.max(...model.regions.map(dens), 1e-9);
       const maxBurden = Math.max(...model.regions.map(r => r.burden), 1e-9);
       const cellT = (reg) =>
         view === "wealth" ? RW(reg) / 100 :
+        view === "class" ? SE(reg) / 100 :
         view === "endowment" ? RE(reg) / 100 :
         view === "centrality" ? reg.centrality / 100 :
         view === "services" ? reg.arcaneServices / 100 :
@@ -3754,6 +3898,7 @@
         Math.sqrt(dens(reg) / maxDensity);
       const cellValue = (reg) =>
         view === "wealth" ? RW(reg) :
+        view === "class" ? SE(reg) :
         view === "endowment" ? RE(reg) :
         view === "centrality" ? reg.centrality :
         view === "services" ? reg.arcaneServices :
@@ -3964,6 +4109,7 @@
           ? model.events.map(ev => `e${ev.epoch}: ${ev.type.replace("_", " ")}${ev.region_id !== undefined ? " @ #" + ev.region_id : ev.measure ? " (" + ev.measure.replace("_", " ") + ")" : ev.name ? " (" + ev.name + ")" : ""}`).join(" · ")
           : "none — a quiet age"],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
+        ["the owners", (() => { const FR = computeFindings(model); return FR.owners ? `${FR.owners.pop_pct}% of people hold ${FR.owners.coin_pct}% of the coin` : "\u2014"; })()],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1000 (y-up)"]
       ];

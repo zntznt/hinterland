@@ -8,6 +8,10 @@ Client-side, one file, no build step, no backend.
   d3-delaunay CDN), or host it on GitHub Pages.
 - **Design docs:** [`docs/attribute-model.md`](docs/attribute-model.md) — the
   attribute model, the causal/emergence map, and the build phasing.
+- **The atlas:** [`docs/atlas.md`](docs/atlas.md) — a calibration sweep of 80
+  worlds and the archetypal extremes it found (the most oligarchic realm, the
+  darkest, the most poisoned mouth…), each one click away with its own
+  chronicle line.
 
 ## Controls
 

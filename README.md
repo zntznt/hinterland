@@ -36,7 +36,19 @@ choropleth; the export always carries every column.
    (or `aetherstone_endowment`, `pop_density`) → Natural Breaks (Jenks), 5 classes.
 4. **Proportional symbols:** settlements layer → *Graduated* by **size** on
    `population` — or *Categorized* on `tier`.
-5. **The F1 check (the blocs become agents):** the chokepoints are now
+5. **The F2 check (money begets reach begets money):** the provenance now
+   carries the ledgers — `hinterland.treasuries` (every held gate pays its
+   holder 3 per epoch; each seizure debits 12, and a fat ledger lowers the
+   next seizure's bar) and `hinterland.tensions` (the three faction pairs:
+   +25 when one seizes from the other, +1.2 per epoch per contested region
+   where the two claims meet, −8%/epoch decay). The oligarchy loop is
+   measurable: in acquisitive worlds the deepest ledger ends holding the
+   most gates (~79%). And wars are **policy, not weather**: a pair past the
+   tension bar fires the war machinery within two epochs, the battlefield
+   prefers contested ground where THAT pair meets, and every `war` event
+   carries its two `factions` — join them against `dominant_bloc` and the
+   front line explains itself.
+6. **The F1 check (the blocs become agents):** the chokepoints are now
    OWNED — style `held_by` on the bridge/pass/port layers (crown / temple /
    magnate / none) and read `hinterland.events` for the `seizure` entries
    (each carries a `faction`): the ownership map is a history of takings,
@@ -48,7 +60,7 @@ choropleth; the export always carries every column.
    `tower_burned` when Crown force or Temple reach closes in — and the
    burned region's black market and trust heal, because the exports carry
    the final state.
-6. **The P1 check (the wild layer):** everything on the map before this was
+7. **The P1 check (the wild layer):** everything on the map before this was
    infrastructure obeying a ledger; the wild layer is the objects that
    don't. Overlay **ruins** (◆ — `ruin_type` = delve / tomb / deadhold, with
    `peril` and `yield`), **towers** (♜), **bridges** (═) and the
@@ -64,7 +76,7 @@ choropleth; the export always carries every column.
    maelstrom are blind geology — knob-stable; towers are sited on the
    founding political map (state failure is a social fact, so the tower
    moves when the state does).
-7. **The G3 check (the double lottery):** the map now has TWO geographic
+8. **The G3 check (the double lottery):** the map now has TWO geographic
    poles — the seat and the sea. Overlay the **coast** lines and **port**
    points (⚓, `port_name`), choropleth `sea_access` (exp-decayed
    cost-distance from the harbors over the same friction graph — the
@@ -76,7 +88,7 @@ choropleth; the export always carries every column.
    drinks the river last and ships it first; check `is_port = 1 AND
    on_river = 1` against `downstream_blight`. `on_coast` is exactly
    recomputable: does the region's ring touch an exported `sea_sides` edge?
-8. **The G2 check (who drinks first):** overlay the **river** lines on a
+9. **The G2 check (who drinks first):** overlay the **river** lines on a
    `downstream_blight` choropleth — the poison accumulates down the chain, so
    the mouth drinks what every town and works upstream let fall in
    (`river_pos` gives the drinking order; the max load sits in the lower
@@ -88,7 +100,7 @@ choropleth; the export always carries every column.
    regions out-earn dry ones in ~80% of worlds), which is exactly what makes
    the downstream seat at the mouth so bitter. Where a river cuts a ridge it
    opens a **gorge** — pass-grade crossing the traffic also threads.
-9. **The G1 check (geography is destiny):** overlay the **ridge** lines and
+10. **The G1 check (geography is destiny):** overlay the **ridge** lines and
    **pass** points on the wealth choropleth, then categorize regions on
    `range_shadow` — same distance from the seat, different fate: at matched
    crow-flies distance the shadowed region is poorer in ~93% of pairs and cut
@@ -99,7 +111,7 @@ choropleth; the export always carries every column.
    exactly recomputable: does the straight line from the settlement anchor to
    the seat cross an exported ridge LineString? The mountains are drawn in
    the blind-geology stage — sliders and capital moves never move them.
-10. **The E3 check (the world names itself):** categorize settlements on
+11. **The E3 check (the world names itself):** categorize settlements on
    `name_register` — the map has a linguistic geography, and it tracks the
    **ore, not the border**: frontier-register names (hard, clipped) sit on
    high founding endowment or rugged ground, lowland-register names (soft,
@@ -109,7 +121,7 @@ choropleth; the export always carries every column.
    moves, weight changes, and epoch settings of a seed. Label the
    `sanctioned_site` layer with `site_name` for the shrines' liturgical
    dedications ("Shrine of " || "site_name" in the label expression).
-11. **The D6 check (events cause events):** history is no longer a set of
+12. **The D6 check (events cause events):** history is no longer a set of
    independent dice — read `hinterland.events` as a causal chain. An
    **`ore_strike`** whose epicenter is *contested* ground guarantees and
    accelerates the **`war`** (the rush arrives, then the armies; the war lands
@@ -120,7 +132,7 @@ choropleth; the export always carries every column.
    `temple_reach` hits 100 there, pilgrim routes re-aim, and `dominant_bloc`
    re-contests around the live shrine set. Filter the epoch series to the
    frames around a wound and watch the shrine appear two frames later.
-12. **The D3 check (history with dates):** the provenance member now carries an
+13. **The D3 check (history with dates):** the provenance member now carries an
    `events` timeline, and regions carry `event_type` / `event_epoch` /
    `event_severity`. Filter the epoch series to the frames around an event and
    watch the aftermath: a **refinery collapse** kills a region's income and
@@ -139,7 +151,7 @@ choropleth; the export always carries every column.
    surfaces and a rush begins) and **`war`** (live politics chooses the
    battlefield: the most valuable *contested* region burns, its capacity is
    permanently wounded, and the Crown garrisons it *after* the blood).
-13. **The D2 check (watch it happen):** set epochs to 8+, click **Download
+14. **The D2 check (watch it happen):** set epochs to 8+, click **Download
    epoch series**, and load `hinterland-epochs.geojson`. On each layer open
    *Properties → Temporal → Single field with date/time* → field `epoch_date`
    (for the conduit, enable *Accumulate features over time* so built lines
@@ -149,7 +161,7 @@ choropleth; the export always carries every column.
    hollow. In the browser, the same history is on the **View epoch** scrubber.
    One epoch = 25 fictional years; frame 0 is the founding, the last frame is
    exactly the main export.
-14. **The D1 check (time makes the loops real):** export the same seed at
+15. **The D1 check (time makes the loops real):** export the same seed at
    `epochs = 0` and `epochs = 8+` and compare. Choropleth
    `wealth − wealth_t0` (field calculator) to watch the compounding; map
    `boom_bust` for the trajectory categories; `ore_depleted` marks the mines
@@ -159,7 +171,7 @@ choropleth; the export always carries every column.
    The founding geology is preserved in `endowment_t0` — identical across all
    epoch settings of the same seed, so the dynamics are auditable against a
    fixed world.
-15. **The W4 check (the uncounted):** choropleth `legibility_gap` — the census
+16. **The W4 check (the uncounted):** choropleth `legibility_gap` — the census
    undercounts exactly where need is greatest, so **every per-capita map you
    have made so far is optimistic**. Recompute any rate with
    `population + uncounted_population` in the field calculator and put the
@@ -169,7 +181,7 @@ choropleth; the export always carries every column.
    absorb it), `mobility_ceiling` (ore-only frontier: born labor, die labor),
    `segregation_index` (refinery enclaves standing apart from their
    surroundings), and `tenure_regime` (whose land the registry recognizes).
-16. **The W3 check (the past sits on the land):** choropleth
+17. **The W3 check (the past sits on the land):** choropleth
    `abandonment_index` — the dark patches are old ore country
    (`exhausted_lode = 1`, real blind geology that feeds no income today) whose
    value left and whose people stayed. Categorize `founding_era` to see the
@@ -177,7 +189,7 @@ choropleth; the export always carries every column.
    lodes, plagues at the worst blight, wars on the bloc seams), and scatter
    `legacy_advantage` × `wealth` to watch head starts persist. Every column is
    exactly recomputable from the other exported fields.
-17. **The W2 check (the shadow is the state's negative image):** choropleth
+18. **The W2 check (the shadow is the state's negative image):** choropleth
    `enforcement_gap` next to `force_projection` — the lawless hinterland is
    the exact complement of where the garrisons (`kind = 'garrison'`, G) can
    reach. Style `smuggling_intensity` and watch the contraband corridors
@@ -186,7 +198,7 @@ choropleth; the export always carries every column.
    index (multiply by `population` in the field calculator for volume) and
    correlates ≈ −0.9 with `arcane_service_index` — the shadow prices the
    underservice. `security_status` gives the categorical version.
-18. **The W1 check (two networks, one lie):** style roads by `road_class`
+19. **The W1 check (two networks, one lie):** style roads by `road_class`
    (width) or graduated on `traffic`, and overlay the conduit. **Every**
    settlement is on the road network — connection is universal, because people
    walk. The conduit is what gets rationed. That side-by-side is the sharpest
@@ -194,7 +206,7 @@ choropleth; the export always carries every column.
    *unserved*. Then choropleth `market_access` (Hansen gravity over road
    costs) and `pilgrim_flux` (through-traffic to the sanctioned sites — the
    on-route economy the bypassed never see).
-19. **The Phase 6 check (who governs whom):** categorize regions on
+20. **The Phase 6 check (who governs whom):** categorize regions on
    `dominant_bloc` (5 classes). The Crown holds the center, the magnates hold
    the refinery districts, the Temple holds its sanctioned sites (▲ points,
    `kind = 'sanctioned_site'`) out on the ore and the margins — and between
@@ -203,7 +215,7 @@ choropleth; the export always carries every column.
    The reach fields behind the classification (`centrality_to_seat`,
    `temple_reach`, `magnate_reach`) are all exported, so the argmax is
    auditable.
-20. **The Phase 5 check (the payload — who gets sick, who gets care):**
+21. **The Phase 5 check (the payload — who gets sick, who gets care):**
    choropleth `disease_burden_per_1k` (a rate — Jenks, 5 classes, sequential
    ramp) and overlay facility points filtered to `facility_type = 'healer'`.
    The burden concentrates exactly where `healing_reach` collapses — the
@@ -213,7 +225,7 @@ choropleth; the export always carries every column.
    unsafe water, or structural vulnerability as small multiples. For coverage:
    `service_gap_idx` choropleth, or buffer the healer points for a service-area
    view and see who falls outside.
-21. **The Phase 4 check (environmental injustice):** choropleth `blight_load`
+22. **The Phase 4 check (environmental injustice):** choropleth `blight_load`
    and bivariate it against `wealth` (or just map the precomputed
    `injustice_idx`). Under the default dump bias the blight–wealth correlation
    is strongly **negative** — the poison lands on the poor. Re-export at
@@ -221,14 +233,14 @@ choropleth; the export always carries every column.
    the spoil stays at the refineries and the centers eat their own waste. That
    sign flip, side by side in a print layout, is the measured *policy share*
    of the injustice.
-22. **The Phase 3 check (off-grid darkness):** style regions by
+23. **The Phase 3 check (off-grid darkness):** style regions by
    `arcane_service_index`, overlay the conduit lines, and categorize settlements
    by `on_conduit` — the dark periphery is exactly where the grid's economics
    said "not worth it" (`population × wealth` below the threshold), never a
    hand-picked list. Compute darkness as `100 - "conduit_access"` in the field
    calculator if you want the negative image. Sweep the grid-threshold slider
    (0 = everyone connected) and re-export to watch darkness spread.
-23. **The Phase 2 check (the resource curse):** scatter or bivariate
+24. **The Phase 2 check (the resource curse):** scatter or bivariate
    `aetherstone_endowment` × `wealth` — under default weights a visible share of
    high-endowment regions sits below median wealth: rich ground, poor people,
    and no layer was authored to produce it (ore is blind noise; the seat prefers
@@ -416,6 +428,14 @@ Drop it beside the QGIS map as the qualitative companion: every name in the
 prose is a feature in the layers.
 
 **Schema history:**
+- **v23** (escalation + the oligarchy loop F2): faction treasuries (held
+  gates pay 3/epoch; seizures cost 12; the ledger lowers the next seizure
+  bar) and pair tensions (+25 per rival taking, +1.2 per contested meeting
+  ground per epoch, 8% decay) exported in provenance; wars become policy —
+  a pair past a seeded tension bar fires the war machinery, the battlefield
+  prefers that pair's contested ground, and every war event carries its two
+  `factions`. Recalibrated (measured first): drain floor 0.2→0.15 (policy
+  wars legitimately redistribute people against the spiral).
 - **v22** (the faction turn F1): the blocs become agents. Bridges, passes,
   and ports are HOLDINGS (`held_by`; founding owner = the host's founding
   bloc); each epoch the single strongest claim seizes a gate (`seizure`

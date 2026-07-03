@@ -59,7 +59,23 @@
 > Honest physics fallout, measured first: the coherent tilt began pouring
 > plumes into the wealthy lowlands (hill term damped; λ floor −0.15) and
 > the old popΔ↔wealth drain legitimately decorrelated — reframed onto the
-> attractiveness composite the mechanic actually reads. **Mountain ranges + passes (G1)**:
+> attractiveness composite the mechanic actually reads. **The strata (H1)**:
+> class exists. Before H1 every region was one people with one number, so
+> every inequality the generator could speak of was BETWEEN places — the
+> magnate who owns the works and the hauler who coughs in them were the
+> same row of the table. Now each region splits into an owners' row and a
+> labor row: `elite_share` is founded on pure structure (the works, the
+> claimed seams, the court — company towns concentrate, smallholder
+> valleys spread) and then moved by the SAME history with no new dice
+> (rents concentrate it; bread, plagues, and won revolts level it; crushed
+> revolts expropriate under the garrison); `elite_pop_pct` and `class_gap`
+> are derived and exactly recomputable. The findings' two-level ledger
+> (population-weighted `gini_people` vs `gini_between_people`) measures
+> the thesis directly: median 58% of person-level inequality is WITHIN
+> regions — invisible on any map of places — with ~5% of the people
+> holding ~53% of the coin, ~24× apart from the labor they hire
+> (corr(refining, elite_share) 0.72 — ownership follows the works,
+> emergently). **Mountain ranges + passes (G1)**:
 > geography with SHAPE — 1–2 ridge polylines drawn blind per world raise the
 > rock in a band and WALL the cost graph (×4.5 to cross, ×1.4 at the 1–2
 > passes), so centrality, the conduit, roads, markets, and migration all

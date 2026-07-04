@@ -5248,6 +5248,7 @@
         // strokes by reference, then the water itself (memory: 1 copy, not 4)
         const sid = "seashape" + model.seaShapes.indexOf(S);
         parts.push(`<defs><path id="${sid}" d="${d}" fill="none"/></defs>`);
+        parts.push(`<use href="#${sid}" stroke="#1f3846" stroke-width="2" opacity="0.3" transform="translate(1.4,2)"/>`);
         for (const [rw, ro] of [[26, 0.10], [14, 0.13], [6, 0.16]])
           parts.push(`<use href="#${sid}" stroke="#9dbdd9" stroke-width="${rw}" opacity="${ro}" stroke-linejoin="round"/>`);
         parts.push(`<path class="sea" d="${d}" fill-rule="evenodd" fill="#4a7fae" fill-opacity="0.55" stroke="#2b5f8a" stroke-width="1.4"/>`);
@@ -5258,7 +5259,10 @@
             aa += w2; cx += (S.outer[k][0] + S.outer[k + 1][0]) * w2; cy += (S.outer[k][1] + S.outer[k + 1][1]) * w2;
           }
           if (Math.abs(aa) > 1e-6) { cx /= 3 * aa; cy /= 3 * aa;
-            parts.push(`<text x="${cx.toFixed(1)}" y="${fy(cy).toFixed(1)}" font-size="15" font-style="italic" letter-spacing="3" text-anchor="middle" fill="#1d4f7a" opacity="0.75">${esc(S.name)}</text>`);
+            const arcId = "sealbl" + model.seaShapes.indexOf(S);
+            const spread = Math.min(190, 34 + S.name.length * 13);
+            parts.push(`<defs><path id="${arcId}" d="M${(cx - spread).toFixed(1)},${(fy(cy) + 9).toFixed(1)} Q${cx.toFixed(1)},${(fy(cy) - 9).toFixed(1)} ${(cx + spread).toFixed(1)},${(fy(cy) + 9).toFixed(1)}"/></defs>`);
+            parts.push(`<text font-size="15" font-style="italic" letter-spacing="${Math.min(6, 2 + spread / 60).toFixed(1)}" fill="#1d4f7a" opacity="0.78"><textPath href="#${arcId}" startOffset="50%" text-anchor="middle">${esc(S.name)}</textPath></text>`);
           }
         }
       });
@@ -5269,7 +5273,7 @@
         // U2: width by the FLOW the model always computed — the pass
         // funnels, the backroads thin to tracks
         const w = 0.8 + (e.traffic || 0) * 0.032;
-        const dash = e.cls === "track" ? ` stroke-dasharray="6 5"` : "";
+        const dash = e.cls === "track" ? ` stroke-dasharray="1.6 3.2"` : e.cls === "road" ? ` stroke-dasharray="7 2.4"` : "";
         { // V2: three points and a curve — the road finds its own line
           const ax = A.c[0], ay = fy(A.c[1]), bx = B.c[0], by = fy(B.c[1]);
           const mx = (ax + bx) / 2, my = (ay + by) / 2, L2 = Math.hypot(bx - ax, by - ay) || 1;
@@ -5371,6 +5375,36 @@
         const mid = R.pts[Math.floor(R.pts.length / 2)];
         parts.push(`<text x="${mid[0].toFixed(1)}" y="${(fy(mid[1]) - 10).toFixed(1)}" font-size="13" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(R.name)} ${esc(R.kind)}</text>`);
       });
+      // V2-B: the range is a PROFILE — small inked mountain shapes stamped
+      // along each crest (size falls off toward the ends; the left face is
+      // shaded, the right lit), sorted far-to-near so they overlap like a
+      // painting. Deterministic: every jitter is a function of position.
+      {
+        const stamps = [];
+        model.ridges.forEach(R => {
+          let acc = 0;
+          for (let k = 1; k < R.pts.length; k++) {
+            const [ax, ay] = R.pts[k - 1], [bx, by] = R.pts[k];
+            const segL = Math.hypot(bx - ax, by - ay);
+            for (let t = acc; t < segL; t += 34) {
+              const u = t / segL, x = ax + (bx - ax) * u, y = ay + (by - ay) * u;
+              const along = (k - 1 + u) / (R.pts.length - 1);
+              const endFall = Math.sin(Math.PI * Math.min(1, Math.max(0, along)));
+              const s2 = (7 + (R.maxElev - 60) * 0.16) * (0.55 + 0.45 * endFall) * (0.82 + 0.36 * Math.abs(jit(x, y, 5)));
+              if (s2 < 4) continue;
+              stamps.push([x + jit(x, y, 7) * 9, y + jit(y, x, 8) * 7, s2]);
+            }
+            acc = (acc + segL) % 34;
+          }
+        });
+        stamps.sort((p2, q2) => (fy(p2[1]) + p2[2]) - (fy(q2[1]) + q2[2]));
+        for (const [x, y, s2] of stamps) {
+          const px = x, py = fy(y), wHalf = s2 * 0.95;
+          const apexX = px + jit(x, y, 9) * s2 * 0.18, apexY = py - s2;
+          parts.push(`<path d="M${(px - wHalf).toFixed(1)},${py.toFixed(1)}L${apexX.toFixed(1)},${apexY.toFixed(1)}L${(px + wHalf).toFixed(1)},${py.toFixed(1)}" fill="#efe7d9" stroke="#4a3421" stroke-width="0.9" stroke-linejoin="round" opacity="0.9"/>`);
+          parts.push(`<path d="M${(px - wHalf).toFixed(1)},${py.toFixed(1)}L${apexX.toFixed(1)},${apexY.toFixed(1)}L${(apexX + wHalf * 0.16).toFixed(1)},${py.toFixed(1)}Z" fill="#c9b592" stroke="none" opacity="0.55"/>`);
+        }
+      }
       model.peaks.forEach(pk => {
         parts.push(`<text class="peak" x="${pk.x.toFixed(1)}" y="${(fy(pk.y) + 5).toFixed(1)}" font-size="14" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">▲</text>`);
       });

@@ -3220,74 +3220,8 @@ console.log("# Second wave W4 acceptance: trust vs kin, born labor, the uncounte
   else fail(`enclave signature weak: ${enclave}/${N}`);
 }
 
-console.log("# Phase 2 acceptance: legacy mode, emergent mode, resource curse, seat");
-
-// (a) Legacy diagram reachable: wg=100, rest 0 => wealth is the old gradient.
-{
-  let bad = 0;
-  for (let i = 0; i < 8; i++) {
-    const g = gen(`#seed=leg${i}&regions=24&relax=2&bias=80&we=0&wf=0&wt=0&wg=100`).gj;
-    const regions = regionsOf(g);
-    const capR = regions.find(r => r.properties.is_capital_region === 1);
-    const cc = cen(capR.geometry.coordinates[0]);
-    const ds = regions.map(r => { const c = cen(r.geometry.coordinates[0]); return Math.hypot(c[0] - cc[0], c[1] - cc[1]); });
-    const corr = pearson(ds, col(g, "wealth"));
-    if (corr > -0.5) { bad++; fail(`legacy mode seed leg${i}: dist/wealth corr ${corr.toFixed(2)} not strongly negative`); }
-  }
-  if (bad === 0) ok("gradient=100 reproduces the explicit diagram (strong negative dist/wealth corr, 8 seeds)");
-}
-
-// (b) Fully emergent: wg=0 => wealth still structured, tracking geography.
-{
-  let sum = 0; const N = 10;
-  for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=em${i}&regions=24&relax=2&bias=80&we=35&wf=25&wt=30&wg=0`).gj;
-    sum += pearson(col(g, "centrality_to_seat"), col(g, "wealth"));
-  }
-  const mean = sum / N;
-  if (mean >= 0.45) ok(`gradient=0: wealth still spatially structured (mean centrality corr ${mean.toFixed(2)})`);
-  else fail(`gradient=0 wealth unstructured: mean corr ${mean.toFixed(2)}`);
-}
-
-// (c) Resource curse quadrant under DEFAULT weights: high-endowment regions
-// should often be below-median wealth (ore does not buy prosperity).
-{
-  let cursed = 0, rich = 0, quadrant = 0, total = 0, seedsWithCurse = 0;
-  const N = 18; // trimmed from 30: tail of a ~480-world run — cumulative jsdom weight under the organic render
-  for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=curse${i}&regions=24&relax=2&bias=80`).gj;
-    const ws = col(g, "wealth"), es = col(g, "aetherstone_endowment");
-    const mw = median(ws);
-    let any = false;
-    es.forEach((e, j) => {
-      total++;
-      if (e >= 50) { rich++; if (ws[j] < mw) { cursed++; quadrant++; any = true; } }
-    });
-    if (any) seedsWithCurse++;
-  }
-  const ratio = rich > 0 ? cursed / rich : 0;
-  const share = quadrant / total;
-  // (G3 recalibration: ore country near the harbor now has an export
-  // income path — the curse holds inland, softer on the coast)
-  // (G4 recalibration: coastal rain and river valleys give more ore
-  // country an out; the curse persists but not as a majority fate)
-  if (rich > 0 && ratio >= 0.2 && seedsWithCurse >= N * 0.5)
-    ok(`resource curse emerges: ${(ratio * 100).toFixed(0)}% of high-endowment regions are below-median wealth; quadrant = ${(share * 100).toFixed(1)}% of all regions; present in ${seedsWithCurse}/${N} seeds`);
-  else fail(`resource curse weak: ratio ${(ratio * 100).toFixed(0)}%, seeds ${seedsWithCurse}/${N}`);
-}
-
-// (d) Seat placement: unpinned capital settles in fertile (above-median) land.
-{
-  let fertile = 0; const N = 18; // trimmed from 30 with the block above
-  for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=seat${i}&regions=24&relax=2&bias=80`).gj;
-    const regions = regionsOf(g);
-    const capR = regions.find(r => r.properties.is_capital_region === 1);
-    if (capR.properties.fertility >= median(col(g, "fertility"))) fertile++;
-  }
-  if (fertile >= N * 0.7) ok(`unpinned seat prefers the agrarian core (${fertile}/${N} seeds above-median fertility)`);
-  else fail(`seat placement not agrarian: ${fertile}/${N}`);
-}
+// (the Phase 2 acceptance sweep moved to stress.mjs — second process,
+// memory headroom; the organic render fattened per-world DOM weight)
 
 console.log(failures === 0 ? "\nALL PASS (main)" : `\n${failures} FAILURE(S)`);
 process.exitCode = failures ? 1 : 0;

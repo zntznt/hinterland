@@ -59,7 +59,17 @@
 > Honest physics fallout, measured first: the coherent tilt began pouring
 > plumes into the wealthy lowlands (hill term damped; λ floor −0.15) and
 > the old popΔ↔wealth drain legitimately decorrelated — reframed onto the
-> attractiveness composite the mechanic actually reads. **The
+> attractiveness composite the mechanic actually reads. **The map is a
+> map (M1)**: the physical world survives contact with a cartographer.
+> The straight-strip shore became a coastline (the shelf's reach and
+> steepness wander: bays with a median ~150-unit inland reach, headlands,
+> skerries; islands export as polygon holes); the sea level NEGOTIATES
+> down until every region keeps dry ground, and a town sunk in a noise
+> pit stands on a raised holm. Anchors relocated off wet centroids in two
+> passes (field, then traced polygon — the authoritative water); harbors
+> stand at the waterfront, ruins/towers/shrines at their own dry sites;
+> mountains render as hachured mass with peaks. "No town in the water"
+> is now a permanent invariant on every stress config. **The
 > counterfactual (C1)**: the λ experiment moves onto the page — one
 > button re-runs the same world at λ=0 (same rock, wind, and dice) and
 > sets the two injustice maps side by side with the numbers; on the

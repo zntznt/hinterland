@@ -282,7 +282,18 @@
 > ground-matched plagues); and towns earn DERIVED bynames (the Yoked / the
 > Free / the Gilded / the Ashen…, 26% of towns, first match wins) — the
 > chronicle closes The Years with the byname roll. Society flavors the
-> byname and the event name, never the place name. With time real,
+> byname and the event name, never the place name. **The places between
+> (L1)**: four location types that pull on the model — the FREEPORT (a
+> harbor beyond the writ on the farthest coast: a smuggler sink, a
+> founding retention offset, invisible to official sea access, open
+> under sealed quays, closed to the Dominion), the STILLAIR (a
+> geology-stable tract where lift dies: no aeries, and a stilled seat
+> grounds the skyway entirely), the HIGH SANCTUARY (an unchartered
+> healer and pilgrim draw that hides its people from the census:
+> legibility +15, measured ~96 at the refuge vs ~38 elsewhere), and
+> HUNTER CAMPS (predation −18/−8, mobility +4, black market +6 — risk
+> as the poor's one wage). All named, drawn, inspected, chronicled,
+> exported. With time real,
 > `abandonment_index` became true hysteresis (peak wealth − present wealth) and
 > dead lodes emerge in-run; the arrow-inversion caveat on deep time is thereby
 > partially resolved (founding-era/shock reconstruction remains). Remaining

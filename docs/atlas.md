@@ -1,7 +1,7 @@
 # The Hinterland Atlas
 
 A calibration sweep of **80 worlds** (default knobs, 24 regions, 10
-epochs, schema v35) measured end-to-end, and the archetypal extremes it
+epochs, schema v36) measured end-to-end, and the archetypal extremes it
 found. Every world below is one click away — the seed and knobs live in
 the URL hash — and every quotation is the world describing itself (the
 chronicle is deterministic: you will find the same words). For HOW to
@@ -17,10 +17,10 @@ read these worlds, see the [field guide](field-guide.md).
 | owners' rows' share of all coin % | 33.30 | 48.90 | 78.90 |
 | rank-size alpha (Zipf ≈ 1) | 0.98 | 1.24 | 1.52 |
 | urban primacy (1st/2nd) | 1 | 1.30 | 3.20 |
-| sky advantage behind the wall (mean) | 0 | 50.30 | 76.20 |
+| sky advantage behind the wall (mean) | 0 | 49.60 | 76.20 |
 | off-grid share | 0 | 0.33 | 0.75 |
 | mountain-shadow share | 0.13 | 0.46 | 0.79 |
-| corr(blight, wealth) | -0.52 | -0.11 | 0.48 |
+| corr(blight, wealth) | -0.52 | -0.10 | 0.48 |
 | events per run | 10 | 23 | 37 |
 | seizures | 0 | 4 | 10 |
 | max abandonment | 34 | 42 | 78 |
@@ -180,5 +180,5 @@ Knob extremes for the classroom — each isolates one mechanism:
 - **The sealed realm** ([hb=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&hb=0)): the quays closed by decree — no sea trade, no port tolls, and no door for the Dominion. The price is smaller than the safety, and that asymmetry is a finding about what this economy is made of.
 - **Both mercies** ([db=0&gt=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&db=0&gt=0)): no dumping and a universal grid at once — the nearest thing this engine has to a just policy regime, run on the same rock as everything above.
 
-*Generated from the calibration sweep (schema v35); regenerate with the
+*Generated from the calibration sweep (schema v36); regenerate with the
 suite's atlas script (node --max-old-space-size=8192 atlas.mjs).*

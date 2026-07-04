@@ -59,7 +59,21 @@
 > Honest physics fallout, measured first: the coherent tilt began pouring
 > plumes into the wealthy lowlands (hill term damped; λ floor −0.15) and
 > the old popΔ↔wealth drain legitimately decorrelated — reframed onto the
-> attractiveness composite the mechanic actually reads. **The Dominion
+> attractiveness composite the mechanic actually reads. **The founding
+> centuries (Z1)**: the census is grown, not painted. The authored tier
+> bands are gone; every region starts a hamlet and the centuries before
+> year 1000 run the same physics as the recorded epochs, blind to wealth
+> — compound growth on land quality, road migration toward the bigger
+> market (size begets size, log-damped + preferential attachment;
+> distance shields the remote hamlet), a floor under the smallest, one
+> rescale to the familiar realm scale. The rank-size law is emergent:
+> full-system slope med 1.22 (Zipf ≈1), the big-town tail straight at
+> r² 0.91, primacy med 1.4 — and tiers are now labels for the outcome,
+> exactly recomputable from the exported sizes. Honest fallout, measured
+> first: H1's within-region share med 58 → ≈37 (real city sizes weight
+> the between-place spread); the market shadow moved from matched pairs
+> to the distribution level (a big grown town behind the wall is its own
+> market — the pairs blur, the median still trails by ≈24). **The Dominion
 > (X1)**: sovereignty is the last inequality. Every loop before X1 ran
 > inside the map; now the outside exists — an empire from beyond the sea
 > lands at the realm's best quay in ~half of the worlds with time and a
@@ -101,7 +115,7 @@
 > revolts expropriate under the garrison); `elite_pop_pct` and `class_gap`
 > are derived and exactly recomputable. The findings' two-level ledger
 > (population-weighted `gini_people` vs `gini_between_people`) measures
-> the thesis directly: median 58% of person-level inequality is WITHIN
+> the thesis directly: median ≈37% under the grown census (58% before Z1) of person-level inequality is WITHIN
 > regions — invisible on any map of places — with ~5% of the people
 > holding ~53% of the coin, ~24× apart from the labor they hire
 > (corr(refining, elite_share) 0.72 — ownership follows the works,

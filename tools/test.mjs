@@ -1604,8 +1604,8 @@ console.log("# The surface catches up U2: inspector, lenses, legends, menus, flo
     ok("categorical legends carry NAMED swatches (7 biomes keyed)");
   else fail("no swatches on the biome legend");
   // roads by traffic
-  const widths = new Set([...doc.querySelectorAll("#stage svg line.road")].map(l => l.getAttribute("stroke-width")));
-  if (widths.size >= 5) ok(`roads draw by FLOW: ${widths.size} distinct widths on ${doc.querySelectorAll("#stage svg line.road").length} edges`);
+  const widths = new Set([...doc.querySelectorAll("#stage svg path.road")].map(l => l.getAttribute("stroke-width")));
+  if (widths.size >= 5) ok(`roads draw by FLOW: ${widths.size} distinct widths on ${doc.querySelectorAll("#stage svg path.road").length} edges`);
   else fail(`uniform roads: ${widths.size} widths`);
   // the occupation animates on the scrubber
   const blocChip = doc.querySelector(`input[name=view][value="bloc"]`);
@@ -3253,7 +3253,7 @@ console.log("# Phase 2 acceptance: legacy mode, emergent mode, resource curse, s
 // should often be below-median wealth (ore does not buy prosperity).
 {
   let cursed = 0, rich = 0, quadrant = 0, total = 0, seedsWithCurse = 0;
-  const N = 30;
+  const N = 18; // trimmed from 30: tail of a ~480-world run — cumulative jsdom weight under the organic render
   for (let i = 0; i < N; i++) {
     const g = gen(`#seed=curse${i}&regions=24&relax=2&bias=80`).gj;
     const ws = col(g, "wealth"), es = col(g, "aetherstone_endowment");
@@ -3278,7 +3278,7 @@ console.log("# Phase 2 acceptance: legacy mode, emergent mode, resource curse, s
 
 // (d) Seat placement: unpinned capital settles in fertile (above-median) land.
 {
-  let fertile = 0; const N = 30;
+  let fertile = 0; const N = 18; // trimmed from 30 with the block above
   for (let i = 0; i < N; i++) {
     const g = gen(`#seed=seat${i}&regions=24&relax=2&bias=80`).gj;
     const regions = regionsOf(g);

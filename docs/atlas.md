@@ -34,7 +34,7 @@ negative at the default dump bias (the poison lands on the poor) in
 80/80; the Dominion landed in
 40/80; a rising won somewhere in
 61/80; and in the median world a region map
-is blind to 40% of person-level inequality — the class
+is blind to 39% of person-level inequality — the class
 ledger lives inside the walls.
 
 ## The atlas

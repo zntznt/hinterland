@@ -1,0 +1,10 @@
+{
+  "name": "hinterland-tools",
+  "private": true,
+  "type": "module",
+  "description": "The evidence: verification suite, structural stress, and the atlas sweep for ../index.html",
+  "dependencies": {
+    "jsdom": "^24.0.0",
+    "d3-delaunay": "^6.0.4"
+  }
+}

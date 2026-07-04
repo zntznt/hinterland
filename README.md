@@ -14,7 +14,7 @@ Client-side, one file, no build step, no backend.
   auditing that every mechanical feature feeds at least one measured
   inequality (the handful that don't are presentation, listed, on purpose).
 - **The atlas:** [`docs/atlas.md`](docs/atlas.md) — a calibration sweep of 80
-  worlds (schema v34) and the archetypal extremes it found — the world that
+  worlds (schema v35) and the archetypal extremes it found — the world that
   closed its gap, the company country a region map lies about, the occupied
   realm, the town that freed itself — each one click away with its own
   chronicle line.
@@ -341,9 +341,16 @@ choropleth; the export always carries every column.
    agrarian) on the settled core, exactly recomputable from `endowment_t0`
    and `terrain_ruggedness`. Names are walked by an order-2 Markov chain
    over invented corpora, unique per world, and byte-stable across capital
-   moves, weight changes, and epoch settings of a seed. Label the
+   moves, weight changes, and epoch settings of a seed — and since E6 the
+   grammar goes further: the qualifying parts of a name are themselves
+   geology (label a `-mouth` town and check it sits at a river's last
+   region; find the `Delf`s and `hold`s on `endowment_t0` ≥ 50 or rugged
+   ground; `High —`/`Tor`/`Fell` on `elevation` ≥ 62). Label the
    `sanctioned_site` layer with `site_name` for the shrines' liturgical
    dedications ("Shrine of " || "site_name" in the label expression).
+   For the bynames, label settlements `name || coalesce(', ' || epithet, '')`
+   and verify each epithet against the columns that earn it (the cascade in
+   the settlement table above) — the byname is DERIVED, never drawn.
 25. **The D6 check (events cause events):** history is no longer a set of
    independent dice — read `hinterland.events` as a causal chain. An
    **`ore_strike`** whose epicenter is *contested* ground guarantees and
@@ -357,7 +364,13 @@ choropleth; the export always carries every column.
    frames around a wound and watch the shrine appear two frames later.
 26. **The D3 check (history with dates):** the provenance member now carries an
    `events` timeline, and regions carry `event_type` / `event_epoch` /
-   `event_severity`. Filter the epoch series to the frames around an event and
+   `event_severity`. Since E6 the great events also carry a `name` that
+   recomputes exactly from the record: a war within two epochs of an ore
+   strike is `the War of the <town> Seam`; treaties are `the Peace of
+   <town>`, revolts `the <town> Rising`, annexations `the Landing at
+   <town>`; a plague is named by the ground it struck (`Fen-Ague` in the
+   marshes, `Water-Rot` where `downstream_blight` > 0, `Grey Breath`
+   elsewhere, always "of <year>"). Filter the epoch series to the frames around an event and
    watch the aftermath: a **refinery collapse** kills a region's income and
    blight plume and orphans its trunk conduit (ghost infrastructure); a
    **blight plague** empties a poisoned town and hands it to the drain spiral;
@@ -566,7 +579,8 @@ capital) — every file can reproduce its world.
 
 | property | type | meaning |
 |---|---|---|
-| `name` | string | Markov-walked toponym (order-2 chain over invented corpora), unique per world, stable across every society knob |
+| `name` | string | Toponym grown from the world (E6): a Markov-walked base word (order-2 chain over invented corpora) plus qualifying parts SELECTED BY THE REGION'S GEOLOGY — a river-mouth town earns "-mouth", ore country a "Delf", the high country "High —"/"Tor"/"Fell", the fens a "Fen", forest a "holt", rugged ground a "hold", a riverside its "-on-<river>"; roughly half keep the plain base word. Unique per world, byte-stable across every society knob and capital move (the grammar reads geology only) |
+| `epithet` | string\|null | E6, DERIVED (exactly recomputable from the exported columns + events): the byname history left — `the Yoked` (occupied) / `the Unyoked` (freed) / `the Free` (won its rising) / `the Gilded` (elite_share ≥ 80) / `the Ashen` (blight_load ≥ 80) / `the Hollow` (collapse) / `the Mourning` (plagued) / `the Rising` (boom & wealth ≥ 60); first match wins, most towns never earn one. Society flavors the BYNAME, never the place name |
 | `name_register` | enum | `lowland` \| `frontier` — the register the place names itself in, read from blind geology (`endowment_t0` ≥ 50 or ruggedness ≥ 60 → frontier) |
 | `tier` | enum | `prime` \| `hub` \| `outpost` \| `holdfast` — a LABEL for the outcome (Z1): the seat is prime by office, the rest rank by grown size (top 20% hub, next 40% outpost); exactly recomputable from the exported populations |
 | `region_id` | int | containing region |
@@ -598,16 +612,23 @@ periphery); the source points of `temple_reach`. The set can GROW mid-run: the
 Temple consecrates the ground of the run's first wound (see `consecration` in
 the event timeline), and reach, pilgrims, and blocs follow the live set.
 
-**Ridge features (LineString):** `ridge_id`, `ridge_name` (frontier register).
+**Ridge features (LineString):** `ridge_id`, `ridge_name` (frontier register),
+`ridge_kind` (`Teeth` \| `Spine` \| `Range` \| `Hills` — recomputable from
+`max_elev` and the endpoint span: ≥86 Teeth, span ≥520 Spine, ≥68 Range),
+`max_elev`.
 Mountain ranges drawn in the blind-geology stage: they raise ruggedness and
 elevation in a band and act as walls in the cost graph (×4.5 edge friction to
 cross, except at the passes). Sliders and capital moves never move them.
 
-**Pass features (Point):** `ridge_id`, `region_id`, `pass_name` (its town's
-name + "Pass"), `held_by`. The 1–2 low gaps per ridge where crossing costs ×1.4 instead
-— the chokepoints where wall-crossing traffic concentrates.
+**Pass features (Point):** `ridge_id`, `region_id`, `pass_name` (its own
+markov word + a kind read from the crossing's height: `Stair` ≥92, `Pass` ≥75,
+`Gap` below — thresholds pinned to the measured elevation quartiles),
+`pass_elev`, `held_by`. The 1–2 low gaps per ridge where crossing costs ×1.4
+instead — the chokepoints where wall-crossing traffic concentrates.
 
-**River features (LineString):** `river_id`, `river_name` (lowland register).
+**River features (LineString):** `river_id`, `river_name` (lowland register),
+`river_kind` (`Beck` ≤3 regions \| `Brook` ≤5 \| `River` — recomputable from
+the coordinate count).
 Traced in the blind-geology stage: a gentlest-descent walk from high interior
 ground (usually the ridge flanks) to the border; the coordinate order IS the
 downstream order, running through the settlement anchors of its regions.
@@ -615,7 +636,8 @@ River edges cost ×0.6 (barge transport); where a river crosses a ridge it
 cuts a pass-grade gorge; floodplains gain fertility, so the seat is drawn to
 the water — emergent, never authored.
 
-**Sea features (Polygon):** `sea_id`, `sea_level`. The water itself: an
+**Sea features (Polygon):** `sea_id`, `sea_name` (named by area: "<X> Sea"
+for the great waters, "Gulf of <X>" / "<X> Deep" for the lesser), `sea_level`. The water itself: an
 irregular coastline flooded from the per-world sea level over the elevation
 surface (marching squares). `on_coast` means the region's cell touches it.
 
@@ -626,7 +648,8 @@ continuous surface (the lowest level is the shoreline).
 world's geology chose as ocean direction (also in `hinterland.sea_sides`).
 
 **Port features (Point):** `region_id`, `port_name` (its town's name +
-"Harbor"), `held_by`. The sea's gates — the export chokepoints where whatever the mines
+"Harbor" — except a Haven- or Strand-named town, which IS its harbor),
+`held_by`. The sea's gates — the export chokepoints where whatever the mines
 raise and the works refine leaves the country.
 
 **Ruin features (Point):** `ruin_type` (`delve` \| `tomb` \| `deadhold`),
@@ -655,7 +678,9 @@ reach whenever any clear coast exists.
 the busiest corridors near the core; the source points of `force_projection`.
 
 **Road features (LineString):** `road_class` (`highway` \| `road` \| `track`,
-assigned by traffic rank), `traffic` (0–100, gravity flows routed over
+assigned by traffic rank), `road_name` (E6: the top three roads take names
+from what they carry — `the <seat> Road`, `the Ore Road`, `the Salt Road`;
+null on every other edge), `traffic` (0–100, gravity flows routed over
 least-cost paths — the busy edges are the chokepoints), `from_region`,
 `to_region`. The road network spans **every** settlement; only the conduit is
 rationed.
@@ -678,6 +703,21 @@ Drop it beside the QGIS map as the qualitative companion: every name in the
 prose is a feature in the layers.
 
 **Schema history:**
+- **v35** (the naming of things E6): the words are grown from the world.
+  Settlement names gain a toponym grammar whose qualifying parts are
+  selected by GEOLOGY (mouth/ford/haven/tor/fen/holt/delf/hold…, ~half
+  stay plain — measured 53/22/25 plain/fused/spaced); ridges, rivers,
+  passes and seas take kinds from their measured size (`ridge_kind` +
+  `max_elev`, `river_kind`, `pass_name` + `pass_elev` with Stair/Pass/Gap
+  pinned to the measured elevation quartiles, `sea_name` by area); the
+  top three roads are named for what they carry (`road_name`); history
+  files its events under names that recompute exactly from the exported
+  columns (`events[].name` — Seam Wars, Peaces, Risings, Landings,
+  ground-matched plague names); towns earn DERIVED bynames (`epithet` —
+  the Yoked/Unyoked/Free/Gilded/Ashen/Hollow/Mourning/Rising, 26% of
+  towns). The toponymy stays byte-stable across every knob, weight, and
+  capital move (tested); society flavors bynames and events, never
+  places. A Haven/Strand-named port town no longer stacks "Harbor".
 - **v34** (the two levers P2): `responsiveness` (0–100, default 45 = the
   old hidden dice, byte-identical at the default) weights the
   reform-or-reaction coin; `harbors_closed` seals the quays (no ports,

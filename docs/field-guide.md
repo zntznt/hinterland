@@ -212,6 +212,7 @@ table is the audit: if a feature moved nothing, it says so.
 | grid threshold | how mean the ledgers are | the full-grid counterfactual |
 | income weights | which economy this realm even is | gini under wg=100 vs wg=0 |
 | **texture only:** islands/holms, hachures/peaks, fine contours, toponyms & registers, ruler names, `event_severity` | nothing, by design — cartography and narrative | the chronicle reads better; the map reads as a map |
+| **texture that TESTIFIES (E6):** `epithet`, `events[].name` | nothing mechanically — but both are DERIVED from the inequality columns, so they are *readable evidence*: a realm of `the Yoked` is an occupied realm, a byname roll heavy with `the Ashen` is a poisoned one, a `War of the <town> Seam` names its own cause | read the byname roll at the chronicle's close as a one-line inequality summary; every byname recomputes from the columns beside it |
 
 The audit's conclusion: **every mechanical aspect of the generator feeds
 at least one measured inequality**, and the handful that feed none are

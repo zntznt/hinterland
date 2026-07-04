@@ -8,6 +8,35 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  THE PLACES BETWEEN (L1): four location types that pull on the model.
+    - THE FREEPORT: a harbor beyond the writ, founded by the lawless on
+      the farthest workable coast from the seat. Its trade enters no
+      ledger (official sea_access cannot see the shadow gate), but the
+      smugglers ROUTE to its quay (it joins the smuggler sinks), its
+      ground keeps what the gates would have taken (retention +10 at
+      the founding, before the income streams run), and the black
+      market prices accordingly. Sealed quays do not close it — a
+      decree is not a reef — and it refuses the Dominion's charter.
+    - THE STILLAIR: a tract where the lift-stones die. Pure geology
+      (ruggedness + elevation + its own substream — byte-stable across
+      every knob and capital move). No aerie can be chartered on
+      stilled ground; if the SEAT itself sits in the still, no skyway
+      flies at all. The sky inequality gains a wall no money crosses.
+    - THE HIGH SANCTUARY: a refuge above the sanctioned faith, on high
+      remote ground. It heals without a charter (a healer source the
+      planner never rationed), draws its own pilgrims (joins the
+      pilgrim destinations), and hides people from the census
+      (legibility +15 where has_sanctuary — exactly recomputable).
+    - HUNTER CAMPS: where the beasts are worth a bounty and the
+      garrisons never come. Predation -18 on camp ground, -8 next door
+      (exactly recomputable from has_camp), mobility +4 (risk is a
+      wage), black market +6 (trophies are fenced, not taxed).
+    - All four are named in their own registers, drawn on the map,
+      shown in the inspector, told by the chronicle, and exported
+      (region columns stillair / is_freeport / has_sanctuary /
+      has_camp; point features freeport / sanctuary / camp).
+      Schema v36.
+
   THE NAMING OF THINGS (E6): the words are grown from the world.
     - THE TOPONYM GRAMMAR: settlement names are no longer single markov
       words. Each region's GEOLOGY selects its qualifying parts — a
@@ -1061,7 +1090,7 @@
 
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
-    const SCHEMA_VERSION = 35;
+    const SCHEMA_VERSION = 36;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
@@ -2255,6 +2284,29 @@
           ? Math.round(100 * Math.exp(-(isFinite(seaCd[i]) ? seaCd[i] : 1e9) / SEA_L)) : 0;
       });
 
+      // L1: THE FREEPORT — the harbor beyond the writ, founded where the
+      // seat's arm has the farthest to reach: never a chartered port, never
+      // in the maelstrom's turning. Its trade enters no ledger (official
+      // sea_access does not see the shadow gate), but its ground keeps what
+      // the gates would have taken, the smugglers route to its quay, and
+      // sealed quays do not close it — a decree is not a reef. It refuses
+      // the Dominion's charter besides: no foothold ever lands there.
+      let freeport = null;
+      regions.forEach(reg => { reg.isFreeport = 0; });
+      {
+        const rfp = sx("freeport");
+        const fpPool = coastal.filter(r2 => r2.isPort === 0 && clearOfMael(r2));
+        if (coastal.length >= 4 && fpPool.length && rfp() < 0.65) {
+          const far = fpPool.map(r2 => {
+            const i2 = regions.indexOf(r2);
+            return { r2, s: (isFinite(cd[i2]) ? cd[i2] : 0) + 0.6 * (100 - r2.ruggedness) + (rfp() - 0.5) * 12 };
+          }).sort((a2, b2) => b2.s - a2.s || a2.r2.id - b2.r2.id)[0].r2;
+          far.isFreeport = 1;
+          far.retention = Math.min(100, far.retention + 10); // no gate takes its rake
+          freeport = { regionId: far.id };
+        }
+      }
+
       // Wealth: three emergent income streams + the legacy gradient term.
       // income() reads the CURRENT ore stock (reg.E), so it can be re-run
       // per epoch as mines deplete. Epoch-0 wealth carries the seeded noise.
@@ -2373,14 +2425,33 @@
       // that price everyone else's distance; the ground below keeps every
       // multiplier it ever had. Geography is destiny only for those who
       // can't afford to leave it, and boarding is an owners' privilege.
+      // L1: THE STILLAIR — the tract where the lift-stones die. Inputs are
+      // geology alone (ruggedness, elevation, its own substream), so the
+      // tract is byte-stable across every knob and capital move.
+      regions.forEach(reg => { reg.stillair = 0; });
+      {
+        const rst = sx("stillair");
+        rst(); rst(); // warm the stream: first draws correlate across sibling seeds
+        if (regions.length >= 12 && rst() < 0.45) {
+          const cands = regions.filter(r2 => r2.ruggedness >= 45 || r2.elevation >= 55);
+          if (cands.length) {
+            const core = cands.map(r2 => ({ r2, s: 0.6 * r2.ruggedness + 0.4 * r2.elevation + (rst() - 0.5) * 10 }))
+              .sort((a2, b2) => b2.s - a2.s || a2.r2.id - b2.r2.id)[0].r2;
+            regions.forEach(r2 => {
+              if (Math.hypot(round2(r2.c[0]) - round2(core.c[0]), round2(r2.c[1]) - round2(core.c[1])) <= 175) r2.stillair = 1;
+            });
+          }
+        }
+      }
       const KS = regions.length >= 40 ? 4 : regions.length >= 16 ? 3 : 2;
       regions.forEach(reg => { reg.isSkyport = 0; });
-      cap.isSkyport = 1;
+      // L1: physics does not negotiate — a stilled seat charters no skyway
+      if (cap.stillair === 0) cap.isSkyport = 1;
       {
         const rpS = (c) => [round2(c[0]), round2(c[1])];
         const sA = rpS(cap.c);
         regions.map((reg, i) => {
-          if (reg === cap) return null;
+          if (reg === cap || reg.stillair === 1 || cap.stillair === 1) return null; // L1: no aerie on stilled ground
           const a = rpS(reg.c);
           const gain = cd[i] - (FLY_BOARD + FLY_COST * Math.hypot(a[0] - sA[0], a[1] - sA[1]));
           if (gain <= 0) return null; // a lane that saves nothing is never chartered
@@ -3209,6 +3280,23 @@
       // Facilities: the planner's rationing rule — prime always served; hubs
       // only when on-conduit (arcane facilities need lumen). Wardstations also
       // guard refinery regions: assets get protection whether people do or not.
+      // L1: THE HIGH SANCTUARY — a refuge above the sanctioned faith, on
+      // high remote ground the Temple never consecrated and the census
+      // would rather not climb for. It heals without a charter, draws its
+      // own pilgrims, and hides the people who come to it.
+      let sanctuary = null;
+      regions.forEach(reg => { reg.hasSanctuary = 0; });
+      {
+        const rhs = sx("sanctuary");
+        const hsPool = regions.filter((r2, i2) => r2.elevation >= 58 && r2.centrality <= 45 && !sanctIdxs.includes(i2));
+        if (hsPool.length && rhs() < 0.6) {
+          const site = hsPool.map(r2 => ({ r2, s: 0.5 * r2.elevation + 0.5 * (100 - r2.centrality) + (rhs() - 0.5) * 10 }))
+            .sort((a2, b2) => b2.s - a2.s || a2.r2.id - b2.r2.id)[0].r2;
+          site.hasSanctuary = 1;
+          sanctuary = { regionId: site.id, x: site.c[0], y: site.c[1] };
+        }
+      }
+
       const facilities = [];
       const servedIdxs = [], anyFacIdxs = [];
       regions.forEach((reg, i) => {
@@ -3222,7 +3310,10 @@
           facilities.push({ type: "wardstation", regionId: reg.id, x: reg.c[0], y: reg.c[1] });
         if (served || reg.refining > 0) anyFacIdxs.push(i);
       });
-      const healerCd = costDistances(regions, servedIdxs).dist;
+      // L1: the sanctuary is a healer source the planner never rationed
+      const healerIdxs = [...servedIdxs];
+      regions.forEach((reg, i) => { if (reg.hasSanctuary === 1 && !healerIdxs.includes(i)) healerIdxs.push(i); });
+      const healerCd = costDistances(regions, healerIdxs).dist;
       const anyFacCd = costDistances(regions, anyFacIdxs).dist;
 
       // Health: exposure, water, vulnerability -> EMERGENT burden, averted by
@@ -3302,9 +3393,12 @@
       // along the way (destination included, origin excluded). On-route
       // places harvest the pilgrim economy; bypassed places don't.
       const nodeFlux = new Array(regions.length).fill(0);
+      // L1: the sanctuary draws pilgrims of its own, beside the sanctioned set
+      const pilgrimSites = [...sanctIdxs];
+      regions.forEach((reg, i) => { if (reg.hasSanctuary === 1 && !pilgrimSites.includes(i)) pilgrimSites.push(i); });
       regions.forEach((reg, i) => {
         let bestSite = -1, bestCost = Infinity;
-        for (const s of sanctIdxs) {
+        for (const s of pilgrimSites) {
           if (sp[s].dist[i] < bestCost) { bestCost = sp[s].dist[i]; bestSite = s; }
         }
         if (bestSite === -1 || !isFinite(bestCost)) return;
@@ -3380,6 +3474,8 @@
         smugAdj[e.b].push({ to: e.a, c });
       });
       const sinkIdxs = regions.map((_, i) => i).filter(i => regions[i].tier === "prime" || regions[i].tier === "hub");
+      // L1: the freeport is the shadow's own gate — smugglers export through it
+      regions.forEach((reg, i) => { if (reg.isFreeport === 1 && !sinkIdxs.includes(i)) sinkIdxs.push(i); });
       const smugFlux = new Array(regions.length).fill(0);
       regions.forEach((reg, i) => {
         if (reg.endowment < 30) return;
@@ -3399,10 +3495,29 @@
         // where the ruins breed peril, and nobody guards any of it
         const preyN = 0.55 * (thr[i] / maxThr) + 0.25 * reg.pilgrimFlux / 100 + 0.2 * reg.ruinPerilNear / 100;
         reg.predation = Math.round(100 * preyN * (1 - reg.forceProjection / 100));
+      });
+      // L1: HUNTER CAMPS — where the beasts are worth a bounty and the
+      // garrisons never come, hunters pitch a stand: risk is a wage where
+      // nothing else pays one. Effects are exactly recomputable from
+      // has_camp: predation -18 on camp ground, -8 next door.
+      const camps = [];
+      regions.forEach(reg => { reg.hasCamp = 0; });
+      {
+        const KC = regions.length >= 32 ? 2 : 1;
+        regions.map((reg, i) => ({ i, s: reg.predation - 0.4 * reg.forceProjection }))
+          .filter(o => regions[o.i].predation >= 35 && regions[o.i].forceProjection < 40)
+          .sort((a2, b2) => b2.s - a2.s || a2.i - b2.i)
+          .slice(0, KC)
+          .forEach(o => { regions[o.i].hasCamp = 1; camps.push({ regionId: regions[o.i].id, x: regions[o.i].c[0], y: regions[o.i].c[1] }); });
+      }
+      regions.forEach((reg, i) => {
+        if (reg.hasCamp === 1) reg.predation = Math.max(0, reg.predation - 18);
+        else if (reg.neighbors.some(nb => regions[nb].hasCamp === 1)) reg.predation = Math.max(0, reg.predation - 8);
         // the black market prices the underservice — and fences what the
-        // delvers carry out and what the apostate sells off-grid
+        // delvers carry out, what the apostate sells off-grid, and what
+        // the hunters bring down off the bounty ground
         reg.blackMarket = clamp(Math.round(0.55 * (100 - reg.arcaneServices) + 0.35 * (100 - reg.forceProjection) +
-          (reg.towerNear === 1 ? 12 : 0) + 0.12 * reg.ruinYieldNear), 0, 100);
+          (reg.towerNear === 1 ? 12 : 0) + 0.12 * reg.ruinYieldNear + (reg.hasCamp === 1 ? 6 : 0)), 0, 100);
         const pressure = 0.4 * reg.smuggling + 0.35 * reg.predation + 0.25 * reg.blackMarket;
         const capacity = 0.6 * reg.forceProjection + 0.4 * reg.wardline;
         reg.enforceGap = clamp(Math.round(pressure - capacity), 0, 100);
@@ -3464,7 +3579,8 @@
         // in a refinery town you may rise; in an ore-only outpost you are born labor
         const chainVal = reg.refining > 0 ? 85 : reg.tier === "prime" ? 80 : reg.tier === "hub" ? 55
           : (reg.endowment >= 50 ? 15 : 30);
-        reg.mobility = clamp(Math.round(0.4 * chainVal + 0.35 * reg.arcaneServices + 0.25 * reg.marketAccess), 0, 100);
+        reg.mobility = clamp(Math.round(0.4 * chainVal + 0.35 * reg.arcaneServices + 0.25 * reg.marketAccess) +
+          (reg.hasCamp === 1 ? 4 : 0), 0, 100); // L1: the bounty is a rung
         reg.culturalDistance = clamp(Math.round(
           0.55 * (100 - reg.centrality) + (reg.onConduit ? 0 : 20) + (rs() - 0.5) * 16
         ), 0, 100);
@@ -3487,7 +3603,8 @@
         // the census undercounts exactly where need is greatest
         reg.legibility = clamp(Math.round(
           0.4 * reg.culturalDistance + 0.3 * (100 - reg.centrality) + (reg.onConduit ? 0 : 15) +
-          ((reg.tenure === "customary" || reg.tenure === "contested") ? 15 : 0)
+          ((reg.tenure === "customary" || reg.tenure === "contested") ? 15 : 0) +
+          (reg.hasSanctuary === 1 ? 15 : 0) // L1: the refuge hides its people
         ), 0, 100);
         reg.uncounted = Math.round(reg.population * reg.legibility / 100 * 0.3);
       });
@@ -3592,6 +3709,51 @@
         if (!p.name) p.name = markovName("frontier", r2, usedNames) + " " + kind;
       });
 
+      // L1: the places between take their names — the freeport in the
+      // sailors' lowland tongue, the sanctuary in the liturgy, the camps
+      // and the still in the frontier's
+      if (freeport) {
+        const rq = sx("freeportname");
+        for (let t3 = 0; t3 < 24 && !freeport.name; t3++) {
+          const w = markovWord("lowland", rq, 4, 8);
+          if (!w) continue;
+          const n2 = capWord(w) + " Quay";
+          if (!usedNames.has(n2)) { usedNames.add(n2); freeport.name = n2; }
+        }
+        if (!freeport.name) freeport.name = markovName("lowland", rq, usedNames) + " Quay";
+      }
+      if (sanctuary) {
+        const rq = sx("sanctuaryname");
+        for (let t3 = 0; t3 < 24 && !sanctuary.name; t3++) {
+          const w = markovWord("temple", rq, 4, 9);
+          if (!w) continue;
+          const n2 = capWord(w) + " Refuge";
+          if (!usedNames.has(n2)) { usedNames.add(n2); sanctuary.name = n2; }
+        }
+        if (!sanctuary.name) sanctuary.name = markovName("temple", rq, usedNames) + " Refuge";
+      }
+      camps.forEach((cp, ci) => {
+        const rq = sx("campname#" + cp.regionId);
+        for (let t3 = 0; t3 < 24 && !cp.name; t3++) {
+          const w = markovWord("frontier", rq, 4, 8);
+          if (!w) continue;
+          const n2 = capWord(w) + " Camp";
+          if (!usedNames.has(n2)) { usedNames.add(n2); cp.name = n2; }
+        }
+        if (!cp.name) cp.name = markovName("frontier", rq, usedNames) + " Camp";
+      });
+      let stillName = null;
+      if (regions.some(r2 => r2.stillair === 1)) {
+        const rq = sx("stillname");
+        for (let t3 = 0; t3 < 24 && !stillName; t3++) {
+          const w = markovWord("frontier", rq, 4, 8);
+          if (!w) continue;
+          const n2 = "the " + capWord(w) + " Still";
+          if (!usedNames.has(n2)) { usedNames.add(n2); stillName = n2; }
+        }
+        if (!stillName) stillName = "the " + markovName("frontier", rq, usedNames) + " Still";
+      }
+
       // E5: the rulers take their names last — in each power's register
       const RULER_REG = { crown: "lowland", temple: "temple", magnate: "frontier" };
       for (const F of ["crown", "temple", "magnate"])
@@ -3662,7 +3824,7 @@
           (reg.boomBust === "boom" && reg.wealth >= 60) ? "the Rising" : null;
       });
       settlements.forEach(s2 => { s2.epithet = regions[s2.regionId].epithet; });
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName,
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
         dominion: dominionAt !== -1 ? { arrived: dominionAt, foothold: footholdIdx } : null };
     }
 
@@ -3757,6 +3919,10 @@
             elite_pop_pct: reg.elitePopPct,
             class_gap: reg.classGap,
             is_skyport: reg.isSkyport,
+            is_freeport: reg.isFreeport,
+            stillair: reg.stillair,
+            has_sanctuary: reg.hasSanctuary,
+            has_camp: reg.hasCamp,
             seat_cost_ground: reg.seatCostGround,
             seat_cost_sky: reg.seatCostSky,
             sky_advantage: reg.skyAdvantage,
@@ -3853,6 +4019,29 @@
           type: "Feature",
           properties: { kind: "port", region_id: reg.id, port_name: harborName(t.name), held_by: reg.heldBy },
           geometry: { type: "Point", coordinates: [round2(reg.shorePt[0]), round2(reg.shorePt[1])] }
+        });
+      });
+      // L1: the places between
+      if (model.freeport) {
+        const reg = model.regions.find(r => r.id === model.freeport.regionId);
+        features.push({
+          type: "Feature",
+          properties: { kind: "freeport", region_id: reg.id, freeport_name: model.freeport.name, writ: "none" },
+          geometry: { type: "Point", coordinates: [round2((reg.shorePt || reg.c)[0]), round2((reg.shorePt || reg.c)[1])] }
+        });
+      }
+      if (model.sanctuary) {
+        features.push({
+          type: "Feature",
+          properties: { kind: "sanctuary", region_id: model.sanctuary.regionId, sanctuary_name: model.sanctuary.name },
+          geometry: { type: "Point", coordinates: [round2(model.sanctuary.x), round2(model.sanctuary.y)] }
+        });
+      }
+      model.camps.forEach(cp => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "camp", region_id: cp.regionId, camp_name: cp.name },
+          geometry: { type: "Point", coordinates: [round2(cp.x), round2(cp.y)] }
         });
       });
       { // S1: the skyway — aeries, and a lane between every pair of them
@@ -4490,6 +4679,31 @@
         L.push(`The old world is not gone: ${list(ruinBits)}. ` +
           `Delvers walk the ${town(busiest.id).name} road every season, because risk is a wage where nothing else pays one; not all of them walk back, and what they carry out is sold in no sanctioned market.`);
       }
+      if (model.freeport) {
+        const t = town(model.freeport.regionId);
+        L.push(``);
+        L.push(`Beyond the last writ-stone, by ${t.name}, the lawless keep a harbor of their own: ${model.freeport.name}. No charter names it, no gate tolls it, and the assessors who visit do not go twice. What the realm will not carry on its books leaves the country there, and the ground around it keeps what the gates would have taken` +
+          (params.hb === 0 ? ` — and with the quays sealed by decree, the shadow gate is the only gate left working.` : `.`));
+      }
+      if (model.sanctuary) {
+        const t = town(model.sanctuary.regionId);
+        L.push(``);
+        L.push(`High above the roads, by ${t.name}, stands ${model.sanctuary.name} — holy ground the Temple never consecrated and cannot forgive. It heals whoever climbs to it and asks no writ; the census does not climb at all, so the people it shelters are people the realm cannot count. Pilgrims walk to it beside the sanctioned roads, which the Temple is reminded of every festival.`);
+      }
+      {
+        const still = model.regions.filter(r => r.stillair === 1);
+        if (still.length) {
+          const bits = still.map(r => town(r.id).name);
+          L.push(``);
+          L.push(`Over ${list(bits)} lies ${model.stillName}: ground where the lift-stones simply die. No aerie can be chartered there and no lane lands; elsewhere the sky is rationed by return — here it is refused outright, and no coin appeals the refusal.` +
+            (model.regions.find(r => r.isCapital).stillair === 1 ? ` The seat itself sits in the still, and so no skyway flies in this realm at all.` : ``));
+        }
+      }
+      if (model.camps.length) {
+        const bits = model.camps.map(cp => `${cp.name} by ${town(cp.regionId).name}`);
+        L.push(``);
+        L.push(`Where the beasts are worth a bounty and the garrisons never come, hunters keep ${list(bits)}. The stands thin the predation on their ground, the trophies are fenced where nothing is taxed, and for the poorest the bounty is the one rung of a ladder the realm never built.`);
+      }
       {
         const towers = model.regions.filter(r => r.hasTower === 1);
         if (towers.length) {
@@ -5085,6 +5299,33 @@
         parts.push(`<text class="fac" x="${(f.x + dx).toFixed(1)}" y="${(fy(f.y) + 58).toFixed(1)}" font-size="14" font-weight="700" text-anchor="middle" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="3">${ch}</text>`);
       });
 
+      // L1: the places between — the freeport's black anchor, the
+      // sanctuary's star, the hunters' stands, the veil over the still
+      if (model.freeport) {
+        const reg = model.regions.find(r => r.id === model.freeport.regionId);
+        const P = reg.shorePt || reg.c;
+        parts.push(`<text x="${P[0].toFixed(1)}" y="${(fy(P[1]) + 6).toFixed(1)}" font-size="18" text-anchor="middle" fill="#1a1a1a" paint-order="stroke" stroke="#fff" stroke-width="3">⚓</text>`);
+        parts.push(`<text x="${P[0].toFixed(1)}" y="${(fy(P[1]) + 21).toFixed(1)}" font-size="10" font-style="italic" text-anchor="middle" fill="#1a1a1a" paint-order="stroke" stroke="#fff" stroke-width="2.5">${esc(model.freeport.name)}</text>`);
+      }
+      if (model.sanctuary) {
+        parts.push(`<text x="${model.sanctuary.x.toFixed(1)}" y="${(fy(model.sanctuary.y) - 16).toFixed(1)}" font-size="16" text-anchor="middle" fill="#8a6d00" paint-order="stroke" stroke="#fff" stroke-width="3">✦</text>`);
+        parts.push(`<text x="${model.sanctuary.x.toFixed(1)}" y="${(fy(model.sanctuary.y) - 30).toFixed(1)}" font-size="10" font-style="italic" text-anchor="middle" fill="#8a6d00" paint-order="stroke" stroke="#fff" stroke-width="2.5">${esc(model.sanctuary.name)}</text>`);
+      }
+      model.camps.forEach(cp => {
+        parts.push(`<text x="${(cp.x - 26).toFixed(1)}" y="${(fy(cp.y) + 34).toFixed(1)}" font-size="13" font-weight="700" text-anchor="middle" fill="#5c4327" paint-order="stroke" stroke="#fff" stroke-width="3">∧</text>`);
+      });
+      {
+        const still = model.regions.filter(r => r.stillair === 1);
+        still.forEach(reg => {
+          parts.push(`<text x="${(reg.c[0] - 26).toFixed(1)}" y="${(fy(reg.c[1]) - 30).toFixed(1)}" font-size="13" text-anchor="middle" fill="#667" paint-order="stroke" stroke="#fff" stroke-width="2.5">⌀</text>`);
+        });
+        if (still.length && model.stillName) {
+          const cx2 = still.reduce((s2, r) => s2 + r.c[0], 0) / still.length;
+          const cy2 = still.reduce((s2, r) => s2 + r.c[1], 0) / still.length;
+          parts.push(`<text x="${cx2.toFixed(1)}" y="${(fy(cy2) - 44).toFixed(1)}" font-size="12" font-style="italic" letter-spacing="2" text-anchor="middle" fill="#556" opacity="0.85" paint-order="stroke" stroke="#fff" stroke-width="2.5">${esc(model.stillName)}</text>`);
+        }
+      }
+
       // Conduit lines (drawn under settlement symbols) — sliced to the epoch
       model.conduitEdges.slice(0, live.edgeCount).forEach(e => {
         const A = model.regions[e.a], B = model.regions[e.b];
@@ -5203,7 +5444,7 @@
         row("elevation / rugged", `${reg.elevation} / ${reg.ruggedness}`) +
         row("climate", `temp ${reg.temperature} · rain ${reg.rainfall} · fertility ${reg.fertility}`) +
         row("ore", `${reg.E} in the ground (founded ${reg.endowment0})${reg.exhausted ? " · DEAD LODE" : ""}`) +
-        row("features", [reg.onRiver === 1 ? "river" : "", reg.onCoast === 1 ? "coast" : "", reg.isPass === 1 ? "pass" : "", reg.rangeShadow === 1 ? "mountain shadow" : ""].filter(Boolean).join(" · ") || "open country") +
+        row("features", [reg.onRiver === 1 ? "river" : "", reg.onCoast === 1 ? "coast" : "", reg.isPass === 1 ? "pass" : "", reg.rangeShadow === 1 ? "mountain shadow" : "", reg.stillair === 1 ? "STILLAIR (no lift)" : ""].filter(Boolean).join(" · ") || "open country") +
         `</table>`);
       L.push(`<div class="insp-sec">THE COIN</div><table>` +
         row("wealth", `${reg.wealth} (founded ${reg.wealthT0}, peak ${reg.peakWealth})`) +
@@ -5229,6 +5470,9 @@
       const stands = [];
       if (reg.refining > 0) stands.push("the works (refinery)");
       if (reg.isPort === 1) stands.push(harborName(st.name));
+      if (reg.isFreeport === 1 && model.freeport) stands.push(`${model.freeport.name} (freeport — no writ runs here)`);
+      if (reg.hasSanctuary === 1 && model.sanctuary) stands.push(`${model.sanctuary.name} (unsanctioned)`);
+      for (const cp of model.camps) if (cp.regionId === reg.id) stands.push(`${cp.name} (hunters)`);
       if (reg.isSkyport === 1) stands.push(`${st.name} Aerie`);
       if (reg.hasTower === 1) stands.push(`${st.name} Tower (apostate)`);
       if (reg.hasBridge === 1) stands.push(`${st.name} Bridge`);

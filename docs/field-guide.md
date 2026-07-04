@@ -206,6 +206,10 @@ table is the audit: if a feature moved nothing, it says so.
 | garrisons | force projection → security → smuggling's negative image | `force_projection`, `smuggling_intensity` |
 | events (all) | the lived history every trajectory column records | `event_type`, `boom_bust`, `peak_wealth` |
 | the granary (reform) | the ONLY downhill pump: gini closer | `gini` vs `gini_t0`, `turning` |
+| the freeport (L1) | the shadow's own gate: where the writ ends, the untaxed economy pools | `smuggling_intensity` at the freeport vs the coast, `value_retention`, `black_market_index` |
+| the stillair (L1) | the sky inequality's hard wall: no coin buys lift on stilled ground | `sky_advantage` = 0 structurally where `stillair` = 1; the S1 shadow metrics |
+| the high sanctuary (L1) | informal institutions substitute for the state — and vanish from its ledgers | `legibility` +15 / `uncounted_population` at `has_sanctuary`; `nearest_healer_dist` relief |
+| hunter camps (L1) | risk as the poor's wage; the bounty is the ladder's one rung | `predation_risk` −18/−8 by `has_camp`, `mobility` +4, black market +6 |
 | responsiveness (P2) | whether wounds buy mercies: reform probability → gini | the iq experiment (mean −0.058) |
 | harbors (P2) | isolation: trade vs sovereignty trade-off | arrivals 0 sealed; coastal wealth |
 | dump bias λ | the poison's routing: policy share of injustice | the λ counterfactual |

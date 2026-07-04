@@ -484,6 +484,17 @@ choropleth; the export always carries every column.
    `centrality_to_seat` (the cost-distance backbone) and `value_retention`
    (who keeps the value their ground generates), and check the seat sits in
    high-`fertility`, low-`terrain_ruggedness` land.
+38. **The L1 check (the places between):** load the `freeport`, `sanctuary`
+   and `camp` point layers over the region choropleths and verify each one
+   pulls on the columns around it. The freeport stands where `sea_access`
+   says nothing does (the official metric cannot see it) while
+   `smuggling_intensity` pools at its quay; filter `stillair = 1` and
+   confirm `is_skyport = 0` on every stilled region (and that the tract
+   is identical across two exports with different society knobs — it is
+   geology); at `has_sanctuary = 1` check `legibility` runs ~+15 over
+   its own recomputed base and `nearest_healer_dist` relief spreads to
+   the neighbors; at `has_camp = 1` recompute `predation_risk` yourself
+   (−18 on camp ground, −8 adjacent) and match the export exactly.
 
 ## Export schema (v2)
 
@@ -649,7 +660,37 @@ world's geology chose as ocean direction (also in `hinterland.sea_sides`).
 
 **Port features (Point):** `region_id`, `port_name` (its town's name +
 "Harbor" — except a Haven- or Strand-named town, which IS its harbor),
-`held_by`. The sea's gates — the export chokepoints where whatever the mines
+`held_by`.
+
+**The places between (L1).** Four location types that pull on the model,
+each exported as a point feature and a region column:
+- **Freeport** (`kind: "freeport"`, `is_freeport`): the harbor beyond the
+  writ, founded on the farthest workable coast from the seat (never a
+  chartered port, never in the maelstrom's turning; present in ~75% of
+  coastal worlds). Its trade enters no ledger — official `sea_access`
+  cannot see it — but the smugglers ROUTE to its quay (it is a sink in
+  the smuggler flow), and its ground keeps what the gates would have
+  taken (`value_retention` +10 at the founding, before the income
+  streams run — an offset against the drained periphery it stands on,
+  not a bonus over the core). Sealed quays (`hb=0`) do not close it,
+  and it refuses the Dominion's charter: every P2/X1 invariant holds.
+- **Stillair** (`stillair` column, one named tract): ground where the
+  lift-stones die — pure geology (byte-stable across every knob and
+  capital move; ~half of worlds). No aerie can be chartered there; if
+  the seat itself sits in the still, no skyway flies at all. The sky
+  inequality gains a wall no money crosses.
+- **High sanctuary** (`kind: "sanctuary"`, `has_sanctuary`): a refuge
+  above the sanctioned faith, on high remote ground. A healer source
+  the planner never rationed (it feeds `nearest_healer_dist` /
+  `healing reach`), a pilgrim destination beside the sanctioned set,
+  and a hole in the census: `legibility` +15 where `has_sanctuary`
+  (exactly recomputable) — measured legibility ~96 at the refuge vs
+  ~38 elsewhere.
+- **Hunter camps** (`kind: "camp"`, `has_camp`): where predation is
+  worth a bounty and the garrisons never come. Exactly recomputable
+  from the column: `predation_risk` −18 on camp ground, −8 adjacent;
+  `mobility` +4 (risk is a wage); black market +6 (trophies are
+  fenced, not taxed). The sea's gates — the export chokepoints where whatever the mines
 raise and the works refine leaves the country.
 
 **Ruin features (Point):** `ruin_type` (`delve` \| `tomb` \| `deadhold`),
@@ -703,6 +744,18 @@ Drop it beside the QGIS map as the qualitative companion: every name in the
 prose is a feature in the layers.
 
 **Schema history:**
+- **v36** (the places between L1): four location types that influence the
+  model — the freeport (shadow gate: smuggler sink, founding retention
+  offset, invisible to official sea_access, immune to sealed quays and
+  to the Dominion), the stillair (geology-stable no-lift tract: no
+  aeries, a stilled seat grounds the whole skyway), the high sanctuary
+  (unchartered healer + pilgrim draw + legibility hole), and hunter
+  camps (predation counter, a wage rung, a fenced market). New region
+  columns `is_freeport` / `stillair` / `has_sanctuary` / `has_camp`;
+  new point features `freeport` / `sanctuary` / `camp`; all named in
+  their own registers, drawn, inspected, and chronicled. Presence
+  measured across 24 worlds: 18 freeports, 14 stills, 13 sanctuaries,
+  17 camp worlds.
 - **v35** (the naming of things E6): the words are grown from the world.
   Settlement names gain a toponym grammar whose qualifying parts are
   selected by GEOLOGY (mouth/ford/haven/tor/fen/holt/delf/hold…, ~half

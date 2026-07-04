@@ -8,6 +8,24 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  THE COUNTERFACTUAL (C1): the lambda experiment moves into the page.
+    - The strongest claim this generator makes — the dumping is a POLICY,
+      not a law of nature — lived only in the test suite's lambda sweep.
+      Now it is an exhibit: one button re-runs THIS world with lambda=0
+      (same rock, same wind, same dice; only the spoil routing differs)
+      and shows the two injustice maps side by side with the numbers:
+      the poorest fifth's blight burden, the plague count, the gini —
+      as rolled vs physics-only. The gap between the maps is the policy.
+    - STAGE-3 PURITY FIX (real bug, latent since the dynamic engine): the
+      loop wrote ore depletion back into reg.endowment, so any society-
+      knob change after an ep>0 render silently recomputed the world on
+      MINED-OUT ground — the screen and its own share link disagreed.
+      applyAttributes now restores the geology as founded on entry;
+      stage 3 is a pure function of (geology, knobs), proven by a new
+      in-page-equals-fresh-boot byte test. The counterfactual is built
+      on that purity: it runs the alternate world and restores the real
+      one, and the export is byte-identical before and after.
+
   THE FOUNDING CENTURIES (Z1): population is GROWN, not painted.
     - Before Z1 settlement sizes were AUTHORED: a tier ladder drawn from
       jittered centrality, then a population dealt from that tier's band.
@@ -657,6 +675,22 @@
   #stage svg { display:block; width:100%; height:auto; cursor:crosshair; }
   .viewgrid { margin-top:14px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px 10px; box-shadow:var(--shadow); }
   .viewgrid .sec-title { margin-bottom:9px; }
+  /* ---- the counterfactual (C1) ---- */
+  #cfBtn { margin-top:10px; width:100%; padding:8px 10px; font:600 13px var(--sans);
+    color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:8px;
+    cursor:pointer; box-shadow:var(--shadow); }
+  #cfBtn:hover { border-color:var(--gold); }
+  #cfBox { max-width:1400px; margin:18px auto 0; padding:0 20px; }
+  .cf-inner { background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; box-shadow:var(--shadow); }
+  .cf-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px; }
+  .cf-cap { font:600 12px var(--sans); color:var(--muted); letter-spacing:.05em; margin-bottom:6px; }
+  .cf-pane svg { width:100%; height:auto; border:1px solid var(--line); border-radius:8px; display:block; }
+  #cfStats { margin-top:12px; font:14px/1.55 var(--sans); }
+  #cfStats table { border-collapse:collapse; margin-top:6px; }
+  #cfStats td, #cfStats th { padding:3px 14px 3px 0; text-align:left; font-weight:400; }
+  #cfStats th { color:var(--muted); font:600 12px var(--sans); letter-spacing:.04em; }
+  @media (max-width: 760px) { .cf-grid { grid-template-columns:1fr; } }
   .chips { display:grid; grid-template-columns:repeat(auto-fill, minmax(215px, 1fr)); gap:5px; }
   label.radio { display:flex; align-items:center; gap:7px; font-size:12.5px; padding:6px 9px; border:1px solid transparent;
     border-radius:6px; cursor:pointer; color:#4d463c; }
@@ -783,6 +817,8 @@
           <label>Dump bias &lambda; <span class="val" id="dbVal"></span></label>
           <input type="range" id="db" min="0" max="100" step="1" />
           <div class="hint">How much refinery spoil is hauled onto poor land. 0 = blight follows only wind and terrain.</div>
+          <button id="cfBtn" type="button">&#8644; the counterfactual: this world at &lambda; = 0</button>
+          <div class="hint">Same rock, same wind, same dice &mdash; only the spoil routing differs. The gap is the policy.</div>
         </div>
       </div>
 
@@ -849,6 +885,19 @@
   </main>
 
   <!-- The chronicle: the same world, narrated -->
+  <!-- The counterfactual (C1): the lambda experiment, on the page -->
+  <section id="cfBox" style="display:none">
+    <div class="cf-inner">
+      <div class="sec-title">THE COUNTERFACTUAL &mdash; SAME ROCK, SAME WIND, SAME DICE; ONLY THE POLICY DIFFERS</div>
+      <div id="cfNote"></div>
+      <div class="cf-grid" id="cfGrid">
+        <div class="cf-pane"><div class="cf-cap" id="cfCapL"></div><div id="cfLeft"></div></div>
+        <div class="cf-pane"><div class="cf-cap">PHYSICS ONLY (&lambda; = 0) &mdash; injustice</div><div id="cfRight"></div></div>
+      </div>
+      <div id="cfStats"></div>
+    </div>
+  </section>
+
   <details id="chronBox">
     <summary>&#128220; The Chronicle &mdash; the world narrating itself</summary>
     <div id="chronText"></div>
@@ -1657,6 +1706,19 @@
     // -> skeleton -> population. No step reads anything computed after it.
     function applyAttributes(regions, params, geo) {
       const sx = streams(params.seed);
+
+      // STAGE-3 PURITY (C1): the loop writes depletion back into
+      // reg.endowment for the export, so a SECOND society run on the same
+      // regions would read mined-out ground as the founding geology. That
+      // was a real, silent bug: after any ep>0 render, dragging any
+      // society slider recomputed the world on depleted ore — the map on
+      // screen and its own share link disagreed. Restore the geology as
+      // founded before every run; stage 3 is now a pure function of
+      // (geology, knobs), and the counterfactual below depends on it.
+      regions.forEach(reg => {
+        if (reg.endowmentGeo === undefined) reg.endowmentGeo = reg.endowment;
+        reg.endowment = reg.endowmentGeo;
+      });
 
       // Seat resolution. Pinned: nearest region to the click. Unpinned: the
       // agrarian core — high fertility, low ruggedness (geology only). This is
@@ -4527,6 +4589,67 @@
       document.getElementById("info").innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
     }
 
+    // ---- The counterfactual (C1) ---------------------------------------------
+    // One button re-runs THIS world with lambda = 0 and puts the two
+    // injustice maps side by side. Built on stage-3 purity: run the
+    // alternate, extract plain numbers, restore the real world — the
+    // export is byte-identical before and after.
+    let cfOn = false;
+    function cfPaneSVG(vals) {
+      const parts = [`<svg viewBox="0 0 ${W} ${W}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`];
+      model.regions.forEach((reg, i) => {
+        const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
+        parts.push(`<path d="${d}" fill="${rampColor(RAMPS.injustice, vals[i])}" stroke="#40352a" stroke-width="1.2"/>`);
+      });
+      model.seaShapes.forEach(ring => {
+        const d = "M" + ring.map(pt => `${pt[0].toFixed(1)},${fy(pt[1]).toFixed(1)}`).join("L") + "Z";
+        parts.push(`<path d="${d}" fill="#4a7fae" fill-opacity="0.55" stroke="#2b5f8a" stroke-width="1.5"/>`);
+      });
+      model.ridges.forEach(R => {
+        const pl = R.pts.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join(" ");
+        parts.push(`<polyline points="${pl}" fill="none" stroke="#5b4a33" stroke-width="5" opacity="0.5"/>`);
+      });
+      parts.push(`</svg>`);
+      return parts.join("");
+    }
+    function updateCf() {
+      const box = document.getElementById("cfBox");
+      box.style.display = cfOn ? "" : "none";
+      if (!cfOn) return;
+      const note = document.getElementById("cfNote");
+      const grid = document.getElementById("cfGrid");
+      const stats = document.getElementById("cfStats");
+      if (params.db === 0) {
+        note.innerHTML = `This world already runs on physics alone (&lambda; = 0): the blight falls where the wind and the water put it. Raise the dump bias to see what a policy adds.`;
+        grid.style.display = "none"; stats.innerHTML = "";
+        return;
+      }
+      note.innerHTML = "";
+      grid.style.display = "";
+      // the alternate world: identical in everything but the spoil routing
+      const cfModel = applyAttributes(topology, { ...params, db: 0 }, geo);
+      const cfVals = cfModel.regions.map(r => (r.blight / 100) * (1 - r.wealth / 100));
+      const cfF = computeFindings(cfModel);
+      const cfPlagues = cfModel.events.filter(ev => ev.type === "blight_plague").length;
+      // restore the world as rolled (stage 3 is pure: byte-identical)
+      model = applyAttributes(topology, params, geo);
+      const asVals = model.regions.map(r => (r.blight / 100) * (1 - r.wealth / 100));
+      const asF = computeFindings(model);
+      const asPlagues = model.events.filter(ev => ev.type === "blight_plague").length;
+      document.getElementById("cfCapL").innerHTML = `AS ROLLED (&lambda; = ${params.db}) &mdash; injustice`;
+      document.getElementById("cfLeft").innerHTML = cfPaneSVG(asVals);
+      document.getElementById("cfRight").innerHTML = cfPaneSVG(cfVals);
+      const dRatio = Math.round((asF.blight_ratio - cfF.blight_ratio) * 10) / 10;
+      const verdict = dRatio > 0
+        ? `The dumping alone puts <b>${dRatio}&times; extra blight</b> on the poorest fifth, over what the wind and water would have done. <b>The gap between these maps is a policy.</b>`
+        : `In this world the physics already found the poor; the policy added little the terrain had not. The chronicle notes that innocence of this kind is luck, not virtue.`;
+      stats.innerHTML = verdict +
+        `<table><tr><th></th><th>as rolled (&lambda; = ${params.db})</th><th>physics only (&lambda; = 0)</th></tr>` +
+        `<tr><td>poorest fifth's blight vs richest's</td><td><b>${asF.blight_ratio}&times;</b></td><td><b>${cfF.blight_ratio}&times;</b></td></tr>` +
+        `<tr><td>plagues in the record</td><td>${asPlagues}</td><td>${cfPlagues}</td></tr>` +
+        `<tr><td>gini at the close</td><td>${asF.gini.toFixed(2)}</td><td>${cfF.gini.toFixed(2)}</td></tr></table>`;
+    }
+
     // ---- State + recompute orchestration ------------------------------------
     let params = { ...DEFAULTS };
     let topology = null;   // regions with geology baked in (stages 1+2)
@@ -4549,6 +4672,7 @@
       sc.max = params.ep; sc.value = params.ep;
       document.getElementById("scrubVal").textContent = `${params.ep}/${params.ep}`;
       render(model, params);
+      updateCf();
       writeHash();
     }
 
@@ -4665,6 +4789,12 @@
         URL.revokeObjectURL(url);
       });
 
+      $("cfBtn").addEventListener("click", () => {
+        cfOn = !cfOn;
+        updateCf();
+        const bx = document.getElementById("cfBox");
+        if (cfOn && typeof bx.scrollIntoView === "function") bx.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
       $("dlChron").addEventListener("click", () => {
         if (!model) return;
         const blob = new Blob([composeChronicle(model, params)], { type: "text/markdown" });

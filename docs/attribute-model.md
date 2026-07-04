@@ -59,7 +59,17 @@
 > Honest physics fallout, measured first: the coherent tilt began pouring
 > plumes into the wealthy lowlands (hill term damped; λ floor −0.15) and
 > the old popΔ↔wealth drain legitimately decorrelated — reframed onto the
-> attractiveness composite the mechanic actually reads. **The founding
+> attractiveness composite the mechanic actually reads. **The
+> counterfactual (C1)**: the λ experiment moves onto the page — one
+> button re-runs the same world at λ=0 (same rock, wind, and dice) and
+> sets the two injustice maps side by side with the numbers; on the
+> default world the dumping alone adds 0.6× to the poorest fifth's
+> burden and five of its nine plagues. Built on a STAGE-3 PURITY FIX
+> for a real latent bug: the loop wrote depletion back into the founding
+> endowment, so any in-page society-knob change after a timed render
+> recomputed the world on mined-out ground (the screen and its share
+> link disagreed); stage 3 is now a pure function of (geology, knobs),
+> proven byte-for-byte. **The founding
 > centuries (Z1)**: the census is grown, not painted. The authored tier
 > bands are gone; every region starts a hamlet and the centuries before
 > year 1000 run the same physics as the recorded epochs, blind to wealth

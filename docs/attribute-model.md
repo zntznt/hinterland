@@ -59,7 +59,18 @@
 > Honest physics fallout, measured first: the coherent tilt began pouring
 > plumes into the wealthy lowlands (hill term damped; λ floor −0.15) and
 > the old popΔ↔wealth drain legitimately decorrelated — reframed onto the
-> attractiveness composite the mechanic actually reads. **The map is a
+> attractiveness composite the mechanic actually reads. **The surface
+> catches up (U2)**: the app shows what it computes — a region INSPECTOR
+> (one click: the land, the coin, the two rows, the state, the people,
+> what stands there, the gates on its road to the seat, its whole event
+> history), 13 new lenses (retention, tolls, tribute, climate, terrain,
+> trust, mobility, smuggling, sea access, wealth-since-founding) under
+> grouped headings, named swatches for categorical legends, the
+> counterfactual menu (lambda / full grid / both mercies), roads drawn
+> by computed traffic, and the occupation animated on the scrubber —
+> which exposed a second stage-3 purity leak (the occupied flag reset
+> after the founding snapshot), now fixed and byte-tested on the series
+> export as well. **The map is a
 > map (M1)**: the physical world survives contact with a cartographer.
 > The straight-strip shore became a coastline (the shelf's reach and
 > steepness wander: bays with a median ~150-unit inland reach, headlands,

@@ -8,6 +8,24 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  THE SURFACE CATCHES UP (U2): the app finally shows what it computes.
+    - THE INSPECTOR: click any region for its full ledger — the land, the
+      coin, the class split, the state's reach, the people, every event
+      that struck it, what stands there by name, and the gates it pays on
+      the road to the seat. ~60 columns were export-only; now one click.
+      (Pinning the capital moved to an explicit arm-then-click button.)
+    - LENSES, GROUPED: 13 new views for columns that were computed but
+      invisible — elevation, ruggedness, temperature, rainfall, fertility,
+      RETENTION (who keeps what it makes), TOLLS, TRIBUTE, sea access,
+      wealth-since-founding, smuggling, trust, mobility — organized under
+      THE LAND / THE COIN / THE STATE / THE PEOPLE.
+    - Categorical legends show SWATCHES (bloc/biome/trajectory named).
+    - THE COUNTERFACTUAL MENU: C1's machinery generalized — lambda=0, the
+      full grid (threshold 0), or both mercies at once.
+    - Roads draw by TRAFFIC (the flow was always computed); the scrubber
+      now animates the occupation on the bloc view (the flag goes up in
+      the year it went up).
+
   THE COUNTERFACTUAL (C1): the lambda experiment moves into the page.
     - The strongest claim this generator makes — the dumping is a POLICY,
       not a law of nature — lived only in the test suite's lambda sweep.
@@ -675,6 +693,27 @@
   #stage svg { display:block; width:100%; height:auto; cursor:crosshair; }
   .viewgrid { margin-top:14px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px 10px; box-shadow:var(--shadow); }
   .viewgrid .sec-title { margin-bottom:9px; }
+  /* ---- lenses + legends + inspector (U2) ---- */
+  /* every overlay is click-transparent: clicks land on the region below */
+  #stage svg text, #stage svg line, #stage svg polyline, #stage svg rect, #stage svg circle,
+  #stage svg path:not([data-region]) { pointer-events: none; }
+  .lens-cap { font:600 10px var(--sans); color:var(--muted); letter-spacing:.09em; margin:8px 0 3px; }
+  .swatches { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .swatch { display:inline-flex; align-items:center; gap:4px; font:11px var(--sans); color:var(--muted); }
+  .swatch i { width:12px; height:12px; border-radius:3px; display:inline-block; border:1px solid rgba(0,0,0,.25); }
+  #pinCap { margin-top:6px; width:100%; padding:6px 8px; font:600 12px var(--sans); color:var(--ink);
+    background:var(--card); border:1px solid var(--line); border-radius:8px; cursor:pointer; }
+  #pinCap.armed { border-color:var(--oxblood); color:var(--oxblood); }
+  #inspector { display:none; }
+  #inspector .insp-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  #inspector .insp-name { font:700 17px var(--serif); }
+  #inspector .insp-sub { font:11px var(--sans); color:var(--muted); }
+  #inspector .insp-sec { font:600 10px var(--sans); color:var(--muted); letter-spacing:.09em; margin:9px 0 2px; }
+  #inspector table { width:100%; border-collapse:collapse; font:12px var(--sans); }
+  #inspector td { padding:1.5px 0; vertical-align:top; }
+  #inspector td:first-child { color:var(--muted); padding-right:8px; white-space:nowrap; }
+  #inspector .insp-ev { font:12px var(--sans); margin:2px 0; }
+  #inspClose { border:none; background:none; font:700 14px var(--sans); color:var(--muted); cursor:pointer; }
   /* ---- the counterfactual (C1) ---- */
   #cfBtn { margin-top:10px; width:100%; padding:8px 10px; font:600 13px var(--sans);
     color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:8px;
@@ -781,7 +820,8 @@
         <div class="row">
           <label>Capital</label>
           <button id="diceCapital" class="wide" title="Random capital region">&#127922; random capital</button>
-          <div class="hint">Unpinned, the seat settles in fertile lowland. Click the map to move it.</div>
+          <button id="pinCap" type="button" title="Arm, then click the map">&#128204; pin the capital by click</button>
+          <div class="hint">Unpinned, the seat settles in fertile lowland. Clicking the map INSPECTS a region; arm the pin to move the seat instead.</div>
         </div>
       </div>
 
@@ -818,7 +858,9 @@
           <input type="range" id="db" min="0" max="100" step="1" />
           <div class="hint">How much refinery spoil is hauled onto poor land. 0 = blight follows only wind and terrain.</div>
           <button id="cfBtn" type="button">&#8644; the counterfactual: this world at &lambda; = 0</button>
-          <div class="hint">Same rock, same wind, same dice &mdash; only the spoil routing differs. The gap is the policy.</div>
+          <button id="cfBtnGrid" type="button" style="margin-top:6px; width:100%; padding:8px 10px; font:600 13px var(--sans); color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:8px; cursor:pointer;">&#8644; the counterfactual: the FULL GRID (threshold 0)</button>
+          <button id="cfBtnBoth" type="button" style="margin-top:6px; width:100%; padding:8px 10px; font:600 13px var(--sans); color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:8px; cursor:pointer;">&#8644; both mercies at once</button>
+          <div class="hint">Same rock, same wind, same dice &mdash; only the policy differs. The gap is the policy.</div>
         </div>
       </div>
 
@@ -851,25 +893,51 @@
       </div>
       <div class="viewgrid">
         <div class="sec-title">THE QUESTION ON THE MAP</div>
+        <div class="lens-cap">THE ARGUMENT</div>
         <div class="chips">
           <label class="radio"><input type="radio" name="view" value="injustice" checked /> who bears the injustice</label>
-          <label class="radio"><input type="radio" name="view" value="wealth" /> who holds the coin</label>
           <label class="radio"><input type="radio" name="view" value="class" /> who owns the town</label>
           <label class="radio"><input type="radio" name="view" value="sky" /> who escapes the ground</label>
-          <label class="radio"><input type="radio" name="view" value="endowment" /> where the ore lies</label>
+          <label class="radio"><input type="radio" name="view" value="delta" /> who rose, who fell</label>
+        </div>
+        <div class="lens-cap">THE LAND</div>
+        <div class="chips">
           <label class="radio"><input type="radio" name="view" value="biome" /> what the land is</label>
+          <label class="radio"><input type="radio" name="view" value="elev" /> how high it stands</label>
+          <label class="radio"><input type="radio" name="view" value="rug" /> how rough the going</label>
+          <label class="radio"><input type="radio" name="view" value="temp" /> how warm the year</label>
+          <label class="radio"><input type="radio" name="view" value="rain" /> where the rain falls</label>
+          <label class="radio"><input type="radio" name="view" value="fert" /> where the farms pay</label>
+          <label class="radio"><input type="radio" name="view" value="endowment" /> where the ore lies</label>
+        </div>
+        <div class="lens-cap">THE COIN</div>
+        <div class="chips">
+          <label class="radio"><input type="radio" name="view" value="wealth" /> who holds the coin</label>
+          <label class="radio"><input type="radio" name="view" value="retention" /> who keeps what it makes</label>
+          <label class="radio"><input type="radio" name="view" value="tolls" /> who pays at the gates</label>
+          <label class="radio"><input type="radio" name="view" value="tribute" /> who pays the Dominion</label>
+          <label class="radio"><input type="radio" name="view" value="market" /> who reaches the market</label>
+          <label class="radio"><input type="radio" name="view" value="seaacc" /> who reaches the water</label>
           <label class="radio"><input type="radio" name="view" value="centrality" /> who reaches the seat</label>
+        </div>
+        <div class="lens-cap">THE STATE</div>
+        <div class="chips">
+          <label class="radio"><input type="radio" name="view" value="bloc" /> who rules here</label>
           <label class="radio"><input type="radio" name="view" value="services" /> who gets served</label>
+          <label class="radio"><input type="radio" name="view" value="gap" /> who was left unserved</label>
           <label class="radio"><input type="radio" name="view" value="blight" /> who breathes the poison</label>
           <label class="radio"><input type="radio" name="view" value="burden" /> who gets sick</label>
-          <label class="radio"><input type="radio" name="view" value="gap" /> who was left unserved</label>
-          <label class="radio"><input type="radio" name="view" value="bloc" /> who rules here</label>
-          <label class="radio"><input type="radio" name="view" value="market" /> who reaches the market</label>
           <label class="radio"><input type="radio" name="view" value="egap" /> where the law runs out</label>
+          <label class="radio"><input type="radio" name="view" value="smug" /> where the shadow trades</label>
+        </div>
+        <div class="lens-cap">THE PEOPLE</div>
+        <div class="chips">
+          <label class="radio"><input type="radio" name="view" value="density" /> how many souls</label>
+          <label class="radio"><input type="radio" name="view" value="traj" /> boom and bust</label>
+          <label class="radio"><input type="radio" name="view" value="trust" /> who believes the realm</label>
+          <label class="radio"><input type="radio" name="view" value="mobility" /> who can rise</label>
           <label class="radio"><input type="radio" name="view" value="aband" /> who was left behind</label>
           <label class="radio"><input type="radio" name="view" value="legib" /> who goes uncounted</label>
-          <label class="radio"><input type="radio" name="view" value="traj" /> boom and bust</label>
-          <label class="radio"><input type="radio" name="view" value="density" /> how many souls</label>
         </div>
         <div class="glyphkey">Preview only &mdash; the export always carries every column. &#9632; refinery &middot; gold lines conduit (dashed = off-grid) &middot; H/W/D healer/waterworks/wardstation &middot; &#9650; shrine &middot; G garrison &middot; &#9875; port &middot; &#9670; ruin &middot; &#9820; tower &middot; &#9552; bridge &middot; &#8745; pass &middot; &#9673; maelstrom &middot; &#9055; aerie (violet dashes = the skyway) &middot; &#9873; the Dominion's foothold &middot; red dashes join the twins.</div>
       </div>
@@ -877,6 +945,13 @@
 
     <!-- Readout -->
     <aside class="side">
+      <div class="sidecard" id="inspector">
+        <div class="insp-head">
+          <div><span class="insp-name" id="inspName"></span> <span class="insp-sub" id="inspSub"></span></div>
+          <button id="inspClose" title="close">&#10005;</button>
+        </div>
+        <div id="inspBody"></div>
+      </div>
       <div class="sidecard">
         <div class="sec-title">THIS WORLD</div>
         <table id="info"></table>
@@ -892,7 +967,7 @@
       <div id="cfNote"></div>
       <div class="cf-grid" id="cfGrid">
         <div class="cf-pane"><div class="cf-cap" id="cfCapL"></div><div id="cfLeft"></div></div>
-        <div class="cf-pane"><div class="cf-cap">PHYSICS ONLY (&lambda; = 0) &mdash; injustice</div><div id="cfRight"></div></div>
+        <div class="cf-pane"><div class="cf-cap" id="cfCapR2">PHYSICS ONLY (&lambda; = 0) &mdash; injustice</div><div id="cfRight"></div></div>
       </div>
       <div id="cfStats"></div>
     </div>
@@ -2099,6 +2174,8 @@
         reg.E = reg.endowment;           // current ore stock (depletes per epoch)
         reg.endowment0 = reg.endowment;  // the geology as founded
         reg.warTorn = false;
+        reg.occupied = false;            // reset BEFORE the founding snapshot
+        reg.occupiedEpoch = -1;          // (stage-3 purity: re-runs must not leak)
         const noise = (rNoise() * 2 - 1) * 5;
         reg.wealth = clamp(Math.round(100 * income(reg) + noise), 0, 100);
         reg.wealthT0 = reg.wealth;
@@ -2498,8 +2575,7 @@
       const rX = sx("dominion");
       const dominionCoin = rX() < 0.5;
       const dominionEpoch = 2 + Math.floor(rX() * Math.min(Math.max(params.ep, 1), 5));
-      let dominionAt = -1, footholdIdx = -1;
-      regions.forEach(reg => { reg.occupied = false; reg.occupiedEpoch = -1; });
+      let dominionAt = -1, footholdIdx = -1; // occupied/occupiedEpoch reset at wealth init
       // E5: the dynasty structure — reigns drawn blind before time runs;
       // the names come later (after the world has taken all of its own)
       const rD = sx("dynasty");
@@ -3865,7 +3941,20 @@
       egap:       { lo: [255, 255, 229], hi: [102, 37, 6],   label: "enforcement gap (shadow > state)" },
       aband:      { lo: [250, 246, 240], hi: [59, 40, 12],   label: "abandonment (hysteresis)" },
       legib:      { lo: [247, 247, 252], hi: [50, 48, 96],   label: "legibility gap (the uncounted)" },
-      density:    { lo: [254, 237, 222], hi: [166, 54, 3],   label: "pop. density (per 100×100 cell)" }
+      density:    { lo: [254, 237, 222], hi: [166, 54, 3],   label: "pop. density (per 100×100 cell)" },
+      delta:      { lo: [161, 46, 39],   hi: [27, 110, 62],  label: "wealth since the founding (fell → rose)" },
+      elev:       { lo: [234, 238, 230], hi: [92, 64, 51],   label: "elevation" },
+      rug:        { lo: [245, 243, 240], hi: [80, 60, 40],   label: "ruggedness (the slope of the land)" },
+      temp:       { lo: [225, 238, 249], hi: [190, 84, 50],  label: "temperature (cold → warm)" },
+      rain:       { lo: [248, 243, 227], hi: [26, 82, 118],  label: "rainfall (dry → wet)" },
+      fert:       { lo: [247, 246, 239], hi: [62, 105, 43],  label: "fertility (derived from climate)" },
+      retention:  { lo: [252, 238, 232], hi: [0, 84, 72],    label: "value retention (who keeps what it makes)" },
+      tolls:      { lo: [246, 246, 242], hi: [122, 31, 31],  label: "toll burden (who pays at the gates)" },
+      tribute:    { lo: [246, 244, 240], hi: [58, 47, 42],   label: "tribute rate (who pays the Dominion)" },
+      seaacc:     { lo: [240, 247, 250], hi: [13, 71, 105],  label: "sea access (the second pole)" },
+      smug:       { lo: [246, 242, 246], hi: [84, 39, 80],   label: "smuggling intensity (the shadow's roads)" },
+      trust:      { lo: [247, 244, 238], hi: [32, 84, 120],  label: "social trust (who believes the realm)" },
+      mobility:   { lo: [250, 244, 238], hi: [140, 84, 16],  label: "mobility ceiling (who can rise)" }
     };
     const BLOC_COLORS = { crown: "#6baed6", temple: "#9e9ac8", magnate: "#fd8d3c", contested: "#cccccc", ungoverned: "#f7f7f7", dominion: "#5a5550" };
     const TRAJ_COLORS = { boom: "#2f9e44", stable: "#d9d9d9", decline: "#f08c00", collapse: "#7a1f1f" };
@@ -4533,6 +4622,8 @@
       const RP = (reg) => live.pop[reg.id];
       const RG = (reg) => live.onGrid[reg.id];
       const SE = (reg) => live.eliteShare[reg.id];
+      const RO = (reg) => live.occupied ? live.occupied[reg.id] : (reg.occupied ? 1 : 0);
+      const TRIBV = (reg) => model.dominion ? (RO(reg) === 1 ? 3 : (reg.bloc === "crown" ? 1 : 2)) : 0;
       const dens = (reg) => (RP(reg) * (1 + reg.rural)) / (reg.area / 10000);
       const maxDensity = Math.max(...model.regions.map(dens), 1e-9);
       const maxBurden = Math.max(...model.regions.map(r => r.burden), 1e-9);
@@ -4540,6 +4631,19 @@
         view === "wealth" ? RW(reg) / 100 :
         view === "class" ? SE(reg) / 100 :
         view === "sky" ? reg.skyAdvantage / 100 :
+        view === "delta" ? clamp((RW(reg) - reg.wealthT0 + 40) / 80, 0, 1) :
+        view === "elev" ? reg.elevation / 100 :
+        view === "rug" ? reg.ruggedness / 100 :
+        view === "temp" ? reg.temperature / 100 :
+        view === "rain" ? reg.rainfall / 100 :
+        view === "fert" ? reg.fertility / 100 :
+        view === "retention" ? reg.retention / 100 :
+        view === "tolls" ? reg.tollBurden / 100 :
+        view === "tribute" ? TRIBV(reg) / 3 :
+        view === "seaacc" ? reg.seaAccess / 100 :
+        view === "smug" ? reg.smuggling / 100 :
+        view === "trust" ? reg.socialTrust / 100 :
+        view === "mobility" ? reg.mobility / 100 :
         view === "endowment" ? RE(reg) / 100 :
         view === "centrality" ? reg.centrality / 100 :
         view === "services" ? reg.arcaneServices / 100 :
@@ -4557,6 +4661,19 @@
         view === "wealth" ? RW(reg) :
         view === "class" ? SE(reg) :
         view === "sky" ? reg.skyAdvantage :
+        view === "delta" ? (RW(reg) - reg.wealthT0 > 0 ? "+" : "") + (RW(reg) - reg.wealthT0) :
+        view === "elev" ? reg.elevation :
+        view === "rug" ? reg.ruggedness :
+        view === "temp" ? reg.temperature :
+        view === "rain" ? reg.rainfall :
+        view === "fert" ? reg.fertility :
+        view === "retention" ? reg.retention :
+        view === "tolls" ? reg.tollBurden :
+        view === "tribute" ? TRIBV(reg) :
+        view === "seaacc" ? reg.seaAccess :
+        view === "smug" ? reg.smuggling :
+        view === "trust" ? reg.socialTrust :
+        view === "mobility" ? reg.mobility :
         view === "endowment" ? RE(reg) :
         view === "centrality" ? reg.centrality :
         view === "services" ? reg.arcaneServices :
@@ -4564,7 +4681,7 @@
         view === "injustice" ? Math.round(100 * (RB(reg) / 100) * (1 - RW(reg) / 100)) :
         view === "burden" ? reg.burden.toFixed(1) :
         view === "gap" ? reg.serviceGap :
-        view === "bloc" ? (reg.occupied ? "dominion" : reg.bloc).slice(0, 3) :
+        view === "bloc" ? (RO(reg) === 1 ? "dominion" : reg.bloc).slice(0, 3) :
         view === "traj" ? reg.boomBust.slice(0, 4) :
         view === "biome" ? reg.biome.slice(0, 5) :
         view === "market" ? reg.marketAccess :
@@ -4572,7 +4689,7 @@
         view === "aband" ? reg.abandonment :
         view === "legib" ? reg.legibility :
         (Math.round(dens(reg) * 10) / 10).toFixed(1);
-      const cellFill = (reg) => view === "bloc" ? BLOC_COLORS[reg.occupied ? "dominion" : reg.bloc]
+      const cellFill = (reg) => view === "bloc" ? BLOC_COLORS[RO(reg) === 1 ? "dominion" : reg.bloc]
         : view === "traj" ? TRAJ_COLORS[reg.boomBust]
         : view === "biome" ? BIOME_COLORS[reg.biome]
         : rampColor(ramp, cellT(reg));
@@ -4582,7 +4699,7 @@
         const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
         const stroke = reg.isCapital ? "#d62728" : "#333";
         const sw = reg.isCapital ? 4 : 1.5;
-        parts.push(`<path d="${d}" fill="${cellFill(reg)}" stroke="${stroke}" stroke-width="${sw}"/>`);
+        parts.push(`<path d="${d}" data-region="${reg.id}" fill="${cellFill(reg)}" stroke="${stroke}" stroke-width="${sw}"/>`);
         parts.push(`<text x="${reg.c[0].toFixed(1)}" y="${(fy(reg.c[1]) + 26).toFixed(1)}" font-size="15" text-anchor="middle" fill="#000" opacity="0.5">${cellValue(reg)}</text>`);
         if (reg.refining > 0) { // refinery glyph
           parts.push(`<rect x="${(reg.c[0] - 8).toFixed(1)}" y="${(fy(reg.c[1]) + 32).toFixed(1)}" width="16" height="16" fill="#111" stroke="#fff" stroke-width="2"/>`);
@@ -4608,9 +4725,11 @@
       // Roads (under everything else): width by class, tracks dashed
       model.roadEdges.forEach(e => {
         const A = model.regions[e.a], B = model.regions[e.b];
-        const w = e.cls === "highway" ? 3.5 : (e.cls === "road" ? 2 : 1.2);
+        // U2: width by the FLOW the model always computed — the pass
+        // funnels, the backroads thin to tracks
+        const w = 0.8 + (e.traffic || 0) * 0.032;
         const dash = e.cls === "track" ? ` stroke-dasharray="6 5"` : "";
-        parts.push(`<line class="road" x1="${A.c[0].toFixed(1)}" y1="${fy(A.c[1]).toFixed(1)}" x2="${B.c[0].toFixed(1)}" y2="${fy(B.c[1]).toFixed(1)}" stroke="#6b5844" stroke-width="${w}" opacity="0.8"${dash}/>`);
+        parts.push(`<line class="road" x1="${A.c[0].toFixed(1)}" y1="${fy(A.c[1]).toFixed(1)}" x2="${B.c[0].toFixed(1)}" y2="${fy(B.c[1]).toFixed(1)}" stroke="#6b5844" stroke-width="${w.toFixed(2)}" opacity="0.8"${dash}/>`);
       });
 
       // A1: the twins — same distance, different fate; the line is the argument
@@ -4747,27 +4866,30 @@
       if (params.ep > 0) {
         parts.push(`<text x="960" y="46" font-size="26" text-anchor="end" fill="#000" opacity="0.65" paint-order="stroke" stroke="#fff" stroke-width="4">epoch ${Math.min(scrubEpoch, snaps.length - 1)}/${params.ep}</text>`);
       }
+      if (inspectId >= 0 && inspectId < model.regions.length) {
+        const reg = model.regions[inspectId];
+        const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
+        parts.push(`<path class="sel" d="${d}" fill="none" stroke="#d9b96c" stroke-width="5" pointer-events="none"/>`);
+      }
       parts.push(`</svg>`);
       const stage = document.getElementById("stage");
       stage.innerHTML = parts.join("");
       stage.querySelector("#map").addEventListener("click", onMapClick);
 
-      if (view === "bloc") {
-        document.getElementById("legendLabel").textContent = "dominant bloc (crown / temple / magnate / contested / ungoverned / dominion)";
-        document.getElementById("legendBar").style.background =
-          `linear-gradient(to right, ${BLOC_COLORS.crown} 0 20%, ${BLOC_COLORS.temple} 20% 40%, ${BLOC_COLORS.magnate} 40% 60%, ${BLOC_COLORS.contested} 60% 80%, ${BLOC_COLORS.ungoverned} 80% 100%)`;
-      } else if (view === "biome") {
-        document.getElementById("legendLabel").textContent = "biome (alpine / badland / moor / marsh / forest / steppe / grassland)";
-        document.getElementById("legendBar").style.background =
-          `linear-gradient(to right, ${BIOME_COLORS.alpine} 0 14%, ${BIOME_COLORS.badland} 14% 28%, ${BIOME_COLORS.moor} 28% 42%, ${BIOME_COLORS.marsh} 42% 56%, ${BIOME_COLORS.forest} 56% 72%, ${BIOME_COLORS.steppe} 72% 86%, ${BIOME_COLORS.grassland} 86% 100%)`;
-      } else if (view === "traj") {
-        document.getElementById("legendLabel").textContent = "trajectory (boom / stable / decline / collapse)";
-        document.getElementById("legendBar").style.background =
-          `linear-gradient(to right, ${TRAJ_COLORS.boom} 0 25%, ${TRAJ_COLORS.stable} 25% 50%, ${TRAJ_COLORS.decline} 50% 75%, ${TRAJ_COLORS.collapse} 75% 100%)`;
-      } else {
-        document.getElementById("legendLabel").textContent = ramp.label + " (choropleth)";
-        document.getElementById("legendBar").style.background =
-          `linear-gradient(to right, rgb(${ramp.lo.join(",")}), rgb(${ramp.hi.join(",")}))`;
+      { // U2: categorical views get NAMED swatches; choropleths keep the bar
+        const bar = document.getElementById("legendBar");
+        const CATS = view === "bloc" ? BLOC_COLORS : view === "biome" ? BIOME_COLORS : view === "traj" ? TRAJ_COLORS : null;
+        if (CATS) {
+          document.getElementById("legendLabel").textContent =
+            view === "bloc" ? "dominant bloc" : view === "biome" ? "biome" : "trajectory";
+          bar.style.background = "none";
+          bar.innerHTML = `<span class="swatches">` + Object.entries(CATS).map(([k, c]) =>
+            `<span class="swatch"><i style="background:${c}"></i>${k}</span>`).join("") + `</span>`;
+        } else {
+          document.getElementById("legendLabel").textContent = ramp.label + " (choropleth)";
+          bar.innerHTML = "";
+          bar.style.background = `linear-gradient(to right, rgb(${ramp.lo.join(",")}), rgb(${ramp.hi.join(",")}))`;
+        }
       }
 
       const ws = model.regions.map(r => r.wealth);
@@ -4806,12 +4928,99 @@
       document.getElementById("info").innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
     }
 
+    // ---- The inspector (U2): one click, the whole ledger ---------------------
+    let inspectId = -1, pinArm = false;
+    function renderInspector() {
+      const card = document.getElementById("inspector");
+      if (inspectId < 0 || !model || inspectId >= model.regions.length) { card.style.display = "none"; return; }
+      card.style.display = "block"; // the stylesheet hides it; inline must override
+      const reg = model.regions[inspectId];
+      const st = model.settlements.find(s => s.regionId === reg.id);
+      const yr = (e) => 1000 + 25 * e;
+      document.getElementById("inspName").textContent = st.name;
+      document.getElementById("inspSub").textContent =
+        `${reg.tier} · region #${reg.id} · ${reg.biome}${reg.occupied ? " · OCCUPIED" : ""}`;
+      const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
+      const L = [];
+      L.push(`<div class="insp-sec">THE LAND</div><table>` +
+        row("elevation / rugged", `${reg.elevation} / ${reg.ruggedness}`) +
+        row("climate", `temp ${reg.temperature} · rain ${reg.rainfall} · fertility ${reg.fertility}`) +
+        row("ore", `${reg.E} in the ground (founded ${reg.endowment0})${reg.exhausted ? " · DEAD LODE" : ""}`) +
+        row("features", [reg.onRiver === 1 ? "river" : "", reg.onCoast === 1 ? "coast" : "", reg.isPass === 1 ? "pass" : "", reg.rangeShadow === 1 ? "mountain shadow" : ""].filter(Boolean).join(" · ") || "open country") +
+        `</table>`);
+      L.push(`<div class="insp-sec">THE COIN</div><table>` +
+        row("wealth", `${reg.wealth} (founded ${reg.wealthT0}, peak ${reg.peakWealth})`) +
+        row("keeps", `${reg.retention} of every 100 it makes`) +
+        row("tolls", reg.tollBurden > 0 ? `${reg.tollBurden} at gates it never chose` : "pays no gate") +
+        (model.dominion ? row("tribute", `${reg.occupied ? 3 : (reg.bloc === "crown" ? 1 : 2)} per year to the Dominion`) : "") +
+        row("reach", `market ${reg.marketAccess} · sea ${reg.seaAccess} · seat ${reg.centrality} · sky +${reg.skyAdvantage}%`) +
+        `</table>`);
+      L.push(`<div class="insp-sec">THE TWO ROWS</div><table>` +
+        row("the owners", `${reg.elitePopPct} in 100 people hold ${reg.eliteShare} of every 100 coins`) +
+        row("the gap", `an owner lives ${reg.classGap}× better than a laborer here`) +
+        `</table>`);
+      L.push(`<div class="insp-sec">THE STATE</div><table>` +
+        row("who rules", reg.occupied ? "the Dominion" : reg.bloc) +
+        row("the grid", reg.onConduit ? `on the conduit · services ${reg.arcaneServices}` : `OFF THE GRID · access ${reg.conduitAccess}`) +
+        row("order", `${reg.security} · force ${reg.forceProjection} · shadow ${reg.smuggling}`) +
+        `</table>`);
+      L.push(`<div class="insp-sec">THE PEOPLE</div><table>` +
+        row("souls", `${reg.population.toLocaleString("en-US")} (founded ${Math.round(reg.popT0 * (1 + reg.rural)).toLocaleString("en-US")}) · ${reg.boomBust}`) +
+        row("health", `burden ${reg.burden}/1k · safe water ${reg.safeWater}`) +
+        row("standing", `trust ${reg.socialTrust} · mobility ${reg.mobility} · uncounted ${reg.uncounted.toLocaleString("en-US")}`) +
+        `</table>`);
+      const stands = [];
+      if (reg.refining > 0) stands.push("the works (refinery)");
+      if (reg.isPort === 1) stands.push(`${st.name} Harbor`);
+      if (reg.isSkyport === 1) stands.push(`${st.name} Aerie`);
+      if (reg.hasTower === 1) stands.push(`${st.name} Tower (apostate)`);
+      if (reg.hasBridge === 1) stands.push(`${st.name} Bridge`);
+      for (const r of model.ruins) if (model.regions[r.regionIdx].id === reg.id) stands.push(`the ${r.type} ${r.name}`);
+      for (const s2 of model.sanctionedSites) if (s2.regionId === reg.id) stands.push(`the shrine ${s2.name}`);
+      for (const g of model.garrisons) if (g.regionId === reg.id) stands.push("a garrison");
+      if (stands.length) L.push(`<div class="insp-sec">WHAT STANDS HERE</div><div class="insp-ev">${stands.join(" · ")}</div>`);
+      // the gates on its road to the seat
+      if (!model._seatRun) {
+        const seatIdx = model.regions.findIndex(r => r.isCapital);
+        model._seatRun = costDistances(model.regions, [seatIdx]);
+      }
+      {
+        const held = new Map();
+        model.holdings.forEach(h => { if (h.heldBy !== "none") held.set(h.regionIdx, h.heldBy); });
+        const gates = [];
+        let cur = inspectId;
+        while (model._seatRun.parent[cur] !== -1) {
+          cur = model._seatRun.parent[cur];
+          if (held.has(cur)) gates.push(`${model.settlements.find(s => s.regionId === model.regions[cur].id).name} (${held.get(cur)})`);
+        }
+        if (gates.length) L.push(`<div class="insp-sec">THE ROAD TO THE SEAT</div><div class="insp-ev">pays at ${gates.join(", ")}</div>`);
+      }
+      const evs = model.events.filter(ev => ev.region_id === reg.id);
+      if (evs.length || reg.occupiedEpoch !== -1) {
+        L.push(`<div class="insp-sec">ITS STORY</div>` +
+          evs.map(ev => `<div class="insp-ev"><b>${yr(ev.epoch)}</b> — ${ev.type.replace(/_/g, " ")}${ev.outcome ? " (" + ev.outcome + ")" : ""}${ev.faction ? " (" + ev.faction + ")" : ""}</div>`).join("") +
+          (reg.occupiedEpoch !== -1 && !reg.occupied ? `<div class="insp-ev"><b>freed</b> — threw the Dominion out</div>` : ""));
+      }
+      document.getElementById("inspBody").innerHTML = L.join("");
+    }
+
     // ---- The counterfactual (C1) ---------------------------------------------
     // One button re-runs THIS world with lambda = 0 and puts the two
     // injustice maps side by side. Built on stage-3 purity: run the
     // alternate, extract plain numbers, restore the real world — the
     // export is byte-identical before and after.
-    let cfOn = false;
+    let cfOn = false, cfMode = "db";
+    const CF_MODES = {
+      db:   { over: (p) => ({ ...p, db: 0 }),        capR: "PHYSICS ONLY (&lambda; = 0) &mdash; injustice",
+              already: (p) => p.db === 0,
+              note: `This world already runs on physics alone (&lambda; = 0): the blight falls where the wind and the water put it. Raise the dump bias to see what a policy adds.` },
+      gt:   { over: (p) => ({ ...p, gt: 0 }),        capR: "THE FULL GRID (threshold 0) &mdash; injustice",
+              already: (p) => p.gt === 0,
+              note: `This world already wires everyone (threshold 0): the grid is a right, not a return. Raise the grid threshold to see what the ledgers withhold.` },
+      both: { over: (p) => ({ ...p, db: 0, gt: 0 }), capR: "BOTH MERCIES (&lambda; = 0, threshold 0) &mdash; injustice",
+              already: (p) => p.db === 0 && p.gt === 0,
+              note: `This world already runs on both mercies. There is nothing left to forgive it.` }
+    };
     function cfPaneSVG(vals) {
       const parts = [`<svg viewBox="0 0 ${W} ${W}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`];
       model.regions.forEach((reg, i) => {
@@ -4836,33 +5045,45 @@
       const note = document.getElementById("cfNote");
       const grid = document.getElementById("cfGrid");
       const stats = document.getElementById("cfStats");
-      if (params.db === 0) {
-        note.innerHTML = `This world already runs on physics alone (&lambda; = 0): the blight falls where the wind and the water put it. Raise the dump bias to see what a policy adds.`;
+      const MODE = CF_MODES[cfMode];
+      if (MODE.already(params)) {
+        note.innerHTML = MODE.note;
         grid.style.display = "none"; stats.innerHTML = "";
         return;
       }
       note.innerHTML = "";
       grid.style.display = "";
-      // the alternate world: identical in everything but the spoil routing
-      const cfModel = applyAttributes(topology, { ...params, db: 0 }, geo);
+      // the alternate world: identical in everything but the policy
+      const cfModel = applyAttributes(topology, MODE.over(params), geo);
       const cfVals = cfModel.regions.map(r => (r.blight / 100) * (1 - r.wealth / 100));
       const cfF = computeFindings(cfModel);
       const cfPlagues = cfModel.events.filter(ev => ev.type === "blight_plague").length;
+      const cfDark = cfModel.regions.filter(r => !r.onConduit).length;
       // restore the world as rolled (stage 3 is pure: byte-identical)
       model = applyAttributes(topology, params, geo);
       const asVals = model.regions.map(r => (r.blight / 100) * (1 - r.wealth / 100));
       const asF = computeFindings(model);
       const asPlagues = model.events.filter(ev => ev.type === "blight_plague").length;
-      document.getElementById("cfCapL").innerHTML = `AS ROLLED (&lambda; = ${params.db}) &mdash; injustice`;
+      const asDark = model.regions.filter(r => !r.onConduit).length;
+      document.getElementById("cfCapL").innerHTML = `AS ROLLED (&lambda; = ${params.db}, threshold ${params.gt}) &mdash; injustice`;
+      document.getElementById("cfCapR2").innerHTML = MODE.capR;
       document.getElementById("cfLeft").innerHTML = cfPaneSVG(asVals);
       document.getElementById("cfRight").innerHTML = cfPaneSVG(cfVals);
       const dRatio = Math.round((asF.blight_ratio - cfF.blight_ratio) * 10) / 10;
-      const verdict = dRatio > 0
+      const dDark = asDark - cfDark;
+      const verdict = cfMode === "gt"
+        ? (dDark > 0
+          ? `The charter alone lights <b>${dDark} settlement${dDark === 1 ? "" : "s"}</b> the ledgers left in darkness. <b>The gap between these maps is a policy.</b>`
+          : `The ledgers already reached everyone here; the charter would change nothing. Luck, not virtue.`)
+        : cfMode === "both"
+        ? `Both mercies together: <b>${dRatio > 0 ? dRatio + "&times; less blight on the poorest fifth" : "the blight unchanged"}</b> and <b>${dDark > 0 ? dDark + " settlements lit" : "the grid unchanged"}</b>. <b>The gap between these maps is a policy.</b>`
+        : dRatio > 0
         ? `The dumping alone puts <b>${dRatio}&times; extra blight</b> on the poorest fifth, over what the wind and water would have done. <b>The gap between these maps is a policy.</b>`
         : `In this world the physics already found the poor; the policy added little the terrain had not. The chronicle notes that innocence of this kind is luck, not virtue.`;
       stats.innerHTML = verdict +
-        `<table><tr><th></th><th>as rolled (&lambda; = ${params.db})</th><th>physics only (&lambda; = 0)</th></tr>` +
+        `<table><tr><th></th><th>as rolled</th><th>the counterfactual</th></tr>` +
         `<tr><td>poorest fifth's blight vs richest's</td><td><b>${asF.blight_ratio}&times;</b></td><td><b>${cfF.blight_ratio}&times;</b></td></tr>` +
+        `<tr><td>settlements off the grid</td><td>${asDark}</td><td>${cfDark}</td></tr>` +
         `<tr><td>plagues in the record</td><td>${asPlagues}</td><td>${cfPlagues}</td></tr>` +
         `<tr><td>gini at the close</td><td>${asF.gini.toFixed(2)}</td><td>${cfF.gini.toFixed(2)}</td></tr></table>`;
     }
@@ -4888,7 +5109,10 @@
       const sc = document.getElementById("scrub");
       sc.max = params.ep; sc.value = params.ep;
       document.getElementById("scrubVal").textContent = `${params.ep}/${params.ep}`;
+      delete model._seatRun;
+      if (inspectId >= model.regions.length) inspectId = -1;
       render(model, params);
+      renderInspector();
       updateCf();
       writeHash();
     }
@@ -4946,11 +5170,34 @@
     }
 
     function onMapClick(ev) {
-      const svg = ev.currentTarget, rect = svg.getBoundingClientRect();
-      const wx = ((ev.clientX - rect.left) / rect.width) * W;
-      const wyDisplay = ((ev.clientY - rect.top) / rect.height) * W;
-      params.capital = [clamp(round2(wx), 0, W), clamp(round2(W - wyDisplay), 0, W)]; // un-flip y
-      recomputeAttributes(); // society only — geology and polygons untouched
+      if (pinArm) { // the armed pin: this click moves the seat
+        pinArm = false;
+        document.getElementById("pinCap").classList.remove("armed");
+        const svg = ev.currentTarget, rect = svg.getBoundingClientRect();
+        const wx = ((ev.clientX - rect.left) / rect.width) * W;
+        const wyDisplay = ((ev.clientY - rect.top) / rect.height) * W;
+        params.capital = [clamp(round2(wx), 0, W), clamp(round2(W - wyDisplay), 0, W)]; // un-flip y
+        recomputeAttributes(); // society only — geology and polygons untouched
+        return;
+      }
+      // U2: a plain click INSPECTS — the region path carries its id
+      const t = ev.target && ev.target.getAttribute ? ev.target.getAttribute("data-region") : null;
+      if (t !== null && t !== undefined && t !== "") {
+        inspectId = +t;
+      } else { // clicked a glyph or the water: nearest town by map point
+        const svg = ev.currentTarget, rect = svg.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const wx = ((ev.clientX - rect.left) / rect.width) * W;
+        const wy = W - ((ev.clientY - rect.top) / rect.height) * W;
+        let bi = -1, bd = Infinity;
+        model.regions.forEach((reg, i) => {
+          const d2 = Math.hypot(reg.c[0] - wx, reg.c[1] - wy);
+          if (d2 < bd) { bd = d2; bi = i; }
+        });
+        inspectId = bi;
+      }
+      render(model, params);
+      renderInspector();
     }
 
     function toast(msg) {
@@ -5006,8 +5253,25 @@
         URL.revokeObjectURL(url);
       });
 
+      $("pinCap").addEventListener("click", () => {
+        pinArm = !pinArm;
+        $("pinCap").classList.toggle("armed", pinArm);
+      });
+      $("inspClose").addEventListener("click", () => { inspectId = -1; renderInspector(); if (model) render(model, params); });
+      $("cfBtnGrid").addEventListener("click", () => {
+        if (cfOn && cfMode === "gt") { cfOn = false; } else { cfOn = true; cfMode = "gt"; }
+        updateCf();
+        const bx2 = document.getElementById("cfBox");
+        if (cfOn && typeof bx2.scrollIntoView === "function") bx2.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+      $("cfBtnBoth").addEventListener("click", () => {
+        if (cfOn && cfMode === "both") { cfOn = false; } else { cfOn = true; cfMode = "both"; }
+        updateCf();
+        const bx3 = document.getElementById("cfBox");
+        if (cfOn && typeof bx3.scrollIntoView === "function") bx3.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
       $("cfBtn").addEventListener("click", () => {
-        cfOn = !cfOn;
+        if (cfOn && cfMode === "db") { cfOn = false; } else { cfOn = true; cfMode = "db"; }
         updateCf();
         const bx = document.getElementById("cfBox");
         if (cfOn && typeof bx.scrollIntoView === "function") bx.scrollIntoView({ behavior: "smooth", block: "nearest" });

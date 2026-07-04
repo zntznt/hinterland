@@ -917,7 +917,7 @@
 
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
-    const SCHEMA_VERSION = 32;
+    const SCHEMA_VERSION = 33;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
@@ -1320,6 +1320,14 @@
       const distToSeaEdge = (x, y) => Math.min(...seaSides.map(side =>
         side === "west" ? x : side === "east" ? W - x : side === "south" ? y : W - y));
       const elevNoise = bumpField(sg("elevation"), 6, 120, 300);
+      // M1: the shore is a COASTLINE, not a strip. The old shelf clamped a
+      // fixed 26-unit band to a straight ramp, so the flood line ran
+      // parallel to the map edge. Now the shelf's reach and steepness
+      // WANDER along the shore — wide low shelves become bays and firths,
+      // steep narrow ones become headlands — and the odd skerry pokes
+      // back above the water inside the band.
+      const shoreNoise = bumpField(sg("shore"), 14, 50, 130);
+      const skerryNoise = bumpField(sg("skerries"), 18, 22, 56);
       const elevAt = (x, y) => {
         const t = clamp(distToSeaEdge(x, y) / W, 0, 1);
         let e = 12 + 58 * Math.pow(t, 1.15);                       // the land tilts off the water
@@ -1327,7 +1335,13 @@
         e += 52 * Math.exp(-(rd * rd) / (2 * 95 * 95));            // tectonic uplift
         e += 14 * elevNoise(x, y);                                 // texture
         const ds = distToSeaEdge(x, y);
-        if (ds < 26) e = Math.min(e, 3 + ds * 0.6);                // the shore shelves in below any sea level
+        const sh = clamp(0.5 + 0.5 * shoreNoise(x, y), 0, 1);
+        const band = 16 + 70 * sh;
+        if (ds < band) {
+          e = Math.min(e, 2 + (ds / band) * (10 + 30 * (1 - sh))); // bays reach far; headlands climb fast
+          const sk = skerryNoise(x, y);
+          if (sk > 0.45) e += (sk - 0.45) * 55;                    // skerries and dune ridges
+        }
         return clamp(e, 0, 100);
       };
       // ruggedness is the SLOPE of the surface, plus surface grain
@@ -1342,6 +1356,38 @@
         const crest = e0 > 60 ? (e0 - 60) * 0.7 : 0; // the high country is crag country
         reg.ruggedness = clamp(Math.round(g4 * 4.6 + crest + rugNoise() * 26), 0, 100);
       });
+
+      // M1: THE ANCHOR IS A TOWN SITE, NOT A CENTROID. Candidates fan from
+      // the centroid toward each vertex (convex cells keep them inside).
+      // The sea level is capped so EVERY region keeps at least one dry
+      // candidate, and a wet founding site moves to its cell's driest
+      // ground: no town in the water, by construction.
+      const candsOf = (reg) => {
+        const cs = [reg.c.slice()];
+        for (const v of reg.ring) for (const tt of [0.25, 0.45, 0.62, 0.78, 0.9])
+          cs.push([reg.c[0] + (v[0] - reg.c[0]) * tt, reg.c[1] + (v[1] - reg.c[1]) * tt]);
+        return cs;
+      };
+      const maxDry = Math.min(...regions.map(reg => Math.max(...candsOf(reg).map(p => elevAt(p[0], p[1])))));
+      let seaLevel = Math.max(6, Math.min(16 + Math.round(rsSea() * 8), Math.floor(maxDry) - 1));
+      regions.forEach(reg => {
+        if (elevAt(reg.c[0], reg.c[1]) >= seaLevel + 1.5) return; // dry: the site stands
+        let best = reg.c, bestE = -Infinity;
+        for (const p of candsOf(reg)) {
+          const e2 = elevAt(p[0], p[1]);
+          if (e2 > bestE + 1e-9) { bestE = e2; best = p; }
+        }
+        reg.c = [best[0], best[1]];
+        // re-read the surface at the town site it actually stands on
+        const e0b = elevAt(reg.c[0], reg.c[1]);
+        reg.elevation = Math.round(e0b);
+        const g4b = Math.max(
+          Math.abs(elevAt(reg.c[0] + 30, reg.c[1]) - e0b), Math.abs(elevAt(reg.c[0] - 30, reg.c[1]) - e0b),
+          Math.abs(elevAt(reg.c[0], reg.c[1] + 30) - e0b), Math.abs(elevAt(reg.c[0], reg.c[1] - 30) - e0b));
+        reg.ruggedness = clamp(Math.round(g4b * 4.6 + (e0b > 60 ? (e0b - 60) * 0.7 : 0) + rugNoise() * 26), 0, 100);
+      });
+
+
       // each pass belongs to the region whose anchor point sits closest
       passes.forEach(p => {
         let bi = 0, bd = Infinity;
@@ -1430,10 +1476,13 @@
         }
       }
 
-      // G4: THE SEA IS A SHAPE. A seeded sea level floods the low ground
-      // connected to the ocean side; marching squares traces the coastline.
-      const minAnchorElev = Math.min(...regions.map(r => r.elevation));
-      const seaLevel = Math.max(6, Math.min(16 + Math.round(rsSea() * 8), minAnchorElev - 1));
+      // G4/M1: THE SEA IS A SHAPE — and it NEGOTIATES. Flood the low
+      // ground connected to the ocean side, trace the coastline (marching
+      // squares, padded so every ring closes, rings nested so islands are
+      // holes), then CHECK: if any region lost every candidate point to
+      // the traced water, the sea level drops and the trace re-runs. The
+      // exported level is the negotiated one — no town in the water is a
+      // property of the shape itself, not of a hopeful estimate.
       const GN = 64, CS = W / GN;
       const nodeElev = [];
       for (let gy = 0; gy <= GN; gy++) {
@@ -1441,29 +1490,29 @@
         for (let gx = 0; gx <= GN; gx++) row.push(elevAt(gx * CS, gy * CS));
         nodeElev.push(row);
       }
-      const flooded = nodeElev.map(row => row.map(() => false));
-      const fq = [];
-      const floodSeed = (gx, gy) => {
-        if (gx < 0 || gy < 0 || gx > GN || gy > GN) return;
-        if (flooded[gy][gx] || nodeElev[gy][gx] >= seaLevel) return;
-        flooded[gy][gx] = true;
-        fq.push([gx, gy]);
-      };
-      for (let k = 0; k <= GN; k++) {
-        if (seaSides.includes("west")) floodSeed(0, k);
-        if (seaSides.includes("east")) floodSeed(GN, k);
-        if (seaSides.includes("south")) floodSeed(k, 0);
-        if (seaSides.includes("north")) floodSeed(k, GN);
-      }
-      while (fq.length) {
-        const [gx, gy] = fq.pop();
-        floodSeed(gx + 1, gy); floodSeed(gx - 1, gy); floodSeed(gx, gy + 1); floodSeed(gx, gy - 1);
-      }
-      // marching squares on the flood mask, PADDED with land outside the map
-      // so every coastline closes into a ring on its own
-      const F4 = (gx, gy) => (gx >= 0 && gy >= 0 && gx <= GN && gy <= GN && flooded[gy][gx]) ? 1 : 0;
-      const segs4 = [];
-      {
+      const raisedHolm = new Set(); // grid nodes lifted for a town with no dry ground
+      const traceSea = (level) => {
+        const flooded = nodeElev.map(row => row.map(() => false));
+        const fq = [];
+        const floodSeed = (gx, gy) => {
+          if (gx < 0 || gy < 0 || gx > GN || gy > GN) return;
+          if (raisedHolm.has(gx + ":" + gy)) return;
+          if (flooded[gy][gx] || nodeElev[gy][gx] >= level) return;
+          flooded[gy][gx] = true;
+          fq.push([gx, gy]);
+        };
+        for (let k = 0; k <= GN; k++) {
+          if (seaSides.includes("west")) floodSeed(0, k);
+          if (seaSides.includes("east")) floodSeed(GN, k);
+          if (seaSides.includes("south")) floodSeed(k, 0);
+          if (seaSides.includes("north")) floodSeed(k, GN);
+        }
+        while (fq.length) {
+          const [gx, gy] = fq.pop();
+          floodSeed(gx + 1, gy); floodSeed(gx - 1, gy); floodSeed(gx, gy + 1); floodSeed(gx, gy - 1);
+        }
+        const F4 = (gx, gy) => (gx >= 0 && gy >= 0 && gx <= GN && gy <= GN && flooded[gy][gx]) ? 1 : 0;
+        const segs4 = [];
         const mid = (x1, y1, x2, y2) => [(x1 + x2) / 2, (y1 + y2) / 2];
         for (let gy = -1; gy <= GN; gy++) for (let gx = -1; gx <= GN; gx++) {
           const tl = F4(gx, gy), tr = F4(gx + 1, gy), br = F4(gx + 1, gy + 1), bl = F4(gx, gy + 1);
@@ -1480,10 +1529,9 @@
           else if (code === 6 || code === 9) add(T, B);
           else if (code === 7 || code === 8) add(L2, T);
         }
-      }
-      // stitch segments into rings (endpoints live on a snap lattice)
-      const seaShapes = [];
-      {
+        // stitch segments into rings (endpoints live on a snap lattice)
+        const shapes = [];
+        const rawRings = [];
         const key5 = (pt) => Math.round(pt[0] * 8) + ":" + Math.round(pt[1] * 8);
         const atKey = new Map();
         segs4.forEach((sg2, i) => {
@@ -1509,18 +1557,121 @@
             ring.push(nxt.slice());
           }
           if (ring.length >= 4 && key5(ring[0]) === key5(ring[ring.length - 1]))
-            seaShapes.push(ring.map(pt => [round2(clamp(pt[0], 0, W)), round2(clamp(pt[1], 0, W))]));
+            rawRings.push(ring.map(pt => [round2(clamp(pt[0], 0, W)), round2(clamp(pt[1], 0, W))]));
+        }
+        // rings NEST — an island is a ring inside a sea ring: a hole
+        const ringArea = (rg) => {
+          let s2 = 0;
+          for (let i2 = 0; i2 + 1 < rg.length; i2++) s2 += rg[i2][0] * rg[i2 + 1][1] - rg[i2 + 1][0] * rg[i2][1];
+          return Math.abs(s2) / 2;
+        };
+        rawRings.sort((a2, b2) => ringArea(b2) - ringArea(a2));
+        const parentOf = rawRings.map((rg, i2) => {
+          for (let j2 = i2 - 1; j2 >= 0; j2--)
+            if (pointInRing(rg[0][0] + 0.01, rg[0][1] + 0.01, rawRings[j2])) return j2;
+          return -1;
+        });
+        const depth = parentOf.map((p2) => { let d2 = 0, k2 = p2; while (k2 !== -1) { d2++; k2 = parentOf[k2]; } return d2; });
+        const shapeIdx = new Map();
+        rawRings.forEach((rg, i2) => {
+          if (depth[i2] % 2 === 0) { shapeIdx.set(i2, shapes.length); shapes.push({ outer: rg, holes: [] }); }
+        });
+        rawRings.forEach((rg, i2) => {
+          if (depth[i2] % 2 === 1 && shapeIdx.has(parentOf[i2])) shapes[shapeIdx.get(parentOf[i2])].holes.push(rg);
+        });
+        return shapes;
+      };
+      let seaShapes = traceSea(seaLevel);
+      {
+        const inShapes = (shapes, x, y) => shapes.some(S =>
+          pointInRing(x, y, S.outer) && !S.holes.some(h => pointInRing(x, y, h)));
+        let guard = 24; // enough to walk any seeded level down to the floor
+        while (guard-- > 0 && seaLevel > 3) {
+          const wholly = regions.some(reg => candsOf(reg).every(p => inShapes(seaShapes, p[0], p[1])));
+          if (!wholly) break;
+          seaLevel -= 1;
+          seaShapes = traceSea(seaLevel);
+        }
+        // M1: the last resort. A cell sunk in a noise pit can be wet at
+        // ANY level that still leaves a sea. Such a town raises a HOLM:
+        // the grid nodes around its best point become land and the trace
+        // re-runs — the lagoon town stands on its mound above the tide,
+        // drawn and exported as a small island.
+        const sunk = regions.filter(reg => candsOf(reg).every(p => inShapes(seaShapes, p[0], p[1])));
+        if (sunk.length) {
+          for (const reg of sunk) {
+            let best = reg.c, bestE = -Infinity;
+            for (const p of candsOf(reg)) {
+              const e2 = elevAt(p[0], p[1]);
+              if (e2 > bestE + 1e-9) { bestE = e2; best = p; }
+            }
+            const cgx = Math.round(best[0] / CS), cgy = Math.round(best[1] / CS);
+            for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+              if (Math.hypot(dx, dy) > 2.2) continue;
+              raisedHolm.add((cgx + dx) + ":" + (cgy + dy));
+            }
+          }
+          seaShapes = traceSea(seaLevel);
         }
       }
+      // M1: the marching-squares polygon is the AUTHORITATIVE water — a
+      // grid-resolution coastline can swing past a point that is above
+      // sea level in the continuous field. Second relocation pass: any
+      // anchor inside the traced sea moves to its cell's best candidate
+      // OUTSIDE it. Same for the wild sites below. No town in the water,
+      // now against the very shape the map draws and the file exports.
+      const inSeaPoly = (x, y) => seaShapes.some(S =>
+        pointInRing(x, y, S.outer) && !S.holes.some(h => pointInRing(x, y, h)));
+      regions.forEach(reg => {
+        if (!inSeaPoly(reg.c[0], reg.c[1])) return;
+        const dryC = candsOf(reg)
+          .map(p => ({ p, e: elevAt(p[0], p[1]) }))
+          .filter(o => !inSeaPoly(o.p[0], o.p[1]))
+          .sort((a2, b2) => b2.e - a2.e || a2.p[0] - b2.p[0]);
+        if (!dryC.length) return; // a cell wholly under the sea: keep (never seen; guarded by the cap)
+        reg.c = [dryC[0].p[0], dryC[0].p[1]];
+        const e0c = elevAt(reg.c[0], reg.c[1]);
+        reg.elevation = Math.round(e0c);
+        const g4c = Math.max(
+          Math.abs(elevAt(reg.c[0] + 30, reg.c[1]) - e0c), Math.abs(elevAt(reg.c[0] - 30, reg.c[1]) - e0c),
+          Math.abs(elevAt(reg.c[0], reg.c[1] + 30) - e0c), Math.abs(elevAt(reg.c[0], reg.c[1] - 30) - e0c));
+        reg.ruggedness = clamp(Math.round(g4c * 4.6 + (e0c > 60 ? (e0c - 60) * 0.7 : 0) + rugNoise() * 26), 0, 100);
+      });
+
+      // M1: every cell gets real PLACES. The waterfront: its lowest
+      // boundary point, pulled just inside — where a harbor would stand.
+      // And up to three dry wild sites away from the town — where the
+      // ruins gape, the towers stand, the Temple fences its ground.
+      regions.forEach(reg => {
+        let low = null, lowE = Infinity;
+        for (let k = 0; k + 1 < reg.ring.length; k++) {
+          const v = reg.ring[k];
+          const m = [(reg.ring[k][0] + reg.ring[k + 1][0]) / 2, (reg.ring[k][1] + reg.ring[k + 1][1]) / 2];
+          for (const p of [v, m]) {
+            const e2 = elevAt(p[0], p[1]);
+            if (e2 < lowE) { lowE = e2; low = p; }
+          }
+        }
+        reg.shorePt = [low[0] + (reg.c[0] - low[0]) * 0.06, low[1] + (reg.c[1] - low[1]) * 0.06];
+        const dry = candsOf(reg)
+          .map(p => ({ p, e: elevAt(p[0], p[1]), d: Math.hypot(p[0] - reg.c[0], p[1] - reg.c[1]) }))
+          .filter(o => !inSeaPoly(o.p[0], o.p[1]))
+          .sort((a2, b2) => b2.d - a2.d || a2.p[0] - b2.p[0]);
+        reg.wildPt = dry.length > 0 ? dry[0].p : reg.c.slice();
+        reg.towerPt = dry.length > 1 ? dry[1].p : reg.wildPt.slice();
+        reg.sitePt = dry.length > 2 ? dry[2].p : reg.towerPt.slice();
+      });
+
       // coastal = the cell touches the water (recomputable from the exports)
       const rRing4 = (ring) => ring.map(pt => [round2(pt[0]), round2(pt[1])]);
       const coastTouch = (ring) => {
-        for (const sea of seaShapes) {
-          for (const v of ring) if (pointInRing(v[0], v[1], sea)) return true;
-          for (const v of sea) if (pointInRing(v[0], v[1], ring)) return true;
+        for (const S of seaShapes) {
+          for (const v of ring)
+            if (pointInRing(v[0], v[1], S.outer) && !S.holes.some(h => pointInRing(v[0], v[1], h))) return true;
+          for (const v of S.outer) if (pointInRing(v[0], v[1], ring)) return true;
           for (let a2 = 0; a2 + 1 < ring.length; a2++)
-            for (let b2 = 0; b2 + 1 < sea.length; b2++)
-              if (segInt(ring[a2], ring[a2 + 1], sea[b2], sea[b2 + 1])) return true;
+            for (let b2 = 0; b2 + 1 < S.outer.length; b2++)
+              if (segInt(ring[a2], ring[a2 + 1], S.outer[b2], S.outer[b2 + 1])) return true;
         }
         return false;
       };
@@ -1588,6 +1739,60 @@
           else if (code === 7 || code === 8) add(L3, T);
         }
         if (csegs.length) contours.push({ level: Math.round(level), segs: csegs });
+      }
+
+      // M1: MOUNTAINS ARE MASS, not a line — hachure strokes down both
+      // flanks of the uplift, ▲ peaks at the crests, and a finer set of
+      // display-only contour lines (the exported set is unchanged).
+      const contoursFine = [];
+      for (const level of [28, 42, 58, 72, 88]) {
+        const csegs = [];
+        const lerp2 = (a, b, va, vb) => {
+          const t = (level - va) / (vb - va || 1e-9);
+          return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+        };
+        for (let gy = 0; gy < GN; gy++) for (let gx = 0; gx < GN; gx++) {
+          const x0 = gx * CS, y0 = gy * CS, x1 = (gx + 1) * CS, y1 = (gy + 1) * CS;
+          const vtl = nodeElev[gy][gx], vtr = nodeElev[gy][gx + 1], vbr = nodeElev[gy + 1][gx + 1], vbl = nodeElev[gy + 1][gx];
+          const code = (vtl >= level ? 8 : 0) + (vtr >= level ? 4 : 0) + (vbr >= level ? 2 : 0) + (vbl >= level ? 1 : 0);
+          if (code === 0 || code === 15) continue;
+          const T = lerp2([x0, y0], [x1, y0], vtl, vtr), R3 = lerp2([x1, y0], [x1, y1], vtr, vbr),
+                B = lerp2([x0, y1], [x1, y1], vbl, vbr), L3 = lerp2([x0, y0], [x0, y1], vtl, vbl);
+          const add = (a, b) => csegs.push([[round2(a[0]), round2(a[1])], [round2(b[0]), round2(b[1])]]);
+          if (code === 1 || code === 14) add(L3, B);
+          else if (code === 2 || code === 13) add(B, R3);
+          else if (code === 3 || code === 12) add(L3, R3);
+          else if (code === 4 || code === 11) add(T, R3);
+          else if (code === 5 || code === 10) { add(L3, T); add(B, R3); }
+          else if (code === 6 || code === 9) add(T, B);
+          else if (code === 7 || code === 8) add(L3, T);
+        }
+        if (csegs.length) contoursFine.push({ level, segs: csegs });
+      }
+      const hachures = [], peaks = [];
+      for (const R of ridges) {
+        const top = [];
+        for (let k = 0; k + 1 < R.pts.length; k++) {
+          const [x1, y1] = R.pts[k], [x2, y2] = R.pts[k + 1];
+          const segL = Math.hypot(x2 - x1, y2 - y1);
+          if (segL < 1) continue;
+          const nx = -(y2 - y1) / segL, ny = (x2 - x1) / segL;
+          for (let s2 = 7; s2 < segL; s2 += 13) {
+            const qx = x1 + (x2 - x1) * s2 / segL, qy = y1 + (y2 - y1) * s2 / segL;
+            const eq = elevAt(qx, qy);
+            if (eq < 45) continue;
+            const len = 6 + (eq - 45) * 0.35;
+            for (const sgn of [1, -1])
+              hachures.push([qx + nx * sgn * 5, qy + ny * sgn * 5, qx + nx * sgn * (5 + len), qy + ny * sgn * (5 + len)]);
+            top.push({ x: qx, y: qy, e: eq });
+          }
+        }
+        top.sort((a2, b2) => b2.e - a2.e || a2.x - b2.x);
+        for (const t2 of top) {
+          if (peaks.length && peaks.some(pk => Math.hypot(pk.x - t2.x, pk.y - t2.y) < 70)) continue;
+          peaks.push({ x: t2.x, y: t2.y });
+          if (peaks.length >= 2 * ridges.length) break;
+        }
       }
 
       // P1: bridges & fords — the river as a barrier ACROSS. At region
@@ -1668,7 +1873,7 @@
           y: side === "south" ? 0 : side === "north" ? W : t };
       }
 
-      return { windDeg, ridges, passes, rivers, seaSides, bridges, ruins, maelstrom, seaShapes, seaLevel, contours };
+      return { windDeg, ridges, passes, rivers, seaSides, bridges, ruins, maelstrom, seaShapes, seaLevel, contours, contoursFine, hachures, peaks };
     }
 
     // ---- Cost-distance over the adjacency graph (Dijkstra, O(n^2)) ----------
@@ -2170,7 +2375,7 @@
       for (let i = 0; i < S; i++) {
         const reg = sanctScored[i].reg;
         sanctIdxs.push(regions.indexOf(reg));
-        sanctionedSites.push({ regionId: reg.id, x: reg.c[0], y: reg.c[1] });
+        sanctionedSites.push({ regionId: reg.id, x: reg.sitePt[0], y: reg.sitePt[1] });
       }
 
       // D4/D6 live politics: blocs recomputed whenever the refinery set OR the
@@ -2747,7 +2952,7 @@
           if (!sanctIdxs.includes(firstWoundIdx)) {
             const target = regions[firstWoundIdx];
             sanctIdxs.push(firstWoundIdx);
-            sanctionedSites.push({ regionId: target.id, x: target.c[0], y: target.c[1] });
+            sanctionedSites.push({ regionId: target.id, x: target.sitePt[0], y: target.sitePt[1] });
             target.eventType = "consecration"; target.eventEpoch = e + 1;
             target.eventSeverity = 60 + Math.round(rEv() * 20);
             events.push({ epoch: e + 1, type: "consecration", region_id: target.id });
@@ -2776,13 +2981,13 @@
         reg.ruinPerilNear = 0; reg.ruinYieldNear = 0; reg.towerNear = 0;
         geo.ruins.forEach(r => {
           const R = regions[r.regionIdx];
-          if (Math.hypot(P[0] - round2(R.c[0]), P[1] - round2(R.c[1])) < WILD_R) {
+          if (Math.hypot(P[0] - round2(R.wildPt[0]), P[1] - round2(R.wildPt[1])) < WILD_R) {
             reg.ruinPerilNear = Math.max(reg.ruinPerilNear, r.peril);
             reg.ruinYieldNear = Math.max(reg.ruinYieldNear, r.yield);
           }
         });
         regions.forEach(T => {
-          if (T.hasTower === 1 && Math.hypot(P[0] - round2(T.c[0]), P[1] - round2(T.c[1])) < WILD_R) reg.towerNear = 1;
+          if (T.hasTower === 1 && Math.hypot(P[0] - round2(T.towerPt[0]), P[1] - round2(T.towerPt[1])) < WILD_R) reg.towerNear = 1;
         });
       });
       if (params.ep > 0) {
@@ -3156,7 +3361,7 @@
       const skywayName = markovName("lowland", sx("skyway"), usedNames);
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, seaLevel: geo.seaLevel, contours: geo.contours, skywayName,
+      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName,
         dominion: dominionAt !== -1 ? { arrived: dominionAt, foothold: footholdIdx } : null };
     }
 
@@ -3327,11 +3532,11 @@
           geometry: { type: "LineString", coordinates: SEA_LINES[side] }
         });
       });
-      model.seaShapes.forEach((ring, i) => {
+      model.seaShapes.forEach((S, i) => {
         features.push({
           type: "Feature",
-          properties: { kind: "sea", sea_id: i, sea_level: model.seaLevel },
-          geometry: { type: "Polygon", coordinates: [ring] }
+          properties: { kind: "sea", sea_id: i, sea_level: model.seaLevel, islands: S.holes.length },
+          geometry: { type: "Polygon", coordinates: [S.outer, ...S.holes] }
         });
       });
       model.contours.forEach(cl => {
@@ -3346,7 +3551,7 @@
         features.push({
           type: "Feature",
           properties: { kind: "port", region_id: reg.id, port_name: t.name + " Harbor", held_by: reg.heldBy },
-          geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
+          geometry: { type: "Point", coordinates: [round2(reg.shorePt[0]), round2(reg.shorePt[1])] }
         });
       });
       { // S1: the skyway — aeries, and a lane between every pair of them
@@ -3374,7 +3579,7 @@
         features.push({
           type: "Feature",
           properties: { kind: "ruin", ruin_type: r.type, region_id: reg.id, peril: r.peril, yield: r.yield, ruin_name: r.name },
-          geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
+          geometry: { type: "Point", coordinates: [round2(reg.wildPt[0]), round2(reg.wildPt[1])] }
         });
       });
       model.bridges.forEach(b => {
@@ -3390,7 +3595,7 @@
         features.push({
           type: "Feature",
           properties: { kind: "tower", region_id: reg.id, tower_name: t.name + " Tower" },
-          geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
+          geometry: { type: "Point", coordinates: [round2(reg.towerPt[0]), round2(reg.towerPt[1])] }
         });
       });
       if (model.maelstrom) {
@@ -3548,11 +3753,11 @@
           geometry: { type: "LineString", coordinates: SEA_LINES2[side] }
         });
       });
-      model.seaShapes.forEach((ring, i) => {
+      model.seaShapes.forEach((S, i) => {
         features.push({
           type: "Feature",
           properties: { kind: "sea", sea_id: i, epoch: 0, epoch_date: epochDate(0) },
-          geometry: { type: "Polygon", coordinates: [ring] }
+          geometry: { type: "Polygon", coordinates: [S.outer, ...S.holes] }
         });
       });
       model.contours.forEach(cl => {
@@ -3566,7 +3771,7 @@
         features.push({
           type: "Feature",
           properties: { kind: "port", region_id: reg.id, epoch: 0, epoch_date: epochDate(0) },
-          geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
+          geometry: { type: "Point", coordinates: [round2(reg.shorePt[0]), round2(reg.shorePt[1])] }
         });
       });
       { // S1: the skyway is founding infrastructure — epoch 0, like the roads
@@ -3591,7 +3796,7 @@
         features.push({
           type: "Feature",
           properties: { kind: "ruin", ruin_type: r.type, region_id: reg.id, epoch: 0, epoch_date: epochDate(0) },
-          geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
+          geometry: { type: "Point", coordinates: [round2(reg.wildPt[0]), round2(reg.wildPt[1])] }
         });
       });
       model.bridges.forEach(b => {
@@ -3605,7 +3810,7 @@
         features.push({
           type: "Feature",
           properties: { kind: "tower", region_id: reg.id, epoch: 0, epoch_date: epochDate(0) },
-          geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
+          geometry: { type: "Point", coordinates: [round2(reg.towerPt[0]), round2(reg.towerPt[1])] }
         });
       });
       if (model.maelstrom) {
@@ -4385,14 +4590,19 @@
       });
 
       // G4: the terrain — contour lines over the fills, then the sea itself
+      model.contoursFine.forEach(cl => {
+        const d = cl.segs.map(sg2 => `M${sg2[0][0].toFixed(1)},${fy(sg2[0][1]).toFixed(1)}L${sg2[1][0].toFixed(1)},${fy(sg2[1][1]).toFixed(1)}`).join("");
+        parts.push(`<path class="contourfine" d="${d}" fill="none" stroke="#6d604c" stroke-width="0.8" opacity="${0.12 + cl.level * 0.0016}"/>`);
+      });
       model.contours.forEach(cl => {
         const d = cl.segs.map(sg2 => `M${sg2[0][0].toFixed(1)},${fy(sg2[0][1]).toFixed(1)}L${sg2[1][0].toFixed(1)},${fy(sg2[1][1]).toFixed(1)}`).join("");
         const isShore = cl.level === model.seaLevel;
-        parts.push(`<path class="contour" d="${d}" fill="none" stroke="${isShore ? "#2b5f8a" : "#6d604c"}" stroke-width="${isShore ? 2 : 1}" opacity="${isShore ? 0.55 : 0.28}"/>`);
+        parts.push(`<path class="contour" d="${d}" fill="none" stroke="${isShore ? "#2b5f8a" : "#6d604c"}" stroke-width="${isShore ? 2 : 1}" opacity="${isShore ? 0.55 : 0.3}"/>`);
       });
-      model.seaShapes.forEach(ring => {
-        const d = "M" + ring.map(pt => `${pt[0].toFixed(1)},${fy(pt[1]).toFixed(1)}`).join("L") + "Z";
-        parts.push(`<path class="sea" d="${d}" fill="#4a7fae" fill-opacity="0.55" stroke="#2b5f8a" stroke-width="2"/>`);
+      model.seaShapes.forEach(S => {
+        const sub = (rg) => "M" + rg.map(pt => `${pt[0].toFixed(1)},${fy(pt[1]).toFixed(1)}`).join("L") + "Z";
+        const d = [S.outer, ...S.holes].map(sub).join(" ");
+        parts.push(`<path class="sea" d="${d}" fill-rule="evenodd" fill="#4a7fae" fill-opacity="0.55" stroke="#2b5f8a" stroke-width="2"/>`);
       });
 
       // Roads (under everything else): width by class, tracks dashed
@@ -4416,10 +4626,10 @@
       // P1: the wild layer — ◆ ruins, ♜ towers, ═ bridges, ◉ the maelstrom
       model.ruins.forEach(r => {
         const reg = model.regions[r.regionIdx];
-        parts.push(`<text class="ruin" x="${(reg.c[0] + 26).toFixed(1)}" y="${(fy(reg.c[1]) - 14).toFixed(1)}" font-size="16" text-anchor="middle" fill="#4c4c4c" paint-order="stroke" stroke="#fff" stroke-width="3">◆</text>`);
+        parts.push(`<text class="ruin" x="${reg.wildPt[0].toFixed(1)}" y="${(fy(reg.wildPt[1]) + 5).toFixed(1)}" font-size="16" text-anchor="middle" fill="#4c4c4c" paint-order="stroke" stroke="#fff" stroke-width="3">◆</text>`);
       });
       model.regions.filter(r => r.hasTower === 1).forEach(reg => {
-        parts.push(`<text class="tower" x="${(reg.c[0] - 26).toFixed(1)}" y="${(fy(reg.c[1]) + 14).toFixed(1)}" font-size="17" text-anchor="middle" fill="#3b1f4e" paint-order="stroke" stroke="#fff" stroke-width="3">♜</text>`);
+        parts.push(`<text class="tower" x="${reg.towerPt[0].toFixed(1)}" y="${(fy(reg.towerPt[1]) + 6).toFixed(1)}" font-size="17" text-anchor="middle" fill="#3b1f4e" paint-order="stroke" stroke="#fff" stroke-width="3">♜</text>`);
       });
       model.bridges.forEach(b => {
         parts.push(`<text class="bridge" x="${b.x.toFixed(1)}" y="${(fy(b.y) + 6).toFixed(1)}" font-size="15" font-weight="700" text-anchor="middle" fill="#6b5844" paint-order="stroke" stroke="#fff" stroke-width="3">═</text>`);
@@ -4448,7 +4658,7 @@
 
       // G3: the ports — ⚓ where the realm meets the water
       model.regions.filter(r => r.isPort === 1).forEach(reg => {
-        parts.push(`<text class="port" x="${(reg.c[0] - 26).toFixed(1)}" y="${(fy(reg.c[1]) + 34).toFixed(1)}" font-size="18" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="3">⚓</text>`);
+        parts.push(`<text class="port" x="${reg.shorePt[0].toFixed(1)}" y="${(fy(reg.shorePt[1]) + 6).toFixed(1)}" font-size="18" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="3">⚓</text>`);
       });
 
       // G2: the rivers — blue polylines through the valley anchors
@@ -4461,12 +4671,19 @@
         parts.push(`<text x="${mc[0].toFixed(1)}" y="${(fy(mc[1]) + 18).toFixed(1)}" font-size="12" font-style="italic" text-anchor="middle" fill="#3d7ab5" paint-order="stroke" stroke="#fff" stroke-width="3">the ${esc(RV.name)}</text>`);
       });
 
-      // G1: the mountains — ridge polylines with a name label, passes as ∩
+      // M1: the mountains are MASS — hachures down both flanks, peaks at
+      // the crests; the axis survives only as a faint guide under its name
+      model.hachures.forEach(h => {
+        parts.push(`<line class="hachure" x1="${h[0].toFixed(1)}" y1="${fy(h[1]).toFixed(1)}" x2="${h[2].toFixed(1)}" y2="${fy(h[3]).toFixed(1)}" stroke="#5b4a33" stroke-width="1.3" opacity="0.5"/>`);
+      });
       model.ridges.forEach(R => {
         const pl = R.pts.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join(" ");
-        parts.push(`<polyline class="ridge" points="${pl}" fill="none" stroke="#4a3421" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" opacity="0.45"/>`);
+        parts.push(`<polyline class="ridge" points="${pl}" fill="none" stroke="#4a3421" stroke-width="2" stroke-dasharray="1 6" stroke-linejoin="round" stroke-linecap="round" opacity="0.3"/>`);
         const mid = R.pts[Math.floor(R.pts.length / 2)];
         parts.push(`<text x="${mid[0].toFixed(1)}" y="${(fy(mid[1]) - 10).toFixed(1)}" font-size="13" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(R.name)} Range</text>`);
+      });
+      model.peaks.forEach(pk => {
+        parts.push(`<text class="peak" x="${pk.x.toFixed(1)}" y="${(fy(pk.y) + 5).toFixed(1)}" font-size="14" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">▲</text>`);
       });
       model.passes.forEach(p => {
         parts.push(`<text class="pass" x="${p.x.toFixed(1)}" y="${(fy(p.y) + 6).toFixed(1)}" font-size="17" font-weight="700" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">∩</text>`);
@@ -4474,7 +4691,7 @@
 
       // Sanctioned sites (Temple): violet triangles beside the settlement
       model.sanctionedSites.forEach(s => {
-        parts.push(`<text class="sanct" x="${(s.x + 26).toFixed(1)}" y="${(fy(s.y) - 14).toFixed(1)}" font-size="18" text-anchor="middle" fill="#54278f" paint-order="stroke" stroke="#fff" stroke-width="3">▲</text>`);
+        parts.push(`<text class="sanct" x="${s.x.toFixed(1)}" y="${(fy(s.y) + 6).toFixed(1)}" font-size="18" text-anchor="middle" fill="#54278f" paint-order="stroke" stroke="#fff" stroke-width="3">▲</text>`);
       });
 
       // Event markers: red ✱ where lived history struck (by the scrubbed epoch)
@@ -4601,9 +4818,9 @@
         const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
         parts.push(`<path d="${d}" fill="${rampColor(RAMPS.injustice, vals[i])}" stroke="#40352a" stroke-width="1.2"/>`);
       });
-      model.seaShapes.forEach(ring => {
-        const d = "M" + ring.map(pt => `${pt[0].toFixed(1)},${fy(pt[1]).toFixed(1)}`).join("L") + "Z";
-        parts.push(`<path d="${d}" fill="#4a7fae" fill-opacity="0.55" stroke="#2b5f8a" stroke-width="1.5"/>`);
+      model.seaShapes.forEach(S => {
+        const sub = (rg) => "M" + rg.map(pt => `${pt[0].toFixed(1)},${fy(pt[1]).toFixed(1)}`).join("L") + "Z";
+        parts.push(`<path d="${[S.outer, ...S.holes].map(sub).join(" ")}" fill-rule="evenodd" fill="#4a7fae" fill-opacity="0.55" stroke="#2b5f8a" stroke-width="1.5"/>`);
       });
       model.ridges.forEach(R => {
         const pl = R.pts.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join(" ");

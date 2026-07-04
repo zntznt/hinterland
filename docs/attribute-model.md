@@ -59,7 +59,16 @@
 > Honest physics fallout, measured first: the coherent tilt began pouring
 > plumes into the wealthy lowlands (hill term damped; λ floor −0.15) and
 > the old popΔ↔wealth drain legitimately decorrelated — reframed onto the
-> attractiveness composite the mechanic actually reads. **The surface
+> attractiveness composite the mechanic actually reads. **The two levers
+> (P2)**: institutions and isolation become dials. Responsiveness makes
+> the reform-or-reaction coin a policy (default 45 = the old dice,
+> byte-identical; 0 = the deaf seat, never a reform; 100 =
+> every wound buys a mercy) — and the same seeds run mean gini 0.058
+> lower under the listening seat: the granary hangs on the seat's ear.
+> Close-the-harbors seals the quays: no ports, no sea trade, no door for
+> the Dominion — measured price small (~0.6 coastal wealth; the realm's
+> wealth is mineral, not maritime): safety bought with poverty, cheaply.
+> **The surface
 > catches up (U2)**: the app shows what it computes — a region INSPECTOR
 > (one click: the land, the coin, the two rows, the state, the people,
 > what stands there, the gates on its road to the seat, its whole event

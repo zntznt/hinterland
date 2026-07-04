@@ -8,6 +8,25 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  THE TWO LEVERS (P2): institutions and isolation become dials.
+    - THE SEAT'S EAR (responsiveness, default 45): the reform-or-reaction
+      coin was hidden dice — 45% reform, 30% reaction, 25% silence, fixed
+      forever. Now it is a POLICY: P(reform) = iq/100, P(reaction) the
+      next 30 points. At the default the dice are BYTE-IDENTICAL to
+      every world ever rolled; at 0 the seat answers wounds only with
+      fists or silence; at 100 every wound buys a mercy. Institutional
+      quality is a lever, and the granary — the only measure that ever
+      closes a gap — hangs on it.
+    - THE SEALED QUAYS (close the harbors, default open): isolation as a
+      policy with a price. Closed: no ports are chartered — no sea
+      trade (sea_access 0, the trade stream loses its second pole), no
+      port tolls, and NO DOOR FOR THE DOMINION (the fleet needs a quay).
+      The geology is untouched: the sea is still there; the realm just
+      refuses it. The same door that lets the empire in is the door the
+      coin comes through — sealing it is safety bought with poverty.
+    - Both knobs ride the hash, the share link, and the provenance
+      (responsiveness, harbors_closed). Schema v34.
+
   THE SURFACE CATCHES UP (U2): the app finally shows what it computes.
     - THE INSPECTOR: click any region for its full ledger — the land, the
       coin, the class split, the state's reach, the people, every event
@@ -865,6 +884,19 @@
       </div>
 
       <div class="sec">
+        <div class="sec-title">THE SEAT</div>
+        <div class="row">
+          <label>Responsiveness <span class="val" id="iqVal"></span></label>
+          <input type="range" id="iq" min="0" max="100" step="1" />
+          <div class="hint">How likely the seat answers the realm's first wound with a mercy instead of a fist. The dice still roll; this weights them. 45 = the old world.</div>
+        </div>
+        <div class="row">
+          <label class="radio" style="font-weight:600"><input type="checkbox" id="hb" /> close the harbors</label>
+          <div class="hint">Seal the quays: no sea trade, no port tolls &mdash; and no door for the Dominion. Isolation is a policy with a price.</div>
+        </div>
+      </div>
+
+      <div class="sec">
         <div class="sec-title">TIME</div>
         <div class="row">
           <label>Epochs <span class="val" id="epVal"></span></label>
@@ -992,7 +1024,7 @@
 
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
-    const SCHEMA_VERSION = 33;
+    const SCHEMA_VERSION = 34;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
@@ -1016,6 +1048,8 @@
       we: 35, wf: 25, wt: 30, wg: 10,   // income-mix weights
       gt: 35,                            // grid threshold (0 = conduit reaches everyone)
       db: 60,                            // dump bias λ (0 = blight follows only wind/terrain)
+      iq: 45,                            // the seat's ear (P(reform); default = the old dice)
+      hb: 1,                             // harbors open (0 = sealed: no ports, no Dominion)
       ep: 0,                             // epochs (0 = founding snapshot, no dynamics)
       capital: null                      // null => seat derived from geology
     };
@@ -2127,7 +2161,8 @@
       // ports over the same friction graph: the mountains block the way to
       // the water exactly as they block the way to the seat.
       const coastal = regions.filter(reg => reg.onCoast === 1);
-      const KP = coastal.length === 0 ? 0 : (coastal.length >= 8 ? 2 : 1);
+      // P2: sealed quays charter no ports — and the Dominion needs a quay
+      const KP = params.hb === 0 ? 0 : (coastal.length === 0 ? 0 : (coastal.length >= 8 ? 2 : 1));
       const mouths = new Set();
       geo.rivers.forEach(RV => {
         const m = RV.chain[RV.chain.length - 1];
@@ -2936,7 +2971,7 @@
         // ails the realm most, and it changes the loop's own parameters.
         if (!responded && firstWoundEpoch !== -1 && e + 1 >= firstWoundEpoch + 2) {
           responded = true;
-          if (respCoin < 0.45) {
+          if (respCoin < params.iq / 100) {
             const darkShare = onGrid.filter(v => !v).length / regions.length;
             const meanToll = regions.reduce((a, r) => a + r.tollBurden, 0) / regions.length;
             // the spread of fortunes is itself an ailment the seat can read
@@ -2970,7 +3005,7 @@
               }
             }
             events.push({ epoch: e + 1, type: "reform", measure });
-          } else if (respCoin < 0.75) {
+          } else if (respCoin < params.iq / 100 + 0.3) {
             let measure;
             if (rIns() < 0.5 && params.db > 0) { measure = "dumping_entrenched"; dbShift = 25; }
             else { measure = "toll_crackdown"; tollScale = 1.6; }
@@ -3719,6 +3754,8 @@
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt,
           dump_bias: params.db,
+          responsiveness: params.iq,
+          harbors_closed: params.hb === 0,
           epochs: params.ep,
           events: model.events,
           wind_deg: model.windDeg,
@@ -3908,6 +3945,7 @@
           bias: params.bias,
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt, dump_bias: params.db,
+          responsiveness: params.iq, harbors_closed: params.hb === 0,
           events: model.events,
           wind_deg: model.windDeg,
           sea_sides: model.seaSides,
@@ -4243,7 +4281,9 @@
           (ports.length
             ? `The realm's ${ports.length > 1 ? "gates are" : "gate is"} ${list(portBits)}: whatever the mines raise and the works refine leaves the country there, and whoever holds the quay holds the toll. ` +
               `Distance to the water is the realm's second lottery, drawn at the founding like the first.`
-            : `No harbor was raised at the founding; the water waits.`) +
+            : (params.hb === 0
+              ? `The quays are sealed by decree: the realm trades with no one beyond the water, and no one beyond the water lands. The chronicle records the price of that safety where it falls — on every coast that might have been a gate.`
+              : `No harbor was raised at the founding; the water waits.`)) +
           (model.maelstrom ? ` Sailors give a wide berth to the ${model.maelstrom.name}, where the sea turns on itself; no quay was ever raised in its reach.` : ``));
       }
       if (model.ruins.length) {
@@ -5128,6 +5168,8 @@
       p.set("wt", params.wt); p.set("wg", params.wg);
       p.set("gt", params.gt);
       p.set("db", params.db);
+      p.set("iq", params.iq);
+      p.set("hb", params.hb);
       p.set("ep", params.ep);
       if (params.capital) { p.set("cx", round2(params.capital[0])); p.set("cy", round2(params.capital[1])); }
       history.replaceState(null, "", "#" + p.toString());
@@ -5148,6 +5190,8 @@
         wt: w("wt", DEFAULTS.wt), wg: w("wg", DEFAULTS.wg),
         gt: w("gt", DEFAULTS.gt),
         db: w("db", DEFAULTS.db),
+        iq: w("iq", DEFAULTS.iq),
+        hb: p.get("hb") === "0" ? 0 : 1,
         ep: clamp(Math.round(num("ep", DEFAULTS.ep)), 0, 12),
         capital: null
       };
@@ -5165,8 +5209,9 @@
       document.getElementById("regionsVal").textContent = params.regions;
       document.getElementById("relaxVal").textContent = params.relax;
       document.getElementById("biasVal").textContent = params.bias + "%";
-      for (const kid of ["we", "wf", "wt", "wg", "gt", "db", "ep"])
+      for (const kid of ["we", "wf", "wt", "wg", "gt", "db", "iq", "ep"])
         document.getElementById(kid + "Val").textContent = params[kid];
+      document.getElementById("hb").checked = params.hb === 0;
     }
 
     function onMapClick(ev) {
@@ -5237,6 +5282,15 @@
       document.querySelectorAll('input[name="view"]').forEach(el =>
         el.addEventListener("change", (e) => { view = e.target.value; if (model) render(model, params); }));
 
+      $("iq").addEventListener("input", (e) => {
+        params.iq = +e.target.value;
+        $("iqVal").textContent = params.iq;
+        recomputeAttributes();
+      });
+      $("hb").addEventListener("change", (e) => {
+        params.hb = e.target.checked ? 0 : 1;
+        recomputeAttributes();
+      });
       $("scrub").addEventListener("input", (e) => {
         scrubEpoch = +e.target.value;
         $("scrubVal").textContent = `${scrubEpoch}/${params.ep}`;

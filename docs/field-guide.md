@@ -47,7 +47,7 @@ difference.
 **The question:** how much inequality can a map of regions not see at all?
 **Look at:** the *who owns the town* lens; the inspector's THE TWO ROWS;
 findings `gini_people` vs `gini_between_people` and `within_pct` (median
-≈40% in the calibration sweep — a region map is blind to it),
+≈39% in the calibration sweep — a region map is blind to it),
 `owners` (~5% of people, ~half the coin), `company_town`.
 **The experiment:** scrub a world with a won revolt and watch
 `elite_share` fall 15–25 points in one year at that region — then find a

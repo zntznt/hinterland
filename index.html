@@ -738,7 +738,9 @@
   .mapcard { background:var(--card); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); overflow:hidden; }
   .mapbar { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:9px 14px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
   #legendLabel { font:600 12px var(--sans); color:var(--muted); }
-  .legend .bar { height:10px; width:170px; border:1px solid var(--line); border-radius:5px; }
+  .legend-wrap .bar { height:10px; width:170px; border:1px solid var(--line); border-radius:5px; }
+  .legend-wrap .bar.cats { height:auto; width:auto; border:none; border-radius:0; }
+  .legend-wrap.no-ends .ends { display:none; }
   .legend-wrap { width:170px; }
   .legend-wrap .ends { display:flex; justify-content:space-between; color:var(--muted); font-size:10.5px; margin-top:2px; }
   #stage { background:#f6f2e8; }
@@ -5133,11 +5135,15 @@
         if (CATS) {
           document.getElementById("legendLabel").textContent =
             view === "bloc" ? "dominant bloc" : view === "biome" ? "biome" : "trajectory";
+          bar.classList.add("cats");
+          bar.parentElement.classList.add("no-ends");
           bar.style.background = "none";
           bar.innerHTML = `<span class="swatches">` + Object.entries(CATS).map(([k, c]) =>
             `<span class="swatch"><i style="background:${c}"></i>${k}</span>`).join("") + `</span>`;
         } else {
           document.getElementById("legendLabel").textContent = ramp.label + " (choropleth)";
+          bar.classList.remove("cats");
+          bar.parentElement.classList.remove("no-ends");
           bar.innerHTML = "";
           bar.style.background = `linear-gradient(to right, rgb(${ramp.lo.join(",")}), rgb(${ramp.hi.join(",")}))`;
         }

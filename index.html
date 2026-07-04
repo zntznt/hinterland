@@ -8,6 +8,39 @@
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
 
+  THE NAMING OF THINGS (E6): the words are grown from the world.
+    - THE TOPONYM GRAMMAR: settlement names are no longer single markov
+      words. Each region's GEOLOGY selects its qualifying parts — a
+      river-mouth town earns "-mouth", ore country its "Delf", the high
+      country "High —"/"Tor"/"Fell", the fens their "Fen", forest its
+      "holt", rugged ground its "hold"; roughly half keep the plain base
+      word (measured 53% plain / 22% fused / 25% spaced). The grammar is
+      GEOLOGY-BLIND to society: the same seed names the same towns under
+      every knob, weight, and capital move (tested). A suffix guard
+      rejects double-suffix fusions (no Astermereford).
+    - THE LAND'S KINDS: ridges are Teeth/Spine/Range/Hills by measured
+      height and span; rivers are Beck/Brook/River by length; passes are
+      Stair/Pass/Gap by crossing height (thresholds re-pinned to the
+      measured elevation quartiles: med 90, q25 83); seas are named by
+      area — "X Sea" / "Gulf of X" / "X Deep". The top three roads take
+      names from what they carry: the seat's road, the Ore Road, the
+      Salt Road.
+    - HISTORY TAKES NAMES: a war within two epochs of an ore strike is
+      "the War of the <town> Seam"; treaties are "the Peace of <town>";
+      annexations "the Landing at <town>"; revolts "the <town> Rising";
+      plagues are named by the ground they struck (Fen-Ague in the
+      marshes, Water-Rot downstream, Grey Breath elsewhere). The
+      chronicle files each event under its given name.
+    - EPITHETS: towns earn DERIVED bynames — the Yoked / the Unyoked /
+      the Free / the Gilded / the Ashen / the Hollow / the Mourning /
+      the Rising — first match wins, most towns never earn one (26%
+      do). Exactly recomputable from the exported columns and events;
+      the chronicle closes The Years with the byname roll. Society
+      flavors the BYNAME and the EVENT, never the place name.
+    - Exports: settlement epithet, sea_name, pass_name + pass_elev,
+      road_name, ridge_kind + max_elev, river_kind, events[].name.
+      Schema v35.
+
   THE TWO LEVERS (P2): institutions and isolation become dials.
     - THE SEAT'S EAR (responsiveness, default 45): the reform-or-reaction
       coin was hidden dice — 45% reform, 30% reaction, 25% silence, fixed
@@ -1026,7 +1059,7 @@
 
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
-    const SCHEMA_VERSION = 34;
+    const SCHEMA_VERSION = 35;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
@@ -1153,22 +1186,50 @@
     // ending) and novelty against the used set; the exhaustion fallback
     // extends with the same register's phonology, so even collisions stay
     // in-voice.
-    const markovName = (register, r, used) => {
+    // E6: the raw walk, reusable — a natural-ended word in a register's
+    // phonology within [minL, maxL], or null after honest retries
+    const markovWord = (register, r, minL, maxL) => {
       const chain = NAME_CHAINS[register];
+      for (let a = 0; a < 24; a++) {
+        const w = chainWalk(chain, r, maxL);
+        if (!w || w.length < minL) continue;
+        if (/(..).*\1.*\1/.test(w)) continue; // order-2 stutter loops (e.g. mer-mer-mere)
+        return w;
+      }
+      return null;
+    };
+    const markovName = (register, r, used) => {
       let last = "";
       for (let a = 0; a < 32; a++) {
-        const w = chainWalk(chain, r, 12);
-        if (!w || w.length < 5) continue;
-        if (/(..).*\1.*\1/.test(w)) continue; // order-2 stutter loops (e.g. mer-mer-mere)
+        const w = markovWord(register, r, 5, 12);
+        if (!w) continue;
         last = w;
         const n = w[0].toUpperCase() + w.slice(1);
         if (!used.has(n)) { used.add(n); return n; }
       }
       let n = (last || register)[0].toUpperCase() + (last || register).slice(1);
-      while (used.has(n)) n += ((chainWalk(chain, r, 8) || "an").slice(0, 2));
+      while (used.has(n)) n += ((chainWalk(NAME_CHAINS[register], r, 8) || "an").slice(0, 2));
       used.add(n);
       return n;
     };
+    // E6: THE TOPONYM GRAMMAR — the qualifying parts are chosen by the
+    // LAND itself (geology only, so the toponymy stays byte-stable across
+    // every society knob and capital move): a river mouth earns its
+    // -mouth, the fens their Fen, ore country its Delf, the high country
+    // its Tor. Roughly half of all places keep the plain base word.
+    const PLACE_PARTS = {
+      mouth:  ["{b}mouth"],
+      river:  ["{b}ford", "{b} Ford", "{b}mere", "{b}-on-{R}"],
+      coast:  ["{b} Haven", "{b} Strand", "{b}ness"],
+      high:   ["High {b}", "{b} Crag", "{b} Fell", "{b} Tor"],
+      marsh:  ["{b} Fen", "{b}sedge"],
+      forest: ["{b}holt", "{b} Weald"],
+      ore:    ["{b} Delf", "Nether {b}", "{b}delve"],
+      hold:   ["{b}hold", "{b}gard"],
+      plain:  ["{b}"]
+    };
+    const SUFFIXY = /(mere|ford|holt|wick|mouth|ness|delf|hold|gard|sedge|delve|by|moor|well|brook|field|dale|stead)$/;
+    const harborName = (n) => / (Haven|Strand)$/.test(n) ? n : n + " Harbor";
     // register is a landscape fact: read only from blind geology
     const nameRegister = (reg) => (reg.endowment0 >= 50 || reg.ruggedness >= 60) ? "frontier" : "lowland";
     const makeName = (r) => markovName("lowland", r, new Set());
@@ -1507,6 +1568,7 @@
           if (d < bd) { bd = d; bi = i; }
         });
         p.regionIdx = bi;
+        p.elev = Math.round(elevAt(p.x, p.y)); // E6: the crossing's height names its kind
       });
       regions.forEach(reg => { reg.isPass = 0; });
       passes.forEach(p => { regions[p.regionIdx].isPass = 1; });
@@ -1899,6 +1961,7 @@
           }
         }
         top.sort((a2, b2) => b2.e - a2.e || a2.x - b2.x);
+        R.maxElev = top.length ? Math.round(top[0].e) : Math.round(elevAt(R.pts[0][0], R.pts[0][1]));
         for (const t2 of top) {
           if (peaks.length && peaks.some(pk => Math.hypot(pk.x - t2.x, pk.y - t2.y) < 70)) continue;
           peaks.push({ x: t2.x, y: t2.y });
@@ -3427,15 +3490,54 @@
         reg.uncounted = Math.round(reg.population * reg.legibility / 100 * 0.3);
       });
 
-      // E3: names walked from the region's own substream, register from its
-      // geology — the whole toponymy is identical across capital moves,
-      // weight changes, and epoch settings of the same seed. One shared
-      // used-set keeps every name in the world unique (settlements first,
-      // then the shrines take their liturgical dedications).
+      // E3/E6: names walked from the region's own substream, register AND
+      // grammar from its geology — the whole toponymy is identical across
+      // capital moves, weight changes, and epoch settings of the same
+      // seed. One shared used-set keeps every name in the world unique.
       const usedNames = new Set();
       regions.forEach(reg => { reg.nameRegister = nameRegister(reg); });
+      // rivers and ridges take their names FIRST now: the grammar can say
+      // "{town}-on-{river}", and the mountain kinds read their height
+      geo.ridges.forEach(R => {
+        R.name = markovName("frontier", sx("ridge#" + R.id), usedNames);
+        const span = Math.hypot(R.pts[0][0] - R.pts[R.pts.length - 1][0], R.pts[0][1] - R.pts[R.pts.length - 1][1]);
+        R.kind = (R.maxElev >= 86) ? "Teeth" : (span >= 520) ? "Spine" : (R.maxElev >= 68) ? "Range" : "Hills";
+      });
+      geo.rivers.forEach(RV => {
+        RV.name = markovName("lowland", sx("river#" + RV.id), usedNames);
+        RV.kind = RV.chain.length <= 3 ? "Beck" : RV.chain.length <= 5 ? "Brook" : "River";
+      });
+      const mouthSet = new Set(geo.rivers.map(RV => RV.chain[RV.chain.length - 1]));
+      const capWord = (w) => w[0].toUpperCase() + w.slice(1);
+      const placeName = (reg2, idx, r) => {
+        const pools = [];
+        if (mouthSet.has(idx)) pools.push(PLACE_PARTS.mouth);
+        else if (reg2.onRiver === 1) pools.push(PLACE_PARTS.river);
+        if (reg2.onCoast === 1) pools.push(PLACE_PARTS.coast);
+        if (reg2.elevation >= 62) pools.push(PLACE_PARTS.high);
+        if (reg2.biome === "marsh") pools.push(PLACE_PARTS.marsh);
+        if (reg2.biome === "forest") pools.push(PLACE_PARTS.forest);
+        if (reg2.endowment0 >= 50) pools.push(PLACE_PARTS.ore);
+        if (reg2.ruggedness >= 60) pools.push(PLACE_PARTS.hold);
+        pools.push(PLACE_PARTS.plain, PLACE_PARTS.plain); // the plain majority
+        for (let t = 0; t < 24; t++) {
+          const pool = pools[Math.floor(r() * pools.length)];
+          const pat = pool[Math.floor(r() * pool.length)];
+          const fused = !pat.includes(" ") && pat !== "{b}" && !pat.includes("-on-");
+          const w = markovWord(reg2.nameRegister, r, fused ? 4 : 5, fused ? 7 : 12);
+          if (!w) continue;
+          if (fused && SUFFIXY.test(w)) continue; // no Astermereford
+          let n = pat.replace("{b}", capWord(w));
+          if (n.includes("{R}")) {
+            if (reg2.riverId < 0) continue;
+            n = n.replace("{R}", geo.rivers[reg2.riverId].name);
+          }
+          if (!usedNames.has(n)) { usedNames.add(n); return n; }
+        }
+        return markovName(reg2.nameRegister, r, usedNames); // exhaustion: the old way
+      };
       const settlements = regions.map(reg => ({
-        name: markovName(reg.nameRegister, sx("name#" + reg.id), usedNames),
+        name: placeName(reg, regions.indexOf(reg), sx("name#" + reg.id)),
         nameRegister: reg.nameRegister,
         tier: reg.tier, regionId: reg.id,
         x: reg.c[0], y: reg.c[1],
@@ -3453,15 +3555,40 @@
       // site consecrated mid-run; its stream is keyed by region id, so the
       // dedication is stable however the site came to be)
       sanctionedSites.forEach(s => { s.name = markovName("temple", sx("shrine#" + s.regionId), usedNames); });
-      // mountains speak the frontier tongue; rivers the valley's; the old
-      // world's places keep the old registers (delves in the miners' tongue,
-      // tombs and deadholds in the liturgy; the maelstrom has a dread-name)
-      geo.ridges.forEach(R => { R.name = markovName("frontier", sx("ridge#" + R.id), usedNames); });
-      geo.rivers.forEach(RV => { RV.name = markovName("lowland", sx("river#" + RV.id), usedNames); });
+      // the old world's places keep the old registers (delves in the
+      // miners' tongue, tombs and deadholds in the liturgy)
       geo.ruins.forEach(r => {
         r.name = markovName(r.type === "delve" ? "frontier" : "temple", sx("ruin#" + r.id + "#" + regions[r.regionIdx].id), usedNames);
       });
       if (geo.maelstrom) geo.maelstrom.name = markovName("temple", sx("maelstrom"), usedNames);
+
+      // E6: the waters and the crossings take names of their own — the
+      // sea by its size, the pass by its height
+      geo.seaShapes.forEach((S, i) => {
+        const r2 = sx("seaname#" + i);
+        let area = 0;
+        for (let k = 0; k + 1 < S.outer.length; k++)
+          area += S.outer[k][0] * S.outer[k + 1][1] - S.outer[k + 1][0] * S.outer[k][1];
+        const big = Math.abs(area) / 2 > 120000;
+        for (let t = 0; t < 24; t++) {
+          const w = markovWord("lowland", r2, 4, 9);
+          if (!w) continue;
+          const n = big ? `${capWord(w)} Sea` : (r2() < 0.5 ? `Gulf of ${capWord(w)}` : `${capWord(w)} Deep`);
+          if (!usedNames.has(n)) { usedNames.add(n); S.name = n; break; }
+        }
+        if (!S.name) S.name = markovName("lowland", r2, usedNames) + " Sea";
+      });
+      geo.passes.forEach((p, i) => {
+        const r2 = sx("passname#" + i);
+        const kind = p.elev >= 92 ? "Stair" : p.elev >= 75 ? "Pass" : "Gap"; // measured: pass elev med 90, q25 83
+        for (let t = 0; t < 24; t++) {
+          const w = markovWord("frontier", r2, 4, 8);
+          if (!w) continue;
+          const n = `${capWord(w)} ${kind}`;
+          if (!usedNames.has(n)) { usedNames.add(n); p.name = n; break; }
+        }
+        if (!p.name) p.name = markovName("frontier", r2, usedNames) + " " + kind;
+      });
 
       // E5: the rulers take their names last — in each power's register
       const RULER_REG = { crown: "lowland", temple: "temple", magnate: "frontier" };
@@ -3474,6 +3601,65 @@
       const skywayName = markovName("lowland", sx("skyway"), usedNames);
 
       const capitalName = settlements.find(s => s.tier === "prime").name;
+
+      // E6: the great roads take names from what they carry — the seat's
+      // road, the ore road, the salt road — walking the traffic ranking
+      {
+        const byT = [...roadEdges].sort((a2, b2) => b2.traffic - a2.traffic || a2.a - b2.a || a2.b - b2.b);
+        const givenRoad = new Set();
+        let namedRoads = 0;
+        for (const e of byT) {
+          if (namedRoads >= 3) break;
+          const touches = (pred) => pred(regions[e.a]) || pred(regions[e.b]);
+          let n = null;
+          if ((regions[e.a].isCapital || regions[e.b].isCapital) && !givenRoad.has("seat")) { n = `the ${capitalName} Road`; givenRoad.add("seat"); }
+          else if (touches(r3 => r3.refining > 0) && !givenRoad.has("ore")) { n = "the Ore Road"; givenRoad.add("ore"); }
+          else if (touches(r3 => r3.isPort === 1) && !givenRoad.has("salt")) { n = "the Salt Road"; givenRoad.add("salt"); }
+          if (n) { e.name = n; namedRoads++; }
+        }
+      }
+
+      // E6: HISTORY TAKES NAMES — matched to what actually happened: a war
+      // that followed a strike is a Seam War; a plague in the fens is the
+      // Fen-Ague; the treaty is copied fair as the Peace of its table
+      events.forEach((ev, i) => {
+        if (ev.region_id === undefined) return;
+        const rn = sx("evname#" + i);
+        const tn = settlements.find(s2 => s2.regionId === ev.region_id);
+        const y = 1000 + 25 * ev.epoch;
+        if (ev.type === "war") {
+          const chained = events.some(s2 => s2.type === "ore_strike" && ev.epoch > s2.epoch && ev.epoch <= s2.epoch + 2);
+          ev.name = chained ? `the War of the ${tn.name} Seam`
+            : rn() < 0.5 ? `the ${tn.name} War` : `the War of ${y}`;
+        } else if (ev.type === "treaty") ev.name = `the Peace of ${tn.name}`;
+        else if (ev.type === "annexation") ev.name = `the Landing at ${tn.name}`;
+        else if (ev.type === "revolt") ev.name = `the ${tn.name} Rising`;
+        else if (ev.type === "blight_plague") {
+          const reg3 = regions.find(r3 => r3.id === ev.region_id);
+          const pool = reg3.biome === "marsh" ? ["Fen-Ague", "Marsh Breath"]
+            : reg3.downstreamBlight > 0 ? ["Water-Rot", "River Fever"]
+            : ["Grey Breath", "Ash Fever", "Long Cough"];
+          ev.name = `the ${pool[Math.floor(rn() * pool.length)]} of ${y}`;
+        }
+      });
+
+      // E6: EPITHETS — social bynames, DERIVED (exactly recomputable from
+      // the exported columns and timeline; first match wins, most never
+      // earn one). The name is the land's; the byname is history's.
+      regions.forEach(reg => {
+        const won = events.some(ev => ev.type === "revolt" && ev.outcome === "won" && ev.region_id === reg.id);
+        const plag = events.some(ev => ev.type === "blight_plague" && ev.region_id === reg.id);
+        reg.epithet =
+          (reg.occupiedEpoch !== -1 && !reg.occupied) ? "the Unyoked" :
+          reg.occupied ? "the Yoked" :
+          won ? "the Free" :
+          reg.eliteShare >= 80 ? "the Gilded" :
+          reg.blight >= 80 ? "the Ashen" :
+          reg.boomBust === "collapse" ? "the Hollow" :
+          plag ? "the Mourning" :
+          (reg.boomBust === "boom" && reg.wealth >= 60) ? "the Rising" : null;
+      });
+      settlements.forEach(s2 => { s2.epithet = regions[s2.regionId].epithet; });
       return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName,
         dominion: dominionAt !== -1 ? { arrived: dominionAt, foothold: footholdIdx } : null };
     }
@@ -3593,7 +3779,7 @@
         const A = model.regions[e.a], B = model.regions[e.b];
         features.push({
           type: "Feature",
-          properties: { kind: "road", road_class: e.cls, traffic: e.traffic, from_region: A.id, to_region: B.id },
+          properties: { kind: "road", road_class: e.cls, road_name: e.name || null, traffic: e.traffic, from_region: A.id, to_region: B.id },
           geometry: { type: "LineString", coordinates: [
             [round2(A.c[0]), round2(A.c[1])], [round2(B.c[0]), round2(B.c[1])]
           ] }
@@ -3616,7 +3802,7 @@
       model.ridges.forEach(R => {
         features.push({
           type: "Feature",
-          properties: { kind: "ridge", ridge_id: R.id, ridge_name: R.name },
+          properties: { kind: "ridge", ridge_id: R.id, ridge_name: R.name, ridge_kind: R.kind, max_elev: R.maxElev },
           geometry: { type: "LineString", coordinates: R.pts }
         });
       });
@@ -3624,14 +3810,14 @@
         const t = model.settlements.find(s => s.regionId === model.regions[p.regionIdx].id);
         features.push({
           type: "Feature",
-          properties: { kind: "pass", ridge_id: p.ridgeId, region_id: model.regions[p.regionIdx].id, pass_name: t.name + " Pass", held_by: p.heldBy },
+          properties: { kind: "pass", ridge_id: p.ridgeId, region_id: model.regions[p.regionIdx].id, pass_name: p.name, pass_elev: p.elev, held_by: p.heldBy },
           geometry: { type: "Point", coordinates: [p.x, p.y] }
         });
       });
       model.rivers.forEach(RV => {
         features.push({
           type: "Feature",
-          properties: { kind: "river", river_id: RV.id, river_name: RV.name },
+          properties: { kind: "river", river_id: RV.id, river_name: RV.name, river_kind: RV.kind },
           geometry: { type: "LineString", coordinates: RV.chain.map(ri => {
             const c = model.regions[ri].c; return [round2(c[0]), round2(c[1])];
           }) }
@@ -3648,7 +3834,7 @@
       model.seaShapes.forEach((S, i) => {
         features.push({
           type: "Feature",
-          properties: { kind: "sea", sea_id: i, sea_level: model.seaLevel, islands: S.holes.length },
+          properties: { kind: "sea", sea_id: i, sea_name: S.name || null, sea_level: model.seaLevel, islands: S.holes.length },
           geometry: { type: "Polygon", coordinates: [S.outer, ...S.holes] }
         });
       });
@@ -3663,7 +3849,7 @@
         const t = model.settlements.find(s => s.regionId === reg.id);
         features.push({
           type: "Feature",
-          properties: { kind: "port", region_id: reg.id, port_name: t.name + " Harbor", held_by: reg.heldBy },
+          properties: { kind: "port", region_id: reg.id, port_name: harborName(t.name), held_by: reg.heldBy },
           geometry: { type: "Point", coordinates: [round2(reg.shorePt[0]), round2(reg.shorePt[1])] }
         });
       });
@@ -3732,6 +3918,7 @@
             kind: "settlement",
             name: s.name,
             name_register: s.nameRegister,
+            epithet: s.epithet || null,
             tier: s.tier,
             region_id: s.regionId,
             population: s.population,
@@ -4256,9 +4443,9 @@
       }
       if (model.ridges.length) {
         const shadowN = model.regions.filter(r => r.rangeShadow === 1).length;
-        const passNames = model.passes.map(p => `${town(model.regions[p.regionIdx].id).name} Pass`);
+        const passNames = model.passes.map(p => p.name);
         L.push(``);
-        L.push(`The ${list(model.ridges.map(R => R.name))} ${model.ridges.length > 1 ? "ranges wall" : "Range walls"} the country, and the roads over the rock go by ${list(passNames)}. ` +
+        L.push(`The ${list(model.ridges.map(R => `${R.name} ${R.kind}`))} ${model.ridges.length > 1 ? "wall" : "walls"} the country, and the roads over the rock go by ${list(passNames)}. ` +
           (shadowN > 0
             ? `${shadowN} of the realm's regions lie in the mountains' shadow, on the wrong side of the wall from ${model.capitalName} — and the chronicle will show what that costs.`
             : `By the founding's luck, no region lies beyond the wall from ${model.capitalName}; the chronicle notes that such luck is geography, not justice.`));
@@ -4267,7 +4454,7 @@
         const head = town(model.regions[RV.chain[0]].id).name;
         const mouth = town(model.regions[RV.chain[RV.chain.length - 1]].id).name;
         L.push(``);
-        L.push(`The ${RV.name} comes down off the high ground by ${head} and runs through ${RV.chain.length} regions to the border. ` +
+        L.push(`The ${RV.name}${RV.kind === "River" ? "" : " " + RV.kind} comes down off the high ground by ${head} and runs through ${RV.chain.length} regions to the border. ` +
           `The towns along it drink in order: ${head} drinks it clean, and ${mouth}, at the mouth, drinks whatever every town and works upstream let fall into the water. ` +
           `The order was set by the land before anyone built anything, and no one who lives at the mouth chose it.`);
       }
@@ -4276,10 +4463,11 @@
         const portBits = ports.map(reg => {
           const t = town(reg.id);
           const riverPort = reg.onRiver === 1 && reg.downstreamBlight > 0;
-          return `${t.name} Harbor` + (riverPort ? ` (which drinks the river last and ships it first)` : ``);
+          return harborName(t.name) + (riverPort ? ` (which drinks the river last and ships it first)` : ``);
         });
         L.push(``);
-        L.push(`The sea lies to the ${list(model.seaSides)}. ` +
+        const chartNames = model.seaShapes.map(S => S.name).filter(Boolean);
+        L.push(`The sea lies to the ${list(model.seaSides)}${chartNames.length ? `; the charts name it ${list(chartNames)}` : ""}. ` +
           (ports.length
             ? `The realm's ${ports.length > 1 ? "gates are" : "gate is"} ${list(portBits)}: whatever the mines raise and the works refine leaves the country there, and whoever holds the quay holds the toll. ` +
               `Distance to the water is the realm's second lottery, drawn at the founding like the first.`
@@ -4342,7 +4530,7 @@
           else if (ev.type === "blight_plague") line = pick([
             `Plague took ${t.name}. The blight had sat heavy on that country for years, and when the sickness came it found a town already half-poisoned. A third of the people were carried off or fled.`,
             `In this year the sickness came to ${t.name}, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do.`,
-          ]);
+          ]) + (ev.name ? ` The roads named it ${ev.name}.` : ``);
           else if (ev.type === "relic_calamity") line = pick([
             `The relic ground by ${t.name} woke. What the old power did there is not well described in the accounts that survive, and the land it touched bears the scar still.`,
             `At the sanctioned ground by ${t.name} something of the old world stirred and broke. The Temple calls it a testing; the survivors called it otherwise. The blight of it has not faded.`,
@@ -4362,7 +4550,8 @@
             line = (chained
               ? `War came to ${t.name}, ${25 * (ev.epoch - strikeEv.epoch)} years after the strike — armies follow ore.${powers} `
               : `War came to ${t.name}, as it comes to ground that great powers claim and none can hold.${powers} `) +
-              `When the fighting burned out, ${tierWord[t.tier]} was the poorer by a third of its people and a quarter of its wealth, and the mines and works were ruined ground. The Crown's garrison arrived after the blood, and stayed.`;
+              `When the fighting burned out, ${tierWord[t.tier]} was the poorer by a third of its people and a quarter of its wealth, and the mines and works were ruined ground. The Crown's garrison arrived after the blood, and stayed.` +
+              (ev.name ? ` The scribes head the page: ${ev.name}.` : ``);
           }
           else if (ev.type === "seizure") {
             const F = ev.faction === "crown" ? "the Crown" : ev.faction === "temple" ? "the Temple" : "the magnates";
@@ -4413,6 +4602,7 @@
               : (ev.outcome === "won"
                 ? `${t.name} rose. The wardline broke before the mob — and the mob held. ${t.name} keeps what it makes now, and its gates toll no one; the ledgers record it as a dangerous precedent, and the town records it as the first good year.`
                 : `${t.name} rose, and was put down. The garrison came after the hangings, and the injustice that caused the rising was carefully recorded and carefully unaddressed.`);
+            if (ev.name) line += ` The people keep the date as ${ev.name}.`;
           }
           else if (ev.type === "treaty") {
             const FN3 = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };
@@ -4420,12 +4610,14 @@
             const terms = (ev.ceded > 0 ? `${L2} ceded ${ev.ceded === 1 ? "a gate" : ev.ceded + " gates"}` : `${L2} ceded nothing but its claim`) +
               (ev.tribute > 0 ? ` and paid ${ev.tribute} in tribute out of its ledger` : ` and kept its ledger, having little in it`);
             line = `In the winter after the fighting, terms were set at ${t.name}. ${W2.charAt(0).toUpperCase() + W2.slice(1)} wrote them: ${terms}. ` +
-              `The chronicle observes that the terms were written by the party with the deeper ledger, as terms usually are.`;
+              `The chronicle observes that the terms were written by the party with the deeper ledger, as terms usually are.` +
+              (ev.name ? ` The clerks copied it fair as ${ev.name}.` : ``);
           }
           else if (ev.type === "annexation") {
-            line = `The Dominion's sails stood off ${t.name} Harbor at first light, and by winter its writ ran over ${ev.occupied} regions. ` +
+            line = `The Dominion's sails stood off ${harborName(t.name)} at first light, and by winter its writ ran over ${ev.occupied} regions. ` +
               `There was no war to record: the fleet was the argument. The quays now toll for a power beyond the sea, the yield of the occupied country is assessed at the water, ` +
-              `and the wires came with the garrison — the first country in the realm to be wired entire, because its cargo is wanted elsewhere.`;
+              `and the wires came with the garrison — the first country in the realm to be wired entire, because its cargo is wanted elsewhere.` +
+              (ev.name ? ` The Dominion's own registers file it as ${ev.name}.` : ``);
           }
           else if (ev.type === "consecration") {
             const shrine = model.sanctionedSites.find(s => s.regionId === ev.region_id);
@@ -4433,6 +4625,12 @@
               `Pilgrims walk that road now. Where the Crown's writ had failed and the magnates' ledgers saw nothing worth the ink, the faith planted its standard — after the harm, claiming the ground.`;
           }
           L.push(`**Year ${y}.** ${line}`);
+          L.push(``);
+        }
+        // E6: the years leave bynames where they pass — derived, not drawn
+        const byn = model.regions.filter(r => r.epithet).map(r => `${town(r.id).name} ${r.epithet}`);
+        if (byn.length) {
+          L.push(`The chronicle closes its count of the years with the names they left behind. The realm now speaks of ${list(byn)} — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.`);
           L.push(``);
         }
       }
@@ -4762,6 +4960,16 @@
         const sub = (rg) => "M" + rg.map(pt => `${pt[0].toFixed(1)},${fy(pt[1]).toFixed(1)}`).join("L") + "Z";
         const d = [S.outer, ...S.holes].map(sub).join(" ");
         parts.push(`<path class="sea" d="${d}" fill-rule="evenodd" fill="#4a7fae" fill-opacity="0.55" stroke="#2b5f8a" stroke-width="2"/>`);
+        if (S.name) { // E6: the chart takes its name at the water's centroid
+          let cx = 0, cy = 0, aa = 0;
+          for (let k = 0; k + 1 < S.outer.length; k++) {
+            const w2 = S.outer[k][0] * S.outer[k + 1][1] - S.outer[k + 1][0] * S.outer[k][1];
+            aa += w2; cx += (S.outer[k][0] + S.outer[k + 1][0]) * w2; cy += (S.outer[k][1] + S.outer[k + 1][1]) * w2;
+          }
+          if (Math.abs(aa) > 1e-6) { cx /= 3 * aa; cy /= 3 * aa;
+            parts.push(`<text x="${cx.toFixed(1)}" y="${fy(cy).toFixed(1)}" font-size="15" font-style="italic" letter-spacing="3" text-anchor="middle" fill="#1d4f7a" opacity="0.75">${esc(S.name)}</text>`);
+          }
+        }
       });
 
       // Roads (under everything else): width by class, tracks dashed
@@ -4829,7 +5037,7 @@
         }).join(" ");
         parts.push(`<polyline class="river" points="${pl}" fill="none" stroke="#3d7ab5" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.65"/>`);
         const mc = model.regions[RV.chain[Math.floor(RV.chain.length / 2)]].c;
-        parts.push(`<text x="${mc[0].toFixed(1)}" y="${(fy(mc[1]) + 18).toFixed(1)}" font-size="12" font-style="italic" text-anchor="middle" fill="#3d7ab5" paint-order="stroke" stroke="#fff" stroke-width="3">the ${esc(RV.name)}</text>`);
+        parts.push(`<text x="${mc[0].toFixed(1)}" y="${(fy(mc[1]) + 18).toFixed(1)}" font-size="12" font-style="italic" text-anchor="middle" fill="#3d7ab5" paint-order="stroke" stroke="#fff" stroke-width="3">${RV.kind === "River" ? "the " + esc(RV.name) : esc(RV.name) + " " + esc(RV.kind)}</text>`);
       });
 
       // M1: the mountains are MASS — hachures down both flanks, peaks at
@@ -4841,13 +5049,14 @@
         const pl = R.pts.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join(" ");
         parts.push(`<polyline class="ridge" points="${pl}" fill="none" stroke="#4a3421" stroke-width="2" stroke-dasharray="1 6" stroke-linejoin="round" stroke-linecap="round" opacity="0.3"/>`);
         const mid = R.pts[Math.floor(R.pts.length / 2)];
-        parts.push(`<text x="${mid[0].toFixed(1)}" y="${(fy(mid[1]) - 10).toFixed(1)}" font-size="13" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(R.name)} Range</text>`);
+        parts.push(`<text x="${mid[0].toFixed(1)}" y="${(fy(mid[1]) - 10).toFixed(1)}" font-size="13" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(R.name)} ${esc(R.kind)}</text>`);
       });
       model.peaks.forEach(pk => {
         parts.push(`<text class="peak" x="${pk.x.toFixed(1)}" y="${(fy(pk.y) + 5).toFixed(1)}" font-size="14" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">▲</text>`);
       });
       model.passes.forEach(p => {
         parts.push(`<text class="pass" x="${p.x.toFixed(1)}" y="${(fy(p.y) + 6).toFixed(1)}" font-size="17" font-weight="700" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">∩</text>`);
+        parts.push(`<text x="${p.x.toFixed(1)}" y="${(fy(p.y) + 20).toFixed(1)}" font-size="10" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="2.5" opacity="0.85">${esc(p.name)}</text>`);
       });
 
       // Sanctioned sites (Temple): violet triangles beside the settlement
@@ -4957,7 +5166,7 @@
         ["uncounted", model.regions.reduce((s, r) => s + r.uncounted, 0).toLocaleString("en-US") + " people the census misses"],
         ["epochs", (() => { const c = model.regions.reduce((m, r) => { m[r.boomBust] = (m[r.boomBust] || 0) + 1; return m; }, {}); return `${params.ep} run — ${c.boom || 0} boom / ${c.stable || 0} stable / ${c.decline || 0} decline / ${c.collapse || 0} collapse`; })()],
         ["events", model.events.length
-          ? model.events.map(ev => `e${ev.epoch}: ${ev.type.replace("_", " ")}${ev.region_id !== undefined ? " @ #" + ev.region_id : ev.measure ? " (" + ev.measure.replace("_", " ") + ")" : ev.name ? " (" + ev.name + ")" : ""}`).join(" · ")
+          ? model.events.map(ev => `e${ev.epoch}: ${ev.name && ev.name.startsWith("the ") ? ev.name : ev.type.replace("_", " ") + (ev.region_id !== undefined ? " @ #" + ev.region_id : ev.measure ? " (" + ev.measure.replace("_", " ") + ")" : ev.name ? " (" + ev.name + ")" : "")}`).join(" · ")
           : "none — a quiet age"],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["the owners", (() => { const FR = computeFindings(model); return FR.owners ? `${FR.owners.pop_pct}% of people hold ${FR.owners.coin_pct}% of the coin` : "\u2014"; })()],
@@ -4979,7 +5188,7 @@
       const reg = model.regions[inspectId];
       const st = model.settlements.find(s => s.regionId === reg.id);
       const yr = (e) => 1000 + 25 * e;
-      document.getElementById("inspName").textContent = st.name;
+      document.getElementById("inspName").textContent = st.name + (reg.epithet ? ", " + reg.epithet : "");
       document.getElementById("inspSub").textContent =
         `${reg.tier} · region #${reg.id} · ${reg.biome}${reg.occupied ? " · OCCUPIED" : ""}`;
       const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
@@ -5013,7 +5222,7 @@
         `</table>`);
       const stands = [];
       if (reg.refining > 0) stands.push("the works (refinery)");
-      if (reg.isPort === 1) stands.push(`${st.name} Harbor`);
+      if (reg.isPort === 1) stands.push(harborName(st.name));
       if (reg.isSkyport === 1) stands.push(`${st.name} Aerie`);
       if (reg.hasTower === 1) stands.push(`${st.name} Tower (apostate)`);
       if (reg.hasBridge === 1) stands.push(`${st.name} Bridge`);
@@ -5040,7 +5249,7 @@
       const evs = model.events.filter(ev => ev.region_id === reg.id);
       if (evs.length || reg.occupiedEpoch !== -1) {
         L.push(`<div class="insp-sec">ITS STORY</div>` +
-          evs.map(ev => `<div class="insp-ev"><b>${yr(ev.epoch)}</b> — ${ev.type.replace(/_/g, " ")}${ev.outcome ? " (" + ev.outcome + ")" : ""}${ev.faction ? " (" + ev.faction + ")" : ""}</div>`).join("") +
+          evs.map(ev => `<div class="insp-ev"><b>${yr(ev.epoch)}</b> — ${ev.name && ev.name.startsWith("the ") ? ev.name : ev.type.replace(/_/g, " ")}${ev.outcome ? " (" + ev.outcome + ")" : ""}${ev.faction ? " (" + ev.faction + ")" : ""}</div>`).join("") +
           (reg.occupiedEpoch !== -1 && !reg.occupied ? `<div class="insp-ev"><b>freed</b> — threw the Dominion out</div>` : ""));
       }
       document.getElementById("inspBody").innerHTML = L.join("");

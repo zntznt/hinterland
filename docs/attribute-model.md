@@ -269,7 +269,20 @@
 > panel) composed from the founding, the dated event timeline with the causal
 > chains told as chains, and the closing state of the realm; every event is
 > narrated by settlement name and date, and the prose references only what
-> the export carries. With time real,
+> the export carries. **The naming of things (E6)**: the words are grown
+> from the world — a toponym grammar whose qualifying parts are selected by
+> GEOLOGY (a river-mouth town earns "-mouth", ore country its Delf, the
+> high country High/Tor/Fell, the fens their Fen; measured 53/22/25
+> plain/fused/spaced), so the toponymy stays byte-stable across every knob
+> while no longer being a list of single words; the land takes kinds from
+> its measured size (Teeth/Spine/Range/Hills, Beck/Brook/River,
+> Stair/Pass/Gap pinned to the elevation quartiles, seas named by area);
+> the top three roads are named for their cargo; history files its events
+> under names that recompute exactly (Seam Wars, Peaces, Risings, Landings,
+> ground-matched plagues); and towns earn DERIVED bynames (the Yoked / the
+> Free / the Gilded / the Ashen…, 26% of towns, first match wins) — the
+> chronicle closes The Years with the byname roll. Society flavors the
+> byname and the event name, never the place name. With time real,
 > `abandonment_index` became true hysteresis (peak wealth − present wealth) and
 > dead lodes emerge in-run; the arrow-inversion caveat on deep time is thereby
 > partially resolved (founding-era/shock reconstruction remains). Remaining

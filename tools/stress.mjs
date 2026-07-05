@@ -3,13 +3,17 @@ import { JSDOM } from "jsdom";
 import * as d3d from "d3-delaunay";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-// NOTE: the suite generates ~450 full JSDOM worlds; run with
+// NOTE: the suite generates ~450 full JSDOM worlds. gen() takes one
+// event-loop breath per world — V8 pins every WeakRef target (jsdom
+// holds one per node) until a microtask checkpoint, so a synchronous
+// run would retain every closed window and die at the heap cap. With
+// the breath the peak stays low; a generous cap still never hurts:
 //   node --max-old-space-size=13500 test.mjs
 let failures = 0;
 const fail = (m) => { console.error("FAIL: " + m); failures++; };
 const ok = (m) => console.log("ok  : " + m);
 
-function gen(hash, keepDom = false) {
+async function gen(hash, keepDom = false) {
   let captured = null;
   const dom = new JSDOM(html, {
     runScripts: "dangerously",
@@ -30,7 +34,14 @@ function gen(hash, keepDom = false) {
   const series = JSON.parse(captured);
   doc.getElementById("dlChron").click();
   const chron = captured;
-  if (!keepDom) { dom.window.close(); return { gj, series, chron, doc: null, window: null }; }
+  if (!keepDom) dom.window.close();
+  // one event-loop breath per world: V8 keeps every WeakRef target (jsdom
+  // holds one per node) in the kept-objects set until a microtask
+  // checkpoint, and finalizers only run between turns — a fully
+  // synchronous run would retain every closed window and die at the heap
+  // cap. The breath lets the ordinary GC actually reclaim the worlds.
+  await new Promise((r) => setImmediate(r));
+  if (!keepDom) return { gj, series, chron, doc: null, window: null };
   return { gj, series, chron, doc, window: dom.window };
 }
 
@@ -521,10 +532,10 @@ function validate(gj, tag) {
   }
 
   // G2 rivers: chains valid + named, downstream carriage exactly recomputable
+  // (v39: the LineString is the traced BED; the chain rides in chain_regions)
   {
     const rivers = riversOf(gj);
     if (rivers.length > 2) return fail(`${tag}: river count ${rivers.length}`);
-    const anchor = new Map(settles.map(st => [st.properties.region_id, st.geometry.coordinates]));
     const byRiver = new Map();
     for (const r of regions) {
       const p = r.properties;
@@ -544,11 +555,14 @@ function validate(gj, tag) {
       if (!/^[A-Z][a-z]{4,19}$/.test(p.river_name || "")) return fail(`${tag}: malformed river_name`);
       const chain = (byRiver.get(p.river_id) || []).sort((a, b) => a.river_pos - b.river_pos);
       if (chain.length < 2) return fail(`${tag}: river ${p.river_id} chain too short`);
-      if (RV.geometry.coordinates.length !== chain.length) return fail(`${tag}: river coords != chain length`);
+      if (!Array.isArray(p.chain_regions) || p.chain_regions.length !== chain.length)
+        return fail(`${tag}: chain_regions != chain length`);
+      if (RV.geometry.coordinates.length < chain.length) return fail(`${tag}: trace thinner than its chain`);
+      for (const [tx, ty] of RV.geometry.coordinates)
+        if (tx < -0.01 || tx > 1000.01 || ty < -0.01 || ty > 1000.01) return fail(`${tag}: trace coord OOB`);
       for (let k = 0; k < chain.length; k++) {
         if (chain[k].river_pos !== k) return fail(`${tag}: river_pos not contiguous`);
-        const a = anchor.get(chain[k].region_id), c = RV.geometry.coordinates[k];
-        if (a[0] !== c[0] || a[1] !== c[1]) return fail(`${tag}: river coord ${k} != region anchor`);
+        if (p.chain_regions[k] !== chain[k].region_id) return fail(`${tag}: chain_regions[${k}] != downstream order`);
         if (k > 0 && chain[k].elevation >= chain[k - 1].elevation)
           return fail(`${tag}: river flows uphill at pos ${k} (${chain[k - 1].elevation} -> ${chain[k].elevation})`);
       }
@@ -1193,16 +1207,19 @@ function validate(gj, tag) {
 
 // ===========================================================================
 const BASE = "#seed=alpha&regions=24&relax=3&bias=70&we=35&wf=25&wt=30&wg=10";
-const A1 = gen(BASE, true);
+const A1 = await gen(BASE, true);
 
 console.log("# structural stress (120 configs, 5–64 regions, default weights, varied gt)");
 for (let i = 0; i < 120; i++) {
-  const R = gen(`#seed=s${i}&regions=${5 + (i % 60)}&relax=${i % 9}&bias=${(i * 7) % 101}&gt=${(i * 13) % 101}&db=${(i * 17) % 101}&ep=${(i * 5) % 13}`);
+  const R = await gen(`#seed=s${i}&regions=${5 + (i % 60)}&relax=${i % 9}&bias=${(i * 7) % 101}&gt=${(i * 13) % 101}&db=${(i * 17) % 101}&ep=${(i * 5) % 13}`);
   validate(R.gj, `cfg ${i}`); // gen() auto-closes its page now
 }
 if (failures === 0) ok("all 120 generations structurally valid (skeleton, bands, geology, refineries, rings)");
 
-// render smoke (default = data mode: contours draw above the waterline only — #60 G4)
+// render smoke (default = data mode: contours draw above the waterline
+// only — #60 G4; ridges and passes are ATLAS ink per #60/#63, so the data
+// boot draws NONE — re-pinned: the old expectation predated the two-genre
+// split and had failed ever since. The atlas flip below checks the ink.)
 const svg = A1.doc.querySelector("#stage svg");
 const nCircles = svg ? svg.querySelectorAll("circle").length : 0;
 const nRects = svg ? svg.querySelectorAll("rect:not(.coast)").length : 0;
@@ -1220,9 +1237,27 @@ const nRuin = svg ? svg.querySelectorAll("text.ruin").length : 0;
 const nTower = svg ? svg.querySelectorAll("text.tower").length : 0;
 const nBridge = svg ? svg.querySelectorAll("text.bridge").length : 0;
 const nMael = svg ? svg.querySelectorAll("text.maelstrom").length : 0;
-if (svg && nCircles === regionsOf(A1.gj).length && nRects === Math.max(1, Math.round(regionsOf(A1.gj).length / 16)) && nFac === facilitiesOf(A1.gj).length && nSanct === sanctOf(A1.gj).length && nRoads === roadsOf(A1.gj).length && nGar === garrisonsOf(A1.gj).length && nRidge === ridgesOf(A1.gj).length && nPass === passesOf(A1.gj).length && nRiver === riversOf(A1.gj).length && nSea === A1.gj.features.filter(f => f.properties.kind === "sea").length && nCont === A1.gj.features.filter(f => f.properties.kind === "contour" && f.properties.level > A1.gj.hinterland.sea_level).length && nPort === portsOf(A1.gj).length && nRuin === ruinsOf(A1.gj).length && nTower === towersOf(A1.gj).length && nBridge === bridgesOf(A1.gj).length && nMael === maelOf(A1.gj).length)
-  ok(`SVG renders: ${nCircles} settlement symbols, ${nRects} refinery glyphs, ${nFac} facility glyphs, ${nSanct} sanctioned sites, ${nRoads} road edges, ${nGar} garrisons, ${nRidge} ridges, ${nPass} passes, ${nRiver} rivers, ${nSea} seas, ${nCont} contour levels, ${nPort} ports, ${nRuin} ruins, ${nTower} towers, ${nBridge} bridges, ${nMael} maelstroms`);
+if (svg && nCircles === regionsOf(A1.gj).length && nRects === Math.max(1, Math.round(regionsOf(A1.gj).length / 16)) && nFac === facilitiesOf(A1.gj).length && nSanct === sanctOf(A1.gj).length && nRoads === roadsOf(A1.gj).length && nGar === garrisonsOf(A1.gj).length && nRidge === 0 && nPass === 0 && nRiver === riversOf(A1.gj).length && nSea === A1.gj.features.filter(f => f.properties.kind === "sea").length && nCont === A1.gj.features.filter(f => f.properties.kind === "contour" && f.properties.level > A1.gj.hinterland.sea_level).length && nPort === portsOf(A1.gj).length && nRuin === ruinsOf(A1.gj).length && nTower === towersOf(A1.gj).length && nBridge === bridgesOf(A1.gj).length && nMael === maelOf(A1.gj).length)
+  ok(`SVG renders: ${nCircles} settlement symbols, ${nRects} refinery glyphs, ${nFac} facility glyphs, ${nSanct} sanctioned sites, ${nRoads} road edges, ${nGar} garrisons, ${nRiver} rivers, ${nSea} seas, ${nCont} contour levels, ${nPort} ports, ${nRuin} ruins, ${nTower} towers, ${nBridge} bridges, ${nMael} maelstroms (data lens: no terrain ink)`);
 else fail(`SVG render mismatch (circles ${nCircles}, rects ${nRects}, fac ${nFac}, sanct ${nSanct}, roads ${nRoads}, gar ${nGar}, ridges ${nRidge}, passes ${nPass})`);
+
+// the pen's map carries the terrain ink: flip to atlas, recount, flip back
+{
+  A1.doc.getElementById("modeAtlas").click();
+  const svgA = A1.doc.querySelector("#stage svg");
+  const aRidge = svgA ? svgA.querySelectorAll("path.ridge").length : 0;
+  const aPass = svgA ? svgA.querySelectorAll("text.pass").length : 0;
+  const aRiver = svgA ? svgA.querySelectorAll("path.river").length : 0;
+  // passes on trivial ridges (max_elev < 60) are dropped even in atlas
+  const passExp = passesOf(A1.gj).filter(p => {
+    const R = ridgesOf(A1.gj).find(r => r.properties.ridge_id === p.properties.ridge_id);
+    return R && R.properties.max_elev >= 60;
+  }).length;
+  A1.doc.getElementById("modeData").click(); // leave A1 on the data lens
+  if (aRidge === ridgesOf(A1.gj).length && aPass === passExp && aRiver === riversOf(A1.gj).length)
+    ok(`atlas mode carries the terrain ink (${aRidge} ridges, ${aPass} passes, ${aRiver} rivers)`);
+  else fail(`atlas ink mismatch (ridges ${aRidge}, passes ${aPass}/${passExp}, rivers ${aRiver})`);
+}
 
 console.log("# Phase 2 acceptance: legacy mode, emergent mode, resource curse, seat");
 
@@ -1230,7 +1265,7 @@ console.log("# Phase 2 acceptance: legacy mode, emergent mode, resource curse, s
 {
   let bad = 0;
   for (let i = 0; i < 8; i++) {
-    const g = gen(`#seed=leg${i}&regions=24&relax=2&bias=80&we=0&wf=0&wt=0&wg=100`).gj;
+    const g = (await gen(`#seed=leg${i}&regions=24&relax=2&bias=80&we=0&wf=0&wt=0&wg=100`)).gj;
     const regions = regionsOf(g);
     const capR = regions.find(r => r.properties.is_capital_region === 1);
     const cc = cen(capR.geometry.coordinates[0]);
@@ -1245,7 +1280,7 @@ console.log("# Phase 2 acceptance: legacy mode, emergent mode, resource curse, s
 {
   let sum = 0; const N = 10;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=em${i}&regions=24&relax=2&bias=80&we=35&wf=25&wt=30&wg=0`).gj;
+    const g = (await gen(`#seed=em${i}&regions=24&relax=2&bias=80&we=35&wf=25&wt=30&wg=0`)).gj;
     sum += pearson(col(g, "centrality_to_seat"), col(g, "wealth"));
   }
   const mean = sum / N;
@@ -1259,7 +1294,7 @@ console.log("# Phase 2 acceptance: legacy mode, emergent mode, resource curse, s
   let cursed = 0, rich = 0, quadrant = 0, total = 0, seedsWithCurse = 0;
   const N = 18; // trimmed from 30: tail of a ~480-world run — cumulative jsdom weight under the organic render
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=curse${i}&regions=24&relax=2&bias=80`).gj;
+    const g = (await gen(`#seed=curse${i}&regions=24&relax=2&bias=80`)).gj;
     const ws = col(g, "wealth"), es = col(g, "aetherstone_endowment");
     const mw = median(ws);
     let any = false;
@@ -1284,7 +1319,7 @@ console.log("# Phase 2 acceptance: legacy mode, emergent mode, resource curse, s
 {
   let fertile = 0; const N = 18; // trimmed from 30 with the block above
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=seat${i}&regions=24&relax=2&bias=80`).gj;
+    const g = (await gen(`#seed=seat${i}&regions=24&relax=2&bias=80`)).gj;
     const regions = regionsOf(g);
     const capR = regions.find(r => r.properties.is_capital_region === 1);
     if (capR.properties.fertility >= median(col(g, "fertility"))) fertile++;

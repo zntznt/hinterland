@@ -1122,7 +1122,7 @@
 
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
-    const SCHEMA_VERSION = 38;
+    const SCHEMA_VERSION = 39;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
@@ -1430,6 +1430,25 @@
       }
       return pts[pts.length - 1];
     };
+    // Douglas-Peucker with mandatory anchors: kept indices survive, so a
+    // simplified river trace still owns a point inside every chain region.
+    function dpSimplify(pts, tol, keepIdx) {
+      const marks = new Array(pts.length).fill(false);
+      marks[0] = marks[pts.length - 1] = true;
+      (keepIdx || []).forEach(i => { marks[i] = true; });
+      const rec = (a, b) => {
+        if (b - a < 2) return;
+        let mi = -1, md = -1;
+        for (let i = a + 1; i < b; i++) {
+          const d = distPointSeg(pts[i][0], pts[i][1], pts[a], pts[b]);
+          if (d > md) { md = d; mi = i; }
+        }
+        if (md > tol) { marks[mi] = true; rec(a, mi); rec(mi, b); }
+      };
+      const anchors = marks.map((m, i) => (m ? i : -1)).filter(i => i >= 0);
+      for (let k = 0; k + 1 < anchors.length; k++) rec(anchors[k], anchors[k + 1]);
+      return pts.filter((_, i) => marks[i]);
+    }
 
     // ---- Stage 2: geology (seed + topology ONLY — blind to every social layer)
     // Smooth signed-bump noise field factory: sum of K gaussian bumps.
@@ -1873,6 +1892,173 @@
           Math.abs(elevAt(reg.c[0], reg.c[1] + 30) - e0c), Math.abs(elevAt(reg.c[0], reg.c[1] - 30) - e0c));
         reg.ruggedness = clamp(Math.round(g4c * 4.6 + (e0c > 60 ? (e0c - 60) * 0.7 : 0) + rugNoise() * 26), 0, 100);
       });
+
+      // R1: the river finds its bed. The chain above stays the DRINKING
+      // ORDER society reads — untouched. The BED is additive geology: a
+      // fine polyline walked downhill over the continuous elevAt field,
+      // bent through the chain regions in order, ending only in the water
+      // or off the box. Walked HERE, not at chain time, because the bed
+      // must read the negotiated sea and the relocated anchors.
+      {
+        const rt = sg("rivertrace");
+        // cross-track wander: a pure function of place, no stream consumed
+        const wob = (x, y, k) => {
+          const s2 = Math.sin(x * 12.9898 + y * 78.233 + k * 37.719) * 43758.5453;
+          return (s2 - Math.floor(s2)) * 2 - 1;
+        };
+        const STEP = 9, CAP = 400, PULL = 6.5;
+        // the mouth aims at the SHORE the map actually draws, and takes the
+        // LOW road to it: shore vertices score by distance plus midpoint
+        // elevation, so the run-out rounds a coastal rise into the next bay
+        // instead of climbing straight over it
+        const seaVerts = [];
+        seaShapes.forEach(S => S.outer.forEach(v => seaVerts.push(v)));
+        const seaTarget = (x, y, banned) => {
+          let best = null, bsc = Infinity;
+          for (let i = 0; i < seaVerts.length; i += 3) {
+            const v = seaVerts[i];
+            if (banned && banned.has(v[0] + ":" + v[1])) continue; // proved a dry corner
+            const d = Math.hypot(v[0] - x, v[1] - y);
+            if (d >= bsc) continue; // sc >= d: cannot win
+            const sc = d + 3 * elevAt((x + v[0]) / 2, (y + v[1]) / 2);
+            if (sc < bsc) { bsc = sc; best = v; }
+          }
+          if (best) return best;
+          let bd = Infinity;
+          best = [x, 0];
+          for (const side of seaSides) { // no traced sea at all: the border ends it
+            const p = side === "west" ? [0, y] : side === "east" ? [W, y] : side === "south" ? [x, 0] : [x, W];
+            const d = Math.hypot(p[0] - x, p[1] - y);
+            if (d < bd) { bd = d; best = p; }
+          }
+          return best;
+        };
+        for (const RV of rivers) {
+          const chain = RV.chain;
+          const head = regions[chain[0]];
+          // source: ~12 candidates fanned over the head cell; the highest
+          // dry ground above the anchor wins, else the anchor stands
+          let sx2 = head.c[0], sy2 = head.c[1], se2 = elevAt(sx2, sy2);
+          for (let s2 = 0; s2 < 12; s2++) {
+            const v = head.ring[Math.floor(rt() * (head.ring.length - 1))];
+            const tt = 0.2 + rt() * 0.7;
+            const px = head.c[0] + (v[0] - head.c[0]) * tt, py = head.c[1] + (v[1] - head.c[1]) * tt;
+            const pe = elevAt(px, py);
+            if (!inSeaPoly(px, py) && pe > se2) { se2 = pe; sx2 = px; sy2 = py; }
+          }
+          let x = sx2, y = sy2, ci = 0, th0 = 0;
+          const pts = [[x, y]];
+          const intoWater = (dx2, dy2) => { // 2 extra steps: the mouth visibly enters the sea
+            for (let e2 = 0; e2 < 2; e2++) {
+              const nx2 = clamp(x + dx2 * STEP, 0, W), ny2 = clamp(y + dy2 * STEP, 0, W);
+              if (!inSeaPoly(nx2, ny2)) break; // never back OUT onto an island bank
+              x = nx2; y = ny2;
+              pts.push([x, y]);
+            }
+          };
+          let forced = false; // fallback mode: straight for the sea, never die mid-land
+          let sinceAdv = 0;   // steps since the walker last made real progress
+          let finalSteps = 0; // steps spent past the last chain cell
+          let burst = 0;      // terrain-blind steps: punch through a stalemate wall
+          let shoreTgt = null, shoreAge = 0; // the scored shore pick, re-scored every 10 steps
+          let banned = null;  // shore vertices that turned out to be dry corners
+          for (let step = 1; step <= CAP + 220; step++) {
+            const corridorLive = !forced && ci + 1 < chain.length;
+            if (!corridorLive) finalSteps++;
+            let tgt;
+            if (corridorLive) tgt = regions[chain[ci + 1]].c;
+            else {
+              if (!shoreTgt || shoreAge >= 10) { shoreTgt = seaTarget(x, y, banned); shoreAge = 0; }
+              shoreAge++;
+              tgt = shoreTgt;
+            }
+            const tdx = tgt[0] - x, tdy = tgt[1] - y, tL = Math.hypot(tdx, tdy) || 1;
+            let bth;
+            if (forced || burst > 0) {
+              // straight march at the target: gravity lost the argument.
+              // forced aims at the traced shore, so this still ends wet.
+              bth = Math.atan2(tdy, tdx);
+              if (burst > 0) burst--;
+              if (forced && tL < STEP * 1.2) {
+                // arrived at the vertex still dry (a marching-squares land
+                // corner): step onto the wet side, or ban it and re-score
+                let wetTh = null;
+                for (let k = 0; k < 16 && wetTh === null; k++) {
+                  const th = (k / 16) * 2 * Math.PI;
+                  if (inSeaPoly(x + Math.cos(th) * STEP, y + Math.sin(th) * STEP)) wetTh = th;
+                }
+                if (wetTh !== null) bth = wetTh;
+                else { (banned = banned || new Set()).add(tgt[0] + ":" + tgt[1]); shoreTgt = null; }
+              }
+            } else {
+              // a stalled walker pulls harder — against a gorge lip while
+              // the corridor is live, out of a closed basin on the run out
+              const pull = Math.min(30, PULL + 0.25 * sinceAdv);
+              // 16 compass probes at step radius: steepest descent, bent
+              // toward the corridor target, lightly wobbled cross-track.
+              // A second probe at 2.5x radius gives the walker foresight:
+              // it aims at saddles instead of climbing the nearest crest.
+              let bs = Infinity;
+              bth = th0;
+              for (let k = 0; k < 16; k++) {
+                const th = (k / 16) * 2 * Math.PI;
+                const dx2 = Math.cos(th), dy2 = Math.sin(th);
+                const px = x + dx2 * STEP, py = y + dy2 * STEP;
+                let sc = 0.6 * elevAt(px, py) + 0.4 * elevAt(x + dx2 * STEP * 2.5, y + dy2 * STEP * 2.5)
+                  - pull * (dx2 * tdx + dy2 * tdy) / tL + 0.9 * wob(px, py, k);
+                // the corridor outranks the water: while chain cells remain
+                // the sea is a wall too — the bed skirts the bay to reach
+                // every region that drinks from it
+                if (corridorLive && inSeaPoly(px, py)) sc += 1000;
+                if (px < 0 || px > W || py < 0 || py > W) {
+                  // dry borders are walls; only a sea side lets the river
+                  // out, and never before the corridor is complete
+                  const wetExit = (px < 0 && seaSides.includes("west")) || (px > W && seaSides.includes("east")) ||
+                    (py < 0 && seaSides.includes("south")) || (py > W && seaSides.includes("north"));
+                  if (corridorLive || !wetExit) sc += 1000;
+                }
+                if (sc < bs) { bs = sc; bth = th; }
+              }
+            }
+            th0 = bth;
+            const dxs = Math.cos(bth), dys = Math.sin(bth);
+            x += dxs * STEP; y += dys * STEP;
+            pts.push([x, y]);
+            if (ci + 1 < chain.length && pointInRing(x, y, regions[chain[ci + 1]].ring)) { ci++; sinceAdv = 0; }
+            else sinceAdv++;
+            // only a served corridor (or the forced fallback) may end wet —
+            // a burst can hop a submerged strait mid-corridor and walk on
+            if ((forced || ci + 1 >= chain.length) && inSeaPoly(x, y)) { intoWater(dxs, dys); break; }
+            if (x < 0 || x > W || y < 0 || y > W) { pts[pts.length - 1] = [clamp(x, 0, W), clamp(y, 0, W)]; break; }
+            // tight loop OR a lap around a wide basin: both are stuck
+            const orbit = (pts.length > 12 && Math.hypot(x - pts[pts.length - 13][0], y - pts[pts.length - 13][1]) < STEP) ||
+              (pts.length > 40 && Math.hypot(x - pts[pts.length - 41][0], y - pts[pts.length - 41][1]) < 3 * STEP);
+            if (!forced && (step >= CAP || finalSteps > 160 || (orbit && ci + 1 >= chain.length))) forced = true;
+            else if (orbit && corridorLive && burst === 0) burst = 8; // wall stalemate: punch through
+          }
+          // absolute fallback (never observed in measurement, kept for the
+          // guarantee): if even the forced walk ran out, end ON the border —
+          // a river may leave the map, it may not die mid-land
+          if (!inSeaPoly(x, y) && x > 0 && x < W && y > 0 && y < W) {
+            const dW = Math.min(x, W - x), dH = Math.min(y, W - y);
+            pts.push(dW <= dH ? [x < W - x ? 0 : W, y] : [x, y < W - y ? 0 : W]);
+          }
+          const rpts = pts.map(p => [round2(clamp(p[0], 0, W)), round2(clamp(p[1], 0, W))]);
+          // per chain cell, keep the walk point nearest its anchor: the
+          // simplified bed still testably visits every region it waters
+          const keep = [];
+          for (const ri of chain) {
+            let bi = -1, bd2 = Infinity;
+            for (let i = 0; i < rpts.length; i++) {
+              if (!pointInRing(rpts[i][0], rpts[i][1], regions[ri].ring)) continue;
+              const d = Math.hypot(rpts[i][0] - regions[ri].c[0], rpts[i][1] - regions[ri].c[1]);
+              if (d < bd2) { bd2 = d; bi = i; }
+            }
+            if (bi >= 0) keep.push(bi);
+          }
+          RV.trace = dpSimplify(rpts, 2.5, keep);
+        }
+      }
 
       // M1: every cell gets real PLACES. The waterfront: its lowest
       // boundary point, pulled just inside — where a harbor would stand.
@@ -4061,10 +4247,11 @@
       model.rivers.forEach(RV => {
         features.push({
           type: "Feature",
-          properties: { kind: "river", river_id: RV.id, river_name: RV.name, river_kind: RV.kind },
-          geometry: { type: "LineString", coordinates: RV.chain.map(ri => {
-            const c = model.regions[ri].c; return [round2(c[0]), round2(c[1])];
-          }) }
+          // v39: the geometry is the traced bed; chain_regions carries the
+          // downstream order that river_kind and the columns recompute from
+          properties: { kind: "river", river_id: RV.id, river_name: RV.name, river_kind: RV.kind,
+            chain_regions: RV.chain.map(ri => model.regions[ri].id) },
+          geometry: { type: "LineString", coordinates: RV.trace }
         });
       });
       const SEA_LINES = { west: [[0, 0], [0, 1000]], east: [[1000, 0], [1000, 1000]], south: [[0, 0], [1000, 0]], north: [[0, 1000], [1000, 1000]] };
@@ -4308,10 +4495,8 @@
       model.rivers.forEach(RV => {
         features.push({
           type: "Feature",
-          properties: { kind: "river", river_id: RV.id, river_name: RV.name, epoch: 0, epoch_date: epochDate(0) },
-          geometry: { type: "LineString", coordinates: RV.chain.map(ri => {
-            const c = model.regions[ri].c; return [round2(c[0]), round2(c[1])];
-          }) }
+          properties: { kind: "river", river_id: RV.id, river_name: RV.name, chain_regions: RV.chain.map(ri => model.regions[ri].id), epoch: 0, epoch_date: epochDate(0) },
+          geometry: { type: "LineString", coordinates: RV.trace }
         });
       });
       const SEA_LINES2 = { west: [[0, 0], [0, 1000]], east: [[1000, 0], [1000, 1000]], south: [[0, 0], [1000, 0]], north: [[0, 1000], [1000, 1000]] };
@@ -5495,7 +5680,12 @@
         parts.push(`<text class="tower" x="${reg.towerPt[0].toFixed(1)}" y="${(fy(reg.towerPt[1]) + 6).toFixed(1)}" font-size="17" text-anchor="middle" fill="#3b1f4e" paint-order="stroke" stroke="#fff" stroke-width="3">♜</text>`);
       });
       if (poi) model.bridges.forEach(b => {
-        parts.push(`<text class="bridge" x="${b.x.toFixed(1)}" y="${(fy(b.y) + 6).toFixed(1)}" font-size="15" font-weight="700" text-anchor="middle" fill="#6b5844" paint-order="stroke" stroke="#fff" stroke-width="3">═</text>`);
+        // R1: the glyph stands on the bed (nearest trace point); the
+        // exported bridge point stays the region anchor — data untouched
+        const tr2 = (model.rivers.find(rv => rv.id === b.riverId) || {}).trace || [];
+        let bx = b.x, by = b.y, bd2 = Infinity;
+        for (const p of tr2) { const d = Math.hypot(p[0] - b.x, p[1] - b.y); if (d < bd2) { bd2 = d; bx = p[0]; by = p[1]; } }
+        parts.push(`<text class="bridge" x="${bx.toFixed(1)}" y="${(fy(by) + 6).toFixed(1)}" font-size="15" font-weight="700" text-anchor="middle" fill="#6b5844" paint-order="stroke" stroke="#fff" stroke-width="3">═</text>`);
       });
       if (poi && model.maelstrom) {
         const mx = clamp(model.maelstrom.x, 22, W - 22), my = clamp(model.maelstrom.y, 22, W - 22);
@@ -5530,49 +5720,12 @@
         parts.push(`<text class="port" x="${reg.shorePt[0].toFixed(1)}" y="${(fy(reg.shorePt[1]) + 6).toFixed(1)}" font-size="18" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="3">⚓</text>`);
       });
 
-      // G3: the rivers — the centerline runs the shared Voronoi edges between
-      // the chain regions, not through the settlement anchors; each end stops
-      // 12px short of its dot; a white casing keeps the ribbon legible (#60)
+      // R1: the rivers ride their beds — RV.trace IS the centerline (the
+      // fine downhill walk over the continuous field; the chain stays the
+      // drinking order). Tapered two-bank ribbon over a white casing (#60).
       model.rivers.forEach(RV => {
-        const key01 = (p) => `${Math.round(p[0] * 10)}:${Math.round(p[1] * 10)}`;
-        const anchor = (ri) => { const c = model.regions[ri].c; return [c[0], fy(c[1])]; };
-        const nodes = [anchor(RV.chain[0])];
-        for (let k = 0; k + 1 < RV.chain.length; k++) {
-          const A = model.regions[RV.chain[k]], B = model.regions[RV.chain[k + 1]];
-          const bk = new Set(B.ring.map(key01));
-          const shared = A.ring.filter(p => bk.has(key01(p)));
-          if (shared.length) { // the true shared-edge midpoint
-            const mx = shared.reduce((s2, p) => s2 + p[0], 0) / shared.length;
-            const my = shared.reduce((s2, p) => s2 + p[1], 0) / shared.length;
-            nodes.push([mx, fy(my)]);
-          } else { // no shared vertices survive the rounding: the old anchor midpoint
-            const a2 = anchor(RV.chain[k]), b2 = anchor(RV.chain[k + 1]);
-            nodes.push([(a2[0] + b2[0]) / 2, (a2[1] + b2[1]) / 2]);
-          }
-        }
-        nodes.push(anchor(RV.chain[RV.chain.length - 1]));
-        // #60: the endpoints are town centroids; retreat them past the
-        // settlement dot (max radius 3+13=16, +ring +casing) so the ribbon
-        // never runs through a town marker. 22 clears the largest dot.
-        const pull = (p, q, d) => { const dx = q[0] - p[0], dy = q[1] - p[1], L2 = Math.hypot(dx, dy) || 1; return [p[0] + dx / L2 * d, p[1] + dy / L2 * d]; };
-        if (nodes.length > 1) {
-          nodes[0] = pull(nodes[0], nodes[1], 22);
-          nodes[nodes.length - 1] = pull(nodes[nodes.length - 1], nodes[nodes.length - 2], 22);
-        }
-        // V2: a river is a tapered shape, not a wire — meander points are
-        // inserted at each third with alternating offsets, the half-width
-        // grows downstream, and the two banks join into one filled path
-        const ctr = [];
-        for (let k = 0; k < nodes.length - 1; k++) {
-          const [ax, ay] = nodes[k], [bx, by] = nodes[k + 1];
-          const dx = bx - ax, dy = by - ay, L2 = Math.hypot(dx, dy) || 1;
-          const nx = -dy / L2, ny = dx / L2;
-          ctr.push(nodes[k]);
-          const off = Math.min(9, L2 * 0.09);
-          ctr.push([ax + dx / 3 + nx * off * jit(ax, ay, k), ay + dy / 3 + ny * off * jit(ax, ay, k)]);
-          ctr.push([ax + 2 * dx / 3 - nx * off * jit(bx, by, k), ay + 2 * dy / 3 - ny * off * jit(bx, by, k)]);
-        }
-        ctr.push(nodes[nodes.length - 1]);
+        const ctr = (RV.trace || []).map(p => [p[0], fy(p[1])]);
+        if (ctr.length < 2) return;
         const left = [], right = [];
         const wMul = atlas ? 1 : 0.6; // #63: data mode thins the ribbon — context, not subject
         for (let k = 0; k < ctr.length; k++) {
@@ -5588,7 +5741,7 @@
         parts.push(`<path d="${dRiv}" fill="#fff" stroke="#fff" stroke-width="2"/>`);
         parts.push(`<path class="river" d="${dRiv}" fill="${atlas ? "#3d7ab5" : "#6b90ad"}" opacity="0.65" stroke="none"/>`);
         if (poi) {
-          const mc = model.regions[RV.chain[Math.floor(RV.chain.length / 2)]].c;
+          const mc = RV.trace[Math.floor(RV.trace.length / 2)]; // the name sits on the bed
           parts.push(`<text x="${mc[0].toFixed(1)}" y="${(fy(mc[1]) + 18).toFixed(1)}" font-size="12" font-style="italic" text-anchor="middle" fill="#3d7ab5" paint-order="stroke" stroke="#fff" stroke-width="3">${RV.kind === "River" ? "the " + esc(RV.name) : esc(RV.name) + " " + esc(RV.kind)}</text>`);
         }
       });

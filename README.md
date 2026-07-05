@@ -230,10 +230,14 @@ instead — the chokepoints where wall-crossing traffic concentrates.
 
 **River features (LineString):** `river_id`, `river_name` (lowland register),
 `river_kind` (`Beck` ≤3 regions \| `Brook` ≤5 \| `River` — recomputable from
-the coordinate count).
-Traced in the blind-geology stage: a gentlest-descent walk from high interior
-ground (usually the ridge flanks) to the border; the coordinate order IS the
-downstream order, running through the settlement anchors of its regions.
+`chain_regions.length`), `chain_regions` (region ids in downstream order —
+the drinking order every river column recomputes from).
+The chain is picked in the blind-geology stage (a gentlest-descent walk on
+the region graph from high interior ground, usually the ridge flanks); the
+geometry (v39) is the river's BED: a fine polyline walked downhill over the
+continuous elevation surface from a sampled high source, bent through the
+chain regions in order, ending only in the traced sea (the mouth visibly
+enters the water) or off the map edge — never mid-land.
 River edges cost ×0.6 (barge transport); where a river crosses a ridge it
 cuts a pass-grade gorge; floodplains gain fertility, so the seat is drawn to
 the water — emergent, never authored.

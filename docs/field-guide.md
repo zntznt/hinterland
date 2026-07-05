@@ -8,6 +8,11 @@ columns alone*. This guide tells you where each inequality lives, which
 instrument shows it, and which experiment proves it is a mechanism rather
 than a paint job.
 
+**New to QGIS?** This guide assumes you can already drive QGIS (choropleths,
+filters, joins). If not, do the [QGIS tutorial](qgis-tutorial.md) first: a
+hands-on course that teaches the tool through a Hinterland world, then come
+back here to make the argument.
+
 The epistemic contract, in one paragraph: **geology is blind** (ore,
 terrain, climate, coasts are generated before any social value exists, and
 society knobs cannot move them — tested); **zeros are neutral** (λ=0 means

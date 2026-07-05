@@ -793,6 +793,10 @@
   #stage svg path:not([data-region]) { pointer-events: none; }
   #stage svg path[data-region] { cursor: pointer; }
   #mapHint { font: 11px var(--sans); color: var(--muted); white-space: nowrap; }
+  .modectl { display:inline-flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+  .modectl button { font:600 11px var(--sans); padding:4px 11px; margin:0; border:none; border-radius:0; background:transparent; color:var(--muted); cursor:pointer; }
+  .modectl button.on { background:var(--gold); color:#241d10; }
+  .poictl { display:inline-flex; align-items:center; gap:5px; font:600 11px var(--sans); color:var(--muted); cursor:pointer; white-space:nowrap; }
   #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--dark); color: #f5efe4;
     font: 600 12.5px var(--sans); padding: 7px 14px; border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 60; }
   #toast.show { opacity: 0.93; }
@@ -995,6 +999,11 @@
     <div class="mapcol">
       <div class="mapcard">
         <div class="mapbar">
+          <span class="modectl" id="mapModeCtl">
+            <button type="button" id="modeAtlas">atlas</button>
+            <button type="button" id="modeData" class="on">data</button>
+          </span>
+          <label class="poictl"><input type="checkbox" id="showPoiCk" checked /> points of interest</label>
           <span id="legendLabel"></span>
           <div class="legend-wrap">
             <div class="bar" id="legendBar"></div>
@@ -4390,13 +4399,13 @@
       temp:       { lo: [225, 238, 249], hi: [190, 84, 50],  label: "temperature (cold → warm)" },
       rain:       { lo: [248, 243, 227], hi: [26, 82, 118],  label: "rainfall (dry → wet)" },
       fert:       { lo: [247, 246, 239], hi: [62, 105, 43],  label: "fertility (derived from climate)" },
-      retention:  { lo: [252, 238, 232], hi: [0, 84, 72],    label: "value retention (who keeps what it makes)" },
+      retention:  { lo: [235, 224, 200], hi: [0, 84, 72],    label: "value retention (who keeps what it makes)" }, // floor: the low end must survive a white halo
       tolls:      { lo: [246, 246, 242], hi: [122, 31, 31],  label: "toll burden (who pays at the gates)" },
       tribute:    { lo: [246, 244, 240], hi: [58, 47, 42],   label: "tribute rate (who pays the Dominion)" },
       seaacc:     { lo: [240, 247, 250], hi: [13, 71, 105],  label: "sea access (the second pole)" },
       smug:       { lo: [246, 242, 246], hi: [84, 39, 80],   label: "smuggling intensity (the shadow's roads)" },
       trust:      { lo: [247, 244, 238], hi: [32, 84, 120],  label: "social trust (who believes the realm)" },
-      mobility:   { lo: [250, 244, 238], hi: [140, 84, 16],  label: "mobility ceiling (who can rise)" }
+      mobility:   { lo: [235, 224, 200], hi: [140, 84, 16],  label: "mobility ceiling (who can rise)" } // floor: the low end must survive a white halo
     };
     const BLOC_COLORS = { crown: "#6baed6", temple: "#9e9ac8", magnate: "#fd8d3c", contested: "#cccccc", ungoverned: "#f7f7f7", dominion: "#5a5550" };
     const TRAJ_COLORS = { boom: "#2f9e44", stable: "#d9d9d9", decline: "#f08c00", collapse: "#7a1f1f" };
@@ -5129,6 +5138,13 @@
       document.getElementById("chronText").innerHTML = chronHTML(composeChronicle(model, params));
       document.getElementById("findingsText").innerHTML = findingsHTML(model);
       const ramp = RAMPS[view];
+      // #63: two genres, one switch — atlas is the pen's map (no lens),
+      // data is the lens (terrain demoted); the model is never touched
+      const atlas = mapMode === "atlas";
+      const poi = atlas || showPoi;
+      // #60 G1: preview-only water guard — ink whose anchor floats is a lie
+      const inSea = (x, y) => model.seaShapes.some(S =>
+        pointInRing(x, y, S.outer) && !S.holes.some(h => pointInRing(x, y, h)));
       // Scrub-aware accessors: the stock fields read the selected epoch's
       // snapshot; derived layers always show the final state.
       const snaps = model.epochSnaps;
@@ -5214,31 +5230,39 @@
       const parts = [`<svg id="map" viewBox="0 0 ${W} ${W}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`];
       model.regions.forEach(reg => {
         const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
-        const stroke = reg.isCapital ? "#d62728" : "#333";
-        const sw = reg.isCapital ? 4 : 1.5;
-        parts.push(`<path d="${d}" data-region="${reg.id}" fill="${cellFill(reg)}" stroke="${stroke}" stroke-width="${sw}"/>`);
-        { // the one number the map exists to show: halo + contrast, never a ghost
+        // #62: the capital ring is red only on parchment; on a ramp it is ink
+        const stroke = reg.isCapital ? (atlas ? "#d62728" : "#1f1a14") : (atlas ? "#b9ab8f" : "#333");
+        const sw = reg.isCapital ? 4 : (atlas ? 1 : 1.5);
+        parts.push(`<path d="${d}" data-region="${reg.id}" fill="${atlas ? "#f4ecd8" : cellFill(reg)}" stroke="${stroke}" stroke-width="${sw}"/>`);
+        if (!atlas && SHOW_NUMBERS) { // the one number the map exists to show: halo + contrast, never a ghost
           const fc = cellFill(reg);
-          const m2 = fc.match(/\d+/g);
-          const lum = m2 ? (0.299 * +m2[0] + 0.587 * +m2[1] + 0.114 * +m2[2]) : 200;
+          // #62: hex fills parse as hex — the digit regex read "#5a5550" as garbage
+          let lum = 200;
+          if (fc[0] === "#") {
+            lum = 0.299 * parseInt(fc.slice(1, 3), 16) + 0.587 * parseInt(fc.slice(3, 5), 16) + 0.114 * parseInt(fc.slice(5, 7), 16);
+          } else {
+            const m2 = fc.match(/\d+/g);
+            if (m2) lum = 0.299 * +m2[0] + 0.587 * +m2[1] + 0.114 * +m2[2];
+          }
           const ink = lum < 120 ? "#fff" : "#1a1611";
           const halo = lum < 120 ? "#00000055" : "#ffffff";
           parts.push(`<text x="${reg.c[0].toFixed(1)}" y="${(fy(reg.c[1]) + 26).toFixed(1)}" font-size="15" font-weight="600" text-anchor="middle" fill="${ink}" paint-order="stroke" stroke="${halo}" stroke-width="3">${cellValue(reg)}</text>`);
         }
-        if (reg.refining > 0) { // refinery glyph
-          parts.push(`<rect x="${(reg.c[0] - 8).toFixed(1)}" y="${(fy(reg.c[1]) + 32).toFixed(1)}" width="16" height="16" fill="#111" stroke="#fff" stroke-width="2"/>`);
+        if (reg.refining > 0) { // refinery glyph — ESE slot, clear of the number and the event star (#61)
+          parts.push(`<rect x="${(reg.c[0] + 40).toFixed(1)}" y="${(fy(reg.c[1]) + 22).toFixed(1)}" width="16" height="16" fill="#111" stroke="#fff" stroke-width="2"/>`);
         }
       });
 
-      // G4: the terrain — contour lines over the fills, then the sea itself
-      model.contoursFine.forEach(cl => {
+      // G4: the terrain — contour lines over the fills, then the sea itself.
+      // #60: only levels above the water draw — a ring under the sea is noise;
+      // the fine set is atlas ink (#63)
+      if (atlas) model.contoursFine.filter(cl => cl.level > model.seaLevel).forEach(cl => {
         const d = cl.segs.map(sg2 => `M${sg2[0][0].toFixed(1)},${fy(sg2[0][1]).toFixed(1)}L${sg2[1][0].toFixed(1)},${fy(sg2[1][1]).toFixed(1)}`).join("");
         parts.push(`<path class="contourfine" d="${d}" fill="none" stroke="#6d604c" stroke-width="0.8" opacity="${0.12 + cl.level * 0.0016}"/>`);
       });
-      model.contours.forEach(cl => {
+      model.contours.filter(cl => cl.level > model.seaLevel).forEach(cl => {
         const d = cl.segs.map(sg2 => `M${sg2[0][0].toFixed(1)},${fy(sg2[0][1]).toFixed(1)}L${sg2[1][0].toFixed(1)},${fy(sg2[1][1]).toFixed(1)}`).join("");
-        const isShore = cl.level === model.seaLevel;
-        parts.push(`<path class="contour" d="${d}" fill="none" stroke="${isShore ? "#2b5f8a" : "#6d604c"}" stroke-width="${isShore ? 2 : 1}" opacity="${isShore ? 0.55 : 0.3}"/>`);
+        parts.push(`<path class="contour" d="${d}" fill="none" stroke="#6d604c" stroke-width="1" opacity="0.3"/>`);
       });
       model.seaShapes.forEach(S => {
         const dec = (rg) => rg.length > 240 ? rg.filter((_, i2) => i2 % 3 === 0) : rg.length > 120 ? rg.filter((_, i2) => i2 % 2 === 0) : rg;
@@ -5249,10 +5273,10 @@
         const sid = "seashape" + model.seaShapes.indexOf(S);
         parts.push(`<defs><path id="${sid}" d="${d}" fill="none"/></defs>`);
         parts.push(`<use href="#${sid}" stroke="#1f3846" stroke-width="2" opacity="0.3" transform="translate(1.4,2)"/>`);
-        for (const [rw, ro] of [[26, 0.10], [14, 0.13], [6, 0.16]])
+        for (const [rw, ro] of (atlas ? [[26, 0.10], [14, 0.13], [6, 0.16]] : [[6, 0.16]])) // data: one ring, not a glow
           parts.push(`<use href="#${sid}" stroke="#9dbdd9" stroke-width="${rw}" opacity="${ro}" stroke-linejoin="round"/>`);
         parts.push(`<path class="sea" d="${d}" fill-rule="evenodd" fill="#4a7fae" fill-opacity="0.55" stroke="#2b5f8a" stroke-width="1.4"/>`);
-        if (S.name) { // E6: the chart takes its name at the water's centroid
+        if (S.name && poi) { // E6: the chart takes its name at the water's centroid
           let cx = 0, cy = 0, aa = 0;
           for (let k = 0; k + 1 < S.outer.length; k++) {
             const w2 = S.outer[k][0] * S.outer[k + 1][1] - S.outer[k + 1][0] * S.outer[k][1];
@@ -5279,32 +5303,37 @@
           const mx = (ax + bx) / 2, my = (ay + by) / 2, L2 = Math.hypot(bx - ax, by - ay) || 1;
           const bend = Math.min(10, L2 * 0.08) * jit(mx, my, e.a * 31 + e.b);
           const px = mx - (by - ay) / L2 * bend, py = my + (bx - ax) / L2 * bend;
-          parts.push(`<path class="road" d="${catRom([[ax, ay], [px, py], [bx, by]])}" fill="none" stroke="#6b5844" stroke-width="${w.toFixed(2)}" opacity="0.8" stroke-linecap="round"${dash}/>`);
+          parts.push(`<path class="road" d="${catRom([[ax, ay], [px, py], [bx, by]])}" fill="none" stroke="${atlas ? "#6b5844" : "#8a8378"}" stroke-width="${w.toFixed(2)}" opacity="0.8" stroke-linecap="round"${dash}/>`);
         }
       });
 
-      // A1: the twins — same distance, different fate; the line is the argument
-      {
+      // A1: the twins — same distance, different fate; the line is the argument.
+      // #62: amber, not a sixth red, over a white casing; #63: in data mode it
+      // surfaces only on the lens it argues for
+      if (atlas || view === "injustice") {
         const F2 = computeFindings(model);
         if (F2.twins) {
           const a = model.regions.find(r => r.id === F2.twins.shadow);
           const b = model.regions.find(r => r.id === F2.twins.open);
-          parts.push(`<line class="twin" x1="${a.c[0].toFixed(1)}" y1="${fy(a.c[1]).toFixed(1)}" x2="${b.c[0].toFixed(1)}" y2="${fy(b.c[1]).toFixed(1)}" stroke="#c1121f" stroke-width="2.5" stroke-dasharray="8 5" opacity="0.85"/>`);
+          const seg = `x1="${a.c[0].toFixed(1)}" y1="${fy(a.c[1]).toFixed(1)}" x2="${b.c[0].toFixed(1)}" y2="${fy(b.c[1]).toFixed(1)}"`;
+          parts.push(`<line ${seg} stroke="#fff" stroke-width="5" stroke-dasharray="8 5" opacity="0.85"/>`);
+          parts.push(`<line class="twin" ${seg} stroke="#b45309" stroke-width="2.5" stroke-dasharray="8 5" opacity="0.85"/>`);
         }
       }
 
       // P1: the wild layer — ◆ ruins, ♜ towers, ═ bridges, ◉ the maelstrom
-      model.ruins.forEach(r => {
+      // (#63: data mode files the wild layer under points of interest)
+      if (poi) model.ruins.forEach(r => {
         const reg = model.regions[r.regionIdx];
         parts.push(`<text class="ruin" x="${reg.wildPt[0].toFixed(1)}" y="${(fy(reg.wildPt[1]) + 5).toFixed(1)}" font-size="16" text-anchor="middle" fill="#4c4c4c" paint-order="stroke" stroke="#fff" stroke-width="3">◆</text>`);
       });
-      model.regions.filter(r => r.hasTower === 1).forEach(reg => {
+      if (poi) model.regions.filter(r => r.hasTower === 1).forEach(reg => {
         parts.push(`<text class="tower" x="${reg.towerPt[0].toFixed(1)}" y="${(fy(reg.towerPt[1]) + 6).toFixed(1)}" font-size="17" text-anchor="middle" fill="#3b1f4e" paint-order="stroke" stroke="#fff" stroke-width="3">♜</text>`);
       });
-      model.bridges.forEach(b => {
+      if (poi) model.bridges.forEach(b => {
         parts.push(`<text class="bridge" x="${b.x.toFixed(1)}" y="${(fy(b.y) + 6).toFixed(1)}" font-size="15" font-weight="700" text-anchor="middle" fill="#6b5844" paint-order="stroke" stroke="#fff" stroke-width="3">═</text>`);
       });
-      if (model.maelstrom) {
+      if (poi && model.maelstrom) {
         const mx = clamp(model.maelstrom.x, 22, W - 22), my = clamp(model.maelstrom.y, 22, W - 22);
         parts.push(`<text class="maelstrom" x="${mx.toFixed(1)}" y="${(fy(my) + 7).toFixed(1)}" font-size="20" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="3">◉</text>`);
       }
@@ -5312,11 +5341,15 @@
       // S1: the skyway — violet dashes between the aeries, above every wall
       {
         const sp = model.regions.filter(r => r.isSkyport === 1);
-        for (let i = 0; i < sp.length; i++) for (let j = i + 1; j < sp.length; j++) {
-          parts.push(`<line class="skylane" x1="${sp[i].c[0].toFixed(1)}" y1="${fy(sp[i].c[1]).toFixed(1)}" x2="${sp[j].c[0].toFixed(1)}" y2="${fy(sp[j].c[1]).toFixed(1)}" stroke="#3f007d" stroke-width="2.5" stroke-dasharray="2 7" opacity="0.6"/>`);
+        if (atlas || view === "sky") { // #63: the lanes argue on the sky lens
+          for (let i = 0; i < sp.length; i++) for (let j = i + 1; j < sp.length; j++) {
+            const seg = `x1="${sp[i].c[0].toFixed(1)}" y1="${fy(sp[i].c[1]).toFixed(1)}" x2="${sp[j].c[0].toFixed(1)}" y2="${fy(sp[j].c[1]).toFixed(1)}"`;
+            parts.push(`<line ${seg} stroke="#fff" stroke-width="5" stroke-dasharray="2 7" opacity="0.7"/>`);
+            parts.push(`<line class="skylane" ${seg} stroke="#3f007d" stroke-width="2.5" stroke-dasharray="2 7" opacity="0.6"/>`);
+          }
         }
         sp.forEach(reg => {
-          parts.push(`<text class="skyport" x="${(reg.c[0] - 26).toFixed(1)}" y="${(fy(reg.c[1]) - 34).toFixed(1)}" font-size="17" text-anchor="middle" fill="#3f007d" paint-order="stroke" stroke="#fff" stroke-width="3">⍟</text>`); // NW slot — the event ✱ owns SE; no two satellites share a coordinate
+          parts.push(`<text class="skyport" x="${(reg.c[0] - 26).toFixed(1)}" y="${(fy(reg.c[1]) - 34).toFixed(1)}" font-size="17" text-anchor="middle" fill="#3f007d" paint-order="stroke" stroke="#fff" stroke-width="3">⍟</text>`); // NW slot — dominion NE, garrison W, still E, event SE, camp SW, refinery ESE (#61)
         });
       }
 
@@ -5331,55 +5364,91 @@
         parts.push(`<text class="port" x="${reg.shorePt[0].toFixed(1)}" y="${(fy(reg.shorePt[1]) + 6).toFixed(1)}" font-size="18" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="3">⚓</text>`);
       });
 
-      // G2: the rivers — blue polylines through the valley anchors
+      // G3: the rivers — the centerline runs the shared Voronoi edges between
+      // the chain regions, not through the settlement anchors; each end stops
+      // 12px short of its dot; a white casing keeps the ribbon legible (#60)
       model.rivers.forEach(RV => {
+        const key01 = (p) => `${Math.round(p[0] * 10)}:${Math.round(p[1] * 10)}`;
+        const anchor = (ri) => { const c = model.regions[ri].c; return [c[0], fy(c[1])]; };
+        const nodes = [anchor(RV.chain[0])];
+        for (let k = 0; k + 1 < RV.chain.length; k++) {
+          const A = model.regions[RV.chain[k]], B = model.regions[RV.chain[k + 1]];
+          const bk = new Set(B.ring.map(key01));
+          const shared = A.ring.filter(p => bk.has(key01(p)));
+          if (shared.length) { // the true shared-edge midpoint
+            const mx = shared.reduce((s2, p) => s2 + p[0], 0) / shared.length;
+            const my = shared.reduce((s2, p) => s2 + p[1], 0) / shared.length;
+            nodes.push([mx, fy(my)]);
+          } else { // no shared vertices survive the rounding: the old anchor midpoint
+            const a2 = anchor(RV.chain[k]), b2 = anchor(RV.chain[k + 1]);
+            nodes.push([(a2[0] + b2[0]) / 2, (a2[1] + b2[1]) / 2]);
+          }
+        }
+        nodes.push(anchor(RV.chain[RV.chain.length - 1]));
+        const pull = (p, q) => { const dx = q[0] - p[0], dy = q[1] - p[1], L2 = Math.hypot(dx, dy) || 1; return [p[0] + dx / L2 * 12, p[1] + dy / L2 * 12]; };
+        if (nodes.length > 1) {
+          nodes[0] = pull(nodes[0], nodes[1]);
+          nodes[nodes.length - 1] = pull(nodes[nodes.length - 1], nodes[nodes.length - 2]);
+        }
         // V2: a river is a tapered shape, not a wire — meander points are
         // inserted at each third with alternating offsets, the half-width
         // grows downstream, and the two banks join into one filled path
         const ctr = [];
-        const anchors = RV.chain.map(ri => { const c = model.regions[ri].c; return [c[0], fy(c[1])]; });
-        for (let k = 0; k < anchors.length - 1; k++) {
-          const [ax, ay] = anchors[k], [bx, by] = anchors[k + 1];
+        for (let k = 0; k < nodes.length - 1; k++) {
+          const [ax, ay] = nodes[k], [bx, by] = nodes[k + 1];
           const dx = bx - ax, dy = by - ay, L2 = Math.hypot(dx, dy) || 1;
           const nx = -dy / L2, ny = dx / L2;
-          ctr.push(anchors[k]);
+          ctr.push(nodes[k]);
           const off = Math.min(9, L2 * 0.09);
           ctr.push([ax + dx / 3 + nx * off * jit(ax, ay, k), ay + dy / 3 + ny * off * jit(ax, ay, k)]);
           ctr.push([ax + 2 * dx / 3 - nx * off * jit(bx, by, k), ay + 2 * dy / 3 - ny * off * jit(bx, by, k)]);
         }
-        ctr.push(anchors[anchors.length - 1]);
+        ctr.push(nodes[nodes.length - 1]);
         const left = [], right = [];
+        const wMul = atlas ? 1 : 0.6; // #63: data mode thins the ribbon — context, not subject
         for (let k = 0; k < ctr.length; k++) {
           const a2 = ctr[Math.max(0, k - 1)], b2 = ctr[Math.min(ctr.length - 1, k + 1)];
           const dx = b2[0] - a2[0], dy = b2[1] - a2[1], L2 = Math.hypot(dx, dy) || 1;
           const nx = -dy / L2, ny = dx / L2;
-          const hw = 0.9 + 2.6 * (k / (ctr.length - 1)); // source thin, mouth broad
+          const hw = (0.9 + 2.6 * (k / (ctr.length - 1))) * wMul; // source thin, mouth broad
           left.push([ctr[k][0] + nx * hw, ctr[k][1] + ny * hw]);
           right.push([ctr[k][0] - nx * hw, ctr[k][1] - ny * hw]);
         }
         right.reverse();
         const dRiv = catRom(left) + "L" + right.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join("L") + "Z";
-        parts.push(`<path class="river" d="${dRiv}" fill="#3d7ab5" opacity="0.65" stroke="none"/>`);
-        const mc = model.regions[RV.chain[Math.floor(RV.chain.length / 2)]].c;
-        parts.push(`<text x="${mc[0].toFixed(1)}" y="${(fy(mc[1]) + 18).toFixed(1)}" font-size="12" font-style="italic" text-anchor="middle" fill="#3d7ab5" paint-order="stroke" stroke="#fff" stroke-width="3">${RV.kind === "River" ? "the " + esc(RV.name) : esc(RV.name) + " " + esc(RV.kind)}</text>`);
+        parts.push(`<path d="${dRiv}" fill="#fff" stroke="#fff" stroke-width="2"/>`);
+        parts.push(`<path class="river" d="${dRiv}" fill="${atlas ? "#3d7ab5" : "#6b90ad"}" opacity="0.65" stroke="none"/>`);
+        if (poi) {
+          const mc = model.regions[RV.chain[Math.floor(RV.chain.length / 2)]].c;
+          parts.push(`<text x="${mc[0].toFixed(1)}" y="${(fy(mc[1]) + 18).toFixed(1)}" font-size="12" font-style="italic" text-anchor="middle" fill="#3d7ab5" paint-order="stroke" stroke="#fff" stroke-width="3">${RV.kind === "River" ? "the " + esc(RV.name) : esc(RV.name) + " " + esc(RV.kind)}</text>`);
+        }
       });
 
       // M1: the mountains are MASS — hachures down both flanks, peaks at
-      // the crests; the axis survives only as a faint guide under its name
-      model.hachures.forEach(h => {
-        parts.push(`<line class="hachure" x1="${h[0].toFixed(1)}" y1="${fy(h[1]).toFixed(1)}" x2="${h[2].toFixed(1)}" y2="${fy(h[3]).toFixed(1)}" stroke="#5b4a33" stroke-width="1.3" opacity="0.5"/>`);
+      // the crests; the axis survives only as a faint guide under its name.
+      // hachures are atlas ink (#63); no stroke anchors on the water (#60);
+      // white casings keep the ink legible on any ground (#62)
+      if (atlas) model.hachures.forEach(h => {
+        if (inSea((h[0] + h[2]) / 2, (h[1] + h[3]) / 2)) return;
+        const seg = `x1="${h[0].toFixed(1)}" y1="${fy(h[1]).toFixed(1)}" x2="${h[2].toFixed(1)}" y2="${fy(h[3]).toFixed(1)}"`;
+        parts.push(`<line ${seg} stroke="#fff" stroke-width="3.4" opacity="0.7" stroke-linecap="round"/>`);
+        parts.push(`<line class="hachure" ${seg} stroke="#5b4a33" stroke-width="1.3" opacity="0.5"/>`);
       });
       model.ridges.forEach(R => {
-        const pl = R.pts.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join(" ");
-        parts.push(`<path class="ridge" d="${catRom(R.pts.map(p => [p[0], fy(p[1])]))}" fill="none" stroke="#4a3421" stroke-width="2" stroke-dasharray="1 6" stroke-linejoin="round" stroke-linecap="round" opacity="0.3"/>`);
-        const mid = R.pts[Math.floor(R.pts.length / 2)];
-        parts.push(`<text x="${mid[0].toFixed(1)}" y="${(fy(mid[1]) - 10).toFixed(1)}" font-size="13" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(R.name)} ${esc(R.kind)}</text>`);
+        const dR = catRom(R.pts.map(p => [p[0], fy(p[1])]));
+        parts.push(`<path d="${dR}" fill="none" stroke="#fff" stroke-width="4.5" stroke-dasharray="1 6" stroke-linejoin="round" stroke-linecap="round" opacity="0.7"/>`);
+        parts.push(`<path class="ridge" d="${dR}" fill="none" stroke="#4a3421" stroke-width="2" stroke-dasharray="1 6" stroke-linejoin="round" stroke-linecap="round" opacity="0.3"/>`);
+        if (poi) {
+          const mid = R.pts[Math.floor(R.pts.length / 2)];
+          parts.push(`<text x="${mid[0].toFixed(1)}" y="${(fy(mid[1]) - 10).toFixed(1)}" font-size="13" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(R.name)} ${esc(R.kind)}</text>`);
+        }
       });
       // V2-B: the range is a PROFILE — small inked mountain shapes stamped
       // along each crest (size falls off toward the ends; the left face is
       // shaded, the right lit), sorted far-to-near so they overlap like a
-      // painting. Deterministic: every jitter is a function of position.
-      {
+      // painting. Deterministic: the size jitter is a function of position;
+      // the stamps sit ON the crest walk (#60). Atlas ink only (#63).
+      if (atlas) {
         const stamps = [];
         model.ridges.forEach(R => {
           let acc = 0;
@@ -5392,7 +5461,8 @@
               const endFall = Math.sin(Math.PI * Math.min(1, Math.max(0, along)));
               const s2 = (7 + (R.maxElev - 60) * 0.16) * (0.55 + 0.45 * endFall) * (0.82 + 0.36 * Math.abs(jit(x, y, 5)));
               if (s2 < 4) continue;
-              stamps.push([x + jit(x, y, 7) * 9, y + jit(y, x, 8) * 7, s2]);
+              if (inSea(x, y)) continue; // #60: no mountains on the water
+              stamps.push([x, y, s2]);
             }
             acc = (acc + segL) % 34;
           }
@@ -5400,62 +5470,64 @@
         stamps.sort((p2, q2) => (fy(p2[1]) + p2[2]) - (fy(q2[1]) + q2[2]));
         for (const [x, y, s2] of stamps) {
           const px = x, py = fy(y), wHalf = s2 * 0.95;
-          const apexX = px + jit(x, y, 9) * s2 * 0.18, apexY = py - s2;
+          const apexX = px, apexY = py - s2;
           parts.push(`<path d="M${(px - wHalf).toFixed(1)},${py.toFixed(1)}L${apexX.toFixed(1)},${apexY.toFixed(1)}L${(px + wHalf).toFixed(1)},${py.toFixed(1)}" fill="#efe7d9" stroke="#4a3421" stroke-width="0.9" stroke-linejoin="round" opacity="0.9"/>`);
           parts.push(`<path d="M${(px - wHalf).toFixed(1)},${py.toFixed(1)}L${apexX.toFixed(1)},${apexY.toFixed(1)}L${(apexX + wHalf * 0.16).toFixed(1)},${py.toFixed(1)}Z" fill="#c9b592" stroke="none" opacity="0.55"/>`);
         }
       }
       model.peaks.forEach(pk => {
+        if (inSea(pk.x, pk.y)) return; // #60: no summits at sea
         parts.push(`<text class="peak" x="${pk.x.toFixed(1)}" y="${(fy(pk.y) + 5).toFixed(1)}" font-size="14" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">▲</text>`);
       });
       model.passes.forEach(p => {
         parts.push(`<text class="pass" x="${p.x.toFixed(1)}" y="${(fy(p.y) + 6).toFixed(1)}" font-size="17" font-weight="700" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">∩</text>`);
-        parts.push(`<text x="${p.x.toFixed(1)}" y="${(fy(p.y) + 20).toFixed(1)}" font-size="10" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="2.5" opacity="0.85">${esc(p.name)}</text>`);
+        if (poi) parts.push(`<text x="${p.x.toFixed(1)}" y="${(fy(p.y) + 20).toFixed(1)}" font-size="10" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="2.5" opacity="0.85">${esc(p.name)}</text>`);
       });
 
       // Sanctioned sites (Temple): a violet cross — ▲ belongs to the peaks alone
-      model.sanctionedSites.forEach(s => {
+      if (poi) model.sanctionedSites.forEach(s => {
         parts.push(`<text class="sanct" x="${s.x.toFixed(1)}" y="${(fy(s.y) + 6).toFixed(1)}" font-size="18" text-anchor="middle" fill="#54278f" paint-order="stroke" stroke="#fff" stroke-width="3">✚</text>`);
       });
 
-      // Event markers: red ✱ where lived history struck (by the scrubbed epoch)
+      // Event markers: amber ✱ where lived history struck (#62: the ramp owns red)
       model.regions.forEach(reg => {
         if (reg.eventType !== "none" && reg.eventEpoch <= Math.min(scrubEpoch, snaps.length - 1)) {
-          parts.push(`<text class="evt" x="${(reg.c[0] + 26).toFixed(1)}" y="${(fy(reg.c[1]) + 34).toFixed(1)}" font-size="22" text-anchor="middle" fill="#c1121f" paint-order="stroke" stroke="#fff" stroke-width="3">✱</text>`);
+          parts.push(`<text class="evt" x="${(reg.c[0] + 26).toFixed(1)}" y="${(fy(reg.c[1]) + 34).toFixed(1)}" font-size="22" text-anchor="middle" fill="#d97706" paint-order="stroke" stroke="#fff" stroke-width="3">✱</text>`);
         }
       });
 
-      // Garrisons (Crown force): dark-red G beside the settlement
+      // Garrisons (Crown force): near-black G beside the settlement (#62)
       model.garrisons.forEach(g => {
-        parts.push(`<text class="gar" x="${(g.x - 26).toFixed(1)}" y="${(fy(g.y) - 14).toFixed(1)}" font-size="16" font-weight="700" text-anchor="middle" fill="#a50f15" paint-order="stroke" stroke="#fff" stroke-width="3">G</text>`);
+        parts.push(`<text class="gar" x="${(g.x - 26).toFixed(1)}" y="${(fy(g.y) - 14).toFixed(1)}" font-size="16" font-weight="700" text-anchor="middle" fill="#26201a" paint-order="stroke" stroke="#fff" stroke-width="3">G</text>`);
       });
 
       // Facility glyphs (H = healer, W = waterworks, D = wardstation)
       const FAC_STYLE = { healer: ["H", "#006d2c", -20], waterworks: ["W", "#08519c", 0], wardstation: ["D", "#54278f", 20] };
-      model.facilities.forEach(f => {
+      if (poi) model.facilities.forEach(f => {
         const [ch, color, dx] = FAC_STYLE[f.type];
         parts.push(`<text class="fac" x="${(f.x + dx).toFixed(1)}" y="${(fy(f.y) + 58).toFixed(1)}" font-size="14" font-weight="700" text-anchor="middle" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="3">${ch}</text>`);
       });
 
       // L1: the places between — the freeport's black anchor, the
       // sanctuary's star, the hunters' stands, the veil over the still
-      if (model.freeport) {
+      // (#63: all of it files under points of interest in data mode)
+      if (poi && model.freeport) {
         const reg = model.regions.find(r => r.id === model.freeport.regionId);
         const P = reg.shorePt || reg.c;
         parts.push(`<text x="${P[0].toFixed(1)}" y="${(fy(P[1]) + 6).toFixed(1)}" font-size="18" text-anchor="middle" fill="#1a1a1a" paint-order="stroke" stroke="#fff" stroke-width="3">⚓</text>`);
         parts.push(`<text x="${P[0].toFixed(1)}" y="${(fy(P[1]) + 21).toFixed(1)}" font-size="10" font-style="italic" text-anchor="middle" fill="#1a1a1a" paint-order="stroke" stroke="#fff" stroke-width="2.5">${esc(model.freeport.name)}</text>`);
       }
-      if (model.sanctuary) {
+      if (poi && model.sanctuary) {
         parts.push(`<text x="${model.sanctuary.x.toFixed(1)}" y="${(fy(model.sanctuary.y) - 16).toFixed(1)}" font-size="16" text-anchor="middle" fill="#8a6d00" paint-order="stroke" stroke="#fff" stroke-width="3">✦</text>`);
         parts.push(`<text x="${model.sanctuary.x.toFixed(1)}" y="${(fy(model.sanctuary.y) - 30).toFixed(1)}" font-size="10" font-style="italic" text-anchor="middle" fill="#8a6d00" paint-order="stroke" stroke="#fff" stroke-width="2.5">${esc(model.sanctuary.name)}</text>`);
       }
-      model.camps.forEach(cp => {
+      if (poi) model.camps.forEach(cp => {
         parts.push(`<text x="${(cp.x - 26).toFixed(1)}" y="${(fy(cp.y) + 34).toFixed(1)}" font-size="13" font-weight="700" text-anchor="middle" fill="#5c4327" paint-order="stroke" stroke="#fff" stroke-width="3">∧</text>`);
       });
-      {
+      if (poi) {
         const still = model.regions.filter(r => r.stillair === 1);
         still.forEach(reg => {
-          parts.push(`<text x="${(reg.c[0] - 26).toFixed(1)}" y="${(fy(reg.c[1]) - 30).toFixed(1)}" font-size="13" text-anchor="middle" fill="#667" paint-order="stroke" stroke="#fff" stroke-width="2.5">⌀</text>`);
+          parts.push(`<text x="${(reg.c[0] + 44).toFixed(1)}" y="${(fy(reg.c[1]) - 10).toFixed(1)}" font-size="13" text-anchor="middle" fill="#667" paint-order="stroke" stroke="#fff" stroke-width="2.5">⌀</text>`); // E slot — the NW column belongs to the skyport (#61)
         });
         if (still.length && model.stillName) {
           const cx2 = still.reduce((s2, r) => s2 + r.c[0], 0) / still.length;
@@ -5465,7 +5537,8 @@
       }
 
       // Conduit lines (drawn under settlement symbols) — sliced to the epoch
-      model.conduitEdges.slice(0, live.edgeCount).forEach(e => {
+      // (#63: in data mode the grid argues only on its own lenses)
+      if (atlas || view === "services" || view === "gap") model.conduitEdges.slice(0, live.edgeCount).forEach(e => {
         const A = model.regions[e.a], B = model.regions[e.b];
         parts.push(`<line x1="${A.c[0].toFixed(1)}" y1="${fy(A.c[1]).toFixed(1)}" x2="${B.c[0].toFixed(1)}" y2="${fy(B.c[1]).toFixed(1)}" stroke="#b8860b" stroke-width="${e.cls === "trunk" ? 6 : 3}" opacity="0.85"/>`);
       });
@@ -5511,7 +5584,13 @@
       { // U2: categorical views get NAMED swatches; choropleths keep the bar
         const bar = document.getElementById("legendBar");
         const CATS = view === "bloc" ? BLOC_COLORS : view === "biome" ? BIOME_COLORS : view === "traj" ? TRAJ_COLORS : null;
-        if (CATS) {
+        if (atlas) { // #63: no lens on parchment — the legend stands down
+          document.getElementById("legendLabel").textContent = "atlas — the land itself";
+          bar.classList.remove("cats");
+          bar.parentElement.classList.add("no-ends");
+          bar.innerHTML = "";
+          bar.style.background = "none";
+        } else if (CATS) {
           document.getElementById("legendLabel").textContent =
             view === "bloc" ? "dominant bloc" : view === "biome" ? "biome" : "trajectory";
           bar.classList.add("cats");
@@ -5733,6 +5812,11 @@
     let geo = null;        // world-level geology (wind)
     let model = null;
     let view = "injustice";   // boot into the argument, not the scenery
+    let mapMode = "data";  // #63: atlas = the pen's map, data = the lens; render-only
+    let showPoi = true;    // #63: data mode files the gazetteer under one checkbox
+    // #63 wants the numbers hover-only in data mode; the suite counts them,
+    // so the flag stays true until the hover layer lands
+    const SHOW_NUMBERS = true;
     let scrubEpoch = 0;    // preview-only: which epoch the map shows
 
     function regenerateTopology() {
@@ -5900,6 +5984,18 @@
 
       document.querySelectorAll('input[name="view"]').forEach(el =>
         el.addEventListener("change", (e) => { view = e.target.value; if (model) render(model, params); }));
+
+      // #63: the mode toggle re-renders only — the model never recomputes
+      const setMode = (m) => {
+        if (mapMode === m) return;
+        mapMode = m;
+        $("modeAtlas").classList.toggle("on", m === "atlas");
+        $("modeData").classList.toggle("on", m === "data");
+        if (model) render(model, params);
+      };
+      $("modeAtlas").addEventListener("click", () => setMode("atlas"));
+      $("modeData").addEventListener("click", () => setMode("data"));
+      $("showPoiCk").addEventListener("change", (e) => { showPoi = e.target.checked; if (model) render(model, params); });
 
       $("iq").addEventListener("input", (e) => {
         params.iq = +e.target.value;

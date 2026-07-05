@@ -1202,7 +1202,7 @@ for (let i = 0; i < 120; i++) {
 }
 if (failures === 0) ok("all 120 generations structurally valid (skeleton, bands, geology, refineries, rings)");
 
-// render smoke
+// render smoke (default = data mode: contours draw above the waterline only — #60 G4)
 const svg = A1.doc.querySelector("#stage svg");
 const nCircles = svg ? svg.querySelectorAll("circle").length : 0;
 const nRects = svg ? svg.querySelectorAll("rect:not(.coast)").length : 0;
@@ -1220,7 +1220,7 @@ const nRuin = svg ? svg.querySelectorAll("text.ruin").length : 0;
 const nTower = svg ? svg.querySelectorAll("text.tower").length : 0;
 const nBridge = svg ? svg.querySelectorAll("text.bridge").length : 0;
 const nMael = svg ? svg.querySelectorAll("text.maelstrom").length : 0;
-if (svg && nCircles === regionsOf(A1.gj).length && nRects === Math.max(1, Math.round(regionsOf(A1.gj).length / 16)) && nFac === facilitiesOf(A1.gj).length && nSanct === sanctOf(A1.gj).length && nRoads === roadsOf(A1.gj).length && nGar === garrisonsOf(A1.gj).length && nRidge === ridgesOf(A1.gj).length && nPass === passesOf(A1.gj).length && nRiver === riversOf(A1.gj).length && nSea === A1.gj.features.filter(f => f.properties.kind === "sea").length && nCont === A1.gj.features.filter(f => f.properties.kind === "contour").length && nPort === portsOf(A1.gj).length && nRuin === ruinsOf(A1.gj).length && nTower === towersOf(A1.gj).length && nBridge === bridgesOf(A1.gj).length && nMael === maelOf(A1.gj).length)
+if (svg && nCircles === regionsOf(A1.gj).length && nRects === Math.max(1, Math.round(regionsOf(A1.gj).length / 16)) && nFac === facilitiesOf(A1.gj).length && nSanct === sanctOf(A1.gj).length && nRoads === roadsOf(A1.gj).length && nGar === garrisonsOf(A1.gj).length && nRidge === ridgesOf(A1.gj).length && nPass === passesOf(A1.gj).length && nRiver === riversOf(A1.gj).length && nSea === A1.gj.features.filter(f => f.properties.kind === "sea").length && nCont === A1.gj.features.filter(f => f.properties.kind === "contour" && f.properties.level > A1.gj.hinterland.sea_level).length && nPort === portsOf(A1.gj).length && nRuin === ruinsOf(A1.gj).length && nTower === towersOf(A1.gj).length && nBridge === bridgesOf(A1.gj).length && nMael === maelOf(A1.gj).length)
   ok(`SVG renders: ${nCircles} settlement symbols, ${nRects} refinery glyphs, ${nFac} facility glyphs, ${nSanct} sanctioned sites, ${nRoads} road edges, ${nGar} garrisons, ${nRidge} ridges, ${nPass} passes, ${nRiver} rivers, ${nSea} seas, ${nCont} contour levels, ${nPort} ports, ${nRuin} ruins, ${nTower} towers, ${nBridge} bridges, ${nMael} maelstroms`);
 else fail(`SVG render mismatch (circles ${nCircles}, rects ${nRects}, fac ${nFac}, sanct ${nSanct}, roads ${nRoads}, gar ${nGar}, ridges ${nRidge}, passes ${nPass})`);
 

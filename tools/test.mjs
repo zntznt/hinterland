@@ -1668,6 +1668,7 @@ console.log("# The map is a map M1: coastline, dry towns, places, mountain mass"
     ok(`places are PLACES: ruins and towers stand apart from their towns in ${apart}/${poiN} instances (their own dry sites, not hovering offsets)`);
   else fail(`POIs still hover by the town dot: ${apart}/${poiN}`);
   if (ridgeWorld) {
+    ridgeWorld.doc.getElementById("modeAtlas").click(); // #63: terrain ink is atlas ink
     const svg = ridgeWorld.doc.querySelectorAll.bind(ridgeWorld.doc);
     const hach = svg("#stage svg line.hachure").length, pk = svg("#stage svg text.peak").length, fine = svg("#stage svg path.contourfine").length;
     if (hach >= 20 && pk >= 1 && fine >= 1)
@@ -1972,8 +1973,10 @@ console.log("# The skyway S1 acceptance: geography is destiny only for those who
     ok("the map offers the sky view: who escapes the ground");
   else fail("no sky view chip");
   const spA1 = A1.gj.features.filter(f => f.properties.kind === "skyport").length;
+  A1.doc.getElementById("modeAtlas").click(); // #63: data mode gates the lanes to the sky lens
   const glyphs = A1.doc.querySelectorAll("#stage svg text.skyport").length;
   const laneEls = A1.doc.querySelectorAll("#stage svg line.skylane").length;
+  A1.doc.getElementById("modeData").click();
   if (glyphs === spA1 && laneEls === spA1 * (spA1 - 1) / 2)
     ok(`the aeries and lanes are drawn (${glyphs} glyphs, ${laneEls} lanes)`);
   else fail(`skyway not drawn: ${glyphs}/${spA1} glyphs, ${laneEls} lanes`);

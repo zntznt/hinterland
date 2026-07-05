@@ -14,11 +14,6 @@ Client-side, one file, no build step, no backend.
   shows each one, the experiment that isolates it, and the linkage table
   auditing that every mechanical feature feeds at least one measured
   inequality (the handful that don't are presentation, listed, on purpose).
-- **New to QGIS?** [`docs/qgis-tutorial.md`](docs/qgis-tutorial.md) is a
-  hands-on course for people who have never opened QGIS. It teaches the tool
-  through a Hinterland world across 14 lessons, from loading the map to
-  animating a thousand years of history. Do this before the field guide if you
-  do not already know QGIS.
 - **The atlas:** [`docs/atlas.md`](docs/atlas.md) — a calibration sweep of 80
   worlds (schema v37) and the archetypal extremes it found — the world that
   closed its gap, the company country a region map lies about, the occupied

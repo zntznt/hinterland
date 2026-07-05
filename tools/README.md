@@ -8,7 +8,7 @@ what is tested is what ships.
 ```sh
 cd tools
 npm install                                   # jsdom + d3-delaunay
-node --max-old-space-size=14000 test.mjs      # the main suite (~237 checks)
+node --max-old-space-size=14000 test.mjs      # the main suite (~241 checks)
 node --max-old-space-size=10000 stress.mjs    # 120-config structural stress + render smoke
 node --max-old-space-size=8192  atlas.mjs     # regenerates ../docs/atlas.md (80-world sweep)
 ```

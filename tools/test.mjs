@@ -3,13 +3,17 @@ import { JSDOM } from "jsdom";
 import * as d3d from "d3-delaunay";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-// NOTE: the suite generates ~450 full JSDOM worlds; run with
+// NOTE: the suite generates ~450 full JSDOM worlds. gen() takes one
+// event-loop breath per world — V8 pins every WeakRef target (jsdom
+// holds one per node) until a microtask checkpoint, so a synchronous
+// run would retain every closed window and die at the heap cap. With
+// the breath the peak stays low; a generous cap still never hurts:
 //   node --max-old-space-size=13500 test.mjs
 let failures = 0;
 const fail = (m) => { console.error("FAIL: " + m); failures++; };
 const ok = (m) => console.log("ok  : " + m);
 
-function gen(hash, keepDom = false) {
+async function gen(hash, keepDom = false) {
   let captured = null;
   const dom = new JSDOM(html, {
     runScripts: "dangerously",
@@ -30,7 +34,14 @@ function gen(hash, keepDom = false) {
   const series = JSON.parse(captured);
   doc.getElementById("dlChron").click();
   const chron = captured;
-  if (!keepDom) { dom.window.close(); return { gj, series, chron, doc: null, window: null }; }
+  if (!keepDom) dom.window.close();
+  // one event-loop breath per world: V8 keeps every WeakRef target (jsdom
+  // holds one per node) in the kept-objects set until a microtask
+  // checkpoint, and finalizers only run between turns — a fully
+  // synchronous run would retain every closed window and die at the heap
+  // cap. The breath lets the ordinary GC actually reclaim the worlds.
+  await new Promise((r) => setImmediate(r));
+  if (!keepDom) return { gj, series, chron, doc: null, window: null };
   return { gj, series, chron, doc, window: dom.window };
 }
 
@@ -521,10 +532,10 @@ function validate(gj, tag) {
   }
 
   // G2 rivers: chains valid + named, downstream carriage exactly recomputable
+  // (v39: the LineString is the traced BED; the chain rides in chain_regions)
   {
     const rivers = riversOf(gj);
     if (rivers.length > 2) return fail(`${tag}: river count ${rivers.length}`);
-    const anchor = new Map(settles.map(st => [st.properties.region_id, st.geometry.coordinates]));
     const byRiver = new Map();
     for (const r of regions) {
       const p = r.properties;
@@ -544,11 +555,14 @@ function validate(gj, tag) {
       if (!/^[A-Z][a-z]{4,19}$/.test(p.river_name || "")) return fail(`${tag}: malformed river_name`);
       const chain = (byRiver.get(p.river_id) || []).sort((a, b) => a.river_pos - b.river_pos);
       if (chain.length < 2) return fail(`${tag}: river ${p.river_id} chain too short`);
-      if (RV.geometry.coordinates.length !== chain.length) return fail(`${tag}: river coords != chain length`);
+      if (!Array.isArray(p.chain_regions) || p.chain_regions.length !== chain.length)
+        return fail(`${tag}: chain_regions != chain length`);
+      if (RV.geometry.coordinates.length < chain.length) return fail(`${tag}: trace thinner than its chain`);
+      for (const [tx, ty] of RV.geometry.coordinates)
+        if (tx < -0.01 || tx > 1000.01 || ty < -0.01 || ty > 1000.01) return fail(`${tag}: trace coord OOB`);
       for (let k = 0; k < chain.length; k++) {
         if (chain[k].river_pos !== k) return fail(`${tag}: river_pos not contiguous`);
-        const a = anchor.get(chain[k].region_id), c = RV.geometry.coordinates[k];
-        if (a[0] !== c[0] || a[1] !== c[1]) return fail(`${tag}: river coord ${k} != region anchor`);
+        if (p.chain_regions[k] !== chain[k].region_id) return fail(`${tag}: chain_regions[${k}] != downstream order`);
         if (k > 0 && chain[k].elevation >= chain[k - 1].elevation)
           return fail(`${tag}: river flows uphill at pos ${k} (${chain[k - 1].elevation} -> ${chain[k].elevation})`);
       }
@@ -1195,12 +1209,12 @@ function validate(gj, tag) {
 console.log("# determinism + three-stage decoupling");
 
 const BASE = "#seed=alpha&regions=24&relax=3&bias=70&we=35&wf=25&wt=30&wg=10";
-const A1 = gen(BASE, true);
-const A2 = gen(BASE);
+const A1 = await gen(BASE, true);
+const A2 = await gen(BASE);
 if (JSON.stringify(A1.gj) === JSON.stringify(A2.gj)) ok("same params => byte-identical export");
 else fail("same params produced different export");
 
-const Aw = gen("#seed=alpha&regions=24&relax=3&bias=70&we=80&wf=5&wt=5&wg=10");
+const Aw = await gen("#seed=alpha&regions=24&relax=3&bias=70&we=80&wf=5&wt=5&wg=10");
 if (JSON.stringify(rings(A1.gj)) === JSON.stringify(rings(Aw.gj))) ok("weight change leaves topology identical");
 else fail("weight change altered topology");
 if (geology(A1.gj) === geology(Aw.gj)) ok("weight change leaves GEOLOGY identical (endowment/ruggedness/fertility)");
@@ -1208,7 +1222,7 @@ else fail("weight change altered geology");
 if (JSON.stringify(col(A1.gj, "wealth")) !== JSON.stringify(col(Aw.gj, "wealth"))) ok("weight change alters wealth");
 else fail("weight change did not alter wealth");
 
-const Acap = gen(BASE + "&cx=150&cy=150");
+const Acap = await gen(BASE + "&cx=150&cy=150");
 if (JSON.stringify(rings(A1.gj)) === JSON.stringify(rings(Acap.gj))) ok("capital move leaves topology identical");
 else fail("capital move altered topology");
 if (geology(A1.gj) === geology(Acap.gj)) ok("capital move leaves GEOLOGY identical");
@@ -1217,7 +1231,7 @@ if (JSON.stringify(col(A1.gj, "centrality_to_seat")) !== JSON.stringify(col(Acap
   ok("capital move recomputes centrality (society layer)");
 else fail("capital move did not change centrality");
 
-const Bseed = gen(BASE.replace("alpha", "beta"));
+const Bseed = await gen(BASE.replace("alpha", "beta"));
 if (geology(A1.gj) !== geology(Bseed.gj)) ok("seed change alters geology");
 else fail("seed change did not alter geology");
 
@@ -1250,7 +1264,7 @@ console.log("# Mountain ranges G1 acceptance: geography is destiny");
   let crossRoads = 0, atPass = 0;
   const N = 25;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=g1-${i}&regions=24`).gj;
+    const g = (await gen(`#seed=g1-${i}&regions=24`)).gj;
     const regions = regionsOf(g);
     const anchor = new Map(settlesOf(g).map(st => [st.properties.region_id, st.geometry.coordinates]));
     const seatId = regions.find(r => r.properties.is_capital_region === 1).properties.region_id;
@@ -1316,9 +1330,16 @@ console.log("# Mountain ranges G1 acceptance: geography is destiny");
   else fail(`traffic ignores the chokepoints: ${pct(atPass, crossRoads)}`);
 }
 
+// the plain-alpha worlds are read by many chronicle checks below; closed
+// JSDOM worlds leak their vm context on modern Node and the suite peaks
+// near the heap cap, so each is generated ONCE and shared
+const RA0 = await gen("#seed=alpha&regions=24&ep=0");
+const RA10 = await gen("#seed=alpha&regions=24&ep=10");
+RA0.series = RA10.series = null; // only gj + chron are read; the series would pin MBs to end-of-run
+
 // the chronicle knows the mountains
 {
-  const R = gen("#seed=alpha&regions=24&ep=0");
+  const R = RA0;
   const names = ridgesOf(R.gj).map(r => r.properties.ridge_name);
   if (names.every(nm => R.chron.includes(nm)) && /Pass\b/.test(R.chron))
     ok(`the chronicle names the ranges and their passes (${names.join(", ")})`);
@@ -1338,7 +1359,7 @@ console.log("# The physical world G4 acceptance: rock, rain, and what follows");
   let tempCorr = 0, fertCorr = 0, shadowWorlds = 0, biomeOK = 0, allBiomes = new Set();
   const N = 20;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=g4-${i}&regions=24`).gj;
+    const g = (await gen(`#seed=g4-${i}&regions=24`)).gj;
     const R = regionsOf(g).map(f => f.properties);
     const anchorY = settlesOf(g).map(st => st.geometry.coordinates[1]);
     tempCorr += pearson(R.map(r => r.temperature), anchorY);
@@ -1368,7 +1389,7 @@ console.log("# Divergent histories V1 acceptance: the criticism inverted");
   const leads = new Set();
   const N = 24;
   for (let i = 0; i < N; i++) {
-    const R = gen(`#seed=v1-${i}&regions=24&ep=10`, true);
+    const R = await gen(`#seed=v1-${i}&regions=24&ep=10`, true);
     const F = R.gj.hinterland.findings;
     const d = F.gini - F.gini_t0;
     if (d <= -0.04) down++; else if (d >= 0.04) up++; else held++;
@@ -1400,7 +1421,7 @@ console.log("# The strata H1 acceptance: class exists within the walls");
   // ep=0 neutral zero: elite_share IS its founding structure — recompute
   // the init formula exactly from the exported columns (works, seams, court)
   {
-    const Z = gen("#seed=h1-init&regions=30&ep=0");
+    const Z = await gen("#seed=h1-init&regions=30&ep=0");
     const P = regionsOf(Z.gj).map(f => f.properties);
     const tierOf = new Map(settlesOf(Z.gj).map(st => [st.properties.region_id, st.properties.tier]));
     const bad = P.filter(r => r.elite_share !== Math.min(92, Math.max(8, Math.round(
@@ -1418,7 +1439,7 @@ console.log("# The strata H1 acceptance: class exists within the walls");
   let satWorst = 0;
   let wonDrops = 0, wonSeen = 0, wonNeg = 0, crushRises = 0, crushSeen = 0, plagueDrops = 0, plagueSeen = 0;
   for (let i = 0; i < N; i++) {
-    const R = gen(`#seed=h1-${i}&regions=26&ep=10`);
+    const R = await gen(`#seed=h1-${i}&regions=26&ep=10`);
     const F = R.gj.hinterland.findings;
     const P = regionsOf(R.gj).map(f => f.properties);
     if (F.within_pct !== null) within.push(F.within_pct);
@@ -1472,7 +1493,7 @@ console.log("# The strata H1 acceptance: class exists within the walls");
   if (/the owners/.test(A1.doc.getElementById("info").textContent))
     ok("THIS WORLD reads out the owners' share");
   else fail("readout silent on owners");
-  const RC = gen("#seed=alpha&regions=24&ep=10");
+  const RC = RA10;
   if (RC.chron.includes("two peoples under one name") && RC.chron.includes("within every wall the shares were already set"))
     ok("the chronicle counts the owners' row and the verdict closes on it");
   else fail("chronicle silent on class");
@@ -1489,8 +1510,8 @@ console.log("# The two levers P2: the seat's ear and the sealed quays");
   const N = 10;
   let ref0 = 0, ref100 = 0, wounded100 = 0, giniDiff = 0;
   for (let i = 0; i < N; i++) {
-    const lo = gen(`#seed=p2-${i}&regions=24&ep=10&iq=0`);
-    const hi = gen(`#seed=p2-${i}&regions=24&ep=10&iq=100`);
+    const lo = await gen(`#seed=p2-${i}&regions=24&ep=10&iq=0`);
+    const hi = await gen(`#seed=p2-${i}&regions=24&ep=10&iq=100`);
     if (lo.gj.hinterland.events.some(ev => ev.type === "reform" && !ev.concession)) ref0++;
     const woundedHi = hi.gj.hinterland.events.some(ev => ["blight_plague", "relic_calamity"].includes(ev.type));
     if (woundedHi) {
@@ -1511,8 +1532,8 @@ console.log("# The two levers P2: the seat's ear and the sealed quays");
   // the sealed quays
   let domOpen = 0, domClosed = 0, portsClosed = 0, priceDir = 0, priced = 0;
   for (let i = 0; i < N; i++) {
-    const op = gen(`#seed=p2h-${i}&regions=26&ep=10`);
-    const cl = gen(`#seed=p2h-${i}&regions=26&ep=10&hb=0`);
+    const op = await gen(`#seed=p2h-${i}&regions=26&ep=10`);
+    const cl = await gen(`#seed=p2h-${i}&regions=26&ep=10&hb=0`);
     if (op.gj.hinterland.dominion) domOpen++;
     if (cl.gj.hinterland.dominion) domClosed++;
     portsClosed += portsOf(cl.gj).length;
@@ -1527,8 +1548,8 @@ console.log("# The two levers P2: the seat's ear and the sealed quays");
     ok(`and isolation has its (modest) price: coastal median wealth no better closed than open in ${priceDir}/${priced} — small, because this realm's wealth is mineral, not maritime; the chronicle calls the sealing safety bought with poverty, and the ledger calls it cheap`);
   else fail(`isolation price inverted: ${priceDir}/${priced}`);
   // defaults are the old world, byte for byte
-  const A2 = gen("#seed=alpha&regions=24&ep=10", true);
-  const B2 = gen("#seed=alpha&regions=24&ep=10&iq=45&hb=1");
+  const A2 = await gen("#seed=alpha&regions=24&ep=10", true);
+  const B2 = await gen("#seed=alpha&regions=24&ep=10&iq=45&hb=1");
   if (JSON.stringify(A2.gj) === JSON.stringify(B2.gj))
     ok("the defaults ARE the old dice: iq=45 & harbors open reproduce the unparameterized world byte-for-byte");
   else fail("defaults drifted from the old world");
@@ -1536,7 +1557,7 @@ console.log("# The two levers P2: the seat's ear and the sealed quays");
   if (A2.doc.getElementById("iq") && A2.doc.getElementById("hb"))
     ok("the levers are on the panel: THE SEAT section carries responsiveness and the harbor seal");
   else fail("levers missing from the controls");
-  const C2 = gen("#seed=alpha&ep=0&iq=80&hb=0", true);
+  const C2 = await gen("#seed=alpha&ep=0&iq=80&hb=0", true);
   if (C2.gj.hinterland.responsiveness === 80 && C2.gj.hinterland.harbors_closed === true &&
       C2.window.location.hash.includes("iq=80") && C2.window.location.hash.includes("hb=0"))
     ok("both levers ride the hash and the provenance (share links carry the policy)");
@@ -1621,7 +1642,7 @@ console.log("# The surface catches up U2: inspector, lenses, legends, menus, flo
   // the counterfactual MENU: the grid charter, verified against a fresh gt=0 world
   doc.getElementById("cfBtnGrid").click();
   const statTxt = doc.getElementById("cfStats").textContent;
-  const Z = gen("#seed=v1-0&regions=24&ep=10&gt=0");
+  const Z = await gen("#seed=v1-0&regions=24&ep=10&gt=0");
   const zDark = regionsOf(Z.gj).filter(r => r.properties.on_conduit === 0).length;
   const aDark = regionsOf(gj).filter(r => r.properties.on_conduit === 0).length;
   if (statTxt.includes("lights") && statTxt.includes(`${zDark}`) && statTxt.includes(`${aDark}`))
@@ -1643,7 +1664,7 @@ console.log("# The map is a map M1: coastline, dry towns, places, mountain mass"
   const reaches = [];
   let apart = 0, poiN = 0, ridgeWorld = null;
   for (let i = 0; i < N; i++) {
-    const R = gen(`#seed=m1-${i}&regions=${14 + i * 3}&ep=${i % 9}`, true);
+    const R = await gen(`#seed=m1-${i}&regions=${14 + i * 3}&ep=${i % 9}`, true);
     const seas = R.gj.features.filter(f => f.properties.kind === "sea");
     const sides = R.gj.hinterland.sea_sides;
     let reach = 0;
@@ -1680,7 +1701,7 @@ console.log("# The map is a map M1: coastline, dry towns, places, mountain mass"
     else fail("sea path not even-odd");
   } else fail("no ridged world found in the sweep");
   // the negotiated level is exported and honest
-  const g0 = gen("#seed=m1-10&regions=34&ep=0").gj; // the world that used to drown its towns
+  const g0 = (await gen("#seed=m1-10&regions=34&ep=0")).gj; // the world that used to drown its towns
   if (Number.isInteger(g0.hinterland.sea_level) && g0.hinterland.sea_level >= 3)
     ok(`the sea level NEGOTIATES: the world that used to drown region #8 now exports level ${g0.hinterland.sea_level}, and its towns stand dry (validated above)`);
   else fail("sea level malformed");
@@ -1802,7 +1823,7 @@ console.log("# The founding centuries Z1 acceptance: the census is grown, not pa
   const A = [], TR = [], PR = [], seatRk = [];
   let plagueWorlds = 0, epWorlds = 0;
   for (let i = 0; i < N; i++) {
-    const R = gen(`#seed=z1-${i}&regions=${16 + (i % 34)}&ep=${i % 11}&gt=${(i * 13) % 101}`);
+    const R = await gen(`#seed=z1-${i}&regions=${16 + (i % 34)}&ep=${i % 11}&gt=${(i * 13) % 101}`);
     const F = R.gj.hinterland.findings;
     if (F.zipf) { A.push(F.zipf.alpha); TR.push(F.zipf.tail_r2); PR.push(F.zipf.primacy); }
     const S = settlesOf(R.gj).map(f => f.properties);
@@ -1834,7 +1855,7 @@ console.log("# The founding centuries Z1 acceptance: the census is grown, not pa
   else fail("panel silent on rank-size");
   if (/rank-size/.test(A1.doc.getElementById("info").textContent)) ok("THIS WORLD reads out the rank-size fit");
   else fail("readout silent on rank-size");
-  const RZ = gen("#seed=alpha&regions=24&ep=10");
+  const RZ = RA10;
   if (RZ.chron.includes("a hierarchy grown, not granted"))
     ok("the chronicle knows how the towns got their sizes");
   else fail("chronicle silent on the grown census");
@@ -1852,7 +1873,7 @@ console.log("# The Dominion X1 acceptance: sovereignty is the last inequality");
   const retent = [], growth = [], compr = [], occShare = [];
   let domWorld = null, domProv = null;
   for (let i = 0; i < N; i++) {
-    const R = gen(`#seed=x1-${i}&regions=${18 + (i % 30)}&ep=10&gt=${(i * 13) % 101}&db=${(i * 17) % 101}`, true);
+    const R = await gen(`#seed=x1-${i}&regions=${18 + (i % 30)}&ep=10&gt=${(i * 13) % 101}&db=${(i * 17) % 101}`, true);
     const D = R.gj.hinterland.dominion;
     const F = R.gj.hinterland.findings;
     if (!D) continue;
@@ -1931,7 +1952,7 @@ console.log("# The skyway S1 acceptance: geography is destiny only for those who
   let both = 0, shadowWins = 0, twinSeen = 0, twinPos = 0, aerieElite = 0;
   const shAdv = [];
   for (let i = 0; i < N; i++) {
-    const R = gen(`#seed=s1-${i}&regions=${18 + (i % 30)}&ep=${i % 11}&gt=${(i * 13) % 101}&db=${(i * 17) % 101}`);
+    const R = await gen(`#seed=s1-${i}&regions=${18 + (i % 30)}&ep=${i % 11}&gt=${(i * 13) % 101}&db=${(i * 17) % 101}`);
     const F = R.gj.hinterland.findings;
     const P = regionsOf(R.gj).map(f => f.properties);
     if (F.sky.shadow_adv !== null && F.sky.open_adv !== null) {
@@ -1956,7 +1977,7 @@ console.log("# The skyway S1 acceptance: geography is destiny only for those who
     ok(`the aerie is an owners' district: every skyport town at/above the median elite share in ${aerieElite}/${N} worlds`);
   else fail(`aeries not elite: ${aerieElite}/${N}`);
   // founding infrastructure: every sky column is byte-stable across the epoch knob
-  const K0 = gen("#seed=sky-static&regions=24&ep=0"), K10 = gen("#seed=sky-static&regions=24&ep=10");
+  const K0 = await gen("#seed=sky-static&regions=24&ep=0"), K10 = await gen("#seed=sky-static&regions=24&ep=10");
   const cols = (g) => regionsOf(g.gj).map(f => [f.properties.is_skyport, f.properties.seat_cost_ground, f.properties.seat_cost_sky, f.properties.sky_advantage].join(",")).join("|");
   if (cols(K0) === cols(K10))
     ok("the skyway is founding infrastructure: is_skyport + both cost columns + sky_advantage byte-stable across the epoch knob");
@@ -1983,7 +2004,7 @@ console.log("# The skyway S1 acceptance: geography is destiny only for those who
   if (/the skyway/.test(A1.doc.getElementById("info").textContent))
     ok("THIS WORLD reads out the skyway charter");
   else fail("readout silent on the skyway");
-  const RS = gen("#seed=alpha&regions=24&ep=10");
+  const RS = RA10;
   if (RS.chron.includes("the sky is not") || RS.chron.includes("no lane worth the lift"))
     ok("the chronicle records the charter: the road below is for everyone; the sky is not");
   else fail("chronicle silent on the skyway");
@@ -2006,7 +2027,7 @@ console.log("# The argument surface A1 acceptance: the app says what it measures
   if (twinLines === (F.twins ? 1 : 0)) ok(`the twin exhibit is drawn when the twins exist (${twinLines} line, twins ${F.twins ? "present" : "absent"})`);
   else fail(`twin line mismatch: ${twinLines} vs ${JSON.stringify(F.twins)}`);
   // the chronicle concludes
-  const R = gen("#seed=alpha&regions=24&ep=10");
+  const R = RA10;
   if (R.chron.includes("What the Record Shows") && R.chron.includes("no villain wrote it"))
     ok("the chronicle closes with a verdict: What the Record Shows");
   else fail("the chronicle does not conclude");
@@ -2025,7 +2046,7 @@ console.log("# Dynasties E5 acceptance: the powers have faces");
   let succWorlds = 0, crisisWorlds = 0, reignDated = 0, narrated = 0, narratedTested = 0;
   const N = 12;
   for (let i = 0; i < N; i++) {
-    const R = gen(`#seed=e5-${i}&regions=24&ep=10`);
+    const R = await gen(`#seed=e5-${i}&regions=24&ep=10`);
     const evs = (R.gj.hinterland.events || []).filter(ev => ev.type === "succession");
     if (evs.length) succWorlds++;
     if (evs.some(ev => ev.contested)) crisisWorlds++;
@@ -2045,7 +2066,7 @@ console.log("# Dynasties E5 acceptance: the powers have faces");
     ok(`every succession is narrated by name (${narrated}/${narratedTested})`);
   else fail(`silent successions: ${narrated}/${narratedTested}`);
   // the founding three are byte-stable across epoch settings of a seed
-  const A0 = gen("#seed=e5-0&regions=24&ep=0").gj, A10 = gen("#seed=e5-0&regions=24&ep=10").gj;
+  const A0 = (await gen("#seed=e5-0&regions=24&ep=0")).gj, A10 = (await gen("#seed=e5-0&regions=24&ep=10")).gj;
   const f = (g) => ["crown", "temple", "magnate"].map(F => g.hinterland.rulers[F][0].name).join(",");
   if (f(A0) === f(A10)) ok(`the founding rulers survive the epoch knob (${f(A0)})`);
   else fail("founding rulers drift with ep");
@@ -2057,7 +2078,7 @@ console.log("# Peace terms F3 acceptance: defeat is an institution");
   let treatyWorlds = 0, cessionWorlds = 0, tributeWorlds = 0, chronOK = 0;
   const N = 20;
   for (let i = 0; i < N; i++) {
-    const R = gen(`#seed=f2-${i}&regions=24&ep=10`);
+    const R = await gen(`#seed=f2-${i}&regions=24&ep=10`);
     const evs = R.gj.hinterland.events || [];
     const t = evs.find(ev => ev.type === "treaty");
     if (!t) continue;
@@ -2082,7 +2103,7 @@ console.log("# Escalation F2 acceptance: money begets reach, wars become policy"
   let oligOK = 0, oligTested = 0, warWorlds = 0, warNamed = 0, paid = 0, paidTested = 0;
   const N = 20;
   for (let i = 0; i < N; i++) {
-    const R = gen(`#seed=f2-${i}&regions=24&ep=10`);
+    const R = await gen(`#seed=f2-${i}&regions=24&ep=10`);
     const evs = R.gj.hinterland.events || [];
     const tr = R.gj.hinterland.treasuries;
     const held = { crown: 0, temple: 0, magnate: 0 };
@@ -2120,7 +2141,7 @@ console.log("# The faction turn F1 acceptance: the blocs become agents");
   let seizeWorlds = 0, raiseWorlds = 0, burnWorlds = 0, tollCorr = 0, tollN = 0, chronOK = 0, chronTested = 0;
   const N = 20;
   for (let i = 0; i < N; i++) {
-    const R = gen(`#seed=f1-${i}&regions=24&ep=10`);
+    const R = await gen(`#seed=f1-${i}&regions=24&ep=10`);
     const evs = R.gj.hinterland.events || [];
     const regions = regionsOf(R.gj).map(f => f.properties);
     if (evs.some(ev => ev.type === "seizure")) {
@@ -2163,7 +2184,7 @@ console.log("# The wild layer P1 acceptance: anomalies warp the ledger");
       bridgeTested = 0, bridgeRich = 0, dhN = 0, dhBlighted = 0;
   const N = 20;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=p1-${i}&regions=24`).gj;
+    const g = (await gen(`#seed=p1-${i}&regions=24`)).gj;
     const R = regionsOf(g).map(f => f.properties);
     const medOf = (key) => median(R.map(r => r[key]));
     for (const ru of ruinsOf(g)) {
@@ -2200,7 +2221,7 @@ console.log("# The wild layer P1 acceptance: anomalies warp the ledger");
 
 // the chronicle tells the wild map
 {
-  const R = gen("#seed=alpha&regions=24&ep=0");
+  const R = RA0;
   const ruinNames = ruinsOf(R.gj).map(r => r.properties.ruin_name);
   if (R.chron.includes("The old world is not gone") && ruinNames.every(nm => R.chron.includes(nm)) &&
       (towersOf(R.gj).length === 0 || R.chron.includes(" Tower")) &&
@@ -2221,7 +2242,7 @@ console.log("# The sea G3 acceptance: the double lottery");
   let seaCorr = 0, dblOK = 0, dblTested = 0, riverPorts = 0;
   const N = 20;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=g3-${i}&regions=24`).gj;
+    const g = (await gen(`#seed=g3-${i}&regions=24`)).gj;
     const R = regionsOf(g).map(f => f.properties);
     seaCorr += pearson(R.map(r => r.sea_access), R.map(r => r.wealth));
     const ms = median(R.map(r => r.sea_access));
@@ -2246,7 +2267,7 @@ console.log("# The sea G3 acceptance: the double lottery");
 
 // the chronicle knows where the sea lies
 {
-  const R = gen("#seed=alpha&regions=24&ep=0");
+  const R = RA0;
   if (R.chron.includes("The sea lies to the") && / Harbor| Haven| Strand/.test(R.chron))
     ok("the chronicle places the sea and names the harbor");
   else fail("chronicle silent on the sea");
@@ -2254,6 +2275,9 @@ console.log("# The sea G3 acceptance: the double lottery");
 
 console.log("# Rivers G2 acceptance: who drinks first");
 
+// R1: the bed's field stats ride the same 20 worlds the G2 loop already
+// generates — the suite peaks near the heap cap, so no world is walked twice
+const R1S = { rivN: 0, seaMouth: 0, borderMouth: 0, corridorBad: null, ptsMin: Infinity, ptsMax: 0 };
 {
   // stage discipline: society knobs cannot bend the rivers
   const rvs = (g) => JSON.stringify(riversOf(g).map(r => [r.properties.river_name, r.geometry.coordinates]));
@@ -2263,7 +2287,26 @@ console.log("# Rivers G2 acceptance: who drinks first");
   let chains = 0, mouthWorse = 0, richTested = 0, richer = 0, withRiver = 0;
   const N = 20;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=g2-${i}&regions=24`).gj;
+    const g = (await gen(`#seed=g2-${i}&regions=24`)).gj;
+    {
+      const seaPolys = g.features.filter(f => f.properties.kind === "sea")
+        .map(sf => ({ outer: sf.geometry.coordinates[0], holes: sf.geometry.coordinates.slice(1) }));
+      const inSea = (x, y) => seaPolys.some(S => pointInRing(x, y, S.outer) && !S.holes.some(h => pointInRing(x, y, h)));
+      const regByI = new Map(regionsOf(g).map(f => [f.properties.region_id, f]));
+      for (const RV of riversOf(g)) {
+        R1S.rivN++;
+        const C = RV.geometry.coordinates;
+        R1S.ptsMin = Math.min(R1S.ptsMin, C.length); R1S.ptsMax = Math.max(R1S.ptsMax, C.length);
+        const [mx2, my2] = C[C.length - 1];
+        if (inSea(mx2, my2)) R1S.seaMouth++;
+        else if (mx2 <= 0.01 || mx2 >= 999.99 || my2 <= 0.01 || my2 >= 999.99) R1S.borderMouth++;
+        for (const rid of RV.properties.chain_regions) {
+          const ring = regByI.get(rid).geometry.coordinates[0];
+          if (!C.some(([x, y]) => pointInRing(x, y, ring)))
+            R1S.corridorBad = R1S.corridorBad || `g2-${i} river ${RV.properties.river_id} never enters region ${rid}`;
+        }
+      }
+    }
     const R = regionsOf(g).map(f => f.properties);
     const riv = R.filter(r => r.on_river === 1);
     if (riversOf(g).length > 0) withRiver++;
@@ -2293,11 +2336,43 @@ console.log("# Rivers G2 acceptance: who drinks first");
 
 // the chronicle knows the water
 {
-  const R = gen("#seed=alpha&regions=24&ep=0");
+  const R = RA0;
   const names = riversOf(R.gj).map(r => r.properties.river_name);
   if (names.length && names.every(nm => R.chron.includes(nm)) && R.chron.includes("drinks it clean"))
     ok(`the chronicle tells the drinking order (${names.map(n => "the " + n).join(", ")})`);
   else fail("chronicle silent on the rivers");
+}
+
+
+console.log("# R1 acceptance: the river finds its bed");
+
+// the suite peaks near the heap cap, so R1 generates NO worlds of its own:
+// the epoch pair here is the E3 toponymy block's own T0/T8, hoisted
+const T0 = (await gen("#seed=names&regions=24&ep=0")).gj;
+const T8 = (await gen("#seed=names&regions=24&ep=10")).gj;
+{
+  // the bed is geology: weights, the capital, and the epoch knob leave
+  // every trace byte-identical (same-hash byte-identity is already the
+  // suite's very first check, and the trace rides inside that export)
+  const tr = (g) => JSON.stringify(riversOf(g).map(r => [r.properties.river_id, r.geometry.coordinates]));
+  if (tr(A1.gj) === tr(Aw.gj) && tr(A1.gj) === tr(Acap.gj)) ok("weight change and capital move leave the traced bed identical");
+  else fail("society knobs bent the bed");
+  if (tr(T0) === tr(T8)) ok("time leaves the bed identical (ep=0 vs ep=10)");
+  else fail("epochs bent the bed");
+
+  // field stats collected on the G2 loop's 20 worlds (no extra generations)
+  if (R1S.rivN > 0 && R1S.seaMouth + R1S.borderMouth === R1S.rivN)
+    ok(`no river dies mid-land: ${R1S.seaMouth}/${R1S.rivN} mouths enter the sea, ${R1S.borderMouth} leave over the border (20 worlds)`);
+  else fail(`rivers dying inland: ${R1S.rivN - R1S.seaMouth - R1S.borderMouth}/${R1S.rivN}`);
+  if (!R1S.corridorBad) ok(`the bed serves the drinking order: every chain region holds >=1 trace point (${R1S.rivN} rivers)`);
+  else fail(`corridor broken: ${R1S.corridorBad}`);
+  // band measured across 62 worlds / 91 rivers at calibration: 9-38 points
+  if (R1S.ptsMin >= 5 && R1S.ptsMax <= 60)
+    ok(`the bed stays export-light: trace sizes ${R1S.ptsMin}-${R1S.ptsMax} points (measured band 9-38, pinned 5-60)`);
+  else fail(`trace size out of band: ${R1S.ptsMin}-${R1S.ptsMax}`);
+  // monotone descent along the CONTINUOUS field is measured outside the
+  // suite (elevAt is not exported); what IS pinned here forever is the
+  // chain's own monotone drop — the river-flows-uphill check in validate()
 }
 
 console.log("# Markov toponymy E3 acceptance: the world names itself");
@@ -2310,8 +2385,7 @@ console.log("# Markov toponymy E3 acceptance: the world names itself");
   else fail("capital move renamed settlements");
   if (nm(A1.gj) === nm(Aw.gj)) ok("weight change leaves the entire toponymy identical");
   else fail("weight change renamed settlements");
-  const T0 = gen("#seed=names&regions=24&ep=0").gj;
-  const T8 = gen("#seed=names&regions=24&ep=10").gj;
+  // T0/T8 are generated once, above the R1 block, and shared with it
   if (nm(T0) === nm(T8)) ok("time leaves the toponymy identical (ep=0 vs ep=10)");
   else fail("epochs renamed settlements");
   const s0 = new Map(sanctOf(T0).map(s => [s.properties.region_id, s.properties.site_name]));
@@ -2326,7 +2400,7 @@ console.log("# Markov toponymy E3 acceptance: the world names itself");
   for (const m of html.matchAll(/"([a-z]{4,})"/g)) quoted.add(m[1]);
   let total = 0, novel = 0, frontierSeen = 0, lowlandSeen = 0;
   for (let i = 0; i < 10; i++) {
-    const g = gen(`#seed=nm${i}&regions=24`).gj;
+    const g = (await gen(`#seed=nm${i}&regions=24`)).gj;
     for (const s of settlesOf(g)) {
       total++;
       if (!quoted.has(s.properties.name.toLowerCase())) novel++;
@@ -2347,7 +2421,7 @@ console.log("# The naming of things E6 acceptance: the words are grown from the 
   // measured band (47% at calibration across 20 worlds)
   let plainN = 0, totalN = 0;
   for (let i = 0; i < 6; i++) {
-    const g = gen(`#seed=e6-${i}&regions=24`).gj;
+    const g = (await gen(`#seed=e6-${i}&regions=24`)).gj;
     for (const s of settlesOf(g)) {
       totalN++;
       if (/^[A-Z][a-z]+$/.test(s.properties.name) && !/(mouth|ford|mere|ness|holt|sedge|delve|hold|gard)$/.test(s.properties.name)) plainN++;
@@ -2358,7 +2432,7 @@ console.log("# The naming of things E6 acceptance: the words are grown from the 
   else fail(`name flavor share out of band: ${flavored.toFixed(0)}%`);
 
   // an event-rich world: history is filed under names that RECOMPUTE
-  const E = gen("#seed=vesper-9&regions=24&ep=8").gj;
+  const E = (await gen("#seed=vesper-9&regions=24&ep=8")).gj;
   const evsE = E.hinterland.events || [];
   const nmById = new Map(settlesOf(E).map(st => [st.properties.region_id, st.properties.name]));
   const NAMEABLE = new Set(["war", "treaty", "annexation", "revolt", "blight_plague"]);
@@ -2430,11 +2504,11 @@ console.log("# The naming of things E6 acceptance: the words are grown from the 
     if (f.properties.ridge_kind !== want) kindBad = `ridge ${f.properties.ridge_name}: ${f.properties.ridge_kind} != ${want}`;
   }
   for (const f of E.features.filter(f2 => f2.properties.kind === "river")) {
-    const n2 = f.geometry.coordinates.length;
+    const n2 = f.properties.chain_regions.length; // v39: the kind reads the chain, not the bed's point count
     const want = n2 <= 3 ? "Beck" : n2 <= 5 ? "Brook" : "River";
     if (f.properties.river_kind !== want) kindBad = `river ${f.properties.river_name}: ${f.properties.river_kind} != ${want}`;
   }
-  if (!kindBad) ok("the rock and the rivers speak their kinds, recomputed from geometry (Teeth/Spine/Range/Hills, Beck/Brook/River)");
+  if (!kindBad) ok("the rock and the rivers speak their kinds, recomputed from measured size (Teeth/Spine/Range/Hills from geometry, Beck/Brook/River from chain_regions)");
   else fail(`land kinds do not recompute: ${kindBad}`);
 
   // the great roads: at most three, named only for what they carry
@@ -2468,7 +2542,7 @@ console.log("# The places between L1 acceptance: freeport, stillair, sanctuary, 
   let fpN = 0, stillN = 0, sanctN = 0, campN = 0, bad = null;
   let fpWorldsWithCoast = 0; const fpSmugs = [], coastSmugs = [];
   for (let i = 0; i < 8; i++) {
-    const gj = gen(`#seed=l1t-${i}&regions=24&ep=0`).gj;
+    const gj = (await gen(`#seed=l1t-${i}&regions=24&ep=0`)).gj;
     const rs = regionsOf(gj).map(f => f.properties);
     const fp = rs.find(r => r.is_freeport === 1);
     const still = rs.filter(r => r.stillair === 1);
@@ -2513,16 +2587,16 @@ console.log("# The places between L1 acceptance: freeport, stillair, sanctuary, 
 
   // the stillair is GEOLOGY: byte-stable across knobs, epochs, capital
   const sig = (gj) => regionsOf(gj).map(f => f.properties.stillair).join("");
-  const A0 = gen("#seed=l1t-2&regions=24&ep=0").gj;
-  const A1b = gen("#seed=l1t-2&regions=24&ep=6&iq=90&hb=0&gt=70&db=10").gj;
-  const A2b = gen("#seed=l1t-2&regions=24&ep=0&capital=5").gj;
+  const A0 = (await gen("#seed=l1t-2&regions=24&ep=0")).gj;
+  const A1b = (await gen("#seed=l1t-2&regions=24&ep=6&iq=90&hb=0&gt=70&db=10")).gj;
+  const A2b = (await gen("#seed=l1t-2&regions=24&ep=0&capital=5")).gj;
   if (sig(A0) === sig(A1b) && sig(A0) === sig(A2b))
     ok("the stillair is geology: byte-stable across knobs, epochs, and the capital");
   else fail("society moved the stillair");
 
   // sealed quays: the freeport does not leak into official sea access,
   // does not charter ports, and does not open a door for the Dominion
-  const S = gen("#seed=l1t-1&regions=24&ep=10&hb=0").gj;
+  const S = (await gen("#seed=l1t-1&regions=24&ep=10&hb=0")).gj;
   const sr = regionsOf(S).map(f => f.properties);
   if (sr.every(r => r.sea_access === 0 && r.is_port === 0) && !S.hinterland.dominion)
     ok("sealed quays survive the freeport: sea_access 0 everywhere, no ports, no Dominion");
@@ -2532,7 +2606,7 @@ console.log("# The places between L1 acceptance: freeport, stillair, sanctuary, 
   {
     let eBad = null, seen = 0;
     for (let i = 0; i < 8 && !eBad; i++) {
-      const gj = gen(`#seed=l1t-${i}&regions=24&ep=0`).gj;
+      const gj = (await gen(`#seed=l1t-${i}&regions=24&ep=0`)).gj;
       const rs = regionsOf(gj).map(f => f.properties);
       for (const r of rs) {
         if (r.has_sanctuary === 1) {
@@ -2565,7 +2639,7 @@ console.log("# The chronicle E4 acceptance: the world narrating itself");
   else fail("panel/download divergence");
 
   // an event-rich world: every event is narrated by name, with its date
-  const R = gen("#seed=chain111&regions=24&ep=10");
+  const R = await gen("#seed=chain111&regions=24&ep=10");
   const nameById = new Map(settlesOf(R.gj).map(st => [st.properties.region_id, st.properties.name]));
   let named = 0, dated = 0;
   const evs = R.gj.hinterland.events || [];
@@ -2586,7 +2660,7 @@ console.log("# The chronicle E4 acceptance: the world narrating itself");
   else fail("prose leaks internals");
 
   // a consecration world: the new shrine is dedicated by name
-  const C = gen("#seed=d6-1&regions=24&ep=10");
+  const C = await gen("#seed=d6-1&regions=24&ep=10");
   const cons = (C.gj.hinterland.events || []).find(ev => ev.type === "consecration");
   const shrineName = sanctOf(C.gj).find(st => st.properties.region_id === cons.region_id).properties.site_name;
   if (cons && C.chron.includes("consecrated it as " + shrineName))
@@ -2594,7 +2668,7 @@ console.log("# The chronicle E4 acceptance: the world narrating itself");
   else fail("consecration not narrated");
 
   // the founding snapshot has no years to tell
-  const Z = gen("#seed=alpha&regions=24&ep=0");
+  const Z = RA0;
   if (!Z.chron.includes("## The Years") && Z.chron.includes("newly founded") && Z.chron.includes("year 1000"))
     ok("ep=0 chronicle ends at its beginning (no Years section)");
   else fail("ep=0 chronicle malformed");
@@ -2603,23 +2677,24 @@ console.log("# The chronicle E4 acceptance: the world narrating itself");
 console.log("# schema v4 + URL handling");
 
 const prov = A1.gj.hinterland;
-// re-pinned 37 -> 38: v38 adds the routable edge layer, findings.moran,
-// and the CSV tables (issues #55/#56) — additions only, nothing renamed
-if (prov && prov.schema_version === 38 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+// re-pinned 38 -> 39: v39 re-grounds river geometry — the LineString is now
+// the traced bed (RV.trace) and the downstream order ships as chain_regions;
+// chains, region columns, and the carriage are byte-unchanged
+if (prov && prov.schema_version === 39 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=38 + weights + knobs (incl. responsiveness + harbors) + epochs(default 0) + empty timeline");
+  ok("provenance carries schema_version=39 + weights + knobs (incl. responsiveness + harbors) + epochs(default 0) + empty timeline");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
-const Empt = gen("#seed=&regions=&we=&wg=");
+const Empt = await gen("#seed=&regions=&we=&wg=");
 const eProv = Empt.gj.hinterland;
 if (eProv.seed === "hinterland" && eProv.regions === 24 && eProv.weights.extraction === 35 && eProv.weights.gradient === 10)
   ok("empty hash values fall back to defaults");
 else fail("empty-hash defaults wrong: " + JSON.stringify(eProv));
 
-const rClamp = gen("#seed=z&regions=999&we=999&wg=-5");
+const rClamp = await gen("#seed=z&regions=999&we=999&wg=-5");
 if (rClamp.gj.hinterland.regions === 64 && rClamp.gj.hinterland.weights.extraction === 100 && rClamp.gj.hinterland.weights.gradient === 0)
   ok("out-of-range params clamp (regions 64, weights 0-100)");
 else fail("clamping failed: " + JSON.stringify(rClamp.gj.hinterland));
@@ -2628,7 +2703,7 @@ console.log("# Phase 3 acceptance: neutral zero, darkness, grid economics");
 
 // (i) gt change: society only — topology + geology untouched, conduit changes.
 {
-  const Agt = gen(BASE + "&gt=90");
+  const Agt = await gen(BASE + "&gt=90");
   if (JSON.stringify(rings(A1.gj)) === JSON.stringify(rings(Agt.gj)) && geology(A1.gj) === geology(Agt.gj))
     ok("grid-threshold change leaves topology + geology identical");
   else fail("grid-threshold change altered topology/geology");
@@ -2642,7 +2717,7 @@ console.log("# Phase 3 acceptance: neutral zero, darkness, grid economics");
 {
   let allOn = true;
   for (let i = 0; i < 6; i++) {
-    const g = gen(`#seed=nz${i}&regions=24&gt=0`).gj;
+    const g = (await gen(`#seed=nz${i}&regions=24&gt=0`)).gj;
     if (col(g, "on_conduit").some(v => v !== 1)) allOn = false;
   }
   if (allOn) ok("neutral zero: gt=0 connects every settlement (6 seeds)");
@@ -2653,7 +2728,7 @@ console.log("# Phase 3 acceptance: neutral zero, darkness, grid economics");
 {
   let seedsWithDark = 0, offBeatsOn = 0, onShareSum = 0; const N = 30;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=dark${i}&regions=24`).gj;
+    const g = (await gen(`#seed=dark${i}&regions=24`)).gj;
     const regions = regionsOf(g);
     const on = regions.filter(r => r.properties.on_conduit === 1);
     const off = regions.filter(r => r.properties.on_conduit === 0);
@@ -2676,7 +2751,7 @@ console.log("# Phase 3 acceptance: neutral zero, darkness, grid economics");
 {
   let good = 0, tested = 0; const N = 15;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=svc${i}&regions=24`).gj;
+    const g = (await gen(`#seed=svc${i}&regions=24`)).gj;
     const regions = regionsOf(g);
     const on = regions.filter(r => r.properties.on_conduit === 1).map(r => r.properties.arcane_service_index);
     const off = regions.filter(r => r.properties.on_conduit === 0).map(r => r.properties.arcane_service_index);
@@ -2690,7 +2765,7 @@ console.log("# Phase 4 acceptance: blight physics, dump bias, the λ-sweep");
 
 // (v) db change: society only; blight responds.
 {
-  const Adb = gen(BASE + "&db=0");
+  const Adb = await gen(BASE + "&db=0");
   if (JSON.stringify(rings(A1.gj)) === JSON.stringify(rings(Adb.gj)) && geology(A1.gj) === geology(Adb.gj))
     ok("dump-bias change leaves topology + geology identical");
   else fail("dump-bias change altered topology/geology");
@@ -2703,7 +2778,7 @@ console.log("# Phase 4 acceptance: blight physics, dump bias, the λ-sweep");
 {
   let anchored = 0; const N = 12;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=phys${i}&regions=24&db=0`).gj;
+    const g = (await gen(`#seed=phys${i}&regions=24&db=0`)).gj;
     const regions = regionsOf(g);
     const worst = regions.reduce((a, b) => a.properties.blight_load >= b.properties.blight_load ? a : b);
     const wc = cen(worst.geometry.coordinates[0]);
@@ -2722,8 +2797,8 @@ console.log("# Phase 4 acceptance: blight physics, dump bias, the λ-sweep");
 {
   let c60 = 0, c0 = 0; const N = 24;
   for (let i = 0; i < N; i++) {
-    const g60 = gen(`#seed=sweep${i}&regions=24&db=60`).gj;
-    const g0 = gen(`#seed=sweep${i}&regions=24&db=0`).gj;
+    const g60 = (await gen(`#seed=sweep${i}&regions=24&db=60`)).gj;
+    const g0 = (await gen(`#seed=sweep${i}&regions=24&db=0`)).gj;
     c60 += pearson(col(g60, "blight_load"), col(g60, "wealth"));
     c0 += pearson(col(g0, "blight_load"), col(g0, "wealth"));
   }
@@ -2742,7 +2817,7 @@ console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");
 {
   let cB = 0, cH = 0, cW = 0; const N = 20;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=hb${i}&regions=24`).gj;
+    const g = (await gen(`#seed=hb${i}&regions=24`)).gj;
     cB += pearson(col(g, "disease_burden_per_1k"), col(g, "blight_load"));
     cH += pearson(col(g, "disease_burden_per_1k"), col(g, "healing_reach"));
     cW += pearson(col(g, "disease_burden_per_1k"), col(g, "wealth"));
@@ -2757,7 +2832,7 @@ console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");
 {
   let quad = 0; const N = 20;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=hq${i}&regions=24`).gj;
+    const g = (await gen(`#seed=hq${i}&regions=24`)).gj;
     const regions = regionsOf(g);
     const mb = median(col(g, "disease_burden_per_1k"));
     const mh = median(col(g, "healing_reach"));
@@ -2771,7 +2846,7 @@ console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");
 {
   let good = 0, tested = 0; const N = 15;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=cg${i}&regions=24`).gj;
+    const g = (await gen(`#seed=cg${i}&regions=24`)).gj;
     const regions = regionsOf(g);
     const on = regions.filter(r => r.properties.on_conduit === 1).map(r => r.properties.service_gap_idx);
     const off = regions.filter(r => r.properties.on_conduit === 0).map(r => r.properties.service_gap_idx);
@@ -2787,7 +2862,7 @@ console.log("# Phase 6 acceptance: the governance overlay");
   const seen = new Set();
   let withEdge = 0, seatCrown = 0; const N = 30;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=gov${i}&regions=24`).gj;
+    const g = (await gen(`#seed=gov${i}&regions=24`)).gj;
     const regions = regionsOf(g);
     const blocs = regions.map(r => r.properties.dominant_bloc);
     blocs.forEach(b => seen.add(b));
@@ -2816,7 +2891,7 @@ console.log("# Second wave W1 acceptance: roads for everyone, flows, pilgrims");
 {
   let maCorr = 0, siteFlux = 0, offRoadOK = 0; const N = 20;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=rd${i}&regions=24`).gj;
+    const g = (await gen(`#seed=rd${i}&regions=24`)).gj;
     const regions = regionsOf(g);
     // market access should track centrality (roads radiate around the core)
     maCorr += pearson(col(g, "market_access"), col(g, "centrality_to_seat"));
@@ -2842,7 +2917,7 @@ console.log("# Second wave W2 acceptance: the shadow is the state's negative ima
 {
   let corridor = 0, predOK = 0, bmCorr = 0, wardOK = 0, gapOK = 0; const N = 20;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=sw${i}&regions=24`).gj;
+    const g = (await gen(`#seed=sw${i}&regions=24`)).gj;
     const regions = regionsOf(g);
     const P = (r) => r.properties;
     // smuggling runs through weakly-governed space
@@ -2880,7 +2955,7 @@ console.log("# Second wave W3 acceptance: the past sits on the land");
 {
   let legacyCorr = 0, churnOK = 0, churnSeeds = 0, shocked = 0; const N = 20;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=dt${i}&regions=24`).gj;
+    const g = (await gen(`#seed=dt${i}&regions=24`)).gj;
     const regions = regionsOf(g);
     const P = (r) => r.properties;
     // head starts persist (consistency of the legacy composite)
@@ -2910,9 +2985,9 @@ console.log("# Dynamic engine D1 acceptance: time makes the loops real");
 {
   // epochs=0 is the founding snapshot; running time must be deterministic,
   // leave geology untouched, and produce genuine trajectories.
-  const E0 = gen("#seed=time0&regions=24&ep=0").gj;
-  const E8a = gen("#seed=time0&regions=24&ep=8").gj;
-  const E8b = gen("#seed=time0&regions=24&ep=8").gj;
+  const E0 = (await gen("#seed=time0&regions=24&ep=0")).gj;
+  const E8a = (await gen("#seed=time0&regions=24&ep=8")).gj;
+  const E8b = (await gen("#seed=time0&regions=24&ep=8")).gj;
   if (JSON.stringify(E8a) === JSON.stringify(E8b)) ok("dynamics deterministic: ep=8 twice => byte-identical");
   else fail("dynamics nondeterministic");
   if (JSON.stringify(rings(E0)) === JSON.stringify(rings(E8a))) ok("time never moves borders (topology fixed)");
@@ -2928,7 +3003,7 @@ console.log("# Dynamic engine D1 acceptance: time makes the loops real");
 
   let depleted = 0, ghost = 0, drainSum = 0, drainN = 0, twoCats = 0; const N = 20;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=time${i}&regions=24&ep=8`).gj;
+    const g = (await gen(`#seed=time${i}&regions=24&ep=8`)).gj;
     const regions = regionsOf(g);
     const P = (r) => r.properties;
     if (regions.some(r => P(r).ore_depleted === 1)) depleted++;
@@ -2970,7 +3045,7 @@ console.log("# In-run events D3 acceptance: history with dates");
       plagues = 0, plagueBroken = 0, plagueCount = 0, calamities = 0, calScar = 0, calCount = 0;
   const N = 20;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=hist${i}&regions=24&ep=10`).gj;
+    const g = (await gen(`#seed=hist${i}&regions=24&ep=10`)).gj;
     const regions = regionsOf(g);
     const byId = new Map(regions.map(r => [r.properties.region_id, r.properties]));
     const evs = g.hinterland.events || [];
@@ -3013,7 +3088,7 @@ console.log("# Conflict and fortune D5 acceptance: strikes and wars");
 {
   let strikes = 0, boomAfter = 0, wars = 0, warScar = 0, kinds = new Set(); const N = 30;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=cf${i}&regions=24&ep=10`).gj;
+    const g = (await gen(`#seed=cf${i}&regions=24&ep=10`)).gj;
     const byId = new Map(regionsOf(g).map(r => [r.properties.region_id, r.properties]));
     for (const ev of (g.hinterland.events || [])) {
       kinds.add(ev.type);
@@ -3049,7 +3124,7 @@ console.log("# Causal chains D6 acceptance: the faith arrives, fortune turns hot
   let woundedEligible = 0, consecrations = 0, shrineLive = 0, chainWindow = 0, strikeWorlds = 0;
   const N = 20;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=d6-${i}&regions=24&ep=10`).gj;
+    const g = (await gen(`#seed=d6-${i}&regions=24&ep=10`)).gj;
     const evs = g.hinterland.events || [];
     const wound = evs.find(ev => ev.type === "blight_plague" || ev.type === "relic_calamity");
     const cons = evs.find(ev => ev.type === "consecration");
@@ -3082,7 +3157,7 @@ console.log("# Causal chains D6 acceptance: the faith arrives, fortune turns hot
 {
   // re-pinned under X1 (chain56, a Dominion-free world): the ablation run
   // (pre-chain engine) produces NO war on this seed at all
-  const g = gen("#seed=chain56&regions=24&ep=10").gj;
+  const g = (await gen("#seed=chain56&regions=24&ep=10")).gj;
   const evs = g.hinterland.events || [];
   const strike = evs.find(ev => ev.type === "ore_strike");
   const war = evs.find(ev => ev.type === "war");
@@ -3096,7 +3171,7 @@ console.log("# Dynamic institutions D4 acceptance: capital moves, politics live"
 {
   let eligible = 0, refounds = 0, chaseOK = 0, flips = 0; const N = 20;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=inst${i}&regions=24&ep=10`).gj;
+    const g = (await gen(`#seed=inst${i}&regions=24&ep=10`)).gj;
     const regions = regionsOf(g);
     const byId = new Map(regions.map(r => [r.properties.region_id, r.properties]));
     const evs = g.hinterland.events || [];
@@ -3127,7 +3202,7 @@ console.log("# Temporal bridge D2 acceptance: the history is exportable and scru
 
 {
   const EP = 8;
-  const r = gen(`#seed=temporal&regions=24&ep=${EP}`, true);
+  const r = await gen(`#seed=temporal&regions=24&ep=${EP}`, true);
   const s = r.series, m = r.gj;
   const nR = regionsOf(m).length, nS = settlesOf(m).length;
   const sRegions = s.features.filter(f => f.properties.kind === "region");
@@ -3174,7 +3249,7 @@ console.log("# Temporal bridge D2 acceptance: the history is exportable and scru
   else fail("conduit series not monotone");
 
   // scrubber: hidden at ep=0, present and ranged at ep>0
-  const r0 = gen("#seed=temporal&regions=24&ep=0", true);
+  const r0 = await gen("#seed=temporal&regions=24&ep=0", true);
   const hidden = r0.doc.getElementById("scrubRow").style.display === "none";
   const shown = r.doc.getElementById("scrubRow").style.display !== "none";
   const scrubMax = +r.doc.getElementById("scrub").max === EP;
@@ -3187,7 +3262,7 @@ console.log("# Second wave W4 acceptance: trust vs kin, born labor, the uncounte
 {
   let mirror = 0, bornLabor = 0, bornLaborSeeds = 0, legibCorr = 0, enclave = 0, uncountedPeriph = 0; const N = 20;
   for (let i = 0; i < N; i++) {
-    const g = gen(`#seed=st${i}&regions=24`).gj;
+    const g = (await gen(`#seed=st${i}&regions=24`)).gj;
     const regions = regionsOf(g);
     const P = (r) => r.properties;
     // trust and kinship are designed mirrors
@@ -3231,13 +3306,13 @@ console.log("# QGIS substrates Q1 acceptance (#55/#56): edges, moran, CSV tables
   // one ep>0 world, DOM kept live so the CSV button can be clicked twice.
   // seed=hinterland ep=8 measured before pinning: moran.I 0.565 (p 0.005),
   // moran_blight.I 0.234 (p 0.02) — wealth clusters positive, as it should.
-  const Q1 = gen("#seed=hinterland&regions=24&ep=8", true);
+  const Q1 = await gen("#seed=hinterland&regions=24&ep=8", true);
   const gj = Q1.gj;
   const qRegions = regionsOf(gj);
   const edges = gj.features.filter(f => f.properties.kind === "edge");
 
   // same hash again => the whole file, edges and findings included, is stable
-  const Q1b = gen("#seed=hinterland&regions=24&ep=8");
+  const Q1b = await gen("#seed=hinterland&regions=24&ep=8");
   if (JSON.stringify(gj) === JSON.stringify(Q1b.gj))
     ok("two generations of the same hash export byte-identical files (edges + moran included)");
   else fail("same-hash exports diverge at v38");

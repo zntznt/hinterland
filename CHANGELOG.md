@@ -1,6 +1,28 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v39** (the river finds its bed): a river's LineString was its 3–7
+  settlement anchors drawn point-to-point — on the map the water wandered
+  sideways and could die inland, which no river does. Now each river ships
+  its BED: a fine polyline (measured 9–37 points after Douglas-Peucker at
+  tolerance 2.5) walked downhill over the continuous elevation surface from
+  a sampled high source, bent through the chain regions in order (every
+  chain region still holds a trace point — tested), and ended only in the
+  traced sea — the mouth visibly enters the water — or off the map edge,
+  never mid-land. New river property `chain_regions` (region ids in
+  downstream order) carries what the geometry used to: `river_kind` and the
+  drinking order recompute from it, not from the coordinate count. The
+  chains themselves, the region columns (`on_river` / `river_id` /
+  `river_pos` / `downstream_blight`), the carriage, and the exported bridge
+  points are all byte-unchanged: the bed is additive geology, byte-stable
+  across every knob, capital move, and epoch (measured 91/91 river mouths
+  in the sea across 62 worlds). The suites got two repairs along the way:
+  gen() now takes one event-loop breath per world (V8 pins every WeakRef
+  target until a microtask checkpoint, so the old synchronous run retained
+  all ~450 closed JSDOM windows and could die at the heap cap), and the
+  stress render smoke was re-pinned to the two-genre split it predated
+  (ridges and passes are atlas ink since #60/#63 — the data-mode boot
+  draws none, and a mode flip now checks the pen's map instead).
 - **v38** (the substrates ship): the export stops withholding what it was
   computed on (issues #55/#56). New `edge` LineString features (main
   export only): one per region-adjacency edge the cost engine walks —

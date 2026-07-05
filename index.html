@@ -5519,10 +5519,13 @@
           }
         }
         nodes.push(anchor(RV.chain[RV.chain.length - 1]));
-        const pull = (p, q) => { const dx = q[0] - p[0], dy = q[1] - p[1], L2 = Math.hypot(dx, dy) || 1; return [p[0] + dx / L2 * 12, p[1] + dy / L2 * 12]; };
+        // #60: the endpoints are town centroids; retreat them past the
+        // settlement dot (max radius 3+13=16, +ring +casing) so the ribbon
+        // never runs through a town marker. 22 clears the largest dot.
+        const pull = (p, q, d) => { const dx = q[0] - p[0], dy = q[1] - p[1], L2 = Math.hypot(dx, dy) || 1; return [p[0] + dx / L2 * d, p[1] + dy / L2 * d]; };
         if (nodes.length > 1) {
-          nodes[0] = pull(nodes[0], nodes[1]);
-          nodes[nodes.length - 1] = pull(nodes[nodes.length - 1], nodes[nodes.length - 2]);
+          nodes[0] = pull(nodes[0], nodes[1], 22);
+          nodes[nodes.length - 1] = pull(nodes[nodes.length - 1], nodes[nodes.length - 2], 22);
         }
         // V2: a river is a tapered shape, not a wire — meander points are
         // inserted at each third with alternating offsets, the half-width
@@ -5568,7 +5571,9 @@
         parts.push(`<line ${seg} stroke="#fff" stroke-width="3.4" opacity="0.7" stroke-linecap="round"/>`);
         parts.push(`<line class="hachure" ${seg} stroke="#5b4a33" stroke-width="1.3" opacity="0.5"/>`);
       });
-      model.ridges.forEach(R => {
+      // #60/#63: the ridge axis is terrain ink, so it only draws where its
+      // mountain body (hachures/profiles above) draws, i.e. atlas mode.
+      if (atlas) model.ridges.forEach(R => {
         const dR = catRom(R.pts.map(p => [p[0], fy(p[1])]));
         parts.push(`<path d="${dR}" fill="none" stroke="#fff" stroke-width="4.5" stroke-dasharray="1 6" stroke-linejoin="round" stroke-linecap="round" opacity="0.7"/>`);
         parts.push(`<path class="ridge" d="${dR}" fill="none" stroke="#4a3421" stroke-width="2" stroke-dasharray="1 6" stroke-linejoin="round" stroke-linecap="round" opacity="0.3"/>`);
@@ -5609,11 +5614,17 @@
           parts.push(`<path d="M${(px - wHalf).toFixed(1)},${py.toFixed(1)}L${apexX.toFixed(1)},${apexY.toFixed(1)}L${(apexX + wHalf * 0.16).toFixed(1)},${py.toFixed(1)}Z" fill="#c9b592" stroke="none" opacity="0.55"/>`);
         }
       }
-      model.peaks.forEach(pk => {
+      // #60/#63: ▲ peaks and ∩ passes are terrain glyphs. They orphan on
+      // flat choropleth in data mode where the mountain body is suppressed,
+      // so gate them on atlas. Passes on trivial ridges (maxElev < 60, the
+      // "Hills" grade that draws almost no relief) are dropped even in atlas.
+      if (atlas) model.peaks.forEach(pk => {
         if (inSea(pk.x, pk.y)) return; // #60: no summits at sea
         parts.push(`<text class="peak" x="${pk.x.toFixed(1)}" y="${(fy(pk.y) + 5).toFixed(1)}" font-size="14" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">▲</text>`);
       });
-      model.passes.forEach(p => {
+      if (atlas) model.passes.forEach(p => {
+        const R = model.ridges.find(r => r.id === p.ridgeId);
+        if (R && R.maxElev < 60) return; // orphaned pass on a barely-there ridge
         parts.push(`<text class="pass" x="${p.x.toFixed(1)}" y="${(fy(p.y) + 6).toFixed(1)}" font-size="17" font-weight="700" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">∩</text>`);
         if (poi) parts.push(`<text x="${p.x.toFixed(1)}" y="${(fy(p.y) + 20).toFixed(1)}" font-size="10" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="2.5" opacity="0.85">${esc(p.name)}</text>`);
       });
@@ -5623,10 +5634,13 @@
         parts.push(`<text class="sanct" x="${s.x.toFixed(1)}" y="${(fy(s.y) + 6).toFixed(1)}" font-size="18" text-anchor="middle" fill="#54278f" paint-order="stroke" stroke="#fff" stroke-width="3">✚</text>`);
       });
 
-      // Event markers: amber ✱ where lived history struck (#62: the ramp owns red)
-      model.regions.forEach(reg => {
+      // Event markers: amber ✱ where lived history struck (#62: the ramp owns
+      // red). A gazetteer/history mark, not the data subject, so gate on poi
+      // and it leaves the region numbers alone in data mode. Also smaller: it
+      // was 22, the largest glyph on the map, and now reads as a footnote (#61).
+      if (poi) model.regions.forEach(reg => {
         if (reg.eventType !== "none" && reg.eventEpoch <= Math.min(scrubEpoch, snaps.length - 1)) {
-          parts.push(`<text class="evt" x="${(reg.c[0] + 26).toFixed(1)}" y="${(fy(reg.c[1]) + 34).toFixed(1)}" font-size="22" text-anchor="middle" fill="#d97706" paint-order="stroke" stroke="#fff" stroke-width="3">✱</text>`);
+          parts.push(`<text class="evt" x="${(reg.c[0] + 30).toFixed(1)}" y="${(fy(reg.c[1]) + 36).toFixed(1)}" font-size="16" text-anchor="middle" fill="#c2670a" paint-order="stroke" stroke="#fff" stroke-width="3">✱</text>`);
         }
       });
 

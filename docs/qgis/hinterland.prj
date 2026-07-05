@@ -1,0 +1,1 @@
+ENGCRS["Hinterland planar grid",EDATUM["Hinterland map plane"],CS[Cartesian,2],AXIS["easting (E)",east,ORDER[1],LENGTHUNIT["metre",1]],AXIS["northing (N)",north,ORDER[2],LENGTHUNIT["metre",1]]]

@@ -4497,6 +4497,17 @@
       trust:      { lo: [247, 244, 238], hi: [32, 84, 120],  label: "social trust (who believes the realm)" },
       mobility:   { lo: [235, 224, 200], hi: [140, 84, 16],  label: "mobility ceiling (who can rise)" } // floor: the low end must survive a white halo
     };
+    // #62: many ramps bottom out near-white, so a view where one region spikes
+    // (injustice/burden/tolls, maroon hi) reads as a single loud cell on blank
+    // parchment, not a gradient. Lift every floor a step toward its hi so a low
+    // cell shows a distinct tint and survives the white glyph halos. A uniform
+    // lift, so the already-tinted ramps (retention/mobility) just deepen a touch;
+    // delta is diverging and bloc is categorical, so both are skipped.
+    for (const k in RAMPS) {
+      if (k === "delta" || k === "bloc") continue;
+      const r = RAMPS[k], lift = 0.12;
+      r.lo = r.lo.map((c, i) => Math.round(c + (r.hi[i] - c) * lift));
+    }
     const BLOC_COLORS = { crown: "#6baed6", temple: "#9e9ac8", magnate: "#fd8d3c", contested: "#cccccc", ungoverned: "#f7f7f7", dominion: "#5a5550" };
     const TRAJ_COLORS = { boom: "#2f9e44", stable: "#d9d9d9", decline: "#f08c00", collapse: "#7a1f1f" };
     const BIOME_COLORS = { alpine: "#e8e6e1", badland: "#d9a066", moor: "#a8a58c", marsh: "#7fa88c", forest: "#4f7a4f", steppe: "#cfc06e", grassland: "#a3bd6b" };

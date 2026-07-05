@@ -2603,12 +2603,14 @@ console.log("# The chronicle E4 acceptance: the world narrating itself");
 console.log("# schema v4 + URL handling");
 
 const prov = A1.gj.hinterland;
-if (prov && prov.schema_version === 37 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+// re-pinned 37 -> 38: v38 adds the routable edge layer, findings.moran,
+// and the CSV tables (issues #55/#56) — additions only, nothing renamed
+if (prov && prov.schema_version === 38 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=37 + weights + knobs (incl. responsiveness + harbors) + epochs(default 0) + empty timeline");
+  ok("provenance carries schema_version=38 + weights + knobs (incl. responsiveness + harbors) + epochs(default 0) + empty timeline");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = gen("#seed=&regions=&we=&wg=");
@@ -3221,6 +3223,117 @@ console.log("# Second wave W4 acceptance: trust vs kin, born labor, the uncounte
   else fail(`legibility/grid link broken: ${uncountedPeriph}/${N}`);
   if (enclave >= N * 0.8) ok(`refinery districts carry the enclave signature (${enclave}/${N} seeds)`);
   else fail(`enclave signature weak: ${enclave}/${N}`);
+}
+
+console.log("# QGIS substrates Q1 acceptance (#55/#56): edges, moran, CSV tables");
+
+{
+  // one ep>0 world, DOM kept live so the CSV button can be clicked twice.
+  // seed=hinterland ep=8 measured before pinning: moran.I 0.565 (p 0.005),
+  // moran_blight.I 0.234 (p 0.02) — wealth clusters positive, as it should.
+  const Q1 = gen("#seed=hinterland&regions=24&ep=8", true);
+  const gj = Q1.gj;
+  const qRegions = regionsOf(gj);
+  const edges = gj.features.filter(f => f.properties.kind === "edge");
+
+  // same hash again => the whole file, edges and findings included, is stable
+  const Q1b = gen("#seed=hinterland&regions=24&ep=8");
+  if (JSON.stringify(gj) === JSON.stringify(Q1b.gj))
+    ok("two generations of the same hash export byte-identical files (edges + moran included)");
+  else fail("same-hash exports diverge at v38");
+
+  // the edge layer spans the realm: union-find over the exported rows alone
+  {
+    const ids = qRegions.map(r => r.properties.region_id);
+    const uf2 = new Map(ids.map(i => [i, i]));
+    const find = (x) => { while (uf2.get(x) !== x) { uf2.set(x, uf2.get(uf2.get(x))); x = uf2.get(x); } return x; };
+    for (const e of edges) uf2.set(find(e.properties.from_region), find(e.properties.to_region));
+    if (edges.length >= ids.length - 1 && new Set(ids.map(find)).size === 1)
+      ok(`edge layer is one component spanning all ${ids.length} regions (${edges.length} edges)`);
+    else fail("edge layer does not span the regions");
+  }
+
+  // cost / flag consistency. What the implementation guarantees: cost =
+  // base x rug x wall with rug in [1, 2.5] (FRICTION 1.5) and wall one of
+  // {1, 4.5 ridge, 1.4 pass, 0.6 river, 2.2 ford} — so a river edge caps
+  // at 1.5x, every dry edge floors at 1x, walls floor at their multiplier.
+  // Tolerance 0.02 covers the round2 on cost/base_len.
+  {
+    const HOLDERS = new Set(["crown", "temple", "magnate", "dominion", "none"]);
+    let bad = null;
+    for (const e of edges) {
+      const p = e.properties;
+      const f = p.cost / p.base_len;
+      if (p.is_ridge_crossing + p.is_pass + p.is_river + p.is_ford > 1) { bad = `multiple wall flags on ${p.from_region}-${p.to_region}`; break; }
+      if (!(p.cost >= p.base_len * 0.5 - 0.02)) { bad = `cost ${p.cost} < base ${p.base_len} x 0.5`; break; }
+      if (Math.abs(p.friction_mult - f) > 0.02) { bad = "friction_mult != cost/base_len"; break; }
+      if (p.is_river === 1 && !(f <= 1.5 + 0.02)) { bad = "river edge above the barge ceiling"; break; }
+      if (p.is_river === 0 && !(f >= 1 - 0.02)) { bad = "dry-land edge under 1x"; break; }
+      if (p.is_ridge_crossing === 1 && !(f >= 4.5 - 0.02)) { bad = "wall edge under 4.5x"; break; }
+      if (p.is_ford === 1 && !(f >= 2.2 - 0.02)) { bad = "ford edge under 2.2x"; break; }
+      if (p.is_pass === 1 && !(f >= 1.4 - 0.02)) { bad = "pass edge under 1.4x"; break; }
+      if (!HOLDERS.has(p.held_by)) { bad = "bad held_by " + p.held_by; break; }
+    }
+    if (!bad) ok("edge costs and wall flags are internally consistent (cost >= base/2; river <= 1.5x; ridge >= 4.5x; ford >= 2.2x; pass >= 1.4x; at most one flag)");
+    else fail("edge layer inconsistent: " + bad);
+  }
+
+  // findings.moran recomputes EXACTLY from the exported edges + columns —
+  // an independent implementation, fed nothing but the file
+  const moranX = (field) => {
+    const val = new Map(qRegions.map(r => [r.properties.region_id, r.properties[field]]));
+    const nb = new Map(qRegions.map(r => [r.properties.region_id, []]));
+    for (const e of edges) {
+      nb.get(e.properties.from_region).push(e.properties.to_region);
+      nb.get(e.properties.to_region).push(e.properties.from_region);
+    }
+    const ids = [...val.keys()];
+    const mu = ids.reduce((a, i) => a + val.get(i), 0) / ids.length;
+    const den = ids.reduce((a, i) => a + (val.get(i) - mu) ** 2, 0);
+    let num = 0;
+    for (const i of ids) {
+      const ns = nb.get(i);
+      if (!ns.length) continue;
+      let li = 0;
+      for (const j of ns) li += val.get(j) - mu;
+      num += (val.get(i) - mu) * (li / ns.length);
+    }
+    return Math.round((den > 0 ? num / den : 0) * 1000) / 1000;
+  };
+  const FM = gj.hinterland.findings.moran, FMB = gj.hinterland.findings.moran_blight;
+  if (FM && FMB && FM.I === moranX("wealth") && FMB.I === moranX("blight_load") &&
+      FM.expected === Math.round(-1000 / (qRegions.length - 1)) / 1000 && FM.n_perm === 199)
+    ok(`findings.moran recomputes exactly from the exported edges + columns (wealth I ${FM.I}, blight I ${FMB.I})`);
+  else fail(`moran mismatch: ${JSON.stringify(FM)}/${JSON.stringify(FMB)} vs ${moranX("wealth")}/${moranX("blight_load")}`);
+  if (FM && FMB && FM.p > 0 && FM.p <= 1 && FMB.p > 0 && FMB.p <= 1 && FM.I > FM.expected)
+    ok(`moran pseudo-p in (0,1] and wealth clusters above expectation (I ${FM.I} > ${FM.expected}, p ${FM.p})`);
+  else fail(`moran p out of range or wealth unclustered: ${JSON.stringify(FM)}`);
+
+  // the CSV button: two clicks, six files each, identical bytes
+  {
+    const w2 = Q1.window;
+    const parts = [];
+    const RB2 = w2.Blob;
+    w2.Blob = class extends RB2 { constructor(p, o) { super(p, o); parts.push(p.join("")); } };
+    Q1.doc.getElementById("dlTables").click();
+    const first = parts.slice();
+    parts.length = 0;
+    Q1.doc.getElementById("dlTables").click();
+    const second = parts.slice();
+    if (first.length === 6 && JSON.stringify(first) === JSON.stringify(second))
+      ok("two clicks of Download tables produce the same six files, byte-identical");
+    else fail(`CSV click not deterministic (${first.length} files)`);
+    const rows = (t) => t.split("\n").filter(Boolean).length - 1; // minus header
+    if (rows(first[0]) === gj.hinterland.events.length &&
+        first[0].startsWith("epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occupied,contested,ruler"))
+      ok(`events.csv carries one row per event (${gj.hinterland.events.length}), in timeline order`);
+    else fail(`events.csv rows ${rows(first[0])} != events ${gj.hinterland.events.length}`);
+    if (rows(first[1]) === qRegions.length * (gj.hinterland.epochs + 1) &&
+        first[1].startsWith("region_id,epoch,epoch_date,wealth,elite_share,population,dominant_bloc,occupied,toll_burden"))
+      ok(`epoch_region.csv is the full long table (${qRegions.length} regions x ${gj.hinterland.epochs + 1} epochs)`);
+    else fail("epoch_region.csv shape wrong");
+  }
+  Q1.window.close();
 }
 
 // (the Phase 2 acceptance sweep moved to stress.mjs — second process,

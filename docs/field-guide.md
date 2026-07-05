@@ -27,7 +27,7 @@ world — same rock, same wind, same dice, one policy changed.
 | **The chronicle** | below the map | the same world narrated; deterministic — quote it in citations |
 | **The counterfactual menu** | under the λ slider | λ=0 / the full grid / both mercies, side-by-side with the as-rolled world |
 | **The scrubber** | TIME | replay the epochs: wealth, blight, class, the grid, the occupation |
-| **The exports** | header buttons | the full GeoJSON, the epoch series (QGIS Temporal Controller), the chronicle |
+| **The exports** | header buttons | the full GeoJSON, the epoch series (QGIS Temporal Controller), the chronicle, the six CSV tables (events, epoch series, rulers, tensions, treasuries, findings) |
 
 ---
 
@@ -171,6 +171,63 @@ expect.
 
 ---
 
+## Measuring the thesis (spatial statistics)
+
+The guide above shows where each inequality *lives*; this section is how to
+stop eyeballing it. Since v38 the export ships the two substrates the
+statistics need: the **`edge` layer** (one LineString per region-adjacency
+edge, carrying the engine's own traversal `cost`) and
+**`findings.moran` / `findings.moran_blight`** — global Moran's I of
+`wealth` and `blight_load` over that same adjacency (row-standardized
+weights, 199-permutation pseudo-p from a dedicated seeded substream, so the
+p-value is a fact of the world, not of the run). "The wealth map is
+clustered" now carries its own significance test, and both numbers
+recompute exactly from the exported edges + columns — the suite does.
+
+**LISA / local Moran + Getis-Ord Gi\*** (GeoDa, one click; or PySAL
+`esda`). Load the regions layer, build contiguity weights — best of all,
+build them *from the `edge` layer*, which is the neighbor graph the engine
+actually used — and run Local Moran on `wealth`, then on `blight_load`.
+The High-High blight cluster sitting on the Low-Low wealth cluster, each
+with its p-value, is the thesis measured: not "the map looks unjust" but
+"the poison clusters on the poor, and the clustering is significant."
+Gi\* on `disease_burden_per_1k` finds the hotspots the healers never reach.
+
+**The bivariate λ experiment, made rigorous.** Export the same seed twice:
+as rolled, and at λ=0 (the counterfactual world is one hash away). In
+GeoDa, run bivariate Moran's I of `blight_load` against neighbor `wealth`
+on each. On the λ world the statistic sits negative — poison next to
+poverty; at λ=0 it slides toward zero, because wind and water do not read
+ledgers. The gap between the two statistics is the **policy share of
+injustice as a single spatial number** — the flagship counterfactual,
+upgraded from a picture to a measurement.
+
+**Zonal / grouped statistics** (native Processing, no plugin). *Statistics
+by categories* with `dominant_bloc`, `range_shadow`, or `biome` as the
+class field turns every filter this guide recommends into a quantified
+table with dispersion: `class_gap` and `value_retention` per bloc,
+population (and `uncounted_population`) inside vs outside the mountain
+shadow, `disease_burden_per_1k` per biome. The cheapest rigor upgrade
+available.
+
+**Classification that respects the tails.** Jenks hides the extremes, and
+the extremes are the argument. For THE ARGUMENT lenses default to
+**standard-deviation classification** (how many σ from the mean each
+region sits), and for blight × wealth build a true **3×3 bivariate
+choropleth** (the Bivariate legend plugin, or two graduated renderers
+blended): the dark corner — poisoned *and* poor — is the thesis in one
+glance.
+
+**What needs which substrate.** Network analysis (shortest path, service
+areas, betweenness set against the exported `traffic`) and
+contiguity-from-the-true-graph need the `edge` layer (v38). Left to
+advanced users, documented but not automated: OLS/GWR of `wealth` on
+geography (R or PySAL — the residual map shows where the realm beats its
+ground), and viewshed / watershed audits, which need an elevation raster
+the export does not carry yet.
+
+---
+
 ## Appendix A — the linkage table (the coverage pass)
 
 Every aspect of the generator, and the inequality metric it moves. This
@@ -233,6 +290,6 @@ nothing and names nothing, file it as a bug.
 6. **wg=100 vs wg=0** (same seed): the authored diagram vs the emergent ground.
 7. **Move the capital** (arm the pin): geology fixed, fates re-dealt.
 
-*Every claim in this guide is enforced by the test suite (226 checks) or
+*Every claim in this guide is enforced by the test suite (241 checks) or
 printed in the [atlas](atlas.md), which is regenerated from sweeps of
 measured worlds. Nothing here is aspiration.*

@@ -77,6 +77,10 @@ choropleth; the export always carries every column.
    (or `aetherstone_endowment`, `pop_density`) → Natural Breaks (Jenks), 5 classes.
 4. **Proportional symbols:** settlements layer → *Graduated* by **size** on
    `population` — or *Categorized* on `tier`.
+5. **Skip steps 2-3:** [docs/qgis/](docs/qgis/) ships ready-made `.qml` styles,
+   a flat `hinterland.prj` CRS (no WGS84 warning), and the join recipes for the
+   six flat tables the **Download tables (CSV)** button exports (events, the
+   per-epoch long table, rulers, tensions, treasuries, findings).
 
 The 30+ per-phase QGIS checks — one per mechanic, from mountain walls to the
 byname roll — moved to [CHANGELOG.md](CHANGELOG.md) so this page stays a front

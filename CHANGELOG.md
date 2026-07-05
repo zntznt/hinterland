@@ -1,6 +1,28 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v38** (the substrates ship): the export stops withholding what it was
+  computed on (issues #55/#56). New `edge` LineString features (main
+  export only): one per region-adjacency edge the cost engine walks —
+  `base_len`, `cost` (the engine's own edgeCost), `friction_mult`, exactly
+  one of `is_ridge_crossing` / `is_pass` / `is_river` / `is_ford`, and
+  `held_by` (the gate holder among the edge's two regions) — so QGIS
+  Network Analysis can reproduce `centrality_to_seat` and run
+  close-the-pass counterfactuals. A **Download tables (CSV)** button
+  flattens the provenance no table join could reach: `events.csv`,
+  `epoch_region.csv` (the long per-(region, epoch) table, now carrying
+  `dominant_bloc` and `toll_burden` per epoch), `rulers.csv`,
+  `tensions.csv`, `treasuries.csv`, `findings.csv` — RFC-quoted,
+  deterministic row order, byte-stable per world. New
+  `findings.moran` / `findings.moran_blight`: global Moran's I of wealth
+  and blight over the SAME adjacency (row-standardized, 199 permutations
+  from a dedicated `moran` substream; measured on 3 seeds: wealth I
+  0.47–0.57 at p 0.005 — the clustering claim now ships with its own
+  significance test, recomputable from the exported edges + columns).
+  Plus a static QGIS bundle (`docs/qgis/`): a WKT2 engineering CRS
+  (`hinterland.prj`, kills the WGS84 warning), 7-class `.qml` styles
+  matching the app's ramps, and the join recipes. Everything already in
+  the export is byte-identical minus the additions (tested).
 - **v37** (the honest artifact): the evidence ships with the claim. The
   verification suite, the structural-stress runner, and the 80-world
   atlas sweep are now IN THE REPO (`tools/` — every "measured across N

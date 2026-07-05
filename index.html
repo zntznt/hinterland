@@ -884,6 +884,7 @@
         <button id="download" class="primary wide">&#8681; Download GeoJSON</button>
         <button id="dlSeries" class="ghost wide">&#8681; Epoch series (QGIS temporal)</button>
         <button id="dlChron" class="ghost wide">&#8681; The chronicle (.md)</button>
+        <button id="dlTables" class="ghost wide">&#8681; Download tables (CSV)</button>
         <button id="share" class="ghost wide">&#128279; Copy share link</button>
         <div class="toast" id="toast"></div>
       </div>
@@ -1121,7 +1122,7 @@
 
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
-    const SCHEMA_VERSION = 37;
+    const SCHEMA_VERSION = 38;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
@@ -2639,6 +2640,9 @@
         eliteShare: regions.map(r => Math.round(r.eliteShare)),
         occupied: regions.map(r => r.occupied ? 1 : 0),
         onGrid: regions.map((_, i) => onGrid[i]),
+        // #55: the CSV long table wants politics per epoch too
+        bloc: regions.map(r => r.occupied ? "dominion" : r.bloc),
+        toll: regions.map(r => r.tollBurden),
         edgeCount: conduitEdges.length
       });
       snapNow(); // the founding
@@ -2733,6 +2737,10 @@
         });
       };
       computeTolls(); // the founding exposure: who WOULD pay, before time runs
+      // #55: the founding snapshot predates politics — refresh its two
+      // political columns now that blocs and tolls exist (epoch-0 truth)
+      epochSnaps[0].bloc = regions.map(r => r.occupied ? "dominion" : r.bloc);
+      epochSnaps[0].toll = regions.map(r => r.tollBurden);
 
       // D3 event machinery: seeded triggers, epoch-stamped consequences.
       const events = [];
@@ -3855,7 +3863,7 @@
           (reg.boomBust === "boom" && reg.wealth >= 60) ? "the Rising" : null;
       });
       settlements.forEach(s2 => { s2.epithet = regions[s2.regionId].epithet; });
-      return { regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
+      return { seed: String(params.seed), regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
         dominion: dominionAt !== -1 ? { arrived: dominionAt, foothold: footholdIdx } : null };
     }
 
@@ -3986,6 +3994,41 @@
           ] }
         });
       });
+      // #55: the routable graph itself — one line per adjacency edge the
+      // cost engine actually walks (roads are a subset; centrality, tolls
+      // and market access all run on THIS graph). cost is the engine's own
+      // edgeCost; exactly one wall flag names which crossing rule applied.
+      {
+        const gate = new Map(); // region idx -> first gate holder (bridge/pass/port order)
+        model.holdings.forEach(h => {
+          if (h.heldBy !== "none" && !gate.has(h.regionIdx)) gate.set(h.regionIdx, h.heldBy);
+        });
+        model.regions.forEach((A, i) => {
+          [...A.neighbors].sort((x, y) => x - y).forEach(j => {
+            if (j <= i) return;
+            const B = model.regions[j];
+            const ax = round2(A.c[0]), ay = round2(A.c[1]);
+            const bx = round2(B.c[0]), by = round2(B.c[1]);
+            const base = round2(Math.hypot(ax - bx, ay - by));
+            const cost = round2(edgeCost(A, B));
+            const wall = A.ridgeMult ? (A.ridgeMult.get(B.id) || 1) : 1;
+            features.push({
+              type: "Feature",
+              properties: {
+                kind: "edge", from_region: A.id, to_region: B.id,
+                base_len: base, cost: cost,
+                friction_mult: base > 0 ? round2(cost / base) : 1,
+                is_ridge_crossing: wall === RIDGE_WALL ? 1 : 0,
+                is_pass: wall === PASS_MULT ? 1 : 0,
+                is_river: wall === RIVER_EDGE ? 1 : 0,
+                is_ford: wall === FORD_MULT ? 1 : 0,
+                held_by: gate.get(i) || gate.get(j) || "none"
+              },
+              geometry: { type: "LineString", coordinates: [[ax, ay], [bx, by]] }
+            });
+          });
+        });
+      }
       model.facilities.forEach(f => {
         features.push({
           type: "Feature",
@@ -4375,6 +4418,53 @@
       };
     }
 
+    // ---- Companion CSV tables (#55): the provenance, flattened ---------------
+    // hinterland.events / rulers / treasuries / tensions / findings and the
+    // epoch snapshots live as nested JSON no table join can reach; these are
+    // the same facts as flat rows. RFC 4180 quoting; deterministic row order
+    // (region then epoch; events in timeline order) so the same world always
+    // produces the same bytes.
+    const csvCell = (v) => {
+      if (v === null || v === undefined) return "";
+      const s = String(v);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const csvOf = (header, rows) =>
+      [header.join(","), ...rows.map(r => r.map(csvCell).join(","))].join("\n") + "\n";
+    function toCsvTables(model) {
+      const F = computeFindings(model);
+      const eventRows = model.events.map(ev => [
+        ev.epoch, 1000 + 25 * ev.epoch, ev.type, ev.region_id, ev.name, ev.outcome,
+        ev.faction !== undefined ? ev.faction : (ev.factions ? ev.factions.join("|") : undefined),
+        ev.measure, ev.winner, ev.ceded, ev.tribute, ev.occupied, ev.contested, ev.ruler
+      ]);
+      const epochRows = [];
+      model.regions.forEach((reg, i) => {
+        model.epochSnaps.forEach((S, e) => {
+          epochRows.push([reg.id, e, epochDate(e), S.wealth[i], S.eliteShare[i],
+            Math.round(S.pop[i] * (1 + reg.rural)), S.bloc[i], S.occupied[i], S.toll[i]]);
+        });
+      });
+      const rulerRows = [];
+      for (const fac of ["crown", "temple", "magnate"])
+        model.dynasties[fac].forEach(r => rulerRows.push([fac, r.name, r.from, r.contested]));
+      return [
+        ["events.csv", csvOf(
+          ["epoch", "year", "type", "region_id", "name", "outcome", "faction", "measure", "winner", "ceded", "tribute", "occupied", "contested", "ruler"],
+          eventRows)],
+        ["epoch_region.csv", csvOf(
+          ["region_id", "epoch", "epoch_date", "wealth", "elite_share", "population", "dominant_bloc", "occupied", "toll_burden"],
+          epochRows)],
+        ["rulers.csv", csvOf(["faction", "name", "from_epoch", "contested"], rulerRows)],
+        ["tensions.csv", csvOf(["pair", "tension"],
+          ["crown_magnate", "crown_temple", "magnate_temple"].map(k => [k, Math.round(model.tensions[k])]))],
+        ["treasuries.csv", csvOf(["faction", "coin"],
+          ["crown", "temple", "magnate"].map(k => [k, Math.round(model.treasuries[k])]))],
+        ["findings.csv", csvOf(["key", "value"],
+          Object.keys(F).map(k => [k, F[k] !== null && typeof F[k] === "object" ? JSON.stringify(F[k]) : F[k]]))]
+      ];
+    }
+
     // ---- Rendering (SVG, responsive) ----------------------------------------
     const RAMPS = {
       wealth:     { lo: [237, 248, 233], hi: [0, 90, 50],    label: "wealth" },
@@ -4617,6 +4707,46 @@
         growth_gap: med(freeR.map(r => r.wealth - r.wealthT0)) - med(occs.map(r => r.wealth - r.wealthT0)),
         comprador_ratio: r1(mean(occs.map(r => r.eliteShare)) / Math.max(1, mean(freeR.map(r => r.eliteShare))))
       } : null;
+      // #56: the thesis, measured — global Moran's I over the SAME region
+      // adjacency the cost graph walks (row-standardized weights), with a
+      // permutation pseudo-p drawn from a dedicated substream: "the wealth
+      // map is clustered" now ships with its own significance test, and
+      // both numbers recompute exactly from the exported edges + columns.
+      const round3 = (v) => Math.round(v * 1000) / 1000;
+      const rMoran = streams(model.seed)("moran");
+      const moranOf = (vals) => {
+        const mu = mean(vals);
+        const z = vals.map(v => v - mu);
+        const den = z.reduce((a, v) => a + v * v, 0);
+        const lag = (zz) => {
+          let s = 0;
+          R.forEach((r, i) => {
+            if (!r.neighbors.length) return;
+            let li = 0;
+            for (const j of r.neighbors) li += zz[j];
+            s += zz[i] * (li / r.neighbors.length);
+          });
+          return s;
+        };
+        const I = den > 0 ? lag(z) / den : 0;
+        const EI = -1 / (n - 1);
+        // pseudo-p: rank of the observed I among 199 label shuffles,
+        // one-sided toward the observed side of the expectation
+        const NP = 199;
+        let asFar = 0;
+        const idx = z.map((_, i) => i);
+        for (let t = 0; t < NP; t++) {
+          for (let i = idx.length - 1; i > 0; i--) {
+            const j = Math.floor(rMoran() * (i + 1));
+            const tmp = idx[i]; idx[i] = idx[j]; idx[j] = tmp;
+          }
+          const Ip = den > 0 ? lag(idx.map(i2 => z[i2])) / den : 0;
+          if (I >= EI ? Ip >= I : Ip <= I) asFar++;
+        }
+        return { I: round3(I), expected: round3(EI), p: round3((asFar + 1) / (NP + 1)), n_perm: NP };
+      };
+      const moran = moranOf(R.map(r => r.wealth));
+      const moranBlight = moranOf(R.map(r => r.blight));
       return {
         zipf,
         sky,
@@ -4631,6 +4761,8 @@
         company_share: compTown.eliteShare,
         gini: giniOf(R.map(r => r.wealth)),
         gini_t0: giniOf(R.map(r => r.wealthT0)),
+        moran,
+        moran_blight: moranBlight,
         turning: turn ? { type: turn.type, epoch: turn.epoch, measure: turn.measure || null, outcome: turn.outcome || null } : null,
         blight_ratio: blightRatio,
         shadow_gap_pct: shadowGap,
@@ -5088,6 +5220,8 @@
           `. The sharpest company town is <b>${esc(ct.name)}</b>: ${F.company_share} of every 100 coins under its roofs belong to its owners' row.`);
       }
       L.push(`The poorest fifth of this realm carries <b>${F.blight_ratio}×</b> the blight of the richest fifth.`);
+      if (F.moran && F.moran_blight)
+        L.push(`And the clustering is measured, not eyeballed: global Moran's I puts wealth at <b>${F.moran.I.toFixed(3)}</b> and blight at <b>${F.moran_blight.I.toFixed(3)}</b>, against ${F.moran.expected.toFixed(3)} expected under no structure (p ${F.moran.p.toFixed(3)} / ${F.moran_blight.p.toFixed(3)}, ${F.moran.n_perm} permutations over the region adjacency).`);
       if (F.shadow_gap_pct !== null && F.shadow_gap_pct > 0 && model.ridges.length)
         L.push(`Behind the ${esc(model.ridges[0].name)} wall, the median settlement earns <b>${F.shadow_gap_pct}% less</b> than the open country at the same remove from the seat.`);
       L.push(`<b>${F.dark_n}</b> of ${model.regions.length} regions sit off the grid because serving them would not pay` +
@@ -6053,6 +6187,19 @@
         a.href = url; a.download = "hinterland-chronicle.md";
         document.body.appendChild(a); a.click(); a.remove();
         URL.revokeObjectURL(url);
+      });
+
+      $("dlTables").addEventListener("click", () => {
+        if (!model) return;
+        // one click, six tables — the same blob+anchor path as every download
+        for (const [fname, text] of toCsvTables(model)) {
+          const blob = new Blob([text], { type: "text/csv" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url; a.download = fname;
+          document.body.appendChild(a); a.click(); a.remove();
+          URL.revokeObjectURL(url);
+        }
       });
 
       $("download").addEventListener("click", () => {

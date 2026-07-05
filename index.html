@@ -5294,6 +5294,24 @@
       const dens = (reg) => (RP(reg) * (1 + reg.rural)) / (reg.area / 10000);
       const maxDensity = Math.max(...model.regions.map(dens), 1e-9);
       const maxBurden = Math.max(...model.regions.map(r => r.burden), 1e-9);
+      const maxPop = Math.max(...model.regions.map(RP), 1);
+      // #61: the satellite glyphs (refinery, skyport, dominion, event, garrison,
+      // facility, still, camp) all share one anchor, reg.c, and used to stack.
+      // A per-region compass-slot allocator hands each a distinct free slot,
+      // scaled past the settlement dot. The subject marks (dot, value number,
+      // name label) keep the anchor; everything else claims a ring slot.
+      const RING8 = [[0, -1], [0.7, -0.7], [1, 0], [0.7, 0.7], [0, 1], [-0.7, 0.7], [-1, 0], [-0.7, -0.7]]; // N NE E SE S SW W NW
+      const slotUsed = new Map();
+      const slotAt = (reg, pref) => {
+        // slot 4 (due S) is pre-reserved: the value number lives just below the
+        // anchor, so glyphs never claim that direction.
+        const used = slotUsed.get(reg.id) || new Set([4]);
+        let i = pref;
+        for (let n = 0; n < 8 && used.has(i); n++) i = (i + 1) % 8;
+        used.add(i); slotUsed.set(reg.id, used);
+        const R = 22 + 13 * Math.sqrt(RP(reg) / maxPop); // past the dot (max r 16) + a gap
+        return [reg.c[0] + RING8[i][0] * R, fy(reg.c[1]) + RING8[i][1] * R];
+      };
       const cellT = (reg) =>
         view === "wealth" ? RW(reg) / 100 :
         view === "class" ? SE(reg) / 100 :
@@ -5382,8 +5400,9 @@
           const halo = lum < 120 ? "#00000055" : "#ffffff";
           parts.push(`<text x="${reg.c[0].toFixed(1)}" y="${(fy(reg.c[1]) + 26).toFixed(1)}" font-size="15" font-weight="600" text-anchor="middle" fill="${ink}" paint-order="stroke" stroke="${halo}" stroke-width="3">${cellValue(reg)}</text>`);
         }
-        if (reg.refining > 0) { // refinery glyph — ESE slot, clear of the number and the event star (#61)
-          parts.push(`<rect x="${(reg.c[0] + 40).toFixed(1)}" y="${(fy(reg.c[1]) + 22).toFixed(1)}" width="16" height="16" fill="#111" stroke="#fff" stroke-width="2"/>`);
+        if (reg.refining > 0) { // refinery glyph, a slotted 16x16 square (#61)
+          const [rx, ry] = slotAt(reg, 2); // prefer E
+          parts.push(`<rect x="${(rx - 8).toFixed(1)}" y="${(ry - 8).toFixed(1)}" width="16" height="16" fill="#111" stroke="#fff" stroke-width="2"/>`);
         }
       });
 
@@ -5483,14 +5502,16 @@
           }
         }
         sp.forEach(reg => {
-          parts.push(`<text class="skyport" x="${(reg.c[0] - 26).toFixed(1)}" y="${(fy(reg.c[1]) - 34).toFixed(1)}" font-size="17" text-anchor="middle" fill="#3f007d" paint-order="stroke" stroke="#fff" stroke-width="3">⍟</text>`); // NW slot — dominion NE, garrison W, still E, event SE, camp SW, refinery ESE (#61)
+          const [x, y] = slotAt(reg, 7); // prefer NW
+          parts.push(`<text class="skyport" x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="17" text-anchor="middle" fill="#3f007d" paint-order="stroke" stroke="#fff" stroke-width="3">⍟</text>`);
         });
       }
 
       // X1: the Dominion's standard flies at its foothold
       if (model.dominion) {
         const f = model.regions[model.dominion.foothold];
-        parts.push(`<text class="dominion" x="${(f.c[0] + 26).toFixed(1)}" y="${(fy(f.c[1]) - 34).toFixed(1)}" font-size="18" text-anchor="middle" fill="#3a2f2a" paint-order="stroke" stroke="#fff" stroke-width="3">⚑</text>`);
+        const [x, y] = slotAt(f, 1); // prefer NE
+        parts.push(`<text class="dominion" x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="18" text-anchor="middle" fill="#3a2f2a" paint-order="stroke" stroke="#fff" stroke-width="3">⚑</text>`);
       }
 
       // G3: the ports — ⚓ where the realm meets the water
@@ -5640,20 +5661,27 @@
       // was 22, the largest glyph on the map, and now reads as a footnote (#61).
       if (poi) model.regions.forEach(reg => {
         if (reg.eventType !== "none" && reg.eventEpoch <= Math.min(scrubEpoch, snaps.length - 1)) {
-          parts.push(`<text class="evt" x="${(reg.c[0] + 30).toFixed(1)}" y="${(fy(reg.c[1]) + 36).toFixed(1)}" font-size="16" text-anchor="middle" fill="#c2670a" paint-order="stroke" stroke="#fff" stroke-width="3">✱</text>`);
+          const [x, y] = slotAt(reg, 3); // prefer SE
+          parts.push(`<text class="evt" x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="16" text-anchor="middle" fill="#c2670a" paint-order="stroke" stroke="#fff" stroke-width="3">✱</text>`);
         }
       });
 
       // Garrisons (Crown force): near-black G beside the settlement (#62)
       model.garrisons.forEach(g => {
-        parts.push(`<text class="gar" x="${(g.x - 26).toFixed(1)}" y="${(fy(g.y) - 14).toFixed(1)}" font-size="16" font-weight="700" text-anchor="middle" fill="#26201a" paint-order="stroke" stroke="#fff" stroke-width="3">G</text>`);
+        const reg = model.regions.find(r => r.id === g.regionId);
+        const [x, y] = slotAt(reg, 6); // prefer W
+        parts.push(`<text class="gar" x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="16" font-weight="700" text-anchor="middle" fill="#26201a" paint-order="stroke" stroke="#fff" stroke-width="3">G</text>`);
       });
 
-      // Facility glyphs (H = healer, W = waterworks, D = wardstation)
-      const FAC_STYLE = { healer: ["H", "#006d2c", -20], waterworks: ["W", "#08519c", 0], wardstation: ["D", "#54278f", 20] };
+      // Facility glyphs (H = healer, W = waterworks, D = wardstation). The
+      // trio shares ONE region slot (#61) and fans out horizontally within it.
+      const FAC_STYLE = { healer: ["H", "#006d2c", -14], waterworks: ["W", "#08519c", 0], wardstation: ["D", "#54278f", 14] };
+      const facSlot = new Map(); // regionId -> [x,y], so H/W/D don't each grab a slot
       if (poi) model.facilities.forEach(f => {
         const [ch, color, dx] = FAC_STYLE[f.type];
-        parts.push(`<text class="fac" x="${(f.x + dx).toFixed(1)}" y="${(fy(f.y) + 58).toFixed(1)}" font-size="14" font-weight="700" text-anchor="middle" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="3">${ch}</text>`);
+        let base = facSlot.get(f.regionId);
+        if (!base) { base = slotAt(model.regions.find(r => r.id === f.regionId), 4); facSlot.set(f.regionId, base); } // prefer S
+        parts.push(`<text class="fac" x="${(base[0] + dx).toFixed(1)}" y="${(base[1] + 6).toFixed(1)}" font-size="14" font-weight="700" text-anchor="middle" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="3">${ch}</text>`);
       });
 
       // L1: the places between — the freeport's black anchor, the
@@ -5670,12 +5698,15 @@
         parts.push(`<text x="${model.sanctuary.x.toFixed(1)}" y="${(fy(model.sanctuary.y) - 30).toFixed(1)}" font-size="10" font-style="italic" text-anchor="middle" fill="#8a6d00" paint-order="stroke" stroke="#fff" stroke-width="2.5">${esc(model.sanctuary.name)}</text>`);
       }
       if (poi) model.camps.forEach(cp => {
-        parts.push(`<text x="${(cp.x - 26).toFixed(1)}" y="${(fy(cp.y) + 34).toFixed(1)}" font-size="13" font-weight="700" text-anchor="middle" fill="#5c4327" paint-order="stroke" stroke="#fff" stroke-width="3">∧</text>`);
+        const reg = model.regions.find(r => r.id === cp.regionId);
+        const [x, y] = slotAt(reg, 5); // prefer SW
+        parts.push(`<text x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="13" font-weight="700" text-anchor="middle" fill="#5c4327" paint-order="stroke" stroke="#fff" stroke-width="3">∧</text>`);
       });
       if (poi) {
         const still = model.regions.filter(r => r.stillair === 1);
         still.forEach(reg => {
-          parts.push(`<text x="${(reg.c[0] + 44).toFixed(1)}" y="${(fy(reg.c[1]) - 10).toFixed(1)}" font-size="13" text-anchor="middle" fill="#667" paint-order="stroke" stroke="#fff" stroke-width="2.5">⌀</text>`); // E slot — the NW column belongs to the skyport (#61)
+          const [x, y] = slotAt(reg, 2); // prefer E
+          parts.push(`<text x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="13" text-anchor="middle" fill="#667" paint-order="stroke" stroke="#fff" stroke-width="2.5">⌀</text>`);
         });
         if (still.length && model.stillName) {
           const cx2 = still.reduce((s2, r) => s2 + r.c[0], 0) / still.length;
@@ -5691,7 +5722,6 @@
         parts.push(`<line x1="${A.c[0].toFixed(1)}" y1="${fy(A.c[1]).toFixed(1)}" x2="${B.c[0].toFixed(1)}" y2="${fy(B.c[1]).toFixed(1)}" stroke="#b8860b" stroke-width="${e.cls === "trunk" ? 6 : 3}" opacity="0.85"/>`);
       });
 
-      const maxPop = Math.max(...model.regions.map(RP), 1);
       model.settlements.forEach(s => {
         const sreg = model.regions[s.regionId];
         const cx = s.x, cy = fy(s.y), isPrime = s.tier === "prime";

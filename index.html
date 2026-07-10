@@ -3521,6 +3521,12 @@
       // V1: the loop's own parameters are now history-mutable — reforms and
       // reactions shift them mid-run, and the free town escapes the tolls
       let dbShift = 0, gtShift = 0, tollScale = 1, freeTownIdx = -1, granaryOn = false;
+      // #93: a maturing realm wires more of itself. gtEase lowers the hook-up bar
+      // a touch each epoch so the grid keeps ratcheting outward through the
+      // history instead of freezing after the founding expansion. It is 0 at
+      // founding (byte-identical there), grows only inside the loop, and is
+      // bounded so it eases the bar, never floors it.
+      let gtEase = 0;
 
       // Conduit (grid economics). Trunk: least-cost refinery->seat paths, with
       // pass-through regions tapped. Then greedy gated expansion: repeatedly
@@ -3545,7 +3551,7 @@
           cur = p;
         }
       });
-      const thresh = () => Math.pow(clamp(params.gt + gtShift, 0, 100) / 40, 4); // V1: charters move the bar
+      const thresh = () => Math.pow(clamp(params.gt + gtShift - gtEase, 0, 100) / 40, 4); // V1: charters move the bar; #93: maturity eases it
       const expandConduit = () => { // greedy gated expansion (ratchet: adds only)
         for (;;) {
           let best = null;
@@ -3999,6 +4005,7 @@
             }
           }
         });
+        gtEase = Math.min(gtEase + 2, 24); // #93: the bar eases as the realm matures, bounded
         expandConduit();   // the grid chases the winners (ratchet: once built, kept)
 
         // D3 events — lived history, epoch-stamped

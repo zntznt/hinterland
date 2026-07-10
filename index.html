@@ -3931,12 +3931,20 @@
           // The occupied pay at the quay; the free pay the Crown's
           // assessment, and the Crown assesses its own bloc gently
           const trib = dominionAt === -1 ? 0 : (reg.occupied ? 3 : (reg.bloc === "crown" ? 1 : 2));
+          const wealthBefore = reg.wealth; // #93: for the ownership drift below
           reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg) - 0.035 * reg.tollBurden + gateIncome + bread - trib), 0, 100);
           if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
           // H1: the rents concentrate before anything trickles — the gate's
           // take and the works' profit land on the owners' row first; only
           // the granary's bread lands on labor's
+          // #93: ownership drifts with the town's FORTUNES, not only its assets.
+          // When wealth rises the owners' row captures the upside first (rents
+          // concentrate before wages); when it falls, scarce labor bargains up.
+          // A gentle 0.2/point drift so a plain town's ownership tracks its
+          // trajectory every epoch instead of freezing between discrete shocks.
+          const wealthDrift = 0.2 * (reg.wealth - wealthBefore);
           reg.eliteShare = clamp(reg.eliteShare
+            + wealthDrift                          // the owners capture the swing, up or down
             + 0.75 * gateIncome                    // the toll house pays the holder's men
             + (reg.refining > 0 ? 0.8 : 0)         // the works pay their masters
             + (reg.E >= 40 ? 0.5 : 0)              // live seams pay their charter-holders

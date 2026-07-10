@@ -3609,6 +3609,38 @@
       };
       computeBlight();
 
+      // LIVABILITY: how much a place is worth living in, recomputed each epoch
+      // like blight. It is EMERGENT (every term is an already-computed field,
+      // so it recomputes exactly from the export) and it is what the coming
+      // settlement lifecycle reads: a blooming cell fills, a poisoned one
+      // empties, a dead-zone cell never clears the bar. Structure:
+      //   BASE (the land's intrinsic capacity: fertility, water, gentle ground,
+      //     temperate, off the crags) MINUS what civilization does to it
+      //     (blight from refining, a mined-out lode's lost reason) PLUS what
+      //     draws people (trade reach, a temple's pull) PLUS a decaying legacy
+      //     of shocks the events write (war desolation, flood, a discovery
+      //     boom). eventLegacy is seeded at 0 and only the epoch events move it.
+      const computeLivability = () => {
+        regions.forEach(reg => {
+          if (reg.eventLegacy === undefined) reg.eventLegacy = 0;
+          const wa = (reg.effWaterAccess !== undefined ? reg.effWaterAccess : reg.waterAccess) || 0;
+          const base =
+            0.34 * reg.fertility +
+            0.30 * wa +
+            0.18 * (100 - reg.ruggedness) +
+            0.10 * Math.max(0, 100 - 1.8 * Math.abs(reg.temperature - 55)) +
+            0.08 * (reg.elevation >= 78 ? 0 : 100);       // alpine is uninhabitable ground
+          const degradation =
+            0.55 * reg.blight +
+            (reg.exhausted ? 14 : 0);                     // a dead lode is a town's lost reason
+          const draw =
+            0.16 * reg.centrality +
+            0.14 * (reg.templeReach || 0);                // the god's town pulls pilgrims and coin
+          reg.livability = clamp(Math.round(base - degradation + 0.5 * (draw - 15) + reg.eventLegacy), 0, 100);
+        });
+      };
+      computeLivability();
+
       // Per-epoch snapshots: the raw material of the scrubber and the
       // QGIS temporal export.
       const epochSnaps = [];
@@ -4140,6 +4172,7 @@
         }
         computeTolls(); // next epoch pays whoever holds the gates NOW
         computeBlight();   // the poison follows the poor wherever they end up
+        computeLivability(); // and the land's worth-living-in is re-reckoned
         regions.forEach(reg => { // plague: maximum contamination + real population, once per region
           if (!reg.plagued && reg.blight >= 85 && reg.settlementPop >= 500) {
             reg.plagued = true;
@@ -4920,6 +4953,7 @@
             elevation: reg.elevation,
             blight_load: reg.blight,
             injustice_idx: reg.injustice,
+            livability: (reg.livability !== undefined ? reg.livability : 0),
             healing_reach: reg.healingReach,
             safe_water: reg.safeWater,
             vulnerability_idx: reg.vulnerability,

@@ -4934,6 +4934,43 @@
         reg.uncounted = Math.round(reg.population * reg.legibility / 100 * 0.3);
       });
 
+      // #91: THE STRUCTURE LAYER. A town is not a bag of loose flags — it is a
+      // set of institutions, and its CHARACTER is which ones it holds. Each is
+      // DERIVED from what the town already is (tier, wealth, reach, market,
+      // force, mobility, service — all computed ABOVE this point), so the layer
+      // recomputes from the exported columns. Placed here, after every input it
+      // reads, so a stage-3 re-run reads current values, never a prior run's.
+      // Descriptive for now (feeds no metric yet); the institutional channel into
+      // the metrics is wired in a following step so the drift can be measured.
+      // The counting-house wealth bar is RELATIVE — wealth is heavily bottom-
+      // skewed (the inequality in the data), so finance concentrates at the top
+      // of the realm's own distribution (85th percentile), not an absolute line.
+      const settledW = regions.filter(r => r.settled).map(r => r.wealth).sort((a, b) => a - b);
+      const richBar = settledW.length ? settledW[Math.floor(0.85 * settledW.length)] : 100;
+      const structures = [];
+      regions.forEach(reg => { reg.structures = []; reg.siteCharacter = reg.settled ? "outpost" : "none"; }); // clear first (purity)
+      regions.forEach(reg => {
+        if (!reg.settled) return;
+        const has = [];
+        if (reg.tier === "prime" || reg.tier === "hub" || reg.marketAccess >= 55) has.push("market");                 // trade towns
+        if (reg.wealth >= richBar && (reg.tier === "prime" || reg.tier === "hub")) has.push("counting_house");         // finance concentrates
+        if (reg.templeReach >= 55 || reg.hasSanctuary === 1) has.push("temple");                                       // holy ground
+        if (reg.isCapital || reg.tier === "prime" || reg.forceProjection >= 60) has.push("keep");                      // a seat of force
+        if (reg.refining > 0 || (reg.tier === "hub" && reg.mobility >= 45)) has.push("guildhall");                     // a craft town
+        if (reg.isCapital || reg.arcaneServices >= 55) has.push("library");                                            // knowledge/administration
+        if (reg.settlementPop >= 120) has.push("tavern");                                                              // society gathers
+        reg.structures = has;
+        has.forEach(t => structures.push({ type: t, regionId: reg.id, x: reg.c[0], y: reg.c[1] }));
+        reg.siteCharacter =
+          has.includes("temple") && !has.includes("counting_house") ? "holy" :
+          has.includes("counting_house") ? "market" :
+          has.includes("keep") && has.includes("guildhall") ? "fortress-works" :
+          has.includes("keep") ? "fortress" :
+          has.includes("guildhall") ? "works" :
+          has.includes("market") ? "market" :
+          has.includes("tavern") ? "hamlet" : "outpost";
+      });
+
       // E3/E6: names walked from the region's own substream, register AND
       // grammar from its geology — the whole toponymy is identical across
       // capital moves, weight changes, and epoch settings of the same
@@ -5218,7 +5255,7 @@
       // a bridge on an abandoned river town is gone with it (no one keeps the
       // span); keep only bridges whose host cell is still settled
       const liveBridges = geo.bridges.filter(b => regions[b.regionIdx] && regions[b.regionIdx].settled);
-      return { seed: String(params.seed), regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: liveBridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, lakeShapes: geo.lakeShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
+      return { seed: String(params.seed), regions, settlements, facilities, structures, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: liveBridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, lakeShapes: geo.lakeShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
         dominion: dominionAt !== -1 ? { arrived: dominionAt, foothold: footholdIdx } : null };
     }
 
@@ -5272,6 +5309,8 @@
             magnate_reach: reg.magnateReach,
             crown_reach: (reg.crownReach !== undefined ? reg.crownReach : reg.centrality), // #93: the seat's pull incl. the Crown's fortune; bloc argmax uses this, not raw centrality
             dominant_bloc: reg.occupied ? "dominion" : reg.bloc,
+            site_character: reg.siteCharacter || (reg.settled ? "outpost" : "none"), // #91: what kind of place its institutions make it
+            structures: (reg.structures || []).join(" "),                            // #91: the institutions it holds (space-joined; a deadhold has none)
             market_access: reg.marketAccess,
             pilgrim_flux: reg.pilgrimFlux,
             force_projection: reg.forceProjection,
@@ -5403,6 +5442,14 @@
           type: "Feature",
           properties: { kind: "facility", facility_type: f.type, region_id: f.regionId },
           geometry: { type: "Point", coordinates: [round2(f.x), round2(f.y)] }
+        });
+      });
+      // #91: the structure layer — each institution a town holds, as its own point
+      model.structures.forEach(s => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "structure", structure_type: s.type, region_id: s.regionId },
+          geometry: { type: "Point", coordinates: [round2(s.x), round2(s.y)] }
         });
       });
       model.sanctionedSites.forEach(s => {

@@ -2037,7 +2037,19 @@
             const pe = elevAt(px, py);
             if (!inSeaPoly(px, py) && pe > se2) { se2 = pe; sx2 = px; sy2 = py; }
           }
-          let x = sx2, y = sy2, ci = 0, th0 = 0;
+          // the walker starts pointed DOWNHILL, not east: th0 seeds every
+          // turn-continuity rule below, so its first value must be physical
+          const g0x = elevAt(sx2 + 6, sy2) - elevAt(sx2 - 6, sy2);
+          const g0y = elevAt(sx2, sy2 + 6) - elevAt(sx2, sy2 - 6);
+          let x = sx2, y = sy2, ci = 0, th0 = Math.atan2(-g0y, -g0x);
+          // MEANDER STATE (sine-generated curve, Langbein & Leopold 1966):
+          // a river's direction swings sinusoidally with distance along the
+          // bed; that oscillation, not noise, is what a meander IS. The
+          // wavelength scales with the river's size (bigger rivers swing
+          // wider, not faster) and the amplitude is gated by local slope
+          // below: steep reaches run straight, floodplains swing hard.
+          let meaPhase = rt() * 2 * Math.PI;
+          const meaLambda = 55 + chain.length * 4 + rt() * 30; // wavelength, map units
           const pts = [[x, y]];
           const intoWater = (dx2, dy2) => { // 2 extra steps: the mouth visibly enters the sea
             for (let e2 = 0; e2 < 2; e2++) {
@@ -2108,8 +2120,24 @@
               // a stalled walker pulls harder — against a gorge lip while
               // the corridor is live, out of a closed basin on the run out
               const pull = Math.min(30, PULL + 0.25 * sinceAdv);
+              // MEANDER TERM: advance the phase with arc length and gate the
+              // amplitude by local slope. Real channels hold their bend
+              // radius near 2-3 widths, so a hard turn cap rides along: a
+              // river leans, it never jinks. On steep ground the gradient
+              // term dwarfs the (near-zero) meander weight and the bed runs
+              // straight down its valley, which is also what real ones do.
+              meaPhase += (2 * Math.PI * STEP) / meaLambda;
+              const gx3 = elevAt(x + 6, y) - elevAt(x - 6, y);
+              const gy3 = elevAt(x, y + 6) - elevAt(x, y - 6);
+              const flat3 = 1 / (1 + (Math.hypot(gx3, gy3) / 12) * 18); // 1 on plains, ~0 on walls
+              // the deflection swings around the DOWN-VALLEY axis (the
+              // target line), not around the current heading: anchored to
+              // the heading it integrates into a drifting loop, anchored to
+              // the valley it is the sine-generated curve
+              const thPref = Math.atan2(tdy, tdx) + 0.9 * flat3 * Math.sin(meaPhase);
+              const meaW = 11 * flat3;
               // 16 compass probes at step radius: steepest descent, bent
-              // toward the corridor target, lightly wobbled cross-track.
+              // toward the corridor target, swung by the meander phase.
               // A second probe at 2.5x radius gives the walker foresight:
               // it aims at saddles instead of climbing the nearest crest.
               let bs = Infinity;
@@ -2119,7 +2147,13 @@
                 const dx2 = Math.cos(th), dy2 = Math.sin(th);
                 const px = x + dx2 * STEP, py = y + dy2 * STEP;
                 let sc = 0.6 * elevAt(px, py) + 0.4 * elevAt(x + dx2 * STEP * 2.5, y + dy2 * STEP * 2.5)
-                  - pull * (dx2 * tdx + dy2 * tdy) / tL + 0.9 * wob(px, py, k);
+                  - pull * (dx2 * tdx + dy2 * tdy) / tL
+                  + meaW * (1 - Math.cos(th - thPref)) + 0.3 * wob(px, py, k);
+                // curvature bound: more than ~67 degrees in one 9-unit step
+                // is a bend radius no channel holds; soft wall, the stall
+                // and burst machinery still handle a true dead end
+                const dth = Math.abs(Math.atan2(Math.sin(th - th0), Math.cos(th - th0)));
+                if (dth > 3 * Math.PI / 8) sc += 500;
                 // the corridor outranks the water: while chain cells remain
                 // the sea is a wall too — the bed skirts the bay to reach
                 // every region that drinks from it

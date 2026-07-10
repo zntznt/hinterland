@@ -422,12 +422,17 @@ function validate(gj, tag) {
 
   // D3 events: columns valid + provenance timeline matches both ways
   {
-    const EV = new Set(["none", "refinery_collapse", "blight_plague", "relic_calamity", "refinery_founded", "ore_strike", "war", "consecration", "seizure", "tower_burned", "tower_raised", "treaty", "revolt", "annexation"]);
+    const EV = new Set(["none", "refinery_collapse", "blight_plague", "relic_calamity", "refinery_founded", "ore_strike", "war", "consecration", "seizure", "tower_burned", "tower_raised", "treaty", "revolt", "annexation", "settlement_abandoned",
+      "drought", "flood", "quake", "storm", "discovery", "ascendancy"]);
     const evList = gj.hinterland.events || [];
-    // a region may suffer multiple events (plagued town, then the works close);
-    // its columns record the LATEST (last-pushed) entry
+    // a region records its LATEST event. Abandonment is a headline event_type; a
+    // founding is NOT (a reborn cell resets to "none" until a real shock stamps
+    // it), so a founding clears the column back to none.
     const byRegion = new Map();
-    for (const ev of evList) byRegion.set(ev.region_id, ev);
+    for (const ev of evList) {
+      if (ev.type === "settlement_founded") { byRegion.delete(ev.region_id); continue; }
+      byRegion.set(ev.region_id, ev);
+    }
     for (const r of regions) {
       const p = r.properties;
       if (!EV.has(p.event_type)) return fail(`${tag}: bad event_type ${p.event_type}`);
@@ -2569,7 +2574,8 @@ console.log("# The naming of things E6 acceptance: the words are grown from the 
   // event names derive from the region's own toponym (place_name), which the app
   // keeps through abandonment, so a rising/war on now-dead ground still recomputes
   const nmById = new Map(regionsOf(E).map(r => [r.properties.region_id, r.properties.place_name]));
-  const NAMEABLE = new Set(["war", "treaty", "annexation", "revolt", "blight_plague"]);
+  const NAMEABLE = new Set(["war", "treaty", "annexation", "revolt", "blight_plague",
+    "drought", "flood", "quake", "storm", "discovery", "ascendancy"]);
   let bad = null, n1 = 0;
   for (const ev of evsE) {
     if (!NAMEABLE.has(ev.type) || ev.region_id === undefined) continue;
@@ -2582,7 +2588,15 @@ console.log("# The naming of things E6 acceptance: the words are grown from the 
     else if (ev.type === "war") {
       const chained = evsE.some(s2 => s2.type === "ore_strike" && ev.epoch > s2.epoch && ev.epoch <= s2.epoch + 2);
       want = chained ? [`the War of the ${t} Seam`] : [`the ${t} War`, `the War of ${y}`];
-    } else {
+    }
+    // D7 shocks: land + year, matching the app's event naming
+    else if (ev.type === "drought") want = [`the Drought of ${y}`];
+    else if (ev.type === "flood") want = [`the ${t} Flood`];
+    else if (ev.type === "quake") want = [`the ${t} Quake`];
+    else if (ev.type === "storm") want = [`the Great Storm of ${y}`];
+    else if (ev.type === "discovery") want = [`the ${t} Find`];
+    else if (ev.type === "ascendancy") want = [`the Rise of ${t}`];
+    else {
       const rp = regionsOf(E).find(r => r.properties.region_id === ev.region_id).properties;
       const pool = rp.biome === "marsh" ? ["Fen-Ague", "Marsh Breath"]
         : rp.downstream_blight > 0 ? ["Water-Rot", "River Fever"]
@@ -3202,11 +3216,15 @@ console.log("# In-run events D3 acceptance: history with dates");
       const p = byId.get(ev.region_id);
       if (ev.type === "refinery_collapse") {
         collapses = 1; collapseCount++;
-        if (p.refining_capacity === 0 && p.abandonment_index > 0) collapseScarred++;
+        // scarred = dead works + a hysteresis abandonment_index, OR the town
+        // emptied out entirely (a dead zone zeros the index but IS the scar)
+        if ((p.refining_capacity === 0 && p.abandonment_index > 0) || p.is_settled === 0) collapseScarred++;
       }
       if (ev.type === "blight_plague") {
         plagues = 1; plagueCount++;
-        if (p.boom_bust === "decline" || p.boom_bust === "collapse") plagueBroken++;
+        // a plague breaks the trajectory: decline, collapse, or — the ultimate
+        // break — the town emptied out entirely into a dead zone (abandoned).
+        if (p.boom_bust === "decline" || p.boom_bust === "collapse" || p.boom_bust === "abandoned") plagueBroken++;
       }
       if (ev.type === "relic_calamity") {
         calamities = 1; calCount++;

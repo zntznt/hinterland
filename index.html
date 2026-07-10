@@ -3837,6 +3837,31 @@
       }
       regions.forEach(reg => { reg.eventType = "none"; reg.eventEpoch = -1; reg.eventSeverity = 0; reg.plagued = false; });
 
+      // D7: THE YEARS MOVE THE LAND — weather, ground, discovery, and the god.
+      // Six seeded, epoch-stamped shocks write a decaying eventLegacy that feeds
+      // livability, so places bloom and wither with the passing centuries. Each
+      // strikes where the GEOGRAPHY makes it likely (a drought on dry ground, a
+      // storm on an exposed coast) so the same world always suffers the same
+      // way. Susceptibility is read from founding geography, fixed for the run.
+      const rW = sx("weather");
+      // quake country: near a ridge axis (a pass sits on one; a shadow cell lies
+      // behind the wall) — the ground that folds is the ground that shakes.
+      const quakeProne = regions.map(reg => (reg.isPass ? 1 : 0) || (reg.rangeShadow === 1 && reg.elevation >= 55 ? 1 : 0));
+      // each shock is a coin + a target epoch, drawn blind before time runs; a
+      // world may see several across its centuries. Draw a small schedule.
+      const SHOCKS = ["drought", "flood", "quake", "storm", "discovery", "ascendancy"];
+      const shockPlan = [];
+      const span = Math.max(params.ep, 1);
+      for (const kind of SHOCKS) {
+        // frequency by kind: weather is common, a discovery or a god's rise rarer
+        const p = kind === "discovery" ? 0.4 : kind === "ascendancy" ? 0.45 : 0.6;
+        let at = 1 + Math.floor(rW() * span);
+        while (at <= params.ep) {
+          if (rW() < p) shockPlan.push({ kind, epoch: at });
+          at += 1 + Math.floor(rW() * 3); // a few years between repeats of a kind
+        }
+      }
+
       // ---- THE DYNAMIC LOOP (D1) --------------------------------------------
       // Epoch 0 is the founding snapshot above (params.ep = 0 reproduces the
       // static model exactly). Each further epoch: ore depletes, wealth
@@ -4243,6 +4268,63 @@
           field.eventType = "treaty"; field.eventEpoch = e + 1;
           field.eventSeverity = 60 + Math.round(rF() * 20);
           events.push({ epoch: e + 1, type: "treaty", region_id: field.id, factions: warFactions, winner, ceded: ceded.length, tribute: trib });
+        }
+        // D7: the years' shocks. First the old wounds fade — eventLegacy decays
+        // ~15%/epoch, so a drought's scar or a discovery's boom is loud the year
+        // it lands and a memory a decade on. Then this epoch's scheduled shocks
+        // land where geography invites them, stamping the cell and moving its
+        // legacy (which computeLivability reads just below).
+        regions.forEach(reg => { reg.eventLegacy = Math.round((reg.eventLegacy || 0) * 0.85); });
+        for (const shock of shockPlan) {
+          if (shock.epoch !== e + 1) continue;
+          const rq = () => rW();
+          // pick the cell the shock hits: the most susceptible, ties by id
+          let best = null, bestScore = -1;
+          const score = (reg) => {
+            switch (shock.kind) {
+              // dry ground with little water of its own suffers the drought
+              case "drought": return reg.settled ? (100 - reg.waterAccess) * 0.6 + (100 - reg.effWaterAccess) * 0.4 : -1;
+              // low river cells flood; a wet valley bottom drowns first
+              case "flood": return (reg.onRiver === 1 && reg.elevation < 45) ? (60 - reg.elevation) + (reg.onRiver ? 20 : 0) : -1;
+              // the folding ground shakes: passes and shadowed highland
+              case "quake": return quakeProne[regions.indexOf(reg)] ? reg.elevation : -1;
+              // the exposed coast takes the storm
+              case "storm": return reg.onCoast === 1 ? 60 + (reg.settled ? 20 : 0) : -1;
+              // a discovery surfaces where ore still hides, or on a live town
+              case "discovery": return reg.settled ? (reg.hiddenOre || 0) + reg.wealth * 0.3 : -1;
+              // the god's town rises: the strongest temple reach blooms
+              case "ascendancy": return reg.templeReach || 0;
+              default: return -1;
+            }
+          };
+          regions.forEach(reg => { const s = score(reg); if (s > bestScore || (s === bestScore && best && reg.id < best.id)) { bestScore = s; best = reg; } });
+          if (!best || bestScore <= 0) continue;
+          const reg = best;
+          const sev = 62 + Math.round(rq() * 30); // 62-92; event_severity floor is 60
+          if (shock.kind === "drought") {
+            reg.eventLegacy -= Math.round(sev * 0.35 * (1 - reg.effWaterAccess / 100)); // scaled by how dry
+            reg.blight = clamp(reg.blight + 4, 0, 100); // parched land sours
+          } else if (shock.kind === "flood") {
+            reg.eventLegacy -= Math.round(sev * 0.3);
+            // the flood scours blight downstream and dumps it here
+            reg.blight = clamp(reg.blight + 6, 0, 100);
+          } else if (shock.kind === "quake") {
+            reg.eventLegacy -= Math.round(sev * 0.4);
+            reg.blight = clamp(reg.blight + 3, 0, 100); // slides and broken ground
+          } else if (shock.kind === "storm") {
+            reg.eventLegacy -= Math.round(sev * 0.28);
+          } else if (shock.kind === "discovery") {
+            reg.eventLegacy += Math.round(sev * 0.45);      // a boom draws people back
+            reg.E = clamp(reg.E + Math.round(sev * 0.3), 0, 100);
+            reg.wealth = clamp(reg.wealth + Math.round(sev * 0.2), 0, 100);
+            if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
+          } else if (shock.kind === "ascendancy") {
+            reg.eventLegacy += Math.round(sev * 0.4);       // pilgrims and coin flock
+            reg.templeReach = clamp(reg.templeReach + 12, 0, 100);
+          }
+          reg.eventLegacy = clamp(reg.eventLegacy, -60, 60);
+          reg.eventType = shock.kind; reg.eventEpoch = e + 1; reg.eventSeverity = sev;
+          events.push({ epoch: e + 1, type: shock.kind, region_id: reg.id });
         }
         computeTolls(); // next epoch pays whoever holds the gates NOW
         computeBlight();   // the poison follows the poor wherever they end up
@@ -5013,6 +5095,13 @@
             : ["Grey Breath", "Ash Fever", "Long Cough"];
           ev.name = `the ${pool[Math.floor(rn() * pool.length)]} of ${y}`;
         }
+        // D7: the years' shocks take names too — the land's toponym and the year
+        else if (ev.type === "drought") ev.name = `the Drought of ${y}`;
+        else if (ev.type === "flood") ev.name = `the ${tn.name} Flood`;
+        else if (ev.type === "quake") ev.name = `the ${tn.name} Quake`;
+        else if (ev.type === "storm") ev.name = `the Great Storm of ${y}`;
+        else if (ev.type === "discovery") ev.name = `the ${tn.name} Find`;
+        else if (ev.type === "ascendancy") ev.name = `the Rise of ${tn.name}`;
       });
 
       // E6: EPITHETS — social bynames, DERIVED (exactly recomputable from
@@ -6313,6 +6402,14 @@
             line = `The Temple came to ${t.name}, to the ground of its suffering, and consecrated it as ${shrine ? shrine.name : "holy ground"}. ` +
               `Pilgrims walk that road now. Where the Crown's writ had failed and the magnates' ledgers saw nothing worth the ink, the faith planted its standard — after the harm, claiming the ground.`;
           }
+          // D7: the years' shocks — weather, ground, discovery, and the god
+          else if (ev.type === "drought") line = `The rains failed over ${t.name}, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page ${ev.name}.`;
+          else if (ev.type === "flood") line = `The river rose over ${t.name} and took the low ground with it — the fields, the founding wharves, whatever the water wanted. ${ev.name}, the accounts call it, and they do not agree on the toll.`;
+          else if (ev.type === "quake") line = `The ground moved under ${t.name}, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as ${ev.name}.`;
+          else if (ev.type === "storm") line = `A storm came off the water and stood over the coast for three days. ${t.name} took the worst of it, as the exposed shore always does; ${ev.name} is the name the survivors gave the year.`;
+          else if (ev.type === "discovery") line = `Fortune turned at ${t.name}: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as ${ev.name}.`;
+          else if (ev.type === "ascendancy") line = `The god's fortune rose at ${t.name}, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as ${ev.name}.`;
+          if (!line) continue; // an unrecognized event leaves no year-line
           L.push(`**Year ${y}.** ${line}`);
           L.push(``);
         }

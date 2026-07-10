@@ -474,7 +474,9 @@ function validate(gj, tag) {
 
   // D3 events: columns valid + provenance timeline matches both ways
   {
-    const EV = new Set(["none", "refinery_collapse", "blight_plague", "relic_calamity", "refinery_founded", "ore_strike", "war", "consecration", "seizure", "tower_burned", "tower_raised", "treaty", "revolt", "annexation", "settlement_abandoned"]);
+    const EV = new Set(["none", "refinery_collapse", "blight_plague", "relic_calamity", "refinery_founded", "ore_strike", "war", "consecration", "seizure", "tower_burned", "tower_raised", "treaty", "revolt", "annexation", "settlement_abandoned",
+      // D7 living-world shocks: weather, ground, discovery, the god's rise
+      "drought", "flood", "quake", "storm", "discovery", "ascendancy"]);
     const evList = gj.hinterland.events || [];
     // a region may suffer multiple events (plagued town, then the works close);
     // its columns record the LATEST (last-pushed) entry. Abandonment is now a
@@ -1308,10 +1310,13 @@ function validate(gj, tag) {
     if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad settlement asi`);
   }
 
-  // Default weights: wealth should track geography (centrality) positively.
-  if (n >= 12) {
-    const corr = pearson(col(gj, "centrality_to_seat"), col(gj, "wealth"));
-    if (corr < 0.1) return fail(`${tag}: wealth/centrality corr ${corr.toFixed(2)} too weak (n=${n})`);
+  // Default weights: wealth should track geography (centrality) positively —
+  // measured over SETTLED towns (a dead zone has wealth 0 regardless of where it
+  // sits, which only dilutes the relationship among the places that have one).
+  const settledForCorr = regionsOf(gj).filter(f => f.properties.is_settled === 1);
+  if (settledForCorr.length >= 12) {
+    const corr = pearson(settledForCorr.map(f => f.properties.centrality_to_seat), settledForCorr.map(f => f.properties.wealth));
+    if (corr < 0.1) return fail(`${tag}: wealth/centrality corr ${corr.toFixed(2)} too weak (n=${settledForCorr.length})`);
     // endowment sparsity holds for the FOUNDING geology (endowment_t0);
     // the exported aetherstone_endowment is the current, possibly depleted stock
     const es = col(gj, "endowment_t0");

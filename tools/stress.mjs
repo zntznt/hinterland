@@ -143,7 +143,9 @@ function validate(gj, tag) {
       return fail(`${tag}: malformed name ${p.name}`);
     {
       const rp = regionById.get(p.region_id).properties;
-      const expReg = (rp.endowment_t0 >= 50 || rp.terrain_ruggedness >= 60) ? "frontier" : "lowland";
+      let expReg = (rp.endowment_t0 >= 50 || rp.terrain_ruggedness >= 60) ? "frontier" : "lowland";
+      // D8: a reborn cell (rebirths >= 1) comes back in a different register
+      if (rp.rebirths >= 1) expReg = rp.temple_reach >= 45 ? "temple" : (expReg === "frontier" ? "lowland" : "frontier");
       if (p.name_register !== expReg) return fail(`${tag}: register ${p.name_register} != geology says ${expReg}`);
     }
     if (!Number.isInteger(p.population) || p.population < 25) return fail(`${tag}: bad settlement pop ${p.population}`);
@@ -786,6 +788,17 @@ function validate(gj, tag) {
     // may settle for lesser ground once the richest is taken
     if (anyDelve && !delveOnWorkings) return fail(`${tag}: no delve on the old workings`);
     if (ruins.filter(r => r.properties.ruin_type === "deadhold").length > 1) return fail(`${tag}: multiple deadholds`);
+    // D8: living-world deadholds — a town that emptied over the epochs leaves a
+    // ruin (kind "deadhold", distinct from the ancient ruin_type). Each must sit
+    // on a cell that is unsettled now AND was abandoned (abandoned_epoch >= 0),
+    // named for what it was, dated to the year it fell.
+    const regByIdD = new Map(regions.map(r => [r.properties.region_id, r.properties]));
+    for (const d of gj.features.filter(f => f.properties.kind === "deadhold")) {
+      const host = regByIdD.get(d.properties.region_id);
+      if (!host || host.is_settled !== 0 || host.abandoned_epoch < 0) return fail(`${tag}: deadhold on a live/never-settled cell (#${d.properties.region_id})`);
+      if (d.properties.fell_epoch !== host.abandoned_epoch) return fail(`${tag}: deadhold fell_epoch != abandoned_epoch`);
+      if (!/^the ruins of /.test(d.properties.deadhold_name || "")) return fail(`${tag}: malformed deadhold_name`);
+    }
     const bridges = bridgesOf(gj);
     const perRiver = {};
     for (const b of bridges) {

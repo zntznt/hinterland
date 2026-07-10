@@ -137,7 +137,10 @@ function validate(gj, tag) {
       return fail(`${tag}: malformed name ${p.name}`);
     {
       const rp = regionById.get(p.region_id).properties;
-      const expReg = (rp.endowment_t0 >= 50 || rp.terrain_ruggedness >= 60) ? "frontier" : "lowland";
+      let expReg = (rp.endowment_t0 >= 50 || rp.terrain_ruggedness >= 60) ? "frontier" : "lowland";
+      // D8: a reborn cell (rebirths >= 1) comes back in a different register —
+      // liturgical if the god called it home, else the land's tongue turned over
+      if (rp.rebirths >= 1) expReg = rp.temple_reach >= 45 ? "temple" : (expReg === "frontier" ? "lowland" : "frontier");
       if (p.name_register !== expReg) return fail(`${tag}: register ${p.name_register} != geology says ${expReg}`);
     }
     if (!Number.isInteger(p.population) || p.population < 25) return fail(`${tag}: bad settlement pop ${p.population}`);
@@ -710,6 +713,15 @@ function validate(gj, tag) {
     // may settle for lesser ground once the richest is taken
     if (anyDelve && !delveOnWorkings) return fail(`${tag}: no delve on the old workings`);
     if (ruins.filter(r => r.properties.ruin_type === "deadhold").length > 1) return fail(`${tag}: multiple deadholds`);
+    // D8: living-world deadholds (kind "deadhold") — a town emptied over the
+    // epochs leaves a ruin on its now-unsettled, once-abandoned cell.
+    const regByIdD = new Map(regions.map(r => [r.properties.region_id, r.properties]));
+    for (const d of gj.features.filter(f => f.properties.kind === "deadhold")) {
+      const host = regByIdD.get(d.properties.region_id);
+      if (!host || host.is_settled !== 0 || host.abandoned_epoch < 0) return fail(`${tag}: deadhold on a live/never-settled cell (#${d.properties.region_id})`);
+      if (d.properties.fell_epoch !== host.abandoned_epoch) return fail(`${tag}: deadhold fell_epoch != abandoned_epoch`);
+      if (!/^the ruins of /.test(d.properties.deadhold_name || "")) return fail(`${tag}: malformed deadhold_name`);
+    }
     const bridges = bridgesOf(gj);
     const perRiver = {};
     for (const b of bridges) {
@@ -2515,15 +2527,20 @@ console.log("# Markov toponymy E3 acceptance: the world names itself");
   else fail("weight change renamed settlements");
   // T0/T8 are generated once, above the R1 block, and shared with it. The epoch
   // knob no longer leaves the settlement SET identical (the lifecycle founds and
-  // abandons towns), but it must never RENAME a town: a name is a landscape fact.
-  // So we compare the SURVIVORS — every region settled in both T0 and T8 keeps
-  // the same name/register. (A cell's place_name is fixed at generation; only
-  // whether it holds a settlement changes.)
+  // abandons towns), but it must never rename a CONTINUOUSLY-held town: a name is
+  // a landscape fact. The one honest exception is REBIRTH — a cell that emptied
+  // and came back (rebirths rose) is reborn as something else and takes a new
+  // register/name by design (D8). So compare survivors, skipping the reborn.
   const nmMap = (g) => new Map(settlesOf(g).map(s => [s.properties.region_id, s.properties.name + "/" + s.properties.name_register]));
-  const m0 = nmMap(T0), m8 = nmMap(T8);
-  let renamedT = 0;
-  for (const [id, v] of m0) if (m8.has(id) && m8.get(id) !== v) renamedT++;
-  if (renamedT === 0) ok(`time never renames a town (${[...m0.keys()].filter(id => m8.has(id)).length} survive ep0->ep8 with their names intact)`);
+  const rbMap = (g) => new Map(regionsOf(g).map(r => [r.properties.region_id, r.properties.rebirths]));
+  const m0 = nmMap(T0), m8 = nmMap(T8), rb8 = rbMap(T8);
+  let renamedT = 0, reborn = 0;
+  for (const [id, v] of m0) {
+    if (!m8.has(id)) continue;
+    if (rb8.get(id) >= 1) { if (m8.get(id) !== v) reborn++; continue; } // reborn: a new name is correct
+    if (m8.get(id) !== v) renamedT++;
+  }
+  if (renamedT === 0) ok(`time never renames a town it kept (${[...m0.keys()].filter(id => m8.has(id) && rb8.get(id) < 1).length} continuous survivors intact; ${reborn} reborn under new names)`);
   else fail(`epochs renamed settlements: ${renamedT}`);
   const s0 = new Map(sanctOf(T0).map(s => [s.properties.region_id, s.properties.site_name]));
   const s8 = new Map(sanctOf(T8).map(s => [s.properties.region_id, s.properties.site_name]));

@@ -4893,7 +4893,20 @@
       // capital moves, weight changes, and epoch settings of the same
       // seed. One shared used-set keeps every name in the world unique.
       const usedNames = new Set();
-      regions.forEach(reg => { reg.nameRegister = nameRegister(reg); });
+      regions.forEach(reg => {
+        reg.nameRegister = nameRegister(reg);
+        // D8: REBORN AS SOMETHING ELSE. A cell that emptied and was resettled
+        // (rebirths >= 1) does not come back as what it was — the ore town
+        // reborn is not an ore town. Its new life takes a different register,
+        // read from WHAT drew it back: a strong temple reach means the god
+        // called the people home (liturgical); otherwise the land's character
+        // simply turned over (frontier <-> lowland). Keyed on rebirths so it is
+        // recomputable from the exported columns, and stable across re-runs.
+        if (reg.rebirths >= 1) {
+          reg.nameRegister = reg.templeReach >= 45 ? "temple"
+            : reg.nameRegister === "frontier" ? "lowland" : "frontier";
+        }
+      });
       // rivers and ridges take their names FIRST now: the grammar can say
       // "{town}-on-{river}", and the mountain kinds read their height
       geo.ridges.forEach(R => {
@@ -5483,6 +5496,18 @@
           type: "Feature",
           properties: { kind: "tower", region_id: reg.id, tower_name: ((t && t.name) || reg.placeName || "the watch") + " Tower" },
           geometry: { type: "Point", coordinates: [round2(reg.towerPt[0]), round2(reg.towerPt[1])] }
+        });
+      });
+      // D8: DEADHOLDS. A cell that once held a town and now holds none leaves a
+      // ruin at its anchor — the deadhold, named for what it was, dated to the
+      // year it emptied. Emitted only for cells abandoned AND not resettled
+      // (is_settled 0, abandoned_epoch >= 0), so a reborn cell has none. The
+      // land keeps the name even when the people are gone.
+      model.regions.filter(r => !r.settled && r.abandonedEpoch >= 0).forEach(reg => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "deadhold", region_id: reg.id, deadhold_name: "the ruins of " + (reg.placeName || "a forgotten hold"), fell_epoch: reg.abandonedEpoch },
+          geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
         });
       });
       if (model.maelstrom) {
@@ -6426,14 +6451,26 @@
       L.push(`## The State of the Realm — year ${closeY}`);
       L.push(``);
       if (params.ep > 0) {
-        const bb = { boom: 0, stable: 0, decline: 0, collapse: 0 };
-        model.regions.forEach(r => { bb[r.boomBust]++; });
+        const bb = { boom: 0, stable: 0, decline: 0, collapse: 0, abandoned: 0 };
+        model.regions.forEach(r => { bb[r.boomBust] = (bb[r.boomBust] || 0) + 1; });
+        const settledCount = model.regions.filter(r => r.settled).length;
         const parts = [];
         if (bb.boom) parts.push(`${bb.boom} rose through the years`);
         if (bb.stable) parts.push(`${bb.stable} held steady`);
         if (bb.decline) parts.push(`${bb.decline} declined`);
         if (bb.collapse) parts.push(`${bb.collapse} collapsed outright`);
-        L.push(`Of the realm's ${n} settled regions, ${list(parts)}.`);
+        L.push(`Of the realm's ${settledCount} settled regions, ${list(parts)}.`);
+        // D8: the ghost country — cells the years emptied, and cells reborn
+        const deadholds = model.regions.filter(r => !r.settled && r.abandonedEpoch >= 0);
+        if (deadholds.length) {
+          const names = deadholds.slice(0, 4).map(r => r.placeName).filter(Boolean);
+          L.push(`${deadholds.length} ${deadholds.length === 1 ? "holding stands" : "holdings stand"} empty now — the deadholds, where a town was and is not. The maps still name ${list(names)}${deadholds.length > names.length ? " among others" : ""}; the roads have stopped going.`);
+        }
+        const reborn = model.regions.filter(r => r.settled && r.rebirths >= 1);
+        if (reborn.length) {
+          const rn2 = reborn.slice(0, 3).map(r => town(r.id).name).filter(Boolean);
+          L.push(`And ${reborn.length} ${reborn.length === 1 ? "place has" : "places have"} come back as something else — ${list(rn2)} stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.`);
+        }
         const ghost = model.regions.reduce((a, b) => a.abandonment >= b.abandonment ? a : b);
         if (ghost.abandonment >= 35)
           L.push(`${town(ghost.id).name} is the emptiest of the ghost country: its best years are a memory the roads no longer visit.`);

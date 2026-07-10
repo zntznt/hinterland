@@ -3130,6 +3130,18 @@
       regions.forEach(reg => {
         if (reg.endowmentGeo === undefined) reg.endowmentGeo = reg.endowment;
         reg.endowment = reg.endowmentGeo;
+        // the living-world lifecycle also writes per-cell state across a run
+        // (settled/abandonment, the decaying event legacy, and the POI roles
+        // an abandonment clears); reset it here so a second run on the same
+        // regions is a pure function of (geology, knobs), like the ore above.
+        reg.eventLegacy = 0;
+        reg.settled = 1; reg.settledEpoch = 0; reg.abandonedEpoch = -1; reg.rebirths = 0;
+        reg.tier = undefined; reg.livability = undefined; reg.plagued = false;
+        reg.peakPop = undefined;
+        // templeReach is computed AFTER the founding livability call reads it,
+        // so on the first run it is 0 there but a prior run's value would leak
+        // in on a recompute; clear it so founding livability is run-identical.
+        reg.templeReach = 0;
       });
 
       // Seat resolution. Pinned: nearest region to the click. Unpinned: the
@@ -3405,8 +3417,17 @@
       // prime by office; the rest rank by what they grew to — the same
       // rule the post-loop re-rank has always used
       cap.tier = "prime";
+      // SETTLEMENT STATE: a region is a piece of LAND; whether it holds a
+      // settlement is now an outcome. Every region starts settled (the
+      // founding-centuries growth model runs on all of them); the epoch loop
+      // lets a poisoned or emptied cell go UNSETTLED (a dead zone), and an
+      // unsettled cell with good livability and a settled neighbor be founded
+      // (or reborn). settled=1 until proven otherwise here.
+      regions.forEach(reg => {
+        reg.settled = 1; reg.settledEpoch = 0; reg.abandonedEpoch = -1; reg.rebirths = 0;
+      });
       {
-        const others = regions.filter(reg => reg !== cap)
+        const others = regions.filter(reg => reg !== cap && reg.settled)
           .sort((a, b) => b.settlementPop - a.settlementPop || a.id - b.id);
         const nHub = Math.max(1, Math.round(others.length * 0.2));
         const nOut = Math.max(1, Math.round(others.length * 0.4));
@@ -3609,6 +3630,38 @@
       };
       computeBlight();
 
+      // LIVABILITY: how much a place is worth living in, recomputed each epoch
+      // like blight. It is EMERGENT (every term is an already-computed field,
+      // so it recomputes exactly from the export) and it is what the coming
+      // settlement lifecycle reads: a blooming cell fills, a poisoned one
+      // empties, a dead-zone cell never clears the bar. Structure:
+      //   BASE (the land's intrinsic capacity: fertility, water, gentle ground,
+      //     temperate, off the crags) MINUS what civilization does to it
+      //     (blight from refining, a mined-out lode's lost reason) PLUS what
+      //     draws people (trade reach, a temple's pull) PLUS a decaying legacy
+      //     of shocks the events write (war desolation, flood, a discovery
+      //     boom). eventLegacy is seeded at 0 and only the epoch events move it.
+      const computeLivability = () => {
+        regions.forEach(reg => {
+          if (reg.eventLegacy === undefined) reg.eventLegacy = 0;
+          const wa = (reg.effWaterAccess !== undefined ? reg.effWaterAccess : reg.waterAccess) || 0;
+          const base =
+            0.34 * reg.fertility +
+            0.30 * wa +
+            0.18 * (100 - reg.ruggedness) +
+            0.10 * Math.max(0, 100 - 1.8 * Math.abs(reg.temperature - 55)) +
+            0.08 * (reg.elevation >= 78 ? 0 : 100);       // alpine is uninhabitable ground
+          const degradation =
+            0.55 * reg.blight +
+            (reg.exhausted ? 14 : 0);                     // a dead lode is a town's lost reason
+          const draw =
+            0.16 * reg.centrality +
+            0.14 * (reg.templeReach || 0);                // the god's town pulls pilgrims and coin
+          reg.livability = clamp(Math.round(base - degradation + 0.5 * (draw - 15) + reg.eventLegacy), 0, 100);
+        });
+      };
+      computeLivability();
+
       // Per-epoch snapshots: the raw material of the scrubber and the
       // QGIS temporal export.
       const epochSnaps = [];
@@ -3784,6 +3837,31 @@
       }
       regions.forEach(reg => { reg.eventType = "none"; reg.eventEpoch = -1; reg.eventSeverity = 0; reg.plagued = false; });
 
+      // D7: THE YEARS MOVE THE LAND — weather, ground, discovery, and the god.
+      // Six seeded, epoch-stamped shocks write a decaying eventLegacy that feeds
+      // livability, so places bloom and wither with the passing centuries. Each
+      // strikes where the GEOGRAPHY makes it likely (a drought on dry ground, a
+      // storm on an exposed coast) so the same world always suffers the same
+      // way. Susceptibility is read from founding geography, fixed for the run.
+      const rW = sx("weather");
+      // quake country: near a ridge axis (a pass sits on one; a shadow cell lies
+      // behind the wall) — the ground that folds is the ground that shakes.
+      const quakeProne = regions.map(reg => (reg.isPass ? 1 : 0) || (reg.rangeShadow === 1 && reg.elevation >= 55 ? 1 : 0));
+      // each shock is a coin + a target epoch, drawn blind before time runs; a
+      // world may see several across its centuries. Draw a small schedule.
+      const SHOCKS = ["drought", "flood", "quake", "storm", "discovery", "ascendancy"];
+      const shockPlan = [];
+      const span = Math.max(params.ep, 1);
+      for (const kind of SHOCKS) {
+        // frequency by kind: weather is common, a discovery or a god's rise rarer
+        const p = kind === "discovery" ? 0.4 : kind === "ascendancy" ? 0.45 : 0.6;
+        let at = 1 + Math.floor(rW() * span);
+        while (at <= params.ep) {
+          if (rW() < p) shockPlan.push({ kind, epoch: at });
+          at += 1 + Math.floor(rW() * 3); // a few years between repeats of a kind
+        }
+      }
+
       // ---- THE DYNAMIC LOOP (D1) --------------------------------------------
       // Epoch 0 is the founding snapshot above (params.ep = 0 reproduces the
       // static model exactly). Each further epoch: ore depletes, wealth
@@ -3857,10 +3935,57 @@
           else if (gA < 0) { const m = 0.05 * regions[edge.b].settlementPop * (-gA) / 100; delta[edge.b] -= m; delta[edge.a] += m; }
         });
         regions.forEach((reg, i) => {
-          const d = Math.max(delta[i], -0.15 * reg.settlementPop);
-          reg.settlementPop = Math.max(20, Math.round(reg.settlementPop + d));
-          if (reg.settlementPop > reg.peakPop) reg.peakPop = reg.settlementPop;
-          reg.population = Math.round(reg.settlementPop * (1 + reg.rural));
+          if (reg.settled) {
+            // a living town: migrate, then check whether the land has failed
+            // it. Livability below the ABANDON floor, or a population bled to
+            // nothing, empties the cell: it becomes a dead zone (a ruin, a
+            // name on an old map), and its people are already gone (migrated
+            // out above). Hysteresis: abandon at <20, found at >=45, so a
+            // place on the edge does not flicker in and out year to year.
+            // The SEAT never empties: a capital is held by will, not just by
+            // the land, so it is immune to abandonment (and stays exported).
+            const d = Math.max(delta[i], -0.15 * reg.settlementPop);
+            reg.settlementPop = Math.max(20, Math.round(reg.settlementPop + d));
+            // occupied ground is held by the garrison as the seat is held by
+            // will: the imperial peace keeps it manned, so it (and the Dominion's
+            // foothold harbor) never empties into a dead zone under occupation.
+            if (!reg.isCapital && !reg.occupied && (reg.livability < 20 || reg.settlementPop <= 22)) {
+              reg.settled = 0; reg.abandonedEpoch = e + 1;
+              reg.settlementPop = 0; reg.population = 0; reg.tier = "none";
+              // the abandonment is now this cell's headline event: it overrides
+              // any earlier same-cell event (a tower raised then deserted, a gate
+              // seized then emptied) so event_type never promises a standing
+              // asset the dead zone no longer holds.
+              reg.eventType = "settlement_abandoned"; reg.eventEpoch = e + 1;
+              reg.eventSeverity = Math.max(reg.eventSeverity, 60);
+              events.push({ epoch: e + 1, type: "settlement_abandoned", region_id: reg.id });
+            } else {
+              if (reg.settlementPop > reg.peakPop) reg.peakPop = reg.settlementPop;
+              reg.population = Math.round(reg.settlementPop * (1 + reg.rural));
+            }
+          } else {
+            // empty land: does anyone come? Only if the ground is now worth
+            // living on AND a settled neighbor can spill people onto it (the
+            // frontier spreads from the settled, it does not spark in a void).
+            // A cell abandoned before and resettled now is REBORN, often as a
+            // different kind of place (a mined-out ore town resettled around a
+            // later shrine); rebirths counts how many lives it has had.
+            const founded = reg.livability >= 45 &&
+              reg.neighbors.some(nb => regions[nb].settled);
+            if (founded) {
+              reg.settled = 1; reg.settledEpoch = e + 1;
+              if (reg.abandonedEpoch >= 0) reg.rebirths++;
+              reg.settlementPop = 40 + Math.round(0.3 * (reg.livability - 45));
+              reg.peakPop = Math.max(reg.peakPop || 0, reg.settlementPop);
+              reg.population = Math.round(reg.settlementPop * (1 + reg.rural));
+              reg.tier = "holdfast"; // re-ranked below; a newcomer starts small
+              // a fresh life clears the abandonment headline: the cell holds a
+              // town again, so its event column resets to none until a later
+              // shock stamps it (a real event this same epoch may overwrite).
+              reg.eventType = "none"; reg.eventEpoch = -1; reg.eventSeverity = 0;
+              events.push({ epoch: e + 1, type: "settlement_founded", region_id: reg.id });
+            }
+          }
         });
         expandConduit();   // the grid chases the winners (ratchet: once built, kept)
 
@@ -3970,7 +4095,9 @@
         if (dominionCoin && dominionAt === -1 && e + 1 === dominionEpoch) {
           let best = -1;
           regions.forEach((reg, i) => {
-            if (reg.isPort !== 1 || !clearOfMael(reg)) return;
+            // the Dominion lands at a LIVE harbor: an abandoned quay is no prize
+            // (and occupying a dead zone would resurrect it with settled === 0)
+            if (reg.isPort !== 1 || !reg.settled || !clearOfMael(reg)) return;
             if (best === -1 || reg.wealth > regions[best].wealth ||
                 (reg.wealth === regions[best].wealth && i < best)) best = i;
           });
@@ -4084,7 +4211,7 @@
         // tower clears the bar, the stronger of the two puts it to fire.
         // Tolerance decays as the realm consolidates: the bar drops with time.
         regions.forEach(reg => {
-          if (reg.hasTower !== 1) return;
+          if (reg.hasTower !== 1 || !reg.settled) return; // an emptied cell's tower falls with it, not to fire
           if (Math.max(reg.centrality, reg.templeReach) + 2.2 * (e + 1) >= towerBurnT) {
             reg.hasTower = 0;
             reg.eventType = "tower_burned"; reg.eventEpoch = e + 1;
@@ -4096,7 +4223,11 @@
         if (raiseCoin && e + 1 === raiseEpoch && regions.filter(r => r.hasTower === 1).length < 2) {
           let bi = -1, bs = -Infinity;
           regions.forEach((reg, ri) => {
-            if (reg.hasTower === 1 || reg.occupied) return; // no tower rises under the garrison
+            // no tower rises under the garrison, and none in a dead zone: an
+            // apostate needs a failing town to squat in, not empty ground (else
+            // the post-loop pass would strip the tower and leave a stale
+            // tower_raised event on an abandoned cell).
+            if (reg.hasTower === 1 || reg.occupied || !reg.settled) return;
             const s = (reg.bloc === "ungoverned" ? 40 : reg.bloc === "contested" ? 20 : reg.bloc === "crown" ? -30 : 0) +
               (onGrid[ri] ? 0 : 25) + (100 - reg.centrality) * 0.2 + (rF() - 0.5) * 8;
             if (s > bs || (s === bs && (bi === -1 || ri < bi))) { bs = s; bi = ri; }
@@ -4138,8 +4269,66 @@
           field.eventSeverity = 60 + Math.round(rF() * 20);
           events.push({ epoch: e + 1, type: "treaty", region_id: field.id, factions: warFactions, winner, ceded: ceded.length, tribute: trib });
         }
+        // D7: the years' shocks. First the old wounds fade — eventLegacy decays
+        // ~15%/epoch, so a drought's scar or a discovery's boom is loud the year
+        // it lands and a memory a decade on. Then this epoch's scheduled shocks
+        // land where geography invites them, stamping the cell and moving its
+        // legacy (which computeLivability reads just below).
+        regions.forEach(reg => { reg.eventLegacy = Math.round((reg.eventLegacy || 0) * 0.85); });
+        for (const shock of shockPlan) {
+          if (shock.epoch !== e + 1) continue;
+          const rq = () => rW();
+          // pick the cell the shock hits: the most susceptible, ties by id
+          let best = null, bestScore = -1;
+          const score = (reg) => {
+            switch (shock.kind) {
+              // dry ground with little water of its own suffers the drought
+              case "drought": return reg.settled ? (100 - reg.waterAccess) * 0.6 + (100 - reg.effWaterAccess) * 0.4 : -1;
+              // low river cells flood; a wet valley bottom drowns first
+              case "flood": return (reg.onRiver === 1 && reg.elevation < 45) ? (60 - reg.elevation) + (reg.onRiver ? 20 : 0) : -1;
+              // the folding ground shakes: passes and shadowed highland
+              case "quake": return quakeProne[regions.indexOf(reg)] ? reg.elevation : -1;
+              // the exposed coast takes the storm
+              case "storm": return reg.onCoast === 1 ? 60 + (reg.settled ? 20 : 0) : -1;
+              // a discovery surfaces where ore still hides, or on a live town
+              case "discovery": return reg.settled ? (reg.hiddenOre || 0) + reg.wealth * 0.3 : -1;
+              // the god's town rises: the strongest temple reach blooms
+              case "ascendancy": return reg.templeReach || 0;
+              default: return -1;
+            }
+          };
+          regions.forEach(reg => { const s = score(reg); if (s > bestScore || (s === bestScore && best && reg.id < best.id)) { bestScore = s; best = reg; } });
+          if (!best || bestScore <= 0) continue;
+          const reg = best;
+          const sev = 62 + Math.round(rq() * 30); // 62-92; event_severity floor is 60
+          if (shock.kind === "drought") {
+            reg.eventLegacy -= Math.round(sev * 0.35 * (1 - reg.effWaterAccess / 100)); // scaled by how dry
+            reg.blight = clamp(reg.blight + 4, 0, 100); // parched land sours
+          } else if (shock.kind === "flood") {
+            reg.eventLegacy -= Math.round(sev * 0.3);
+            // the flood scours blight downstream and dumps it here
+            reg.blight = clamp(reg.blight + 6, 0, 100);
+          } else if (shock.kind === "quake") {
+            reg.eventLegacy -= Math.round(sev * 0.4);
+            reg.blight = clamp(reg.blight + 3, 0, 100); // slides and broken ground
+          } else if (shock.kind === "storm") {
+            reg.eventLegacy -= Math.round(sev * 0.28);
+          } else if (shock.kind === "discovery") {
+            reg.eventLegacy += Math.round(sev * 0.45);      // a boom draws people back
+            reg.E = clamp(reg.E + Math.round(sev * 0.3), 0, 100);
+            reg.wealth = clamp(reg.wealth + Math.round(sev * 0.2), 0, 100);
+            if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
+          } else if (shock.kind === "ascendancy") {
+            reg.eventLegacy += Math.round(sev * 0.4);       // pilgrims and coin flock
+            reg.templeReach = clamp(reg.templeReach + 12, 0, 100);
+          }
+          reg.eventLegacy = clamp(reg.eventLegacy, -60, 60);
+          reg.eventType = shock.kind; reg.eventEpoch = e + 1; reg.eventSeverity = sev;
+          events.push({ epoch: e + 1, type: shock.kind, region_id: reg.id });
+        }
         computeTolls(); // next epoch pays whoever holds the gates NOW
         computeBlight();   // the poison follows the poor wherever they end up
+        computeLivability(); // and the land's worth-living-in is re-reckoned
         regions.forEach(reg => { // plague: maximum contamination + real population, once per region
           if (!reg.plagued && reg.blight >= 85 && reg.settlementPop >= 500) {
             reg.plagued = true;
@@ -4271,6 +4460,13 @@
         snapNow();
       }
 
+      // DEAD-ZONE CONSISTENCY: a war, plague, or revolt in the loop can strike
+      // a cell that had already emptied and leave it a scrap of population.
+      // Close the books: an unsettled cell holds no one and no tier, always.
+      regions.forEach(reg => {
+        if (!reg.settled) { reg.settlementPop = 0; reg.population = 0; reg.tier = "none"; }
+      });
+
       // Final classification: trajectories recorded, tiers re-ranked by what
       // the settlements have BECOME (a hub can hollow to a holdfast).
       regions.forEach(reg => {
@@ -4296,11 +4492,16 @@
           }
         });
         regions.forEach(T => {
-          if (T.hasTower === 1 && Math.hypot(P[0] - round2(T.towerPt[0]), P[1] - round2(T.towerPt[1])) < WILD_R) reg.towerNear = 1;
+          // a tower whose town is abandoned is pulled down with it (its POI is
+          // dropped from the export too), so its shadow must not linger — gate
+          // on T.settled to keep social_trust recomputable from the export.
+          if (T.hasTower === 1 && T.settled && Math.hypot(P[0] - round2(T.towerPt[0]), P[1] - round2(T.towerPt[1])) < WILD_R) reg.towerNear = 1;
         });
       });
       if (params.ep > 0) {
-        const others2 = regions.filter(reg => reg !== cap)
+        // re-rank only the SETTLED (the dead zones hold no tier); an abandoned
+        // cell keeps tier "none" from the lifecycle above
+        const others2 = regions.filter(reg => reg !== cap && reg.settled)
           .sort((a, b) => b.settlementPop - a.settlementPop || a.id - b.id);
         const nHub2 = Math.max(1, Math.round(others2.length * 0.2));
         const nOut2 = Math.max(1, Math.round(others2.length * 0.4));
@@ -4383,6 +4584,14 @@
         reg.healerDist = r1(isFinite(healerCd[i]) ? healerCd[i] : 9999);
         reg.facDist = r1(isFinite(anyFacCd[i]) ? anyFacCd[i] : 9999);
         reg.healingReach = Math.round(100 * Math.exp(-(isFinite(healerCd[i]) ? healerCd[i] : 1e9) / 250));
+        if (!reg.settled) {
+          // a dead zone has no people, so no health, water-safety, or service
+          // burden: the human columns are zero, not a fit over an empty town.
+          reg.safeWater = 0; reg.vulnerability = 0;
+          reg.burdenEnv = 0; reg.burdenWater = 0; reg.burdenUnmet = 0; reg.burden = 0;
+          reg.serviceGap = 0;
+          return;
+        }
         const wwHere = reg.tier === "prime" || (reg.tier === "hub" && reg.onConduit);
         reg.safeWater = clamp(Math.round(
           (wwHere ? 85 : (reg.onConduit ? 45 : 15)) + 0.25 * reg.wealth - 0.35 * reg.blight
@@ -4437,13 +4646,17 @@
       byTraffic.forEach((e, i) => { e.cls = i < nHwy ? "highway" : (i < nHwy + nRoad ? "road" : "track"); });
 
       // Market access: Hansen gravity over road-network costs (max = 100).
+      // Normalize by the top SETTLED cell: a dead zone can have high raw
+      // gravity (it sits near a city) but no market of its own, and its column
+      // is zeroed later, so letting it define the max would leave no town at
+      // 100. The best-served living town is the 100 the scale is built on.
       let maxMA = 0;
       const maRaw = regions.map((reg, i) => {
         let A = 0;
         regions.forEach((o, j) => {
           if (i !== j && isFinite(sp[i].dist[j])) A += o.population / Math.pow(1 + sp[i].dist[j] / 100, 2);
         });
-        if (A > maxMA) maxMA = A;
+        if (reg.settled && A > maxMA) maxMA = A;
         return A;
       });
       regions.forEach((reg, i) => { reg.marketAccess = maxMA > 0 ? Math.round(100 * maRaw[i] / maxMA) : 0; });
@@ -4491,8 +4704,12 @@
           cur = p;
         }
       });
-      const maxDel = Math.max(...delFlux, 1e-9);
-      regions.forEach((reg, i) => { reg.delverFlux = Math.round(100 * delFlux[i] / maxDel); });
+      // normalize over SETTLED cells only: a dead zone's stretch of road carries
+      // no town to tax the delvers, and its flux is zeroed in the export, so it
+      // must not set the 100. Collapsed/ruinless worlds leave the column at 0.
+      let maxDel = 1e-9;
+      regions.forEach((reg, i) => { if (reg.settled && delFlux[i] > maxDel) maxDel = delFlux[i]; });
+      regions.forEach((reg, i) => { reg.delverFlux = reg.settled ? Math.round(100 * delFlux[i] / maxDel) : 0; });
 
       // W2 security: garrisons guard the seat and the busiest corridors near
       // the core — protection follows the center's arteries, not the frontier.
@@ -4508,7 +4725,9 @@
       // the Crown fortifies the war region AFTER the blood — and the crushed
       // revolt after the hangings; security arrives late either way
       const garrisonIdxs = [seatIdx, ...(warIdx >= 0 ? [warIdx] : []), ...(crushedIdx >= 0 ? [crushedIdx] : []), ...garScored.slice(0, KG).map(o => o.i)];
-      const garrisons = garrisonIdxs.map(i => ({ regionId: regions[i].id, x: regions[i].c[0], y: regions[i].c[1] }));
+      // a garrison holds a living town, not a dead zone: drop any that fell on
+      // an abandoned cell (its force_projection was zeroed with its people)
+      const garrisons = garrisonIdxs.filter(i => regions[i].settled).map(i => ({ regionId: regions[i].id, x: regions[i].c[0], y: regions[i].c[1] }));
       const garCd = costDistances(regions, garrisonIdxs).dist;
       regions.forEach((reg, i) => {
         reg.forceProjection = Math.round(100 * Math.exp(-(isFinite(garCd[i]) ? garCd[i] : 1e9) / 280));
@@ -4674,7 +4893,20 @@
       // capital moves, weight changes, and epoch settings of the same
       // seed. One shared used-set keeps every name in the world unique.
       const usedNames = new Set();
-      regions.forEach(reg => { reg.nameRegister = nameRegister(reg); });
+      regions.forEach(reg => {
+        reg.nameRegister = nameRegister(reg);
+        // D8: REBORN AS SOMETHING ELSE. A cell that emptied and was resettled
+        // (rebirths >= 1) does not come back as what it was — the ore town
+        // reborn is not an ore town. Its new life takes a different register,
+        // read from WHAT drew it back: a strong temple reach means the god
+        // called the people home (liturgical); otherwise the land's character
+        // simply turned over (frontier <-> lowland). Keyed on rebirths so it is
+        // recomputable from the exported columns, and stable across re-runs.
+        if (reg.rebirths >= 1) {
+          reg.nameRegister = reg.templeReach >= 45 ? "temple"
+            : reg.nameRegister === "frontier" ? "lowland" : "frontier";
+        }
+      });
       // rivers and ridges take their names FIRST now: the grammar can say
       // "{town}-on-{river}", and the mountain kinds read their height
       geo.ridges.forEach(R => {
@@ -4718,8 +4950,13 @@
         }
         return markovName(reg2.nameRegister, r, usedNames); // exhaustion: the old way
       };
-      const settlements = regions.map(reg => ({
-        name: placeName(reg, regions.indexOf(reg), sx("name#" + reg.id)),
+      // EVERY region gets a name, settled or not: a dead zone keeps the name
+      // of what stood there (the ruins of X), and events on abandoned ground
+      // still have a place to be named for. Names are assigned in id order so
+      // they are stable regardless of which cells ended up settled.
+      regions.forEach(reg => { reg.placeName = placeName(reg, regions.indexOf(reg), sx("name#" + reg.id)); });
+      const settlements = regions.filter(reg => reg.settled).map(reg => ({
+        name: reg.placeName,
         nameRegister: reg.nameRegister,
         tier: reg.tier, regionId: reg.id,
         x: reg.c[0], y: reg.c[1],
@@ -4852,7 +5089,10 @@
       events.forEach((ev, i) => {
         if (ev.region_id === undefined) return;
         const rn = sx("evname#" + i);
-        const tn = settlements.find(s2 => s2.regionId === ev.region_id);
+        // the region's own name, which survives abandonment (an event can land
+        // on ground that is now a dead zone, e.g. the abandonment itself)
+        const evReg = regions.find(rg => rg.id === ev.region_id);
+        const tn = { name: (evReg && evReg.placeName) || "the frontier" };
         const y = 1000 + 25 * ev.epoch;
         if (ev.type === "war") {
           const chained = events.some(s2 => s2.type === "ore_strike" && ev.epoch > s2.epoch && ev.epoch <= s2.epoch + 2);
@@ -4868,6 +5108,13 @@
             : ["Grey Breath", "Ash Fever", "Long Cough"];
           ev.name = `the ${pool[Math.floor(rn() * pool.length)]} of ${y}`;
         }
+        // D7: the years' shocks take names too — the land's toponym and the year
+        else if (ev.type === "drought") ev.name = `the Drought of ${y}`;
+        else if (ev.type === "flood") ev.name = `the ${tn.name} Flood`;
+        else if (ev.type === "quake") ev.name = `the ${tn.name} Quake`;
+        else if (ev.type === "storm") ev.name = `the Great Storm of ${y}`;
+        else if (ev.type === "discovery") ev.name = `the ${tn.name} Find`;
+        else if (ev.type === "ascendancy") ev.name = `the Rise of ${tn.name}`;
       });
 
       // E6: EPITHETS — social bynames, DERIVED (exactly recomputable from
@@ -4887,7 +5134,45 @@
           (reg.boomBust === "boom" && reg.wealth >= 60) ? "the Rising" : null;
       });
       settlements.forEach(s2 => { s2.epithet = regions[s2.regionId].epithet; });
-      return { seed: String(params.seed), regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, lakeShapes: geo.lakeShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
+      // DEAD-ZONE ZEROING: an unsettled cell is land with no society, so every
+      // HUMAN / ECONOMIC column reads a clean zero (there is no town to have a
+      // wealth, a class split, a health burden, a market). The LAND columns
+      // (livability, blight, fertility, water access, elevation, biome, and
+      // the geographic flags) stay intact: the ground is still what it is.
+      // One consolidated pass so the export is coherent no matter which post-
+      // loop block computed a metric over an empty town.
+      regions.forEach(reg => {
+        if (reg.settled) return;
+        for (const k of ["wealth", "eliteShare", "elitePopPct", "classGap", "segregation", "socialTrust",
+          "kinship", "culturalDistance", "mobility", "legibility", "uncounted",
+          "marketAccess", "arcaneServices", "safeWater", "vulnerability", "burden",
+          "burdenEnv", "burdenWater", "burdenUnmet", "serviceGap", "predation", "tollBurden",
+          "tenureChurn", "blocChanges", "smuggling", "blackMarket", "enforceGap", "forceProjection",
+          "wardline", "pilgrimFlux", "delverFlux", "abandonment", "legacy"]) reg[k] = 0;
+        // onConduit stays as the app set it: the conduit is force-wired stone
+        // (like a bridge or a road), a PHYSICAL fact that outlasts the town, and
+        // the grid is a connected network that fractures if a mid-trunk node is
+        // pulled. The town simply draws no SERVICE from it (conduitAccess and
+        // arcaneServices are zeroed above), so a dead node is grid-present but
+        // service-dead — its edges and the seat-connectivity invariant hold.
+        reg.tier = "none"; reg.tenure = "none"; reg.security = "none";
+        reg.boomBust = "abandoned";
+        // a dead zone runs no harbor, mans no tower, keeps no bridge, aerie,
+        // freeport, or shrine: its infrastructure roles lapse with its people,
+        // so every POI export loop (which filters on these flags) skips it.
+        // Done in this post-loop pass, NOT mid-loop, so it cannot desync the
+        // tower dynamics the epoch loop runs.
+        reg.isPort = 0; reg.hasTower = 0; reg.hasBridge = 0; reg.isSkyport = 0;
+        reg.isFreeport = 0; reg.hasSanctuary = 0;
+        // injustice stays the presentation product of the raw fields, now that
+        // wealth is zeroed: poisoned abandoned ground reads its blight as its
+        // injustice (blight * (1 - 0)), and the export stays recomputable.
+        reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
+      });
+      // a bridge on an abandoned river town is gone with it (no one keeps the
+      // span); keep only bridges whose host cell is still settled
+      const liveBridges = geo.bridges.filter(b => regions[b.regionIdx] && regions[b.regionIdx].settled);
+      return { seed: String(params.seed), regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: liveBridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, lakeShapes: geo.lakeShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
         dominion: dominionAt !== -1 ? { arrived: dominionAt, foothold: footholdIdx } : null };
     }
 
@@ -4920,6 +5205,15 @@
             elevation: reg.elevation,
             blight_load: reg.blight,
             injustice_idx: reg.injustice,
+            livability: (reg.livability !== undefined ? reg.livability : 0),
+            is_settled: reg.settled ? 1 : 0,
+            settled_epoch: (reg.settledEpoch !== undefined ? reg.settledEpoch : 0),
+            abandoned_epoch: (reg.abandonedEpoch !== undefined ? reg.abandonedEpoch : -1),
+            rebirths: reg.rebirths || 0,
+            // the region's own toponym survives abandonment (a settled cell's
+            // settlement carries the same string). Exported per-region so event
+            // names on now-dead ground ("the <place> Rising") still recompute.
+            place_name: reg.placeName,
             healing_reach: reg.healingReach,
             safe_water: reg.safeWater,
             vulnerability_idx: reg.vulnerability,
@@ -5133,7 +5427,7 @@
         const t = model.settlements.find(s => s.regionId === reg.id);
         features.push({
           type: "Feature",
-          properties: { kind: "port", region_id: reg.id, port_name: harborName(t.name), held_by: reg.heldBy },
+          properties: { kind: "port", region_id: reg.id, port_name: harborName((t && t.name) || reg.placeName || "the quay"), held_by: reg.heldBy },
           geometry: { type: "Point", coordinates: [round2(reg.shorePt[0]), round2(reg.shorePt[1])] }
         });
       });
@@ -5166,7 +5460,7 @@
           const t = model.settlements.find(s => s.regionId === reg.id);
           features.push({
             type: "Feature",
-            properties: { kind: "skyport", region_id: reg.id, skyport_name: t.name + " Aerie" },
+            properties: { kind: "skyport", region_id: reg.id, skyport_name: ((t && t.name) || reg.placeName || "the aerie") + " Aerie" },
             geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
           });
         });
@@ -5192,7 +5486,7 @@
         const t = model.settlements.find(s => s.regionId === model.regions[b.regionIdx].id);
         features.push({
           type: "Feature",
-          properties: { kind: "bridge", river_id: b.riverId, region_id: model.regions[b.regionIdx].id, bridge_name: t.name + " Bridge", held_by: b.heldBy },
+          properties: { kind: "bridge", river_id: b.riverId, region_id: model.regions[b.regionIdx].id, bridge_name: ((t && t.name) || model.regions[b.regionIdx].placeName || "the crossing") + " Bridge", held_by: b.heldBy },
           geometry: { type: "Point", coordinates: [b.x, b.y] }
         });
       });
@@ -5200,8 +5494,20 @@
         const t = model.settlements.find(s => s.regionId === reg.id);
         features.push({
           type: "Feature",
-          properties: { kind: "tower", region_id: reg.id, tower_name: t.name + " Tower" },
+          properties: { kind: "tower", region_id: reg.id, tower_name: ((t && t.name) || reg.placeName || "the watch") + " Tower" },
           geometry: { type: "Point", coordinates: [round2(reg.towerPt[0]), round2(reg.towerPt[1])] }
+        });
+      });
+      // D8: DEADHOLDS. A cell that once held a town and now holds none leaves a
+      // ruin at its anchor — the deadhold, named for what it was, dated to the
+      // year it emptied. Emitted only for cells abandoned AND not resettled
+      // (is_settled 0, abandoned_epoch >= 0), so a reborn cell has none. The
+      // land keeps the name even when the people are gone.
+      model.regions.filter(r => !r.settled && r.abandonedEpoch >= 0).forEach(reg => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "deadhold", region_id: reg.id, deadhold_name: "the ruins of " + (reg.placeName || "a forgotten hold"), fell_epoch: reg.abandonedEpoch },
+          geometry: { type: "Point", coordinates: [round2(reg.c[0]), round2(reg.c[1])] }
         });
       });
       if (model.maelstrom) {
@@ -5284,20 +5590,28 @@
           if (idx < model.epochSnaps[e].edgeCount) return e;
         return model.epochSnaps.length - 1;
       });
+      const lastFrame = model.epochSnaps.length - 1;
       model.epochSnaps.forEach((S, e) => {
         const date = epochDate(e);
         model.regions.forEach((reg, i) => {
+          // the FINAL frame must equal the main map, which zeros a dead zone's
+          // human columns; an intermediate frame keeps the town's living values
+          // (it was alive then). So on the last frame only, a now-unsettled cell
+          // reads the same zeroed wealth/elite_share the main export carries.
+          const dead = e === lastFrame && !reg.settled;
+          const wealthE = dead ? 0 : S.wealth[i];
+          const eliteE = dead ? 0 : S.eliteShare[i];
           features.push({
             type: "Feature",
             properties: {
               kind: "region", epoch: e, epoch_date: date, region_id: reg.id,
-              wealth: S.wealth[i],
-              population: Math.round(S.pop[i] * (1 + reg.rural)),
+              wealth: wealthE,
+              population: dead ? 0 : Math.round(S.pop[i] * (1 + reg.rural)),
               aetherstone_endowment: S.E[i],
               blight_load: S.blight[i],
               on_conduit: S.onGrid[i] ? 1 : 0,
-              injustice_idx: Math.round(100 * (S.blight[i] / 100) * (1 - S.wealth[i] / 100)),
-              elite_share: S.eliteShare[i],
+              injustice_idx: Math.round(100 * (S.blight[i] / 100) * (1 - wealthE / 100)),
+              elite_share: eliteE,
               occupied: S.occupied[i]
             },
             geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
@@ -5692,14 +6006,18 @@
         for (const a of gs) for (const b of gs) s += a.p * b.p * Math.abs(a.v - b.v);
         return Math.round(s / (2 * P * P * mu) * 100) / 100;
       };
+      // only inhabited cells carry a class split; a dead zone has population 0
+      // and a zeroed ledger (elitePopPct 0), so including it would form a 0/0
+      // row. Filter it out — its zero weight adds nothing but the NaN.
+      const peopled = R.filter(r => r.population > 0 && r.elitePopPct > 0 && r.elitePopPct < 100);
       const rows = [];
-      R.forEach(r => {
+      peopled.forEach(r => {
         const pe = r.population * r.elitePopPct / 100;
         rows.push({ p: pe, v: r.wealth * (r.eliteShare / r.elitePopPct) });
         rows.push({ p: r.population - pe, v: r.wealth * ((100 - r.eliteShare) / (100 - r.elitePopPct)) });
       });
       const giniPeople = wgini(rows);
-      const giniBetween = wgini(R.map(r => ({ p: r.population, v: r.wealth })));
+      const giniBetween = wgini(peopled.map(r => ({ p: r.population, v: r.wealth })));
       const popAll = R.reduce((a, r) => a + r.population, 0);
       const popE = R.reduce((a, r) => a + r.population * r.elitePopPct / 100, 0);
       const coinAll = R.reduce((a, r) => a + r.population * r.wealth, 0);
@@ -5719,7 +6037,10 @@
         // in: the slope over the WHOLE system (Zipf's constant is ~1)
         // and the straightness of the big-town tail (hamlets deviate;
         // cities obey). Exactly recomputable from exported settlements.
-        const all = R.map(r => r.settlementPop).sort((a, b) => b - a);
+        // the rank-size law is a law of TOWNS: only settled cells count (an
+        // unsettled dead zone has no population to rank, and log(0) is not a
+        // number). This matches the exported settlements the suite recomputes.
+        const all = R.filter(r => r.settled && r.settlementPop > 0).map(r => r.settlementPop).sort((a, b) => b - a);
         if (all.length < 8) return null;
         const fit = (pops) => {
           const xs = pops.map((_, i) => Math.log(i + 1)), ys = pops.map(p => Math.log(p));
@@ -5816,8 +6137,15 @@
         class_gap: classGapRealm,
         company_town: compTown.id,
         company_share: compTown.eliteShare,
-        gini: giniOf(R.map(r => r.wealth)),
-        gini_t0: giniOf(R.map(r => r.wealthT0)),
+        // the wealth-gap trajectory is measured over the SURVIVING realm (cells
+        // still settled): a dead zone reads wealth 0, and counting a pile of
+        // abandoned zeros would inflate every world's final gini and read as
+        // entrenchment that never happened to the people. Both endpoints use the
+        // same set of places, so the gap's rise or fall is real, not a headcount
+        // artifact of who emptied out. (Recomputable: is_settled + the two
+        // wealth columns.)
+        gini: giniOf(R.filter(r => r.settled).map(r => r.wealth)),
+        gini_t0: giniOf(R.filter(r => r.settled).map(r => r.wealthT0)),
         moran,
         moran_blight: moranBlight,
         turning: turn ? { type: turn.type, epoch: turn.epoch, measure: turn.measure || null, outcome: turn.outcome || null } : null,
@@ -5843,7 +6171,7 @@
       const pick = (v) => v[Math.floor(rc() * v.length)];
       const year = (e) => 1000 + 25 * e;
       const closeY = year(params.ep);
-      const town = (id) => model.settlements.find(s => s.regionId === id);
+      const town = (id) => model.settlements.find(s => s.regionId === id) || { name: ((model.regions.find(r => r.id === id) || {}).placeName) || "the wild", regionId: id, tier: "none", population: 0 };
       const tierWord = { prime: "the seat", hub: "the hub town", outpost: "the outpost", holdfast: "the holdfast" };
       const list = (xs) => xs.length <= 1 ? (xs[0] || "") :
         xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
@@ -6099,6 +6427,14 @@
             line = `The Temple came to ${t.name}, to the ground of its suffering, and consecrated it as ${shrine ? shrine.name : "holy ground"}. ` +
               `Pilgrims walk that road now. Where the Crown's writ had failed and the magnates' ledgers saw nothing worth the ink, the faith planted its standard — after the harm, claiming the ground.`;
           }
+          // D7: the years' shocks — weather, ground, discovery, and the god
+          else if (ev.type === "drought") line = `The rains failed over ${t.name}, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page ${ev.name}.`;
+          else if (ev.type === "flood") line = `The river rose over ${t.name} and took the low ground with it — the fields, the founding wharves, whatever the water wanted. ${ev.name}, the accounts call it, and they do not agree on the toll.`;
+          else if (ev.type === "quake") line = `The ground moved under ${t.name}, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as ${ev.name}.`;
+          else if (ev.type === "storm") line = `A storm came off the water and stood over the coast for three days. ${t.name} took the worst of it, as the exposed shore always does; ${ev.name} is the name the survivors gave the year.`;
+          else if (ev.type === "discovery") line = `Fortune turned at ${t.name}: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as ${ev.name}.`;
+          else if (ev.type === "ascendancy") line = `The god's fortune rose at ${t.name}, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as ${ev.name}.`;
+          if (!line) continue; // an unrecognized event leaves no year-line
           L.push(`**Year ${y}.** ${line}`);
           L.push(``);
         }
@@ -6115,14 +6451,26 @@
       L.push(`## The State of the Realm — year ${closeY}`);
       L.push(``);
       if (params.ep > 0) {
-        const bb = { boom: 0, stable: 0, decline: 0, collapse: 0 };
-        model.regions.forEach(r => { bb[r.boomBust]++; });
+        const bb = { boom: 0, stable: 0, decline: 0, collapse: 0, abandoned: 0 };
+        model.regions.forEach(r => { bb[r.boomBust] = (bb[r.boomBust] || 0) + 1; });
+        const settledCount = model.regions.filter(r => r.settled).length;
         const parts = [];
         if (bb.boom) parts.push(`${bb.boom} rose through the years`);
         if (bb.stable) parts.push(`${bb.stable} held steady`);
         if (bb.decline) parts.push(`${bb.decline} declined`);
         if (bb.collapse) parts.push(`${bb.collapse} collapsed outright`);
-        L.push(`Of the realm's ${n} settled regions, ${list(parts)}.`);
+        L.push(`Of the realm's ${settledCount} settled regions, ${list(parts)}.`);
+        // D8: the ghost country — cells the years emptied, and cells reborn
+        const deadholds = model.regions.filter(r => !r.settled && r.abandonedEpoch >= 0);
+        if (deadholds.length) {
+          const names = deadholds.slice(0, 4).map(r => r.placeName).filter(Boolean);
+          L.push(`${deadholds.length} ${deadholds.length === 1 ? "holding stands" : "holdings stand"} empty now — the deadholds, where a town was and is not. The maps still name ${list(names)}${deadholds.length > names.length ? " among others" : ""}; the roads have stopped going.`);
+        }
+        const reborn = model.regions.filter(r => r.settled && r.rebirths >= 1);
+        if (reborn.length) {
+          const rn2 = reborn.slice(0, 3).map(r => town(r.id).name).filter(Boolean);
+          L.push(`And ${reborn.length} ${reborn.length === 1 ? "place has" : "places have"} come back as something else — ${list(rn2)} stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.`);
+        }
         const ghost = model.regions.reduce((a, b) => a.abandonment >= b.abandonment ? a : b);
         if (ghost.abandonment >= 35)
           L.push(`${town(ghost.id).name} is the emptiest of the ghost country: its best years are a memory the roads no longer visit.`);
@@ -6244,7 +6592,7 @@
 
     function findingsHTML(model) {
       const F = computeFindings(model);
-      const town = (id) => model.settlements.find(st => st.regionId === id);
+      const town = (id) => model.settlements.find(st => st.regionId === id) || { name: ((model.regions.find(r => r.id === id) || {}).placeName) || "the wild", regionId: id, tier: "none", population: 0 };
       const reg = (id) => model.regions.find(r => r.id === id);
       const L = [];
       {
@@ -6985,7 +7333,7 @@
           : "none — a quiet age"],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["the owners", (() => { const FR = computeFindings(model); return FR.owners ? `${FR.owners.pop_pct}% of people hold ${FR.owners.coin_pct}% of the coin` : "\u2014"; })()],
-        ["the skyway", (() => { const sp = model.regions.filter(r => r.isSkyport === 1); return sp.length >= 2 ? `${esc(model.skywayName)} Lane — ${sp.length} aeries (${sp.map(r => esc(model.settlements.find(s => s.regionId === r.id).name)).join(", ")})` : "no lane worth the lift"; })()],
+        ["the skyway", (() => { const sp = model.regions.filter(r => r.isSkyport === 1); return sp.length >= 2 ? `${esc(model.skywayName)} Lane — ${sp.length} aeries (${sp.map(r => esc((model.settlements.find(s => s.regionId === r.id) || {name:(model.regions.find(rg=>rg.id===r.id)||{}).placeName||"the aerie"}).name)).join(", ")})` : "no lane worth the lift"; })()],
         ["the dominion", model.dominion ? `arrived ${1000 + 25 * model.dominion.arrived} — ${model.regions.filter(r => r.occupied).length} regions occupied` : "beyond the horizon, this age"],
         ["rank-size", (() => { const F5 = computeFindings(model); return F5.zipf ? `α ${F5.zipf.alpha.toFixed(2)} · tail fit ${F5.zipf.tail_r2.toFixed(2)} · primacy ${F5.zipf.primacy}×` : "too few towns to fit"; })()],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
@@ -7060,7 +7408,7 @@
         let cur = inspectId;
         while (model._seatRun.parent[cur] !== -1) {
           cur = model._seatRun.parent[cur];
-          if (held.has(cur)) gates.push(`${model.settlements.find(s => s.regionId === model.regions[cur].id).name} (${held.get(cur)})`);
+          if (held.has(cur)) gates.push(`${(model.settlements.find(s => s.regionId === model.regions[cur].id) || {name: model.regions[cur].placeName || "the gate"}).name} (${held.get(cur)})`);
         }
         if (gates.length) L.push(`<div class="insp-sec">THE ROAD TO THE SEAT</div><div class="insp-ev">pays at ${gates.join(", ")}</div>`);
       }

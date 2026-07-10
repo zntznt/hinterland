@@ -3778,14 +3778,24 @@
       // D3 event machinery: seeded triggers, epoch-stamped consequences.
       const events = [];
       const rEv = sx("events");
+      // #88: the scheduling WINDOW for a one-shot event. Historically each was
+      // `min(ep, CAP)` — a fixed early cap tuned for a ~12-epoch world, so a
+      // longer history front-loaded all its politics into the first ~third and
+      // ran quiet after. Widen the window PROPORTIONALLY once the timeline
+      // outgrows the cap, so a long world spreads its politics the way its
+      // weather already does. Tuned so ep<=12 is BYTE-IDENTICAL: at ep=12 the
+      // proportional term (ep*CAP/12) equals CAP, so max() picks the old value;
+      // it only grows for ep>12. Pure arithmetic on params.ep — no stream draw,
+      // so determinism is untouched and the same rand draw lands in a wider span.
+      const evWindow = (cap) => Math.max(Math.min(Math.max(params.ep, 1), cap), Math.round(Math.max(params.ep, 1) * cap / 12));
       const collapseThresh = 0.35 + rEv() * 0.2;          // ore share that breaks the industry
       const calamityCoin = rEv() < 0.65;                   // most worlds, not all
-      const calamityEpoch = 1 + Math.floor(rEv() * Math.min(Math.max(params.ep, 1), 8));
+      const calamityEpoch = 1 + Math.floor(rEv() * evWindow(8));
       const calamitySite = sanctIdxs.length ? sanctIdxs[Math.floor(rEv() * sanctIdxs.length)] : -1;
       const strikeCoin = rEv() < 0.5;                      // half of worlds find the hidden lode
-      const strikeEpoch = 2 + Math.floor(rEv() * Math.min(Math.max(params.ep, 1), 7));
+      const strikeEpoch = 2 + Math.floor(rEv() * evWindow(7));
       let warCoin = rEv() < 0.55;                          // most contested seams eventually burn
-      let warEpoch = 3 + Math.floor(rEv() * Math.min(Math.max(params.ep, 1), 7));
+      let warEpoch = 3 + Math.floor(rEv() * evWindow(7));
       const E0sum = regions.reduce((s, r) => s + r.endowment, 0);
       let collapsed = false, collapseEpoch = -1, refounded = false, warIdx = -1;
       let firstWoundIdx = -1, firstWoundEpoch = -1, consecrated = false;
@@ -3800,7 +3810,7 @@
       const reachOf = (F, reg) => F === "crown" ? reg.centrality : F === "temple" ? reg.templeReach : reg.magnateReach;
       const towerBurnT = 42 + rF() * 15;   // the bar past which the strong burn the strange
       const raiseCoin = rF() < 0.6;
-      const raiseEpoch = 3 + Math.floor(rF() * Math.min(Math.max(params.ep, 1), 6));
+      const raiseEpoch = 3 + Math.floor(rF() * evWindow(6));
       // F2: treasuries, tensions, and the war bar
       const treasuries = { crown: 0, temple: 0, magnate: 0 };
       const pairKey = (a, b) => [a, b].sort().join("_");
@@ -3819,7 +3829,9 @@
       // trade leaves through is the door an empire can walk in.
       const rX = sx("dominion");
       const dominionCoin = rX() < 0.5;
-      const dominionEpoch = 2 + Math.floor(rX() * Math.min(Math.max(params.ep, 1), 5));
+      // the Dominion favors an early arrival (a fleet does not wait a realm out),
+      // so its window stays the smallest — it still scales, but lands sooner.
+      const dominionEpoch = 2 + Math.floor(rX() * evWindow(5));
       let dominionAt = -1, footholdIdx = -1; // occupied/occupiedEpoch reset at wealth init
       // E5: the dynasty structure — reigns drawn blind before time runs;
       // the names come later (after the world has taken all of its own)

@@ -7548,8 +7548,12 @@
         row("the owners", `${reg.elitePopPct} in 100 people hold ${reg.eliteShare} of every 100 coins`) +
         row("the gap", `an owner lives ${reg.classGap}× better than a laborer here`) +
         `</table>`);
+      // #93: read the bloc dynamism as the oligarchy story, not just the current
+      // ruler — ground that changed hands is where the compounding of power shows
+      const rulesStr = (reg.occupied ? "the Dominion" : reg.bloc) +
+        (reg.blocChanges > 0 ? ` · changed hands ${reg.blocChanges}× as the balance shifted` : reg.bloc === "contested" ? " · still contested" : "");
       L.push(`<div class="insp-sec">THE STATE</div><table>` +
-        row("who rules", reg.occupied ? "the Dominion" : reg.bloc) +
+        row("who rules", rulesStr) +
         row("the grid", reg.onConduit ? `on the conduit · services ${reg.arcaneServices}` : `OFF THE GRID · access ${reg.conduitAccess}`) +
         row("order", `${reg.security} · force ${reg.forceProjection} · shadow ${reg.smuggling}`) +
         `</table>`);

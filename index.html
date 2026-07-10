@@ -1538,25 +1538,87 @@
       const NR = (params.regions >= 12 && rr() < 0.4) ? 2 : 1;
       const ridges = [];
       const passes = [];
+      // A CREST IS NOT A RULED LINE. Real ranges follow a curving tectonic
+      // suture and grow massifs and saddles along their length; they branch
+      // (a main spine throws off spurs) rather than run corner to corner. So
+      // the crest is WALKED like a river bed: a sine-generated deflection
+      // (Langbein & Leopold, the same curve that freed the rivers) swings the
+      // heading around the fault axis, the walk stops at a natural extent
+      // (not always the full map), and a mid-crest spur forks off at an angle.
+      // Each crest also carries an ELEVATION PROFILE along its arc length so
+      // the uplift below rises into massifs and dips into saddles, instead of
+      // walling the map at one uniform height.
+      const walkCrest = (sx, sy, axis, extent, wavelen, amp, seedK) => {
+        const pts = [[sx, sy]];
+        let x = sx, y = sy, phase = rr() * 2 * Math.PI, travelled = 0;
+        const STEPC = 26;
+        for (let g = 0; travelled < extent && g < 120; g++) {
+          phase += (2 * Math.PI * STEPC) / wavelen;
+          const th = axis + amp * Math.sin(phase) + (rr() - 0.5) * 0.12; // curve + slight grain
+          x += Math.cos(th) * STEPC; y += Math.sin(th) * STEPC; travelled += STEPC;
+          if (x < -60 || x > W + 60 || y < -60 || y > W + 60) break;
+          pts.push([x, y]);
+        }
+        return pts;
+      };
+      // a seeded massif/saddle profile as a function of position along a
+      // crest's arc-length fraction t in [0,1]: 1 = massif crown, ~0.35 = saddle
+      const crestProfile = (t, seedK) => {
+        const a = 0.5 + 0.5 * Math.cos(2 * Math.PI * (1.5 * t + 0.13 * seedK));
+        const b = 0.5 + 0.5 * Math.cos(2 * Math.PI * (3.2 * t + 0.51 * seedK));
+        return clamp(0.32 + 0.68 * (0.6 * a + 0.4 * b), 0, 1); // saddles never fully collapse
+      };
       for (let ri = 0; ri < NR; ri++) {
-        let main = null;
-        for (let attempt = 0; attempt < 6 && !main; attempt++) {
-          const cx = 250 + rr() * 500, cy = 250 + rr() * 500;
-          const th = rr() * Math.PI;
-          const dx = Math.cos(th), dy = Math.sin(th);
-          const pts = [];
-          for (let t = -800; t <= 800; t += 145) {
-            const j = (rr() - 0.5) * 130;
-            pts.push([cx + dx * t - dy * j, cy + dy * t + dx * j]);
-          }
-          const pieces = clipPolyline(pts, 0, 0, W, W);
+        let main = null, seedK = ri * 3 + 1;
+        for (let attempt = 0; attempt < 10 && !main; attempt++) {
+          // start off one side and aim ACROSS THE INTERIOR (toward a point
+          // near the far center, with spread), so the crest spans real ground
+          // instead of curving off the box. A sinuous walk aimed randomly can
+          // wander straight out an edge; aiming it inward keeps the range on
+          // the map, and the fallback below guarantees one always lands.
+          const startEdge = Math.floor(rr() * 4);
+          const sx = startEdge === 0 ? 40 : startEdge === 1 ? W - 40 : 100 + rr() * (W - 200);
+          const sy = startEdge === 2 ? 40 : startEdge === 3 ? W - 40 : 100 + rr() * (W - 200);
+          const tx = W / 2 + (rr() - 0.5) * W * 0.5, ty = W / 2 + (rr() - 0.5) * W * 0.5;
+          const axis = Math.atan2(ty - sy, tx - sx);
+          const extent = 620 + rr() * 460;              // varied length, not corner-to-corner
+          const wavelen = 320 + rr() * 260;             // long-wavelength curve of the whole range
+          const amp = (0.28 + rr() * 0.22) * (attempt < 5 ? 1 : 0.5); // calmer curve if the first tries fell off
+          const walked = walkCrest(sx, sy, axis, extent, wavelen, amp, seedK);
+          const pieces = clipPolyline(walked, 0, 0, W, W);
           for (const pl of pieces) if (!main || polyLen(pl) > polyLen(main)) main = pl;
-          if (main && polyLen(main) < 300) main = null; // degenerate corner clip: redraw
+          if (main && polyLen(main) < 320) main = null;  // fell off the box: redraw
+        }
+        // GUARANTEE a range on ri=0: if the sinuous walk never held the box,
+        // fall back to a gentle diagonal across the interior (still curved,
+        // just calmer). Every world has mountains.
+        if (!main && ri === 0) {
+          const axis = Math.PI * (0.15 + rr() * 0.2) + (rr() < 0.5 ? 0 : Math.PI / 2);
+          const sx = 120 + rr() * 120, sy = 120 + rr() * 120;
+          const walked = walkCrest(sx, sy, axis, 900, 500, 0.16, seedK);
+          const pieces = clipPolyline(walked, 0, 0, W, W).sort((a, b) => polyLen(b) - polyLen(a));
+          if (pieces[0] && polyLen(pieces[0]) >= 300) main = pieces[0];
         }
         if (!main) continue;
         const rounded = main.map(p => [round2(p[0]), round2(p[1])]);
-        const R = { id: ridges.length, pts: rounded };
+        const R = { id: ridges.length, pts: rounded, seedK, profile: (t) => crestProfile(t, seedK) };
         ridges.push(R);
+        // BRANCH: a longer range forks a spur off a mid-crest point, angled
+        // away from the spine (dendritic / en-echelon, as real orogens do).
+        if (polyLen(rounded) > 600 && rr() < 0.7 && ridges.length < 4) {
+          const bt = 0.35 + rr() * 0.3;
+          const bp = polyPointAt(rounded, bt * polyLen(rounded));
+          const bi = Math.max(1, Math.min(rounded.length - 1, Math.round(bt * (rounded.length - 1))));
+          const seg = [rounded[bi][0] - rounded[bi - 1][0], rounded[bi][1] - rounded[bi - 1][1]];
+          const segA = Math.atan2(seg[1], seg[0]);
+          const spurAxis = segA + (rr() < 0.5 ? 1 : -1) * (0.7 + rr() * 0.5); // fork angle
+          const spur = walkCrest(bp[0], bp[1], spurAxis, 260 + rr() * 240, 240 + rr() * 160, 0.3 + rr() * 0.2, seedK + 7);
+          const spurClipped = clipPolyline(spur, 0, 0, W, W).sort((a, b) => polyLen(b) - polyLen(a))[0];
+          if (spurClipped && polyLen(spurClipped) > 180) {
+            const sk2 = seedK + 7;
+            ridges.push({ id: ridges.length, pts: spurClipped.map(p => [round2(p[0]), round2(p[1])]), seedK: sk2, profile: (t) => crestProfile(t, sk2), isSpur: true });
+          }
+        }
         // passes: 1-2 low gaps, placed blind along the ridge's length
         const nPass = 1 + (rr() < 0.5 ? 1 : 0);
         const L = polyLen(rounded);
@@ -1575,8 +1637,48 @@
           best = Math.min(best, distPointSeg(x, y, R.pts[k], R.pts[k + 1]));
         return best;
       };
-      const distToSeaEdge = (x, y) => Math.min(...seaSides.map(side =>
-        side === "west" ? x : side === "east" ? W - x : side === "south" ? y : W - y));
+      // per-ridge cumulative arc length, so a point can be located ALONG the
+      // crest (its profile fraction t) and the massif/saddle height read there
+      ridges.forEach(R => {
+        R.cum = [0];
+        for (let k = 0; k + 1 < R.pts.length; k++)
+          R.cum.push(R.cum[k] + Math.hypot(R.pts[k + 1][0] - R.pts[k][0], R.pts[k + 1][1] - R.pts[k][1]));
+        R.total = R.cum[R.cum.length - 1] || 1;
+      });
+      // nearest ridge to (x,y): returns { dist, uplift } where uplift in [0,1]
+      // is the crest's massif/saddle height at the nearest point. A massif
+      // walls to full height; a saddle is a natural low the range dips to.
+      const ridgeUpliftAt = (x, y) => {
+        let best = Infinity, up = 0;
+        for (const R of ridges) for (let k = 0; k + 1 < R.pts.length; k++) {
+          const a = R.pts[k], b = R.pts[k + 1];
+          const abx = b[0] - a[0], aby = b[1] - a[1], L2 = abx * abx + aby * aby || 1;
+          const tt = Math.max(0, Math.min(1, ((x - a[0]) * abx + (y - a[1]) * aby) / L2));
+          const qx = a[0] + abx * tt, qy = a[1] + aby * tt;
+          const d = Math.hypot(qx - x, qy - y);
+          if (d < best) {
+            best = d;
+            const arc = R.cum[k] + tt * (R.cum[k + 1] - R.cum[k]);
+            up = R.profile ? R.profile(arc / R.total) : 1;
+          }
+        }
+        return { dist: best, uplift: up };
+      };
+      // DOMAIN WARP: the raw edge distance is axis-aligned, so its gradient
+      // is a constant compass vector and the continental tilt descends in
+      // dead-straight lines: a river with no ridge to follow runs ruler
+      // straight, worst against a map edge where the meander cannot swing
+      // outward. Displacing the sample point by a low-frequency vector field
+      // bends every iso-distance contour, so the tilt itself flows at an
+      // angle that wanders across the map. Geology, not render: the coast,
+      // the flood, and every bed read this warped field.
+      const warpX = bumpField(sg("tiltwarpx"), 5, 90, 210);
+      const warpY = bumpField(sg("tiltwarpy"), 5, 90, 210);
+      const distToSeaEdge = (x, y) => {
+        const wx = x + 130 * warpX(x, y), wy = y + 130 * warpY(x, y);
+        return Math.min(...seaSides.map(side =>
+          side === "west" ? wx : side === "east" ? W - wx : side === "south" ? wy : W - wy));
+      };
       const elevNoise = bumpField(sg("elevation"), 6, 120, 300);
       // M1: the shore is a COASTLINE, not a strip. The old shelf clamped a
       // fixed 26-unit band to a straight ramp, so the flood line ran
@@ -1586,17 +1688,47 @@
       // back above the water inside the band.
       const shoreNoise = bumpField(sg("shore"), 14, 50, 130);
       const skerryNoise = bumpField(sg("skerries"), 18, 22, 56);
+      // FRACTAL COAST, three octaves so the shore has detail at every scale
+      // (a real coast is not one tilted edge with a crinkly crust, which is
+      // what a single fine octave leaves; it is deep gulfs holding coves
+      // holding rocks). The GULF octave is coarse and strong: it does not
+      // just ripple the waterline, it pushes the whole low shore ZONE tens of
+      // units inland (a gulf, a firth) or out to sea (a broad peninsula), so
+      // the silhouette itself varies instead of paralleling the map edge.
+      const gulfNoise = bumpField(sg("gulfs"), 9, 150, 340);  // gulf / peninsula scale (silhouette)
+      const coveNoise = bumpField(sg("coves"), 40, 18, 40);   // cove / small-bay scale
+      const crenNoise = bumpField(sg("crenels"), 70, 9, 20);  // crenellation / rock scale
       const elevAt = (x, y) => {
         const t = clamp(distToSeaEdge(x, y) / W, 0, 1);
         let e = 12 + 58 * Math.pow(t, 1.15);                       // the land tilts off the water
-        const rd = distToRidge(x, y);
-        e += 52 * Math.exp(-(rd * rd) / (2 * 95 * 95));            // tectonic uplift
+        // tectonic uplift, but MODULATED along the crest: a massif reaches
+        // full height, a saddle only partway, so the range has a skyline of
+        // peaks and gaps instead of one uniform wall. The Gaussian falloff
+        // across the crest (width ~95) is unchanged, preserving the flanks
+        // the rivers rise on and the cost-graph wall.
+        const ru = ridgeUpliftAt(x, y);
+        // massif reaches ABOVE the old uniform wall (58), saddle dips to 34,
+        // so the range still throws real peaks (the rain shadow needs the
+        // height) while gaining a varied skyline instead of a flat top.
+        e += (34 + 40 * ru.uplift) * Math.exp(-(ru.dist * ru.dist) / (2 * 95 * 95)); // 34..74 by massif/saddle
         e += 14 * elevNoise(x, y);                                 // texture
-        const ds = distToSeaEdge(x, y);
+        // GULF OCTAVE reshapes the SILHOUETTE: it shifts the effective
+        // distance-to-water by tens of units, so the low shore zone floods
+        // deep inland where the field dips (a gulf/firth) and the land runs
+        // out to sea where it rises (a peninsula/cape). This is what breaks
+        // the "tilted toast edge": the coast no longer parallels the map
+        // border, it bites in and juts out.
+        const ds = clamp(distToSeaEdge(x, y) + 78 * gulfNoise(x, y), -40, W);
         const sh = clamp(0.5 + 0.5 * shoreNoise(x, y), 0, 1);
         const band = 16 + 70 * sh;
         if (ds < band) {
-          e = Math.min(e, 2 + (ds / band) * (10 + 30 * (1 - sh))); // bays reach far; headlands climb fast
+          e = Math.min(e, 2 + (Math.max(0, ds) / band) * (10 + 30 * (1 - sh))); // bays reach far; headlands climb fast
+          // fractal shore: the fine octaves push the shelf up and down across
+          // a few units, cutting coves into the land and throwing small points
+          // out to sea. Strongest right at the waterline (weighted by how deep
+          // into the shelf we are), fading inland so it only shapes the COAST.
+          const shoreW = 1 - Math.max(0, ds) / band;               // 1 at the water, 0 at the band's inland edge
+          e += (12 * coveNoise(x, y) + 7 * crenNoise(x, y)) * shoreW;
           const sk = skerryNoise(x, y);
           if (sk > 0.45) e += (sk - 0.45) * 55;                    // skerries and dune ridges
         }
@@ -1703,23 +1835,73 @@
           if (regions[src].onRiver) continue;
           const chain = [src];
           let cur = src, joinRegion = -1;
+          // the river's current heading in map space: the direction from the
+          // previous chain anchor to this one. Descent must not fold back on
+          // it, or the chain hairpins and the traced bed loops over itself.
+          // SEED the heading at the source from the mean direction of its
+          // downhill neighbors (where the water actually wants to go), so even
+          // the FIRST step prefers the natural flow line instead of picking a
+          // neighbor that sets up a hairpin with the second step.
+          let hdx = 0, hdy = 0;
+          {
+            const sc0 = regions[src].c;
+            for (const j of regions[src].neighbors) {
+              if (regions[j].elevation >= regions[src].elevation) continue;
+              const dvx = regions[j].c[0] - sc0[0], dvy = regions[j].c[1] - sc0[1];
+              const dl = Math.hypot(dvx, dvy) || 1;
+              const w = regions[src].elevation - regions[j].elevation; // steeper pulls more
+              hdx += (dvx / dl) * w; hdy += (dvy / dl) * w;
+            }
+            const hl = Math.hypot(hdx, hdy);
+            if (hl > 1e-6) { hdx /= hl; hdy /= hl; } else { hdx = 0; hdy = 0; }
+          }
           while (!isBorder[cur]) {
-            let nxt = -1;      // highest FREE neighbor still strictly lower
             let joinCand = -1; // an already-river neighbor lower than us (a confluence)
+            // score every FREE strictly-lower neighbor: gentlest descent
+            // (highest lower ground) is the drinking-order rule, but among
+            // comparably-low neighbors we prefer the one that CONTINUES the
+            // river's direction over one that doubles back. Elevation still
+            // strictly decreases, so the chain stays a valid drinking order;
+            // it just stops choosing a downhill hairpin over a downhill run.
+            const curC = regions[cur].c, curE = regions[cur].elevation;
+            // gather every FREE strictly-lower neighbor with its heading
+            // alignment, so we can VETO the hairpins (a downhill step that
+            // folds back on the river's course) unless one is the only way
+            // down. A veto, not a soft score: a big elevation drop toward a
+            // fold otherwise still wins and the chain doubles back.
+            const cands = [];
             for (const j of regions[cur].neighbors) {
               if (chain.includes(j)) continue;
-              if (regions[j].elevation >= regions[cur].elevation) continue;
-              if (regions[j].onRiver) { // a lower neighbor that is already a river: a place to join
+              if (regions[j].elevation >= curE) continue;
+              if (regions[j].onRiver) { // a lower neighbor already a river: a place to join
                 if (joinCand === -1 || regions[j].elevation > regions[joinCand].elevation) joinCand = j;
                 continue;
               }
-              if (nxt === -1 || regions[j].elevation > regions[nxt].elevation ||
-                  (regions[j].elevation === regions[nxt].elevation && j < nxt)) nxt = j;
+              const jc = regions[j].c;
+              const vx = jc[0] - curC[0], vy = jc[1] - curC[1], vL = Math.hypot(vx, vy) || 1;
+              const align = (hdx || hdy) ? (vx * hdx + vy * hdy) / vL : 1; // no heading yet: neutral
+              cands.push({ j, drop: curE - regions[j].elevation, align });
+            }
+            // onward candidates (align >= 0.1, i.e. turning less than ~84deg)
+            // are preferred wholesale; only if none exists do we accept a
+            // sharper turn, and then the gentlest descent among them, so the
+            // river still goes down. A river bends; it does not switchback.
+            let pool = cands.filter(c => c.align >= 0.1);
+            if (!pool.length) pool = cands;
+            // within the pool: gentlest descent (drinking order), and among
+            // near-equal drops the most onward-pointing wins
+            let nxt = -1, bestScore = -Infinity;
+            for (const c of pool) {
+              const score = -c.drop + 6 * c.align;
+              if (score > bestScore) { bestScore = score; nxt = c.j; }
             }
             if (nxt === -1) { // no free downhill: join a river if one is adjacent and lower
               if (joinCand !== -1) joinRegion = joinCand;
               break; // otherwise an inland basin (the marsh terminus, until lakes land)
             }
+            const pc = regions[cur].c, ncC = regions[nxt].c;
+            hdx = ncC[0] - pc[0]; hdy = ncC[1] - pc[1];
+            const hL = Math.hypot(hdx, hdy) || 1; hdx /= hL; hdy /= hL; // unit heading
             chain.push(nxt);
             cur = nxt;
           }
@@ -1751,7 +1933,13 @@
       // the traced water, the sea level drops and the trace re-runs. The
       // exported level is the negotiated one — no town in the water is a
       // property of the shape itself, not of a hopeful estimate.
-      const GN = 64, CS = W / GN;
+      // GN was 64 (cells ~15.6 wide), coarser than the cove/crenel shore
+      // detail, so the coast could not resolve below one cell and read blocky.
+      // 96 (cells ~10.4) captures the fractal shore octaves while keeping the
+      // transient grid arrays (flood mask, label, marching squares) and the
+      // retained coastline vertex count from ballooning the way 128 did (the
+      // suite generates hundreds of worlds; 128 exhausted memory).
+      const GN = 96, CS = W / GN;
       const nodeElev = [];
       for (let gy = 0; gy <= GN; gy++) {
         const row = [];
@@ -1789,13 +1977,28 @@
         if (opts.floodedOut) opts.floodedOut.mask = flooded;
         const F4 = (gx, gy) => (gx >= 0 && gy >= 0 && gx <= GN && gy <= GN && flooded[gy][gx]) ? 1 : 0;
         const segs4 = [];
-        const mid = (x1, y1, x2, y2) => [(x1 + x2) / 2, (y1 + y2) / 2];
+        // SUB-CELL INTERPOLATION: the crossing on a cell edge is placed where
+        // the elevation actually reaches sea level between the two corners,
+        // not at the geometric midpoint. Midpoints lock every coast vertex to
+        // the grid lattice and every segment to a 0/45/90-degree angle, which
+        // is what made the coastline read blocky and square. Interpolating on
+        // the real corner elevations lets the shore follow the true contour,
+        // curving at any angle. A flooded corner may sit above `level` (it was
+        // reached by connectivity, not depth), so the fraction is clamped and
+        // falls back to the midpoint when the two corners are on the same side.
+        const eAt = (gx, gy) => (gx >= 0 && gy >= 0 && gx <= GN && gy <= GN) ? nodeElev[gy][gx] : 200; // off-grid = dry wall
+        const crossX = (gxa, gya, gxb, gyb) => {
+          const ea = eAt(gxa, gya), eb = eAt(gxb, gyb);
+          let t = 0.5;
+          if ((ea < level) !== (eb < level) && ea !== eb) t = clamp((level - ea) / (eb - ea), 0.02, 0.98);
+          return [ (gxa + (gxb - gxa) * t) * CS, (gya + (gyb - gya) * t) * CS ];
+        };
         for (let gy = -1; gy <= GN; gy++) for (let gx = -1; gx <= GN; gx++) {
           const tl = F4(gx, gy), tr = F4(gx + 1, gy), br = F4(gx + 1, gy + 1), bl = F4(gx, gy + 1);
           const code = tl * 8 + tr * 4 + br * 2 + bl;
           if (code === 0 || code === 15) continue;
-          const x0 = gx * CS, y0 = gy * CS, x1 = (gx + 1) * CS, y1 = (gy + 1) * CS;
-          const T = mid(x0, y0, x1, y0), R2 = mid(x1, y0, x1, y1), B = mid(x0, y1, x1, y1), L2 = mid(x0, y0, x0, y1);
+          const T = crossX(gx, gy, gx + 1, gy), R2 = crossX(gx + 1, gy, gx + 1, gy + 1),
+                B = crossX(gx, gy + 1, gx + 1, gy + 1), L2 = crossX(gx, gy, gx, gy + 1);
           const add = (a, b) => segs4.push([a, b]);
           if (code === 1 || code === 14) add(L2, B);
           else if (code === 2 || code === 13) add(B, R2);
@@ -1987,6 +2190,55 @@
       // bent through the chain regions in order, ending only in the water
       // or off the box. Walked HERE, not at chain time, because the bed
       // must read the negotiated sea and the relocated anchors.
+      // (segCross + cutSelfLoops are hoisted to this scope so the final
+      // cross-river repair pass below can re-simplify beds it splices.)
+      const segCross = (a, b, c, d) => {
+        const rX = b[0] - a[0], rY = b[1] - a[1], sX = d[0] - c[0], sY = d[1] - c[1];
+        const den = rX * sY - rY * sX;
+        if (!den) return null;
+        const t = ((c[0] - a[0]) * sY - (c[1] - a[1]) * sX) / den;
+        const u = ((c[0] - a[0]) * rY - (c[1] - a[1]) * rX) / den;
+        if (t > 1e-6 && t < 1 - 1e-6 && u > 1e-6 && u < 1 - 1e-6)
+          return [round2(a[0] + rX * t), round2(a[1] + rY * t)];
+        return null;
+      };
+      const cutSelfLoops = (T, protectRings) => {
+        const rings = protectRings || [];
+        for (let guard = 0; guard < 60; guard++) {
+          let cut = false;
+          for (let i = 0; i < T.length && !cut; i++)
+            for (let k = i + 2; k < T.length; k++)
+              if (Math.hypot(T[k][0] - T[i][0], T[k][1] - T[i][1]) < 7) {
+                T = T.slice(0, i + 1).concat(T.slice(k + 1)); cut = true; break;
+              }
+          if (!cut) break;
+        }
+        for (let guard = 0; guard < 60; guard++) {
+          let done = true;
+          outer:
+          for (let i = 0; i + 1 < T.length; i++)
+            for (let k = i + 2; k + 1 < T.length; k++) {
+              if (i === 0 && k + 1 === T.length - 1) continue;
+              const p = segCross(T[i], T[i + 1], T[k], T[k + 1]);
+              if (!p) continue;
+              const head = T.slice(0, i + 1), tail = T.slice(k + 1);
+              const span = T.slice(i + 1, k + 1);
+              const rescue = [];
+              const wouldCross = (pt) =>
+                segCross(head[head.length - 1], p, pt, tail[0] || pt);
+              for (const ring of rings) {
+                const stillIn = q => pointInRing(q[0], q[1], ring);
+                if (head.some(stillIn) || tail.some(stillIn)) continue;
+                const keepPt = span.find(stillIn);
+                if (keepPt && !wouldCross(keepPt)) rescue.push(keepPt);
+              }
+              T = head.concat([p], rescue, tail);
+              done = false; break outer;
+            }
+          if (done) break;
+        }
+        return T;
+      };
       {
         const rt = sg("rivertrace");
         // cross-track wander: a pure function of place, no stream consumed
@@ -1994,7 +2246,14 @@
           const s2 = Math.sin(x * 12.9898 + y * 78.233 + k * 37.719) * 43758.5453;
           return (s2 - Math.floor(s2)) * 2 - 1;
         };
-        const STEP = 9, CAP = 400, PULL = 6.5;
+        // excise self-intersections from a polyline: the earliest later
+        // segment that cuts an earlier one closes an oxbow; splice both to
+        // the crossing point and drop the loop between. Repeat until simple.
+        // CAP is the meandering budget: a sinuous bed is LONGER than a
+        // straight one (sinuosity up to ~2), so the walk needs headroom to
+        // reach the sea before "forced" trips and rules a straight line.
+        // 700 covers a 2x-sinuous crossing of the whole map at 9-unit steps.
+        const STEP = 9, CAP = 700, PULL = 6.5;
         // the mouth aims at the SHORE the map actually draws, and takes the
         // LOW road to it: shore vertices score by distance plus midpoint
         // elevation, so the run-out rounds a coastal rise into the next bay
@@ -2049,6 +2308,7 @@
           // wider, not faster) and the amplitude is gated by local slope
           // below: steep reaches run straight, floodplains swing hard.
           let meaPhase = rt() * 2 * Math.PI;
+          // wavelength ~11x channel width (Leopold & Wolman)
           const meaLambda = 55 + chain.length * 4 + rt() * 30; // wavelength, map units
           const pts = [[x, y]];
           const intoWater = (dx2, dy2) => { // 2 extra steps: the mouth visibly enters the sea
@@ -2073,6 +2333,20 @@
             for (const p of bed) { const d = Math.hypot(p[0] - x, p[1] - y); if (d < bd) { bd = d; bp = p; } }
             return bp;
           };
+          // the tributary's confluence AIM is fixed once, at the trunk point
+          // nearest its LAST chain anchor (the point it is already heading
+          // toward), not the perpetually-nearest trunk point. Re-picking the
+          // nearest each step lets the run-out turn BACK upstream and cross
+          // its own bed; a fixed forward aim keeps the join ahead of it.
+          let trunkAim = null;
+          if (trunkBed && trunkBed.length) {
+            const lastAnchor = regions[chain[chain.length - 1]].c;
+            let bd = Infinity;
+            for (const p of trunkBed) {
+              const d = Math.hypot(p[0] - lastAnchor[0], p[1] - lastAnchor[1]);
+              if (d < bd) { bd = d; trunkAim = p; }
+            }
+          }
           let merged = false; // ended by joining an earlier bed, not by reaching water
           // an earlier bed repels the walker at close range: skirting inside
           // the simplifier's tolerance would let the straightened line cross
@@ -2092,18 +2366,55 @@
             if (!corridorLive) finalSteps++;
             let tgt;
             if (corridorLive) tgt = regions[chain[ci + 1]].c;
-            else if (trunkBed) tgt = nearestBedPt(trunkBed); // the run-out seeks the trunk
+            else if (trunkAim) tgt = trunkAim;               // fixed forward aim at the trunk join
+            else if (trunkBed) tgt = nearestBedPt(trunkBed); // (fallback) seek the trunk
             else {
               if (!shoreTgt || shoreAge >= 10) { shoreTgt = seaTarget(x, y, banned); shoreAge = 0; }
               shoreAge++;
               tgt = shoreTgt;
             }
-            const tdx = tgt[0] - x, tdy = tgt[1] - y, tL = Math.hypot(tdx, tdy) || 1;
+            meaPhase += (2 * Math.PI * STEP) / meaLambda; // one advance per step
+            // THE PULL FOLLOWS A SINUOUS AIM, not a straight one. Offsetting
+            // the target point sideways by the meander phase means the very
+            // force that guarantees cell service now traces the meander
+            // itself, instead of the meander having to fight a straight pull
+            // (which the DP simplifier then flattens back into a ruled line).
+            // Amplitude is slope-gated and scaled to how far the target is,
+            // so a long corridor leg bows in proportion and a short in-cell
+            // hop stays tame. Off steep ground the gate closes and the aim
+            // is straight down the valley, as a real channel runs.
+            let tgtX = tgt[0], tgtY = tgt[1];
+            {
+              const rawL = Math.hypot(tgt[0] - x, tgt[1] - y) || 1;
+              const gxa = elevAt(x + 6, y) - elevAt(x - 6, y);
+              const gya = elevAt(x, y + 6) - elevAt(x, y - 6);
+              const flata = 1 / (1 + (Math.hypot(gxa, gya) / 12) * 18);
+              // STABILITY BOUND: a sine curve A*sin(2*pi*s/lambda) never folds
+              // back on itself (never crosses its own bed) only while its peak
+              // offset A stays under lambda/pi. Past that the loop closes and
+              // the trace self-intersects, which was the over-wiggle defect.
+              // Cap the offset there (with margin), so the meander is as wide
+              // as it can be while staying a simple, non-crossing curve.
+              const ampCap = meaLambda / Math.PI * 0.85;
+              const amp = Math.min(0.32 * flata * Math.min(rawL, 140), ampCap);
+              const nxa = -(tgt[1] - y) / rawL, nya = (tgt[0] - x) / rawL;
+              const off = amp * Math.sin(meaPhase);
+              tgtX = tgt[0] + nxa * off; tgtY = tgt[1] + nya * off;
+            }
+            const tdx = tgtX - x, tdy = tgtY - y, tL = Math.hypot(tdx, tdy) || 1;
             let bth;
             if (forced || burst > 0) {
-              // straight march at the target: gravity lost the argument.
-              // forced aims at the traced shore, so this still ends wet.
-              bth = Math.atan2(tdy, tdx);
+              // march at the target: gravity lost the argument. But a bare
+              // atan2 rules a dead-straight line to the shore, the single
+              // ugliest artifact on the map. Keep the meander phase swinging
+              // the heading so even a forced run-out arrives with the same
+              // curve as a free one; the target bias still guarantees it
+              // reaches water. (burst, a short wall-punch, stays straight.)
+              if (forced) {
+                const fgx = elevAt(x + 6, y) - elevAt(x - 6, y), fgy = elevAt(x, y + 6) - elevAt(x, y - 6);
+                const fflat = 1 / (1 + (Math.hypot(fgx, fgy) / 12) * 18);
+                bth = Math.atan2(tdy, tdx) + 0.9 * fflat * Math.sin(meaPhase);
+              } else bth = Math.atan2(tdy, tdx);
               if (burst > 0) burst--;
               if (forced && tL < STEP * 1.2) {
                 // arrived at the vertex still dry (a marching-squares land
@@ -2117,24 +2428,43 @@
                 else { (banned = banned || new Set()).add(tgt[0] + ":" + tgt[1]); shoreTgt = null; }
               }
             } else {
-              // a stalled walker pulls harder — against a gorge lip while
-              // the corridor is live, out of a closed basin on the run out
-              const pull = Math.min(30, PULL + 0.25 * sinceAdv);
+              // THE PULL is a rescue force, not a steering wheel. At full
+              // strength it beelines the walker at a fixed target point, and
+              // that straight aim (not the gradient, not a weak meander) is
+              // what pinned run-out beds into ruler lines. So: while the
+              // corridor is live the pull must still visit each chain cell,
+              // but on the free run to the sea it drops to a whisper and
+              // only swells back when the walker actually STALLS (sinceAdv
+              // climbs against a basin lip). A flowing river is left to the
+              // terrain and its own meander; a stuck one gets hauled out.
+              // even in the corridor the pull only needs to make the walker
+              // ENTER the next cell (a whole region wide), not aim at its
+              // centroid: a gentler steady pull lets the bed bow between
+              // cells instead of ruling a line from anchor to anchor. On the
+              // free run to the sea it drops to a whisper. The stall ramp
+              // still hauls hard out of a true basin.
+              const basePull = corridorLive ? 3.5 : 1.2;
+              const pull = Math.min(30, basePull + 0.6 * sinceAdv);
               // MEANDER TERM: advance the phase with arc length and gate the
               // amplitude by local slope. Real channels hold their bend
               // radius near 2-3 widths, so a hard turn cap rides along: a
               // river leans, it never jinks. On steep ground the gradient
               // term dwarfs the (near-zero) meander weight and the bed runs
               // straight down its valley, which is also what real ones do.
-              meaPhase += (2 * Math.PI * STEP) / meaLambda;
               const gx3 = elevAt(x + 6, y) - elevAt(x - 6, y);
               const gy3 = elevAt(x, y + 6) - elevAt(x, y - 6);
-              const flat3 = 1 / (1 + (Math.hypot(gx3, gy3) / 12) * 18); // 1 on plains, ~0 on walls
-              // the deflection swings around the DOWN-VALLEY axis (the
-              // target line), not around the current heading: anchored to
-              // the heading it integrates into a drifting loop, anchored to
-              // the valley it is the sine-generated curve
-              const thPref = Math.atan2(tdy, tdx) + 0.9 * flat3 * Math.sin(meaPhase);
+              const slope3 = Math.hypot(gx3, gy3);       // elevation units per ~12
+              const flat3 = 1 / (1 + (slope3 / 12) * 18); // 1 on plains, ~0 on walls
+              // the aim (tdx,tdy) already points at the sinuous offset
+              // target, so it carries most of the meander; this reinforces
+              // it in the same phase. The two together are tuned as a pair
+              // (measured: 18% of rivers keep a >200u straight, worst 387u,
+              // max sinuosity in band) and are sensitive, so change them
+              // together against the straightsweep + sinmax harnesses.
+              const thPref = Math.atan2(tdy, tdx) + 1.15 * flat3 * Math.sin(meaPhase);
+              // meander weight, gated by slope (straight in gorges, free on
+              // plains). With the shore-pull no longer beelining the run-out,
+              // this is now the dominant lateral force on gentle ground.
               const meaW = 11 * flat3;
               // 16 compass probes at step radius: steepest descent, bent
               // toward the corridor target, swung by the meander phase.
@@ -2241,7 +2571,7 @@
             // tight loop OR a lap around a wide basin: both are stuck
             const orbit = (pts.length > 12 && Math.hypot(x - pts[pts.length - 13][0], y - pts[pts.length - 13][1]) < STEP) ||
               (pts.length > 40 && Math.hypot(x - pts[pts.length - 41][0], y - pts[pts.length - 41][1]) < 3 * STEP);
-            if (!forced && (step >= CAP || finalSteps > 160 || (orbit && ci + 1 >= chain.length))) forced = true;
+            if (!forced && (step >= CAP || finalSteps > 320 || (orbit && ci + 1 >= chain.length))) forced = true;
             else if (orbit && corridorLive && burst === 0) burst = 8; // wall stalemate: punch through
           }
           // absolute fallback (never observed in measurement, kept for the
@@ -2251,7 +2581,18 @@
             const dW = Math.min(x, W - x), dH = Math.min(y, W - y);
             pts.push(dW <= dH ? [x < W - x ? 0 : W, y] : [x, y < W - y ? 0 : W]);
           }
-          const rpts = pts.map(p => [round2(clamp(p[0], 0, W)), round2(clamp(p[1], 0, W))]);
+          let rpts = pts.map(p => [round2(clamp(p[0], 0, W)), round2(clamp(p[1], 0, W))]);
+          // SELF-CROSSING GUARANTEE, applied to the RAW walk before anything
+          // else reads it: a river never crosses its own bed. Where a later
+          // segment cuts an earlier one it closes an oxbow; splice both to
+          // the crossing and drop the loop between (exactly how a real river
+          // cuts an oxbow off). Done here, before the chain-service points
+          // are chosen, so a de-looped path is what gets sampled and every
+          // chain region is still served by a surviving visit (the chain
+          // rings are protected: a loop-cut keeps a point in any cell it
+          // would otherwise orphan).
+          const chainRings = chain.map(ri => regions[ri].ring);
+          rpts = cutSelfLoops(rpts, chainRings);
           // per chain cell, keep the walk point nearest its anchor: the
           // simplified bed still testably visits every region it waters
           const keep = [];
@@ -2270,7 +2611,58 @@
           // normal ending; this is the guarantee)
           if (trunkBed && !merged && RV.trace.length) {
             RV.trace.push(nearestBedPt(trunkBed).slice());
+            RV.trace = cutSelfLoops(RV.trace, chainRings); // the join step must not re-cross
           }
+          // CHAIN / BED CONSISTENCY: excising a fold can drop the only visit
+          // to a chain region, because serving that region REQUIRED the
+          // doubled-back excursion the excision removed. Such a region was a
+          // geographic hairpin that never belonged on a sound course, so it
+          // leaves the chain: prune it (and its society bookkeeping) so the
+          // drinking order and the drawn bed always agree. The source (k=0)
+          // and any region still visited stay; only genuinely orphaned
+          // interior/tail cells are cut.
+          {
+            // Excision can drop the only visit to a chain region (serving it
+            // needed the doubled-back excursion that was cut). Prune such an
+            // orphaned region and its bookkeeping so the drinking order and
+            // the drawn bed agree. But NEVER prune the mouth region (the last
+            // chain cell): the river's ending is anchored there, and dropping
+            // it would leave the bed dying inland. If the mouth is the orphan,
+            // leave the chain intact and trust the ending the walk already
+            // built (sea / border / confluence) rather than cut the terminus.
+            const visits = (k) => RV.trace.some(([px, py]) => pointInRing(px, py, regions[chain[k]].ring));
+            // prune EVERY chain region the drawn bed never enters, mouth
+            // included: when the terrain sends the bed to a different exit than
+            // the chain's last cell (the mountain field can reroute a river),
+            // that last cell is a stranded orphan, not a real mouth, and must
+            // leave the chain or the drinking order and the bed disagree.
+            for (let k = chain.length - 1; k >= 1; k--) {
+              if (visits(k)) continue;
+              const dropped = regions[chain[k]];
+              dropped.onRiver = 0; dropped.riverId = -1; dropped.riverPos = -1;
+              chain.splice(k, 1);
+            }
+            chain.forEach((ri, k) => { regions[ri].riverPos = k; });
+            // if that left a trunk below two regions, adopt the regions the
+            // bed ACTUALLY crosses as the chain (in bed order), so a river is
+            // always the places its water truly touches, never fewer.
+            if (chain.length < 2 && (RV.confluenceInto === undefined || RV.confluenceInto < 0)) {
+              const crossed = [];
+              for (const p of RV.trace) {
+                const hit = regions.findIndex(rg => pointInRing(p[0], p[1], rg.ring));
+                if (hit >= 0 && !crossed.includes(hit)) crossed.push(hit);
+              }
+              if (crossed.length >= 2) {
+                chain.forEach(ri => { const r = regions[ri]; if (!crossed.includes(ri)) { r.onRiver = 0; r.riverId = -1; r.riverPos = -1; } });
+                chain.length = 0; crossed.forEach((ri, k) => { chain.push(ri); const r = regions[ri]; r.onRiver = 1; r.riverId = RV.id; r.riverPos = k; });
+              }
+            }
+          }
+          // ABSOLUTE GUARANTEE: one final unprotected excision. Chain service
+          // is already secured above, so this can only remove a residual loop
+          // the junction approach or a protected rescue left behind. After
+          // this the bed is a simple, non-self-crossing polyline, always.
+          RV.trace = cutSelfLoops(RV.trace);
           tracedBeds.push({ id: RV.id, pts: RV.trace });
         }
       }
@@ -2307,6 +2699,82 @@
           rivers[ri2].trace = T2.slice(0, cutAt + 1).concat([cutP]);
           rivers[ri2].confluenceInto = cutInto;
         }
+      }
+      // FINAL self-simplification: the cross-river repair above can leave a
+      // tiny spur or a fold where it spliced in the junction point. One last
+      // spur-collapse + self-loop excision on every bed makes the guarantee
+      // absolute: no bed self-crosses and none doubles back on a point.
+      rivers.forEach(RV => { if (RV.trace && RV.trace.length > 3) RV.trace = cutSelfLoops(RV.trace); });
+      // CHAIN IS THE SINGLE SOURCE OF TRUTH: pruning and re-derivation above
+      // mutate both the chain arrays and each region's on_river bookkeeping,
+      // and a mismatch (a region left in a chain but flagged off-river, or
+      // vice versa) breaks downstream invariants (blight rides the chain,
+      // stress checks on_river against the river fields). Reconcile once, at
+      // the end: a region is on-river IFF it sits in exactly one final chain.
+      // A region belongs to EXACTLY ONE chain, and each chain must stay a
+      // strictly-descending drinking order. A confluence can leave the same
+      // region in two rivers' chains (the trunk cell a tributary fed). Simply
+      // deleting the shared cell from the later chain would splice two
+      // non-adjacent cells together and can read as flowing uphill. Instead:
+      // where a chain first hits a cell an earlier river already claimed, that
+      // is its CONFLUENCE, so TRUNCATE the chain just before it (the shared
+      // cell belongs to the trunk) and record the join. Contiguous river_pos
+      // and monotone descent both survive, and chain_regions length matches
+      // the on-river count.
+      regions.forEach(reg => { reg.onRiver = 0; reg.riverId = -1; reg.riverPos = -1; });
+      // MONOTONE DESCENT against the FINAL elevation: chains were built on the
+      // pre-relocation field, but a wet cell gets moved to its driest dry
+      // ground (sea negotiation), which can lift it above its upstream cell.
+      // A river cannot climb to a relocated hilltop, so truncate each chain at
+      // the first cell that is not strictly lower than the one before it.
+      rivers.forEach(RV => {
+        for (let k = 1; k < RV.chain.length; k++) {
+          if (regions[RV.chain[k]].elevation >= regions[RV.chain[k - 1]].elevation) { RV.chain = RV.chain.slice(0, k); break; }
+        }
+      });
+      const claimed = new Set();
+      rivers.forEach(RV => {
+        let cut = RV.chain.length;
+        for (let k = 0; k < RV.chain.length; k++) if (claimed.has(RV.chain[k])) { cut = k; break; }
+        if (cut < RV.chain.length) {
+          // meets an elder river here: the join is that trunk cell's river
+          const trunkRi = RV.chain[cut];
+          if (regions[trunkRi].riverId >= 0 && (RV.confluenceInto === undefined || RV.confluenceInto < 0))
+            RV.confluenceInto = regions[trunkRi].riverId;
+          RV.chain = RV.chain.slice(0, cut);
+        }
+        RV.chain.forEach((ri, k) => {
+          claimed.add(ri);
+          const reg = regions[ri];
+          reg.onRiver = 1; reg.riverId = RV.id; reg.riverPos = k;
+        });
+      });
+      // a river truncated below two cells is no longer a river; drop it so
+      // the stress "chain >= 2 for a trunk" and "no 1-cell river" hold. Its
+      // tributaries (if any) re-home to the sea via their own bed ending.
+      for (let i = rivers.length - 1; i >= 0; i--) {
+        const RV = rivers[i];
+        const isTrib = RV.confluenceInto !== undefined && RV.confluenceInto >= 0;
+        if (RV.chain.length < (isTrib ? 1 : 2)) {
+          RV.chain.forEach(ri => { const r = regions[ri]; r.onRiver = 0; r.riverId = -1; r.riverPos = -1; });
+          rivers.forEach(t => { if (t.confluenceInto === RV.id) t.confluenceInto = -1; });
+          rivers.splice(i, 1);
+        }
+      }
+      // REINDEX after any splice: several readers use rivers[id] as a direct
+      // array index (name composition, trace lookups), which the splice would
+      // break. Reassign each surviving river's id to its array position and
+      // remap every region's river_id and every confluence_into to match, so
+      // rivers[id] === that river holds again everywhere downstream.
+      {
+        const oldToNew = new Map();
+        rivers.forEach((RV, newId) => oldToNew.set(RV.id, newId));
+        rivers.forEach((RV, newId) => {
+          RV.id = newId;
+          if (RV.confluenceInto !== undefined && RV.confluenceInto >= 0)
+            RV.confluenceInto = oldToNew.has(RV.confluenceInto) ? oldToNew.get(RV.confluenceInto) : -1;
+        });
+        regions.forEach(reg => { if (reg.riverId >= 0) reg.riverId = oldToNew.has(reg.riverId) ? oldToNew.get(reg.riverId) : -1; });
       }
       // barge transport: consecutive river edges are cheap. Where the river
       // crosses a ridge it cuts a GORGE (passable, but pass-grade, not
@@ -2390,8 +2858,49 @@
         reg.rainfall = clamp(Math.round((fromSea ? 92 : 50) - 0.028 * dist - shadow + (rc4() - 0.5) * 10), 2, 100);
       });
 
+      // WATER ACCESS: a region's water is not the binary "does a river cross
+      // it". It is a GRADIENT from every source (river, lake, and the hidden
+      // one, groundwater) that falls off with distance, so a town beside the
+      // water still drinks (the floodplain is wider than the channel). This
+      // replaces the old on_river flag as the fertility input, which restores
+      // the watered ground a shorter (sounder) river would otherwise strand.
+      // AQUIFER: low-frequency groundwater. History is full of civilizations
+      // the rivers never reached (oasis wells, spring-fed hill towns), so a
+      // slice of dry country sits on groundwater regardless of surface water.
+      const aquiferField = bumpField(sg("aquifer"), 7, 70, 150);
+      // nearest distance from a region anchor to any drawn river bed / lake
+      // shore, in map units (rivers and lakes are already traced above)
+      const nearWaterDist = (reg) => {
+        let best = Infinity;
+        for (const RV of rivers) for (const p of (RV.trace || [])) {
+          const d = Math.hypot(p[0] - reg.c[0], p[1] - reg.c[1]);
+          if (d < best) best = d;
+        }
+        for (const S of lakeShapes) for (const v of S.outer) {
+          const d = Math.hypot(v[0] - reg.c[0], v[1] - reg.c[1]);
+          if (d < best) best = d;
+        }
+        return best;
+      };
+      regions.forEach(reg => {
+        // surface access: 100 on the water, tapering to 0 by ~140 units out
+        // (roughly two region widths, the reach of a floodplain / a haul to
+        // the river). on_river / on_lake anchor the full-access end.
+        const surfD = (reg.onRiver === 1 || reg.onLake === 1) ? 0 : nearWaterDist(reg);
+        const surface = clamp(Math.round(100 * Math.max(0, 1 - surfD / 140)), 0, 100);
+        // groundwater: the aquifer field, thresholded so ~a fifth of the map
+        // has usable groundwater; independent of surface water
+        const aq = aquiferField(reg.c[0], reg.c[1]);       // ~[-1,1]
+        reg.aquifer = aq > 0.25 ? 1 : 0;                   // usable groundwater here
+        const ground = reg.aquifer ? clamp(Math.round(45 + 120 * (aq - 0.25)), 0, 80) : 0;
+        // physical access is the best source available (you drink from
+        // whichever is nearest); relationship-mediated denial comes later,
+        // in the society stage, once blocs and wealth exist.
+        reg.waterAccess = Math.max(surface, ground);
+      });
+
       // G4: BIOME (ordered rules — exactly recomputable from the exports) and
-      // FERTILITY, now DERIVED: rain + warmth + floodplain − altitude.
+      // FERTILITY, now DERIVED: rain + warmth + water access − altitude.
       regions.forEach(reg => {
         reg.biome =
           reg.elevation >= 78 ? "alpine" :
@@ -2400,9 +2909,13 @@
           (reg.onRiver === 1 && reg.elevation < 35) ? "marsh" :
           reg.rainfall >= 68 ? "forest" :
           reg.rainfall < 42 ? "steppe" : "grassland";
+        // rain is still the dominant term (the farms follow the rain); water
+        // access is a SECONDARY input worth ~10 points at full access, so a
+        // floodplain or a well lifts dry ground without decoupling fertility
+        // from the climate that the rain-shadow story turns on.
         reg.fertility = clamp(Math.round(
-          0.5 * reg.rainfall + 0.3 * Math.max(0, 100 - 1.8 * Math.abs(reg.temperature - 55)) +
-          (reg.onRiver === 1 ? 18 : 0) - (reg.elevation >= 78 ? 25 : 0)
+          0.56 * reg.rainfall + 0.3 * Math.max(0, 100 - 1.8 * Math.abs(reg.temperature - 55)) +
+          0.10 * reg.waterAccess - (reg.elevation >= 78 ? 25 : 0)
         ), 0, 100);
       });
 
@@ -2811,7 +3324,15 @@
         const base = total > 0
           ? (params.we * ext + params.wf * ref + params.wt * trade + params.wg * legacy) / total
           : 0.5; // all weights zero: no income model — flat
-        return base * (reg.warTorn ? 0.85 : 1); // war permanently wounds capacity
+        // WATER is a precondition, not a fourth income stream: no economy
+        // sustains itself without it, so it MULTIPLIES the base rather than
+        // adding to it. A well-watered region keeps its full income; a dry
+        // one is throttled toward a floor. effWaterAccess is the RELATIONSHIP
+        // -MEDIATED figure (a neighbor can price a region out of nearby
+        // water); it falls back to the physical figure before society exists.
+        const wa = (reg.effWaterAccess !== undefined ? reg.effWaterAccess : reg.waterAccess);
+        const waterMult = 0.7 + 0.3 * (wa / 100); // dry floor 0.70, full 1.00
+        return base * waterMult * (reg.warTorn ? 0.85 : 1); // war permanently wounds capacity
       };
       regions.forEach(reg => {
         reg.E = reg.endowment;           // current ore stock (depletes per epoch)
@@ -2819,6 +3340,8 @@
         reg.warTorn = false;
         reg.occupied = false;            // reset BEFORE the founding snapshot
         reg.occupiedEpoch = -1;          // (stage-3 purity: re-runs must not leak)
+        reg.effWaterAccess = reg.waterAccess; // founding: no bloc has priced anyone out yet
+        reg.waterDenial = 0;             // (stage-3 purity: the epoch loop's denial must not leak)
         const noise = (rNoise() * 2 - 1) * 5;
         reg.wealth = clamp(Math.round(100 * income(reg) + noise), 0, 100);
         reg.wealthT0 = reg.wealth;
@@ -3272,6 +3795,35 @@
         // bread in the lean ones; wealth is pulled toward the median, ±3 a year
         const medW2 = granaryOn
           ? regions.map(r => r.wealth).sort((a, b) => a - b)[Math.floor(regions.length / 2)] : 0;
+        // WATER ACCESS IS CONTESTED. A region with little water of its own
+        // depends on a neighbor's, and that neighbor may SHARE it or PRICE it
+        // OUT. The denial rises when the water-holding neighbor is (a) a
+        // different bloc (political rivalry, feeds tension and war) or (b)
+        // much richer (economic pricing, feeds injustice and revolt). A
+        // well-watered region owes no one; a dry one at the mercy of a
+        // hostile, wealthy neighbor loses much of its effective access. This
+        // is the inequality Zeo wanted: not raw geography, but who controls
+        // the water and whether they let you drink.
+        regions.forEach(reg => {
+          // the region's own surface/ground water is never denied
+          const own = reg.waterAccess;
+          if (own >= 70) { reg.effWaterAccess = own; reg.waterDenial = 0; return; }
+          // else it leans on the best-watered neighbor; that neighbor's
+          // disposition sets how much of the shortfall it actually gets
+          let bestNbr = null, bestNbrWA = -1;
+          for (const nb of reg.neighbors) {
+            if (regions[nb].waterAccess > bestNbrWA) { bestNbrWA = regions[nb].waterAccess; bestNbr = regions[nb]; }
+          }
+          if (!bestNbr || bestNbrWA <= own) { reg.effWaterAccess = own; reg.waterDenial = 0; return; }
+          const shortfall = bestNbrWA - own;           // the water it could borrow
+          const hostile = (bestNbr.bloc !== undefined && reg.bloc !== undefined &&
+                           bestNbr.bloc !== reg.bloc && bestNbr.bloc !== "ungoverned" && reg.bloc !== "ungoverned") ? 1 : 0;
+          const richer = Math.max(0, (bestNbr.wealth - reg.wealth)) / 100; // 0..1
+          // denial in [0,1]: worst case both political and economic gates shut
+          const denial = clamp(0.45 * hostile + 0.7 * richer, 0, 1);
+          reg.waterDenial = Math.round(100 * denial * (shortfall / 100)); // 0..~
+          reg.effWaterAccess = clamp(Math.round(own + shortfall * (1 - denial)), 0, 100);
+        });
         regions.forEach((reg, ri) => {
           // F1: connection itself is taxed — every held gate on the way out
           // takes its cut before anything compounds — and the cut is not
@@ -3501,6 +4053,18 @@
           // grievance accrues wherever two claims meet, and old grudges fade
           regions.forEach(reg => {
             if (reg.topTwo) tensions[pairKey(reg.topTwo[0], reg.topTwo[1])] += 1.2;
+            // WATER GRIEVANCE: a region priced out of a hostile neighbor's
+            // water resents the bloc that holds it. Thirst is a casus belli
+            // the world over; this feeds the SAME tension the war trigger
+            // reads, so a dry frontier under a rival's dam drifts to war.
+            if (reg.waterDenial > 12 && reg.bloc !== undefined && reg.bloc !== "ungoverned" && reg.bloc !== "contested") {
+              let holder = null, bestWA = reg.waterAccess;
+              for (const nb of reg.neighbors)
+                if (regions[nb].waterAccess > bestWA) { bestWA = regions[nb].waterAccess; holder = regions[nb]; }
+              if (holder && holder.bloc !== undefined && holder.bloc !== reg.bloc &&
+                  holder.bloc !== "ungoverned" && holder.bloc !== "contested")
+                tensions[pairKey(reg.bloc, holder.bloc)] += 0.03 * reg.waterDenial; // scaled by how parched
+            }
           });
           for (const k of Object.keys(tensions)) tensions[k] *= 0.92;
           // F2: war becomes policy — a pair past the bar spends its grievance
@@ -4343,6 +4907,10 @@
             aetherstone_endowment: reg.endowment,
             terrain_ruggedness: reg.ruggedness,
             fertility: reg.fertility,
+            water_access: reg.waterAccess,
+            water_access_effective: (reg.effWaterAccess !== undefined ? reg.effWaterAccess : reg.waterAccess),
+            water_denial: reg.waterDenial || 0,
+            aquifer: reg.aquifer || 0,
             centrality_to_seat: reg.centrality,
             refining_capacity: reg.refining,
             value_retention: reg.retention,
@@ -4506,7 +5074,7 @@
       model.ridges.forEach(R => {
         features.push({
           type: "Feature",
-          properties: { kind: "ridge", ridge_id: R.id, ridge_name: R.name, ridge_kind: R.kind, max_elev: R.maxElev },
+          properties: { kind: "ridge", ridge_id: R.id, ridge_name: R.name, ridge_kind: R.kind, max_elev: R.maxElev, is_spur: R.isSpur ? 1 : 0 },
           geometry: { type: "LineString", coordinates: R.pts }
         });
       });

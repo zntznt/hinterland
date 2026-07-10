@@ -203,10 +203,17 @@ function validate(gj, tag) {
     for (let k = 0; k < ring.length - 1; k++) area += ring[k][0] * ring[k + 1][1] - ring[k + 1][0] * ring[k][1];
     if (area <= 0) return fail(`${tag}: ring not CCW`);
     for (const [x, y] of ring) if (x < -0.01 || x > 1000.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: coord OOB`);
-    for (const key of ["wealth", "aetherstone_endowment", "terrain_ruggedness", "fertility", "centrality_to_seat", "value_retention"]) {
+    for (const key of ["wealth", "aetherstone_endowment", "terrain_ruggedness", "fertility", "centrality_to_seat", "value_retention",
+                       "water_access", "water_access_effective"]) {
       const v = p[key];
       if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad ${key} ${v}`);
     }
+    if (p.aquifer !== 0 && p.aquifer !== 1) return fail(`${tag}: bad aquifer ${p.aquifer}`);
+    // effective access = own water + water SHARED by neighbors (net of denial),
+    // so it can rise above physical (a friendly neighbor lends water) but never
+    // below it (a region always keeps its own); denial is a non-negative score.
+    if (p.water_access_effective < p.water_access) return fail(`${tag}: effective water < own physical`);
+    if (typeof p.water_denial !== "number" || p.water_denial < 0) return fail(`${tag}: bad water_denial ${p.water_denial}`);
     if (!Number.isInteger(p.population) || p.population <= 0) return fail(`${tag}: bad region population`);
     if (typeof p.pop_density !== "number" || p.pop_density <= 0) return fail(`${tag}: bad pop_density`);
     if (p.on_conduit !== 0 && p.on_conduit !== 1) return fail(`${tag}: bad on_conduit`);
@@ -448,14 +455,19 @@ function validate(gj, tag) {
   // G1 mountains: ridges valid + named, passes on the rock, shadow recomputable
   {
     const ridges = ridgesOf(gj), passes = passesOf(gj);
-    if (ridges.length < 1 || ridges.length > 2) return fail(`${tag}: ridge count ${ridges.length}`);
+    // re-pinned 1-2 -> 1-4 under the branching-ridge rework: a range can now
+    // fork spurs (dendritic / en-echelon, as real orogens do), so a world
+    // carries a main crest plus up to a few spurs. Every world still has >=1.
+    if (ridges.length < 1 || ridges.length > 4) return fail(`${tag}: ridge count ${ridges.length}`);
     const passByRidge = {};
     for (const R of ridges) {
       if (R.geometry.type !== "LineString" || R.geometry.coordinates.length < 2) return fail(`${tag}: bad ridge geometry`);
       for (const [x, y] of R.geometry.coordinates)
         if (x < -0.01 || x > 1000.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: ridge coord OOB`);
       if (!/^[A-Z][a-z]{4,19}$/.test(R.properties.ridge_name || "")) return fail(`${tag}: malformed ridge_name`);
-      passByRidge[R.properties.ridge_id] = 0;
+      // only MAIN ridges must carry a crossing; a spur is a dead-end offshoot
+      // (a real spur ridge is not a barrier you build a road pass over)
+      if (!R.properties.is_spur) passByRidge[R.properties.ridge_id] = 0;
     }
     const regIds = new Set(regions.map(r => r.properties.region_id));
     const passRegIds = new Set();
@@ -524,9 +536,12 @@ function validate(gj, tag) {
         p.rainfall >= 68 ? "forest" :
         p.rainfall < 42 ? "steppe" : "grassland";
       if (p.biome !== expBiome) return fail(`${tag}: biome ${p.biome} != rules say ${expBiome}`);
+      // fertility's water term is now the GRADIENT water_access (river, lake,
+      // aquifer), not the old binary on_river flag: 0.18 * water_access, which
+      // equals the old +18 for a fully-watered cell and tapers with distance.
       const expFert = Math.max(0, Math.min(100, Math.round(
-        0.5 * p.rainfall + 0.3 * Math.max(0, 100 - 1.8 * Math.abs(p.temperature - 55)) +
-        (p.on_river === 1 ? 18 : 0) - (p.elevation >= 78 ? 25 : 0))));
+        0.56 * p.rainfall + 0.3 * Math.max(0, 100 - 1.8 * Math.abs(p.temperature - 55)) +
+        0.10 * p.water_access - (p.elevation >= 78 ? 25 : 0))));
       if (p.fertility !== expFert) return fail(`${tag}: fertility ${p.fertility} != climate says ${expFert}`);
     }
   }

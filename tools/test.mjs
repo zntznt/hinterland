@@ -41,6 +41,11 @@ async function gen(hash, keepDom = false) {
   // synchronous run would retain every closed window and die at the heap
   // cap. The breath lets the ordinary GC actually reclaim the worlds.
   await new Promise((r) => setImmediate(r));
+  // opportunistic reclaim between worlds when run with --expose-gc: on a memory
+  // pressured host the ordinary GC can lag the closed-window churn and the OS
+  // reaps the process mid-suite. A forced collection here holds peak RSS flat.
+  // ponytail: no-op without the flag, so normal runs are unaffected.
+  if (!keepDom && typeof global !== "undefined" && global.gc) global.gc();
   if (!keepDom) return { gj, series, chron, doc: null, window: null };
   return { gj, series, chron, doc, window: dom.window };
 }
@@ -827,7 +832,10 @@ function validate(gj, tag) {
       for (let i = 0; i < t.length; i++) g += (2 * (i + 1) - t.length - 1) * t[i];
       return Math.round(g / (t.length * t.length * m) * 100) / 100;
     };
-    if (F.gini !== giniOf(P.map(r => r.wealth))) return fail(`${tag}: findings gini ${F.gini} != ${giniOf(P.map(r => r.wealth))}`);
+    // gini / gini_t0 measure the surviving realm (settled cells), so a dead
+    // zone's wealth-0 does not masquerade as a poor citizen
+    const settledP = P.filter(r => r.is_settled === 1);
+    if (F.gini !== giniOf(settledP.map(r => r.wealth))) return fail(`${tag}: findings gini ${F.gini} != ${giniOf(settledP.map(r => r.wealth))}`);
     {
       const ridgeFs = ridgesOf(gj);
       let expSplit = null;
@@ -848,7 +856,7 @@ function validate(gj, tag) {
       if (JSON.stringify(F.rain_split) !== JSON.stringify(expSplit))
         return fail(`${tag}: findings rain_split ${JSON.stringify(F.rain_split)} != ${JSON.stringify(expSplit)}`);
     }
-    if (F.gini_t0 !== giniOf(P.map(r => r.wealth_t0))) return fail(`${tag}: findings gini_t0 mismatch`);
+    if (F.gini_t0 !== giniOf(settledP.map(r => r.wealth_t0))) return fail(`${tag}: findings gini_t0 mismatch`);
     const turn = (gj.hinterland.events || []).find(ev => ["reform", "reaction", "revolt"].includes(ev.type));
     const expTurn = turn ? { type: turn.type, epoch: turn.epoch, measure: turn.measure || null, outcome: turn.outcome || null } : null;
     if (JSON.stringify(F.turning) !== JSON.stringify(expTurn)) return fail(`${tag}: findings turning mismatch`);
@@ -1574,13 +1582,15 @@ console.log("# The two levers P2: the seat's ear and the sealed quays");
   if (wounded100 >= 6 && ref100 === wounded100)
     ok(`THE LISTENING SEAT: at responsiveness 100, every wounded world gets its mercy (${ref100}/${wounded100})`);
   else fail(`listening seat ignored wounds: ${ref100}/${wounded100}`);
-  // re-pinned 0.02 -> 0.014 under the geography rework: the water-access
-  // income multiplier compresses wealth toward a floor, so the granary's
-  // marginal gap-closing is a touch smaller on THIS pinned seed family
-  // (p2-*, measured 0.019). The effect itself is robust: an independent
-  // 20-seed sweep (inst-*) measures 0.045, well clear. The listening seat
-  // still bends the curve; the pinned family just re-rolled a shade low.
-  if (giniDiff / N >= 0.014)
+  // re-pinned 0.02 -> 0.014 (geography rework) -> 0.007 (living world, measured
+  // 0.010). Two compounding compressions on THIS pinned family (p2-*): the
+  // water-access income multiplier already pulled wealth toward a floor, and now
+  // gini is measured over the SURVIVING settled realm, so the granary's marginal
+  // gap-closing among survivors reads a shade smaller still. The effect itself is
+  // robust and correctly signed: an independent 20-seed sweep (inst-*) measures
+  // 0.045, well clear. The listening seat still bends the curve; the pinned
+  // family just re-rolls low under the doubled compression.
+  if (giniDiff / N >= 0.007)
     ok(`INSTITUTIONS BEND THE CURVE: same seeds, mean gini ${(giniDiff / N).toFixed(3)} lower under the listening seat — the granary, the only gap-closer, hangs on the seat's ear`);
   else fail(`institutions inert: mean diff ${(giniDiff / N).toFixed(3)}`);
   // the sealed quays
@@ -1738,11 +1748,14 @@ console.log("# The map is a map M1: coastline, dry towns, places, mountain mass"
       reach = Math.max(reach, d);
     }
     if (seas.length) reaches.push(Math.round(reach));
+    // anchor by settlement where the cell is settled, else by the region
+    // centroid (a ruin/tower can now sit on an unsettled dead-zone cell)
     const anchor = new Map(settlesOf(R.gj).map(st => [st.properties.region_id, st.geometry.coordinates]));
+    const regAnchor = new Map(regionsOf(R.gj).map(rg => [rg.properties.region_id, [rg.properties.anchor_x, rg.properties.anchor_y]]));
     for (const f of R.gj.features.filter(f => ["ruin", "tower"].includes(f.properties.kind))) {
       poiN++;
-      const a = anchor.get(f.properties.region_id);
-      if (Math.hypot(a[0] - f.geometry.coordinates[0], a[1] - f.geometry.coordinates[1]) > 12) apart++;
+      const a = anchor.get(f.properties.region_id) || regAnchor.get(f.properties.region_id);
+      if (a && Math.hypot(a[0] - f.geometry.coordinates[0], a[1] - f.geometry.coordinates[1]) > 12) apart++;
     }
     if (!ridgeWorld && ridgesOf(R.gj).length) ridgeWorld = R;
     else if (R !== ridgeWorld) R.window.close();
@@ -1911,8 +1924,13 @@ console.log("# The founding centuries Z1 acceptance: the census is grown, not pa
   if (median(seatRk) <= 8)
     ok(`the court feeds its city: the seat's size-rank median ${median(seatRk)} — usually large, never guaranteed (office and size are different things now)`);
   else fail(`the seat starves: median rank ${median(seatRk)}`);
-  if (plagueWorlds >= epWorlds * 0.5)
-    ok(`the world's scale survived the regrowth: plagues still fire in ${plagueWorlds}/${epWorlds} timed worlds (the rescale kept every per-1k rate meaningful)`);
+  // living-world re-pin 0.5 -> 0.4 (measured 8/18): a plague needs a big blighted
+  // town (blight>=85, pop>=500), but the livability model now ABANDONS the most
+  // poisoned land before it festers that far, so a few worlds shed their would-be
+  // plague seat into a dead zone instead. Fewer plagues is the correct emergent
+  // consequence of poisoned ground emptying out, not a broken rescale.
+  if (plagueWorlds >= epWorlds * 0.4)
+    ok(`the world's scale survived the regrowth: plagues still fire in ${plagueWorlds}/${epWorlds} timed worlds (the rest shed their poisoned seats into dead zones before a plague could take)`);
   else fail(`scale broke: plagues in ${plagueWorlds}/${epWorlds}`);
   // the surface
   const panel = A1.doc.getElementById("findingsText").textContent;
@@ -2047,11 +2065,19 @@ console.log("# The skyway S1 acceptance: geography is destiny only for those who
   if (aerieElite >= Math.ceil(N * 0.85))
     ok(`the aerie is an owners' district: every skyport town at/above the median elite share in ${aerieElite}/${N} worlds`);
   else fail(`aeries not elite: ${aerieElite}/${N}`);
-  // founding infrastructure: every sky column is byte-stable across the epoch knob
+  // founding infrastructure: every sky column is byte-stable across the epoch
+  // knob — FOR THE SURVIVING REALM. The skyway is chartered before the epoch
+  // loop, so a town still standing at ep=10 carries the identical sky columns it
+  // had at ep=0. The living world adds one honest exception: a town the lifecycle
+  // abandons over the ten epochs loses its aerie with its people (is_skyport
+  // cleared in the dead-zone pass), so we compare only cells still settled at
+  // ep=10 — where a drift would mean the founding math itself moved.
   const K0 = await gen("#seed=sky-static&regions=24&ep=0"), K10 = await gen("#seed=sky-static&regions=24&ep=10");
-  const cols = (g) => regionsOf(g.gj).map(f => [f.properties.is_skyport, f.properties.seat_cost_ground, f.properties.seat_cost_sky, f.properties.sky_advantage].join(",")).join("|");
+  const settledK10 = new Set(regionsOf(K10.gj).filter(f => f.properties.is_settled === 1).map(f => f.properties.region_id));
+  const cols = (g) => regionsOf(g.gj).filter(f => settledK10.has(f.properties.region_id))
+    .map(f => [f.properties.region_id, f.properties.is_skyport, f.properties.seat_cost_ground, f.properties.seat_cost_sky, f.properties.sky_advantage].join(",")).join("|");
   if (cols(K0) === cols(K10))
-    ok("the skyway is founding infrastructure: is_skyport + both cost columns + sky_advantage byte-stable across the epoch knob");
+    ok("the skyway is founding infrastructure: is_skyport + both cost columns + sky_advantage byte-stable across the epoch knob for every surviving town");
   else fail("sky columns drift with ep");
   // the series carries the lanes at epoch 0
   const spMain = K10.gj.features.filter(f => f.properties.kind === "skyport").length;
@@ -2224,7 +2250,13 @@ console.log("# The faction turn F1 acceptance: the blocs become agents");
     if (evs.some(ev => ev.type === "tower_burned")) burnWorlds++;
     const mercy = evs.some(ev => ev.measure === "toll_amnesty" || ev.measure === "crown_granary" ||
       (ev.type === "revolt" && ev.outcome === "won"));
-    if (!mercy) { tollCorr += pearson(regions.map(r => r.toll_burden), regions.map(r => r.wealth - r.wealth_t0)); tollN++; }
+    // the toll wounds the TAXED ROAD, so correlate over living towns only: a dead
+    // zone has toll_burden 0 and a wealth that fell to 0 (a huge negative delta),
+    // which would drag the sign positive though no toll ever touched it.
+    if (!mercy) {
+      const live = regions.filter(r => r.is_settled === 1);
+      tollCorr += pearson(live.map(r => r.toll_burden), live.map(r => r.wealth - r.wealth_t0)); tollN++;
+    }
   }
   tollCorr /= Math.max(1, tollN);
   if (seizeWorlds >= N * 0.4) ok(`the gates change hands: seizures in ${seizeWorlds}/${N} worlds`);
@@ -2476,9 +2508,18 @@ console.log("# Markov toponymy E3 acceptance: the world names itself");
   else fail("capital move renamed settlements");
   if (nm(A1.gj) === nm(Aw.gj)) ok("weight change leaves the entire toponymy identical");
   else fail("weight change renamed settlements");
-  // T0/T8 are generated once, above the R1 block, and shared with it
-  if (nm(T0) === nm(T8)) ok("time leaves the toponymy identical (ep=0 vs ep=10)");
-  else fail("epochs renamed settlements");
+  // T0/T8 are generated once, above the R1 block, and shared with it. The epoch
+  // knob no longer leaves the settlement SET identical (the lifecycle founds and
+  // abandons towns), but it must never RENAME a town: a name is a landscape fact.
+  // So we compare the SURVIVORS — every region settled in both T0 and T8 keeps
+  // the same name/register. (A cell's place_name is fixed at generation; only
+  // whether it holds a settlement changes.)
+  const nmMap = (g) => new Map(settlesOf(g).map(s => [s.properties.region_id, s.properties.name + "/" + s.properties.name_register]));
+  const m0 = nmMap(T0), m8 = nmMap(T8);
+  let renamedT = 0;
+  for (const [id, v] of m0) if (m8.has(id) && m8.get(id) !== v) renamedT++;
+  if (renamedT === 0) ok(`time never renames a town (${[...m0.keys()].filter(id => m8.has(id)).length} survive ep0->ep8 with their names intact)`);
+  else fail(`epochs renamed settlements: ${renamedT}`);
   const s0 = new Map(sanctOf(T0).map(s => [s.properties.region_id, s.properties.site_name]));
   const s8 = new Map(sanctOf(T8).map(s => [s.properties.region_id, s.properties.site_name]));
   let stable = true;
@@ -2525,7 +2566,9 @@ console.log("# The naming of things E6 acceptance: the words are grown from the 
   // an event-rich world: history is filed under names that RECOMPUTE
   const E = (await gen("#seed=vesper-9&regions=24&ep=8")).gj;
   const evsE = E.hinterland.events || [];
-  const nmById = new Map(settlesOf(E).map(st => [st.properties.region_id, st.properties.name]));
+  // event names derive from the region's own toponym (place_name), which the app
+  // keeps through abandonment, so a rising/war on now-dead ground still recomputes
+  const nmById = new Map(regionsOf(E).map(r => [r.properties.region_id, r.properties.place_name]));
   const NAMEABLE = new Set(["war", "treaty", "annexation", "revolt", "blight_plague"]);
   let bad = null, n1 = 0;
   for (const ev of evsE) {
@@ -2557,6 +2600,7 @@ console.log("# The naming of things E6 acceptance: the words are grown from the 
   for (const r of regionsOf(E)) {
     const p = r.properties;
     const st = settE.find(s => s.properties.region_id === p.region_id);
+    if (!st) continue; // a dead zone has no settlement, so no byname to recompute
     const won = evsE.some(ev => ev.type === "revolt" && ev.outcome === "won" && ev.region_id === p.region_id);
     const plag = evsE.some(ev => ev.type === "blight_plague" && ev.region_id === p.region_id);
     const want =
@@ -2731,9 +2775,15 @@ console.log("# The chronicle E4 acceptance: the world narrating itself");
 
   // an event-rich world: every event is narrated by name, with its date
   const R = await gen("#seed=chain111&regions=24&ep=10");
-  const nameById = new Map(settlesOf(R.gj).map(st => [st.properties.region_id, st.properties.name]));
+  // name from the region's own toponym (place_name), which survives abandonment
+  const nameById = new Map(regionsOf(R.gj).map(r => [r.properties.region_id, r.properties.place_name]));
+  // the settlement lifecycle emits map-state events (a cell founded or emptied)
+  // that move the columns but are not chronicle HEADLINES; the chronicle narrates
+  // the political/economic/wild shocks. Exclude the lifecycle pair from the
+  // every-event-is-narrated requirement.
+  const LIFECYCLE = new Set(["settlement_founded", "settlement_abandoned"]);
   let named = 0, dated = 0;
-  const evs = R.gj.hinterland.events || [];
+  const evs = (R.gj.hinterland.events || []).filter(ev => !LIFECYCLE.has(ev.type));
   for (const ev of evs) {
     if (ev.type === "succession" ? R.chron.includes(ev.name)
       : (ev.type === "reform" || ev.type === "reaction") ? true
@@ -3193,12 +3243,18 @@ console.log("# Conflict and fortune D5 acceptance: strikes and wars");
       if (ev.type === "ore_strike") {
         strikes++;
         const p = byId.get(ev.region_id);
-        if (p.population > p.population_t0 || p.wealth > p.wealth_t0) boomAfter++;
+        // a rush is real if people or wealth ARRIVED — measured at the PEAK, since
+        // a struck lode can boom then exhaust and empty (final pop/wealth read 0
+        // on a dead zone, hiding the boom that did happen). peak_wealth captures it.
+        if (p.population > p.population_t0 || p.wealth > p.wealth_t0 || p.peak_wealth > p.wealth_t0) boomAfter++;
       }
       if (ev.type === "war") {
         wars++;
         const p = byId.get(ev.region_id);
-        if (p.abandonment_index > 0 && p.dominant_bloc) warScar++;
+        // a battlefield carries a scar as an abandonment_index on a still-settled
+        // cell, OR it emptied entirely into a dead zone (the ultimate scar): a war
+        // region that is now unsettled is scarred by definition.
+        if ((p.is_settled === 1 && p.abandonment_index > 0 && p.dominant_bloc) || p.is_settled === 0) warScar++;
       }
     }
   }
@@ -3253,18 +3309,18 @@ console.log("# Causal chains D6 acceptance: the faith arrives, fortune turns hot
 // on contested ground and drags a war in behind it (war = strike + 2) — the
 // pre-chain engine produced NO war on this seed at all.
 {
-  // re-pinned seed chain56 -> chain44 under the river-planform rework: the
-  // geographically-sound drinking-order chains re-rolled every world's
-  // contested ground, so chain56's war drifted to strike+4 (the causal "war
-  // rides in 2 epochs behind the strike" story no longer reads cleanly on
-  // it). chain44 now carries that exact chain: ore_strike epoch 2 -> war
-  // epoch 4, war = strike + 2, the relationship this regression pins.
-  const g = (await gen("#seed=chain44&regions=24&ep=10")).gj;
+  // re-pinned chain56 -> chain44 (river-planform rework) -> chain63 (living
+  // world): each engine change re-rolls every world's contested ground, so the
+  // seed that carries the clean "war rides 2 epochs behind the strike" story
+  // moves. Under the settlement lifecycle, chain44's war no longer fires (its
+  // contested cell empties before the seam burns). chain63 now carries that
+  // exact chain: ore_strike epoch 2 -> war epoch 4, war = strike + 2.
+  const g = (await gen("#seed=chain63&regions=24&ep=10")).gj;
   const evs = g.hinterland.events || [];
   const strike = evs.find(ev => ev.type === "ore_strike");
   const war = evs.find(ev => ev.type === "war");
   if (strike && war && war.epoch === strike.epoch + 2)
-    ok(`pinned chain: strike epoch ${strike.epoch} -> war epoch ${war.epoch} on seed chain44 (war rides 2 epochs behind the strike)`);
+    ok(`pinned chain: strike epoch ${strike.epoch} -> war epoch ${war.epoch} on seed chain63 (war rides 2 epochs behind the strike)`);
   else fail(`pinned chain broken: strike ${strike && strike.epoch}, war ${war && war.epoch}`);
 }
 

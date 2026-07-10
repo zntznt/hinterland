@@ -108,7 +108,18 @@ function validate(gj, tag) {
   const n = regions.length;
   if (n < 5 || n > 64) return fail(`${tag}: region count ${n} out of range`);
 
-  if (settles.length !== n) return fail(`${tag}: settlements ${settles.length} != regions ${n}`);
+  // under the settlement lifecycle a region is LAND, not automatically a town:
+  // it can go unsettled (a dead zone), so settlements match the SETTLED cells,
+  // not every region. Every settlement sits on a settled cell, and no settled
+  // cell lacks a settlement.
+  const settledRegs = regions.filter(r => r.properties.is_settled === 1);
+  if (settles.length !== settledRegs.length)
+    return fail(`${tag}: settlements ${settles.length} != settled regions ${settledRegs.length} (of ${n})`);
+  const settledIds = new Set(settledRegs.map(r => r.properties.region_id));
+  for (const s of settles) if (!settledIds.has(s.properties.region_id)) return fail(`${tag}: settlement on unsettled cell ${s.properties.region_id}`);
+  // an unsettled cell holds no one: population 0, tier none
+  for (const r of regions) if (r.properties.is_settled === 0 && r.properties.population !== 0)
+    return fail(`${tag}: unsettled cell ${r.properties.region_id} has population ${r.properties.population}`);
   const primes = settles.filter(s => s.properties.tier === "prime");
   if (primes.length !== 1) return fail(`${tag}: prime count ${primes.length}`);
   const capRegions = regions.filter(r => r.properties.is_capital_region === 1);
@@ -214,8 +225,12 @@ function validate(gj, tag) {
     // below it (a region always keeps its own); denial is a non-negative score.
     if (p.water_access_effective < p.water_access) return fail(`${tag}: effective water < own physical`);
     if (typeof p.water_denial !== "number" || p.water_denial < 0) return fail(`${tag}: bad water_denial ${p.water_denial}`);
-    if (!Number.isInteger(p.population) || p.population <= 0) return fail(`${tag}: bad region population`);
-    if (typeof p.pop_density !== "number" || p.pop_density <= 0) return fail(`${tag}: bad pop_density`);
+    // a settled cell holds people (population > 0); an unsettled dead zone
+    // holds none (population 0). Density follows: positive if settled, 0 if not.
+    if (!Number.isInteger(p.population) || p.population < 0) return fail(`${tag}: bad region population ${p.population}`);
+    if ((p.is_settled === 1) !== (p.population > 0)) return fail(`${tag}: settled/population mismatch (settled ${p.is_settled}, pop ${p.population})`);
+    if (typeof p.pop_density !== "number" || p.pop_density < 0) return fail(`${tag}: bad pop_density`);
+    if ((p.is_settled === 1) !== (p.pop_density > 0)) return fail(`${tag}: settled/density mismatch`);
     if (p.on_conduit !== 0 && p.on_conduit !== 1) return fail(`${tag}: bad on_conduit`);
     for (const key of ["conduit_access", "arcane_service_index", "elevation", "blight_load", "injustice_idx"]) {
       const v = p[key];
@@ -256,13 +271,26 @@ function validate(gj, tag) {
       if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad ${key} ${v}`);
     }
   }
-  if (Math.max(...regions.map(r => r.properties.market_access)) !== 100) return fail(`${tag}: max market_access != 100`);
+  // market access is normalized so the best-served SETTLED town reads 100 (a
+  // dead zone has 0, and would drag the max down if counted). Living-world
+  // exception: a world the lifecycle collapses to a lone surviving town has no
+  // market to reach, so every gravity sum is 0 and the whole column is 0 - a
+  // correct degenerate, not a normalization bug.
+  const settledMkt = regions.filter(r => r.properties.is_settled === 1).map(r => r.properties.market_access);
+  const mktMax = settledMkt.length ? Math.max(...settledMkt) : 0;
+  if (settledMkt.length > 1 && mktMax !== 100 && mktMax !== 0) return fail(`${tag}: max settled market_access ${mktMax} (expected 100 or a collapsed 0)`);
 
   // W2 columns + garrison invariants
   {
-    const SEC = new Set(["secured", "patrolled", "contested", "ungoverned"]);
+    const SEC = new Set(["secured", "patrolled", "contested", "ungoverned", "none"]);
     for (const r of regions) {
       const p = r.properties;
+      // a dead zone has no security regime (no one to secure): status "none",
+      // all force/market columns 0 - skip the settled-only derivations
+      if (p.is_settled === 0) {
+        if (p.security_status !== "none") return fail(`${tag}: unsettled cell ${p.region_id} security ${p.security_status} != none`);
+        continue;
+      }
       for (const key of ["force_projection", "wardline_strength", "smuggling_intensity", "predation_risk", "black_market_index", "enforcement_gap"]) {
         const v = p[key];
         if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad ${key} ${v}`);
@@ -278,9 +306,15 @@ function validate(gj, tag) {
     const KG = Math.max(1, Math.round(regions.length / 12));
     const warEvs = (gj.hinterland.events || []).filter(ev => ev.type === "war");
     const crushedEvs = (gj.hinterland.events || []).filter(ev => ev.type === "revolt" && ev.outcome === "crushed");
-    if (gars.length !== KG + 1 + warEvs.length + crushedEvs.length)
-      return fail(`${tag}: garrisons ${gars.length} != ${KG + 1} + ${warEvs.length} war + ${crushedEvs.length} crushed`);
+    // a garrison holds a living town; if a garrisoned cell later abandoned,
+    // its garrison lapses, so the count is AT MOST the base + war + crushed
+    // (every emitted garrison still sits on a settled cell, asserted below).
+    const settledSet = new Set(regions.filter(r => r.properties.is_settled === 1).map(r => r.properties.region_id));
+    if (gars.length > KG + 1 + warEvs.length + crushedEvs.length)
+      return fail(`${tag}: garrisons ${gars.length} > ${KG + 1} + ${warEvs.length} war + ${crushedEvs.length} crushed`);
+    for (const g of gars) if (!settledSet.has(g.properties.region_id)) return fail(`${tag}: garrison on unsettled cell ${g.properties.region_id}`);
     for (const wev of warEvs.concat(crushedEvs)) {
+      if (!settledSet.has(wev.region_id)) continue; // its town emptied; no garrison to expect
       if (!gars.some(g => g.properties.region_id === wev.region_id))
         return fail(`${tag}: region ${wev.region_id} not garrisoned after the blood`);
     }
@@ -328,6 +362,13 @@ function validate(gj, tag) {
       if (p.exhausted_lode !== 0 && p.exhausted_lode !== 1) return fail(`${tag}: bad exhausted_lode`);
       if (!ERAS.has(p.founding_era)) return fail(`${tag}: bad founding_era ${p.founding_era}`);
       if (!SHOCKS.has(p.shock_legacy)) return fail(`${tag}: bad shock_legacy ${p.shock_legacy}`);
+      // a dead zone has no society-trajectory columns to recompute (legacy,
+      // abandonment, tenure churn are all zero on unsettled ground)
+      if (p.is_settled === 0) {
+        for (const key of ["legacy_advantage", "abandonment_index", "tenure_churn"])
+          if (p[key] !== 0) return fail(`${tag}: unsettled cell ${p.region_id} nonzero ${key} ${p[key]}`);
+        continue;
+      }
       for (const key of ["founding_age", "legacy_advantage", "abandonment_index", "tenure_churn"]) {
         const v = p[key];
         if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad ${key} ${v}`);
@@ -335,7 +376,8 @@ function validate(gj, tag) {
       if (p.shock_legacy === "none" ? p.shock_severity !== 0 : (p.shock_severity < 40 || p.shock_severity > 90))
         return fail(`${tag}: severity ${p.shock_severity} inconsistent with ${p.shock_legacy}`);
       // trajectory columns
-      const BB = new Set(["boom", "stable", "decline", "collapse"]);
+      // "abandoned" is the trajectory of a dead zone (its town emptied out)
+      const BB = new Set(["boom", "stable", "decline", "collapse", "abandoned"]);
       if (!BB.has(p.boom_bust)) return fail(`${tag}: bad boom_bust ${p.boom_bust}`);
       if (p.ore_depleted !== 0 && p.ore_depleted !== 1) return fail(`${tag}: bad ore_depleted`);
       for (const key of ["endowment_t0", "wealth_t0", "peak_wealth"]) {
@@ -383,6 +425,14 @@ function validate(gj, tag) {
     const REGIMES = new Set(["titled", "mixed", "customary", "contested"]);
     for (const r of regions) {
       const p = r.properties;
+      // an unsettled dead zone has no society: its human/economic columns are
+      // zero by construction (no town to recompute a mobility or a tenure for).
+      if (p.is_settled === 0) {
+        for (const key of ["segregation_index", "mobility_ceiling", "social_trust", "kinship_reliance",
+          "cultural_distance", "legibility_gap", "uncounted_population", "market_access"])
+          if (p[key] !== 0) return fail(`${tag}: unsettled cell ${p.region_id} has nonzero ${key} ${p[key]}`);
+        continue;
+      }
       for (const key of ["segregation_index", "mobility_ceiling", "social_trust", "kinship_reliance", "cultural_distance", "legibility_gap"]) {
         const v = p[key];
         if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad ${key} ${v}`);
@@ -424,12 +474,18 @@ function validate(gj, tag) {
 
   // D3 events: columns valid + provenance timeline matches both ways
   {
-    const EV = new Set(["none", "refinery_collapse", "blight_plague", "relic_calamity", "refinery_founded", "ore_strike", "war", "consecration", "seizure", "tower_burned", "tower_raised", "treaty", "revolt", "annexation"]);
+    const EV = new Set(["none", "refinery_collapse", "blight_plague", "relic_calamity", "refinery_founded", "ore_strike", "war", "consecration", "seizure", "tower_burned", "tower_raised", "treaty", "revolt", "annexation", "settlement_abandoned"]);
     const evList = gj.hinterland.events || [];
     // a region may suffer multiple events (plagued town, then the works close);
-    // its columns record the LATEST (last-pushed) entry
+    // its columns record the LATEST (last-pushed) entry. Abandonment is now a
+    // headline event_type (the cell's dead-zone state overrides any earlier
+    // asset event); a founding is NOT (a reborn cell resets to "none" until a
+    // real shock stamps it), so a founding clears the column back to none.
     const byRegion = new Map();
-    for (const ev of evList) byRegion.set(ev.region_id, ev);
+    for (const ev of evList) {
+      if (ev.type === "settlement_founded") { byRegion.delete(ev.region_id); continue; }
+      byRegion.set(ev.region_id, ev);
+    }
     for (const r of regions) {
       const p = r.properties;
       if (!EV.has(p.event_type)) return fail(`${tag}: bad event_type ${p.event_type}`);
@@ -498,8 +554,11 @@ function validate(gj, tag) {
     }
     for (const rid in passByRidge)
       if (passByRidge[rid] < 1 || passByRidge[rid] > 2) return fail(`${tag}: ridge ${rid} has ${passByRidge[rid]} passes`);
-    // shadow: exact recompute from the exported geometry (settlement anchors)
-    const anchor = new Map(settles.map(st => [st.properties.region_id, st.geometry.coordinates]));
+    // shadow: exact recompute from the exported geometry. Uses the REGION
+    // anchor (anchor_x/anchor_y), not the settlement, so it is defined for
+    // every cell including unsettled dead zones (the shadow is geographic:
+    // does the seat-to-cell line cross a ridge, town or no town).
+    const anchor = new Map(regions.map(r => [r.properties.region_id, [r.properties.anchor_x, r.properties.anchor_y]]));
     const seatId = regions.find(r => r.properties.is_capital_region === 1).properties.region_id;
     const seatP = anchor.get(seatId);
     for (const r of regions) {
@@ -681,8 +740,14 @@ function validate(gj, tag) {
     const KP = gj.hinterland.harbors_closed ? 0 : (coastalN === 0 ? 0 : (coastalN >= 8 ? 2 : 1));
     const ports = portsOf(gj);
     const portRegs = regions.filter(r => r.properties.is_port === 1);
-    if (ports.length !== KP || portRegs.length !== KP)
+    // living world: ports are geology-sited (KP of them, blind to settlement) but
+    // a harbor whose town is abandoned is shut, so the export may carry FEWER than
+    // KP. The feature/flag pair must still agree, and every surviving port sits on
+    // a settled coastal cell.
+    if (ports.length !== portRegs.length || portRegs.length > KP)
       return fail(`${tag}: ports ${ports.length}/${portRegs.length} != ${KP} (coastal ${coastalN})`);
+    for (const pr of portRegs)
+      if (pr.properties.is_settled !== 1) return fail(`${tag}: port on an unsettled cell (#${pr.properties.region_id})`);
     for (const pt of ports) {
       const t = settles.find(st => st.properties.region_id === pt.properties.region_id);
       // E6: a Haven- or Strand-named town IS its harbor; the word does not stack
@@ -693,7 +758,11 @@ function validate(gj, tag) {
 
   // P1 wild layer: ruins, bridges, towers, maelstrom — all structurally sound
   {
-    const anchor = new Map(settles.map(st => [st.properties.region_id, st.geometry.coordinates]));
+    // region anchor (anchor_x/anchor_y), defined for every cell, so the maelstrom
+    // clearance test over ALL coastal cells (some now dead zones) never derefs a
+    // missing settlement point; bridge points equal the region anchor, so the
+    // bridge-position check stays exact.
+    const anchor = new Map(regions.map(r => [r.properties.region_id, [r.properties.anchor_x, r.properties.anchor_y]]));
     const regById = new Map(regions.map(r => [r.properties.region_id, r.properties]));
     const ruins = ruinsOf(gj);
     if (ruins.length < 2 || ruins.length > 3) return fail(`${tag}: ruin count ${ruins.length}`);
@@ -731,7 +800,10 @@ function validate(gj, tag) {
     for (const RV of riversOf(gj)) {
       const n2 = perRiver[RV.properties.river_id] || 0;
       const chainLen = regions.filter(r => r.properties.river_id === RV.properties.river_id).length;
-      if (n2 < 1 || n2 > Math.min(2, chainLen)) return fail(`${tag}: river ${RV.properties.river_id} has ${n2} bridges (chain ${chainLen})`);
+      // living world: bridges are geology-placed (1-2 per river) but a span whose
+      // host town is abandoned is torn down, so a river may now export 0 bridges
+      // when all its crossings fell into dead zones. Only the upper bound holds.
+      if (n2 > Math.min(2, chainLen)) return fail(`${tag}: river ${RV.properties.river_id} has ${n2} bridges (chain ${chainLen})`);
     }
     for (const r of regions) {
       const p = r.properties;
@@ -740,7 +812,10 @@ function validate(gj, tag) {
       if (p.has_tower !== 0 && p.has_tower !== 1) return fail(`${tag}: bad has_tower`);
       if (typeof p.delver_flux !== "number" || p.delver_flux < 0 || p.delver_flux > 100) return fail(`${tag}: bad delver_flux`);
     }
-    if (Math.max(...regions.map(r => r.properties.delver_flux)) !== 100) return fail(`${tag}: max delver_flux != 100`);
+    // normalized so the busiest SETTLED delver road reads 100; a world with no
+    // ruins, or one the lifecycle collapses, leaves the whole column at 0.
+    const maxDelv = Math.max(...regions.map(r => r.properties.delver_flux), 0);
+    if (maxDelv !== 100 && maxDelv !== 0) return fail(`${tag}: max delver_flux ${maxDelv} (expected 100 or a ruinless/collapsed 0)`);
     const towers = towersOf(gj);
     if (towers.length > 2) return fail(`${tag}: tower count ${towers.length}`);
     const towerRegs = new Set(towers.map(t => t.properties.region_id));
@@ -792,7 +867,10 @@ function validate(gj, tag) {
     const F = gj.hinterland.findings;
     if (!F) return fail(`${tag}: no findings in provenance`);
     const P = regions.map(r => r.properties);
-    const anchor = new Map(settles.map(st => [st.properties.region_id, st.geometry.coordinates]));
+    // twins/seat-distance mirror the app, which measures from the region anchor
+    // (anchor_x/anchor_y, defined for every cell) not the settlement point, so
+    // shadow/open sets that now include unsettled dead zones still resolve.
+    const anchor = new Map(regions.map(r => [r.properties.region_id, [r.properties.anchor_x, r.properties.anchor_y]]));
     const mean = (xs) => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
     const med2 = (xs) => { const t = xs.slice().sort((a, b) => a - b); return t.length ? t[Math.floor(t.length / 2)] : 0; };
     const r1 = (v) => Math.round(v * 10) / 10;
@@ -842,7 +920,10 @@ function validate(gj, tag) {
       for (let i = 0; i < t.length; i++) g += (2 * (i + 1) - t.length - 1) * t[i];
       return Math.round(g / (t.length * t.length * m) * 100) / 100;
     };
-    if (F.gini !== giniOf(P.map(r => r.wealth))) return fail(`${tag}: findings gini ${F.gini} != ${giniOf(P.map(r => r.wealth))}`);
+    // gini / gini_t0 measure the surviving realm (settled cells), so a dead
+    // zone's wealth-0 does not masquerade as a poor citizen
+    const settledP = P.filter(r => r.is_settled === 1);
+    if (F.gini !== giniOf(settledP.map(r => r.wealth))) return fail(`${tag}: findings gini ${F.gini} != ${giniOf(settledP.map(r => r.wealth))}`);
     {
       const ridgeFs = ridgesOf(gj);
       let expSplit = null;
@@ -863,7 +944,7 @@ function validate(gj, tag) {
       if (JSON.stringify(F.rain_split) !== JSON.stringify(expSplit))
         return fail(`${tag}: findings rain_split ${JSON.stringify(F.rain_split)} != ${JSON.stringify(expSplit)}`);
     }
-    if (F.gini_t0 !== giniOf(P.map(r => r.wealth_t0))) return fail(`${tag}: findings gini_t0 mismatch`);
+    if (F.gini_t0 !== giniOf(settledP.map(r => r.wealth_t0))) return fail(`${tag}: findings gini_t0 mismatch`);
     const turn = (gj.hinterland.events || []).find(ev => ["reform", "reaction", "revolt"].includes(ev.type));
     const expTurn = turn ? { type: turn.type, epoch: turn.epoch, measure: turn.measure || null, outcome: turn.outcome || null } : null;
     if (JSON.stringify(F.turning) !== JSON.stringify(expTurn)) return fail(`${tag}: findings turning mismatch`);
@@ -872,6 +953,12 @@ function validate(gj, tag) {
     // exactly from the exported file alone
     const tierOf = new Map(settles.map(st => [st.properties.region_id, st.properties.tier]));
     for (const r of P) {
+      // a dead zone has no class ledger: elite_share / elite_pop_pct are zeroed
+      if (r.is_settled === 0) {
+        if (r.elite_share !== 0 || r.elite_pop_pct !== 0)
+          return fail(`${tag}: dead zone carries a class ledger (${r.elite_share}/${r.elite_pop_pct})`);
+        continue;
+      }
       if (!Number.isInteger(r.elite_share) || r.elite_share < 8 || r.elite_share > 92)
         return fail(`${tag}: elite_share out of range: ${r.elite_share}`);
       const expPP = 2 + (tierOf.get(r.region_id) === "prime" ? 3 : tierOf.get(r.region_id) === "hub" ? 2 : 0)
@@ -891,14 +978,17 @@ function validate(gj, tag) {
         for (const a of gs) for (const b of gs) s += a.p * b.p * Math.abs(a.v - b.v);
         return Math.round(s / (2 * Pw * Pw * mu) * 100) / 100;
       };
+      // mirror the app: only inhabited cells carry a class split (a dead zone
+      // has population 0 and a zeroed ledger, which would be a 0/0 row)
+      const peopled = P.filter(r => r.population > 0 && r.elite_pop_pct > 0 && r.elite_pop_pct < 100);
       const rows = [];
-      P.forEach(r => {
+      peopled.forEach(r => {
         const pe = r.population * r.elite_pop_pct / 100;
         rows.push({ p: pe, v: r.wealth * (r.elite_share / r.elite_pop_pct) });
         rows.push({ p: r.population - pe, v: r.wealth * ((100 - r.elite_share) / (100 - r.elite_pop_pct)) });
       });
       const gp = wgini(rows);
-      const gb = wgini(P.map(r => ({ p: r.population, v: r.wealth })));
+      const gb = wgini(peopled.map(r => ({ p: r.population, v: r.wealth })));
       if (F.gini_people !== gp) return fail(`${tag}: findings gini_people ${F.gini_people} != ${gp}`);
       if (F.gini_between_people !== gb) return fail(`${tag}: findings gini_between_people ${F.gini_between_people} != ${gb}`);
       // collapsing each region's two rows to their mean can only LOWER a
@@ -1087,6 +1177,10 @@ function validate(gj, tag) {
       // the Dominion took its region now tolls for the Dominion
       const rOcc = regions.find(x => x.properties.region_id === rid).properties;
       if (rOcc.occupied_epoch !== -1 && rOcc.occupied_epoch >= ev.epoch) continue;
+      // living world: a gate seized then abandoned into a dead zone is torn down
+      // with its town, so there is no asset left to carry the held_by. The
+      // seizure is moot once no one holds the ground.
+      if (rOcc.is_settled === 0) continue;
       if (!assetFeatures.some(a => a.properties.region_id === rid && a.properties.held_by === ev.faction))
         return fail(`${tag}: last seizure at ${rid} by ${ev.faction} not reflected in held_by`);
     }

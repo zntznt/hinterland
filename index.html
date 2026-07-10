@@ -785,6 +785,8 @@
   .legend-wrap .ends { display:flex; justify-content:space-between; color:var(--muted); font-size:10.5px; margin-top:2px; }
   #stage { background:#f6f2e8; }
   #stage svg { display:block; width:100%; height:auto; cursor:crosshair; }
+  /* map labels take the display serif, not the browser default */
+  #stage svg text { font-family: var(--serif); }
   .viewgrid { margin-top:14px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px 10px; box-shadow:var(--shadow); }
   .viewgrid .sec-title { margin-bottom:9px; }
   /* ---- lenses + legends + inspector (U2) ---- */
@@ -792,6 +794,8 @@
   #stage svg text, #stage svg line, #stage svg polyline, #stage svg rect, #stage svg circle,
   #stage svg path:not([data-region]) { pointer-events: none; }
   #stage svg path[data-region] { cursor: pointer; }
+  /* hover: the region under the cursor lifts a gold outline so it is clearly clickable */
+  #stage svg path[data-region]:hover { stroke: #d9b96c; stroke-width: 3; }
   #mapHint { font: 11px var(--sans); color: var(--muted); white-space: nowrap; }
   .modectl { display:inline-flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
   .modectl button { font:600 11px var(--sans); padding:4px 11px; margin:0; border:none; border-radius:0; background:transparent; color:var(--muted); cursor:pointer; }
@@ -1684,7 +1688,9 @@
         reg.ring.some(([x, y]) => x <= 0.01 || x >= W - 0.01 || y <= 0.01 || y >= W - 0.01));
       const rivers = [];
       regions.forEach(reg => { reg.onRiver = 0; reg.riverId = -1; reg.riverPos = -1; });
-      const NRIV = (params.regions >= 16 && rv2() < 0.45) ? 2 : 1;
+      // a few rivers, more on bigger maps, kept sparse so beds do not crowd
+      // (they now branch via confluences rather than avoiding each other)
+      const NRIV = Math.max(1, Math.min(3, 1 + Math.floor(params.regions / 22)));
       // sources: high INTERIOR ground (a source on the border is a one-step
       // river); descent is GENTLEST-first — water meanders, it does not dive
       const interior = regions.map((_, i) => i).filter(i => !isBorder[i]);
@@ -1696,40 +1702,47 @@
           const src = srcPool[Math.floor(rv2() * Math.min(8, srcPool.length))];
           if (regions[src].onRiver) continue;
           const chain = [src];
-          let cur = src;
+          let cur = src, joinRegion = -1;
           while (!isBorder[cur]) {
-            let nxt = -1; // highest neighbor that is still strictly lower
+            let nxt = -1;      // highest FREE neighbor still strictly lower
+            let joinCand = -1; // an already-river neighbor lower than us (a confluence)
             for (const j of regions[cur].neighbors) {
-              if (regions[j].onRiver || chain.includes(j)) continue;
+              if (chain.includes(j)) continue;
               if (regions[j].elevation >= regions[cur].elevation) continue;
+              if (regions[j].onRiver) { // a lower neighbor that is already a river: a place to join
+                if (joinCand === -1 || regions[j].elevation > regions[joinCand].elevation) joinCand = j;
+                continue;
+              }
               if (nxt === -1 || regions[j].elevation > regions[nxt].elevation ||
                   (regions[j].elevation === regions[nxt].elevation && j < nxt)) nxt = j;
             }
-            if (nxt === -1) break; // inland basin: the river ends in a marsh
+            if (nxt === -1) { // no free downhill: join a river if one is adjacent and lower
+              if (joinCand !== -1) joinRegion = joinCand;
+              break; // otherwise an inland basin (the marsh terminus, until lakes land)
+            }
             chain.push(nxt);
             cur = nxt;
           }
-          if (!bestChain || chain.length > bestChain.length) bestChain = chain;
+          if (!bestChain || chain.length > bestChain.length) { bestChain = chain; bestChain.joinRegion = joinRegion; }
           if (bestChain.length >= 5) break;
         }
         if (!bestChain || bestChain.length < 2) continue;
         const R = { id: rivers.length, chain: bestChain };
+        // a tributary records where it meets its trunk (the trunk region it feeds)
+        if (bestChain.joinRegion !== undefined && bestChain.joinRegion >= 0) {
+          R.confluenceInto = regions[bestChain.joinRegion].riverId;
+          R.confluenceRegion = bestChain.joinRegion;
+        }
         rivers.push(R);
         bestChain.forEach((ri, k) => {
           const reg = regions[ri];
           reg.onRiver = 1; reg.riverId = R.id; reg.riverPos = k;
         });
-        // barge transport: consecutive river edges are cheap. Where the river
-        // crosses a ridge it cuts a GORGE — passable, but pass-grade, not
-        // barge-grade: the wall multiplier relaxes to the pass rate.
-        for (let k = 0; k + 1 < bestChain.length; k++) {
-          const A = regions[bestChain[k]], B = regions[bestChain[k + 1]];
-          const prev = A.ridgeMult.get(B.id) || 1;
-          const m = prev > 1 ? PASS_MULT : RIVER_EDGE;
-          A.ridgeMult.set(B.id, m);
-          B.ridgeMult.set(A.id, m);
-        }
+        // (barge-edge relaxation moved below the bed walk: a chain can be
+        // truncated at a confluence, and only the served reach is barge water)
       }
+      // (discharge accumulation moved below the bed walk: beds can now MERGE
+      // into an earlier bed mid-walk, and that merge is what sets the trunk)
 
       // G4/M1: THE SEA IS A SHAPE — and it NEGOTIATES. Flood the low
       // ground connected to the ocean side, trace the coastline (marching
@@ -1746,17 +1759,24 @@
         nodeElev.push(row);
       }
       const raisedHolm = new Set(); // grid nodes lifted for a town with no dry ground
-      const traceSea = (level) => {
+      // opts.seed(floodSeed) chooses the flood origins (default: the sea sides);
+      // opts.block is a Set of "gx:gy" nodes the flood may not enter (used to
+      // keep lakes out of the already-flooded sea). Returns the flooded mask via
+      // opts.floodedOut if requested, so a second pass can subtract it.
+      const traceSea = (level, opts) => {
+        opts = opts || {};
         const flooded = nodeElev.map(row => row.map(() => false));
         const fq = [];
         const floodSeed = (gx, gy) => {
           if (gx < 0 || gy < 0 || gx > GN || gy > GN) return;
           if (raisedHolm.has(gx + ":" + gy)) return;
+          if (opts.block && opts.block.has(gx + ":" + gy)) return;
           if (flooded[gy][gx] || nodeElev[gy][gx] >= level) return;
           flooded[gy][gx] = true;
           fq.push([gx, gy]);
         };
-        for (let k = 0; k <= GN; k++) {
+        if (opts.seed) opts.seed(floodSeed);
+        else for (let k = 0; k <= GN; k++) {
           if (seaSides.includes("west")) floodSeed(0, k);
           if (seaSides.includes("east")) floodSeed(GN, k);
           if (seaSides.includes("south")) floodSeed(k, 0);
@@ -1766,6 +1786,7 @@
           const [gx, gy] = fq.pop();
           floodSeed(gx + 1, gy); floodSeed(gx - 1, gy); floodSeed(gx, gy + 1); floodSeed(gx, gy - 1);
         }
+        if (opts.floodedOut) opts.floodedOut.mask = flooded;
         const F4 = (gx, gy) => (gx >= 0 && gy >= 0 && gx <= GN && gy <= GN && flooded[gy][gx]) ? 1 : 0;
         const segs4 = [];
         const mid = (x1, y1, x2, y2) => [(x1 + x2) / 2, (y1 + y2) / 2];
@@ -1869,6 +1890,73 @@
           seaShapes = traceSea(seaLevel);
         }
       }
+      // LAKES: an ENCLOSED low basin the sea never reached. A basin is a lake
+      // only if its water body touches NEITHER the map edge NOR the sea. We
+      // label connected low components at the sea level, and keep only the ones
+      // that are fully interior (the sea itself, and coastal shelves reaching
+      // the border, are excluded).
+      let lakeShapes = [];
+      {
+        const seaHold = {};
+        traceSea(seaLevel, { floodedOut: seaHold }); // the sea's flooded mask
+        const seaMask = seaHold.mask;
+        // label connected components of "wet but not sea" nodes (below seaLevel)
+        // town anchors on the grid, so a lake never drowns a settlement
+        const townNodes = new Set();
+        regions.forEach(reg => {
+          const gx = Math.round(reg.c[0] / CS), gy = Math.round(reg.c[1] / CS);
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) townNodes.add((gx + dx) + ":" + (gy + dy));
+        });
+        // a lake is a DEEP pit: nodes well below sea level (not a broad low
+        // plain), so use a stricter threshold than the coastline.
+        const lakeThresh = seaLevel - 8;
+        const label = nodeElev.map(row => row.map(() => 0));
+        let nextLabel = 0;
+        const compTouchesEdge = new Map(), compTouchesSea = new Map(), compTouchesTown = new Map(), compNodes = new Map();
+        for (let gy = 0; gy <= GN; gy++) for (let gx = 0; gx <= GN; gx++) {
+          if (label[gy][gx] || seaMask[gy][gx] || nodeElev[gy][gx] >= lakeThresh) continue;
+          const id = ++nextLabel; const st = [[gx, gy]]; label[gy][gx] = id;
+          let edge = false, nearSea = false, hasTown = false, count = 0;
+          while (st.length) {
+            const [x, y] = st.pop(); count++;
+            if (x === 0 || y === 0 || x === GN || y === GN) edge = true;
+            if (townNodes.has(x + ":" + y)) hasTown = true;
+            for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+              const nx = x + dx, ny = y + dy;
+              if (nx < 0 || ny < 0 || nx > GN || ny > GN) continue;
+              if (seaMask[ny][nx]) { nearSea = true; continue; }
+              if (label[ny][nx] || nodeElev[ny][nx] >= lakeThresh) continue;
+              label[ny][nx] = id; st.push([nx, ny]);
+            }
+          }
+          compTouchesEdge.set(id, edge); compTouchesSea.set(id, nearSea); compTouchesTown.set(id, hasTown); compNodes.set(id, count);
+        }
+        // a lake: interior (no edge), not sea-adjacent, no town in it, and a
+        // sensible SIZE (big enough to matter, small enough to be a lake and not
+        // a drowned plain): a few nodes up to a small fraction of the grid.
+        const maxNodes = Math.round((GN + 1) * (GN + 1) * 0.05);
+        const lakeIds = new Set();
+        for (const [id, count] of compNodes)
+          if (!compTouchesEdge.get(id) && !compTouchesSea.get(id) && !compTouchesTown.get(id) && count >= 3 && count <= maxNodes) lakeIds.add(id);
+        if (lakeIds.size) {
+          // trace exactly those components (flood seeded from their nodes, and
+          // everything else blocked) with the same marching squares as the sea
+          const block = new Set();
+          for (let gy = 0; gy <= GN; gy++) for (let gx = 0; gx <= GN; gx++)
+            if (!lakeIds.has(label[gy][gx])) block.add(gx + ":" + gy);
+          const seed = (floodSeed) => {
+            for (let gy = 0; gy <= GN; gy++) for (let gx = 0; gx <= GN; gx++)
+              if (lakeIds.has(label[gy][gx])) floodSeed(gx, gy);
+          };
+          const raw = traceSea(lakeThresh, { seed, block }); // trace at the deep pit level
+          const areaOf = (rg) => { let s2 = 0; for (let i2 = 0; i2 + 1 < rg.length; i2++) s2 += rg[i2][0] * rg[i2 + 1][1] - rg[i2 + 1][0] * rg[i2][1]; return Math.abs(s2) / 2; };
+          lakeShapes = raw.filter(S => areaOf(S.outer) >= 250);
+          lakeShapes.forEach((S, i) => { S.lake_id = i; });
+        }
+      }
+      const inLakePoly = (x, y) => lakeShapes.some(S =>
+        pointInRing(x, y, S.outer) && !S.holes.some(h => pointInRing(x, y, h)));
+      regions.forEach(reg => { reg.onLake = inLakePoly(reg.c[0], reg.c[1]) ? 1 : 0; });
       // M1: the marching-squares polygon is the AUTHORITATIVE water — a
       // grid-resolution coastline can swing past a point that is above
       // sea level in the continuous field. Second relocation pass: any
@@ -1933,6 +2021,9 @@
           }
           return best;
         };
+        // beds already walked: a later river that touches one MERGES into it
+        // (rivers join and share the downstream course; they never cross)
+        const tracedBeds = [];
         for (const RV of rivers) {
           const chain = RV.chain;
           const head = regions[chain[0]];
@@ -1962,11 +2053,34 @@
           let burst = 0;      // terrain-blind steps: punch through a stalemate wall
           let shoreTgt = null, shoreAge = 0; // the scored shore pick, re-scored every 10 steps
           let banned = null;  // shore vertices that turned out to be dry corners
+          // a chain-level tributary runs at its trunk's bed, not at the sea
+          const trunkBed = (RV.confluenceInto !== undefined && RV.confluenceInto >= 0)
+            ? ((rivers.find(t => t.id === RV.confluenceInto) || {}).trace || null) : null;
+          const nearestBedPt = (bed) => {
+            let bp = bed[0], bd = Infinity;
+            for (const p of bed) { const d = Math.hypot(p[0] - x, p[1] - y); if (d < bd) { bd = d; bp = p; } }
+            return bp;
+          };
+          let merged = false; // ended by joining an earlier bed, not by reaching water
+          // an earlier bed repels the walker at close range: skirting inside
+          // the simplifier's tolerance would let the straightened line cross
+          const nearBed = (qx, qy, r) => {
+            for (const TB of tracedBeds)
+              for (let si = 0; si + 1 < TB.pts.length; si++) {
+                const a = TB.pts[si], b = TB.pts[si + 1];
+                const abx = b[0] - a[0], aby = b[1] - a[1];
+                const t = Math.max(0, Math.min(1, ((qx - a[0]) * abx + (qy - a[1]) * aby) / (abx * abx + aby * aby || 1)));
+                const ddx = a[0] + abx * t - qx, ddy = a[1] + aby * t - qy;
+                if (ddx * ddx + ddy * ddy < r * r) return true;
+              }
+            return false;
+          };
           for (let step = 1; step <= CAP + 220; step++) {
             const corridorLive = !forced && ci + 1 < chain.length;
             if (!corridorLive) finalSteps++;
             let tgt;
             if (corridorLive) tgt = regions[chain[ci + 1]].c;
+            else if (trunkBed) tgt = nearestBedPt(trunkBed); // the run-out seeks the trunk
             else {
               if (!shoreTgt || shoreAge >= 10) { shoreTgt = seaTarget(x, y, banned); shoreAge = 0; }
               shoreAge++;
@@ -2010,6 +2124,9 @@
                 // the sea is a wall too — the bed skirts the bay to reach
                 // every region that drinks from it
                 if (corridorLive && inSeaPoly(px, py)) sc += 1000;
+                // another river's bed is a wall while the corridor is live;
+                // meeting it is a decision (the merge below), not a drift
+                if (corridorLive && tracedBeds.length && nearBed(px, py, 6)) sc += 400;
                 if (px < 0 || px > W || py < 0 || py > W) {
                   // dry borders are walls; only a sea side lets the river
                   // out, and never before the corridor is complete
@@ -2022,10 +2139,67 @@
             }
             th0 = bth;
             const dxs = Math.cos(bth), dys = Math.sin(bth);
+            const px2 = x, py2 = y;
             x += dxs * STEP; y += dys * STEP;
+            // NEVER CROSS an earlier bed: two rivers meeting become one.
+            // If this step would cut another river, end HERE, at the cut
+            // (a confluence), and release any chain cells left unserved.
+            {
+              let cut = null;
+              for (const TB of tracedBeds) {
+                for (let si = 0; si + 1 < TB.pts.length && !cut; si++) {
+                  const c = TB.pts[si], d = TB.pts[si + 1];
+                  const rX = x - px2, rY = y - py2, sX = d[0] - c[0], sY = d[1] - c[1];
+                  const den = rX * sY - rY * sX;
+                  if (!den) continue;
+                  const t = ((c[0] - px2) * sY - (c[1] - py2) * sX) / den;
+                  const u = ((c[0] - px2) * rY - (c[1] - py2) * rX) / den;
+                  if (t >= 0 && t <= 1 && u >= 0 && u <= 1)
+                    cut = { id: TB.id, p: [round2(px2 + rX * t), round2(py2 + rY * t)] };
+                }
+                if (cut) break;
+              }
+              if (cut) {
+                pts.push(cut.p);
+                RV.confluenceInto = cut.id;
+                merged = true;
+                if (ci + 1 < chain.length) { // the tail past the junction is not this river's water
+                  for (let k = ci + 1; k < chain.length; k++) {
+                    const r2 = regions[chain[k]];
+                    r2.onRiver = 0; r2.riverId = -1; r2.riverPos = -1;
+                  }
+                  chain.length = ci + 1;
+                }
+                break;
+              }
+            }
             pts.push([x, y]);
             if (ci + 1 < chain.length && pointInRing(x, y, regions[chain[ci + 1]].ring)) { ci++; sinceAdv = 0; }
             else sinceAdv++;
+            // CONFLUENCE: past its corridor, a bed that touches an earlier bed
+            // joins it and ends there. Two rivers meeting become one river;
+            // they do not braid, cross, or race each other to the same bay
+            if (!corridorLive && pts.length > 3) {
+              // distance to the bed's SEGMENTS: a simplified straight reach
+              // has sparse points, and a crossing must not slip between them
+              let met = null;
+              for (const TB of tracedBeds) {
+                for (let si = 0; si + 1 < TB.pts.length && !met; si++) {
+                  const a = TB.pts[si], b = TB.pts[si + 1];
+                  const abx = b[0] - a[0], aby = b[1] - a[1];
+                  const t = Math.max(0, Math.min(1, ((x - a[0]) * abx + (y - a[1]) * aby) / (abx * abx + aby * aby || 1)));
+                  const qx = a[0] + abx * t, qy = a[1] + aby * t;
+                  if (Math.hypot(qx - x, qy - y) < STEP * 1.4) met = { id: TB.id, p: [round2(qx), round2(qy)] };
+                }
+                if (met) break;
+              }
+              if (met) {
+                pts.push(met.p); // land exactly on the trunk's centerline
+                RV.confluenceInto = met.id;
+                merged = true;
+                break;
+              }
+            }
             // only a served corridor (or the forced fallback) may end wet —
             // a burst can hop a submerged strait mid-corridor and walk on
             if ((forced || ci + 1 >= chain.length) && inSeaPoly(x, y)) { intoWater(dxs, dys); break; }
@@ -2039,7 +2213,7 @@
           // absolute fallback (never observed in measurement, kept for the
           // guarantee): if even the forced walk ran out, end ON the border —
           // a river may leave the map, it may not die mid-land
-          if (!inSeaPoly(x, y) && x > 0 && x < W && y > 0 && y < W) {
+          if (!merged && !trunkBed && !inSeaPoly(x, y) && x > 0 && x < W && y > 0 && y < W) {
             const dW = Math.min(x, W - x), dH = Math.min(y, W - y);
             pts.push(dW <= dH ? [x < W - x ? 0 : W, y] : [x, y < W - y ? 0 : W]);
           }
@@ -2057,8 +2231,71 @@
             if (bi >= 0) keep.push(bi);
           }
           RV.trace = dpSimplify(rpts, 2.5, keep);
+          // a chain-level tributary that somehow ran out of steps still ends
+          // ON its trunk, never hanging mid-land (the merge above is the
+          // normal ending; this is the guarantee)
+          if (trunkBed && !merged && RV.trace.length) {
+            RV.trace.push(nearestBedPt(trunkBed).slice());
+          }
+          tracedBeds.push({ id: RV.id, pts: RV.trace });
         }
       }
+      // THE INVARIANT: no bed crosses an earlier bed, ever. The walk already
+      // refuses to (it merges instead), but the simplifier can straighten an
+      // approach across a trunk elbow right at the junction. So the final
+      // traces are checked once more, and a crossing is cut AT the crossing:
+      // that point on the trunk becomes the junction.
+      for (let ri2 = 1; ri2 < rivers.length; ri2++) {
+        const T2 = rivers[ri2].trace || [];
+        let cutAt = -1, cutP = null, cutInto = -1;
+        for (let a2 = 0; a2 + 1 < T2.length && cutAt < 0; a2++) {
+          let bestT = Infinity;
+          for (let rj = 0; rj < ri2; rj++) {
+            const U2 = rivers[rj].trace || [];
+            for (let b2 = 0; b2 + 1 < U2.length; b2++) {
+              const rX = T2[a2 + 1][0] - T2[a2][0], rY = T2[a2 + 1][1] - T2[a2][1];
+              const sX = U2[b2 + 1][0] - U2[b2][0], sY = U2[b2 + 1][1] - U2[b2][1];
+              const den = rX * sY - rY * sX;
+              if (!den) continue;
+              const t = ((U2[b2][0] - T2[a2][0]) * sY - (U2[b2][1] - T2[a2][1]) * sX) / den;
+              const u = ((U2[b2][0] - T2[a2][0]) * rY - (U2[b2][1] - T2[a2][1]) * rX) / den;
+              // the junction endpoint itself sits ON the trunk: t just below 1
+              // there is the meeting we built, not a crossing to repair
+              if (t > 0.001 && t < 0.999 && u >= 0 && u <= 1 && t < bestT) {
+                bestT = t;
+                cutAt = a2; cutInto = rivers[rj].id;
+                cutP = [round2(T2[a2][0] + rX * t), round2(T2[a2][1] + rY * t)];
+              }
+            }
+          }
+        }
+        if (cutAt >= 0) {
+          rivers[ri2].trace = T2.slice(0, cutAt + 1).concat([cutP]);
+          rivers[ri2].confluenceInto = cutInto;
+        }
+      }
+      // barge transport: consecutive river edges are cheap. Where the river
+      // crosses a ridge it cuts a GORGE (passable, but pass-grade, not
+      // barge-grade): the wall multiplier relaxes to the pass rate. Applied
+      // AFTER the bed walk, on the chains a confluence may have shortened.
+      rivers.forEach(RV => {
+        for (let k = 0; k + 1 < RV.chain.length; k++) {
+          const A = regions[RV.chain[k]], B = regions[RV.chain[k + 1]];
+          const prev = A.ridgeMult.get(B.id) || 1;
+          const m = prev > 1 ? PASS_MULT : RIVER_EDGE;
+          A.ridgeMult.set(B.id, m);
+          B.ridgeMult.set(A.id, m);
+        }
+      });
+      // Discharge: a trunk carries its own length plus every tributary that
+      // joins it (chain joins and bed merges alike), so a trunk below a
+      // confluence reads broader than a headwater.
+      rivers.forEach(RV => { RV.flow = RV.chain.length; });
+      rivers.forEach(RV => {
+        if (RV.confluenceInto === undefined || RV.confluenceInto < 0) return;
+        const trunk = rivers.find(t => t.id === RV.confluenceInto);
+        if (trunk) trunk.flow += RV.chain.length; // one level of accumulation (tributaries feed trunks)
+      });
 
       // M1: every cell gets real PLACES. The waterfront: its lowest
       // boundary point, pulled just inside — where a harbor would stand.
@@ -2296,7 +2533,7 @@
           y: side === "south" ? 0 : side === "north" ? W : t };
       }
 
-      return { windDeg, ridges, passes, rivers, seaSides, bridges, ruins, maelstrom, seaShapes, seaLevel, contours, contoursFine, hachures, peaks };
+      return { windDeg, ridges, passes, rivers, seaSides, bridges, ruins, maelstrom, seaShapes, lakeShapes, seaLevel, contours, contoursFine, hachures, peaks };
     }
 
     // ---- Cost-distance over the adjacency graph (Dijkstra, O(n^2)) ----------
@@ -3849,7 +4086,10 @@
       });
       geo.rivers.forEach(RV => {
         RV.name = markovName("lowland", sx("river#" + RV.id), usedNames);
-        RV.kind = RV.chain.length <= 3 ? "Beck" : RV.chain.length <= 5 ? "Brook" : "River";
+        // kind by discharge (flow), so a trunk swollen by tributaries is a River
+        // even if its own chain is short; recomputable from the exported flow.
+        const fl = RV.flow || RV.chain.length;
+        RV.kind = fl <= 3 ? "Beck" : fl <= 5 ? "Brook" : "River";
       });
       const mouthSet = new Set(geo.rivers.map(RV => RV.chain[RV.chain.length - 1]));
       const capWord = (w) => w[0].toUpperCase() + w.slice(1);
@@ -4049,7 +4289,7 @@
           (reg.boomBust === "boom" && reg.wealth >= 60) ? "the Rising" : null;
       });
       settlements.forEach(s2 => { s2.epithet = regions[s2.regionId].epithet; });
-      return { seed: String(params.seed), regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
+      return { seed: String(params.seed), regions, settlements, facilities, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: geo.bridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, lakeShapes: geo.lakeShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
         dominion: dominionAt !== -1 ? { arrived: dominionAt, foothold: footholdIdx } : null };
     }
 
@@ -4250,7 +4490,10 @@
           // v39: the geometry is the traced bed; chain_regions carries the
           // downstream order that river_kind and the columns recompute from
           properties: { kind: "river", river_id: RV.id, river_name: RV.name, river_kind: RV.kind,
-            chain_regions: RV.chain.map(ri => model.regions[ri].id) },
+            chain_regions: RV.chain.map(ri => model.regions[ri].id),
+            // v40: tributaries record the trunk they join and their accumulated flow
+            confluence_into: (RV.confluenceInto !== undefined && RV.confluenceInto >= 0) ? RV.confluenceInto : null,
+            flow: RV.flow || RV.chain.length },
           geometry: { type: "LineString", coordinates: RV.trace }
         });
       });
@@ -4266,6 +4509,14 @@
         features.push({
           type: "Feature",
           properties: { kind: "sea", sea_id: i, sea_name: S.name || null, sea_level: model.seaLevel, islands: S.holes.length },
+          geometry: { type: "Polygon", coordinates: [S.outer, ...S.holes] }
+        });
+      });
+      // v40: inland lakes (interior basins the sea flood never reached)
+      (model.lakeShapes || []).forEach((S, i) => {
+        features.push({
+          type: "Feature",
+          properties: { kind: "lake", lake_id: i, islands: S.holes.length },
           geometry: { type: "Polygon", coordinates: [S.outer, ...S.holes] }
         });
       });
@@ -4696,6 +4947,14 @@
     const BLOC_COLORS = { crown: "#6baed6", temple: "#9e9ac8", magnate: "#fd8d3c", contested: "#cccccc", ungoverned: "#f7f7f7", dominion: "#5a5550" };
     const TRAJ_COLORS = { boom: "#2f9e44", stable: "#d9d9d9", decline: "#f08c00", collapse: "#7a1f1f" };
     const BIOME_COLORS = { alpine: "#e8e6e1", badland: "#d9a066", moor: "#a8a58c", marsh: "#7fa88c", forest: "#4f7a4f", steppe: "#cfc06e", grassland: "#a3bd6b" };
+    // Atlas land: the biome color blended toward parchment cream (#f4ecd8), so
+    // the ground shows climate as a quiet tint, not a data choropleth.
+    const PARCH = [244, 236, 216];
+    function parchmentBiome(biome) {
+      const hex = BIOME_COLORS[biome] || "#f4ecd8", mix = 0.32;
+      const c = i => Math.round(PARCH[i] + (parseInt(hex.slice(1 + 2 * i, 3 + 2 * i), 16) - PARCH[i]) * mix);
+      return `rgb(${c(0)},${c(1)},${c(2)})`;
+    }
     function rampColor(ramp, t) {
       const m = (a, b) => Math.round(a + (b - a) * t);
       return `rgb(${m(ramp.lo[0], ramp.hi[0])},${m(ramp.lo[1], ramp.hi[1])},${m(ramp.lo[2], ramp.hi[2])})`;
@@ -4993,7 +5252,7 @@
       L.push(`# A Chronicle of the Hinterland`);
       L.push(``);
       const crownLine = model.dynasties.crown;
-      const reigning = crownLine[crownLine.length - 1].name;
+      const reigning = (crownLine[crownLine.length - 1] || {}).name || "an unnamed regent";
       L.push(`*The world called "${params.seed}", as set down at ${model.capitalName} in the year ${closeY}, in the reign of ${reigning}.*`);
       L.push(``);
       L.push(`## The Founding — year 1000`);
@@ -5506,7 +5765,8 @@
         for (let n = 0; n < 8 && used.has(i); n++) i = (i + 1) % 8;
         used.add(i); slotUsed.set(reg.id, used);
         const R = 22 + 13 * Math.sqrt(RP(reg) / maxPop); // past the dot (max r 16) + a gap
-        return [reg.c[0] + RING8[i][0] * R, fy(reg.c[1]) + RING8[i][1] * R];
+        // clamp to the frame so an edge region's glyph never draws off-canvas
+        return [clamp(reg.c[0] + RING8[i][0] * R, 10, W - 10), clamp(fy(reg.c[1]) + RING8[i][1] * R, 10, W - 10)];
       };
       const cellT = (reg) =>
         view === "wealth" ? RW(reg) / 100 :
@@ -5576,12 +5836,50 @@
         : rampColor(ramp, cellT(reg));
 
       const parts = [`<svg id="map" viewBox="0 0 ${W} ${W}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`];
+      // A small filter library: a soft lift for the point marks so they sit
+      // above the map, a fibrous paper texture for the land, and a soft edge
+      // vignette. Preview-only; the export never sees any of it.
+      parts.push(`<defs>
+        <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="1.1"/><feOffset dx="0.5" dy="1"/><feComponentTransfer><feFuncA type="linear" slope="0.5"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="paper" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" seed="7" result="n"/><feDiffuseLighting in="n" lighting-color="#fff" surfaceScale="2.4" result="l"><feDistantLight azimuth="235" elevation="32"/></feDiffuseLighting><feComponentTransfer in="l" result="g"><feFuncR type="linear" slope="1" intercept="-0.12"/><feFuncG type="linear" slope="1" intercept="-0.12"/><feFuncB type="linear" slope="1" intercept="-0.12"/></feComponentTransfer><feComposite in="g" in2="SourceGraphic" operator="in"/></filter>
+        <radialGradient id="vignette" cx="50%" cy="48%" r="72%"><stop offset="62%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#2a2018" stop-opacity="0.16"/></radialGradient>
+      </defs>`);
+      // Greedy label de-clutter: a shared list of placed name boxes. A label is
+      // suppressed if its box overlaps one already reserved by a higher rank.
+      // Settlement names (the loudest) are pre-reserved so the decorative
+      // sea/river/ridge names (drawn earlier) yield to them. Widths estimated
+      // from char count, so no DOM measure/reflow is needed.
+      const placedLabels = [];
+      const labelBox = (x, y, text, fsize) => {
+        const w = String(text).length * fsize * 0.55, h = fsize;
+        return [x - w / 2, y - h, x + w / 2, y]; // text-anchor=middle, baseline at y
+      };
+      const tryLabel = (box, rank) => {
+        for (const [b, r] of placedLabels) {
+          if (!(box[2] < b[0] || box[0] > b[2] || box[3] < b[1] || box[1] > b[3]) && rank <= r) return false;
+        }
+        placedLabels.push([box, rank]);
+        return true;
+      };
+      // pre-reserve settlement label boxes (rank 4) before the decorative labels run
+      const maxPop0 = Math.max(...model.regions.map(RP), 1);
+      model.settlements.forEach(s => {
+        if (s.tier !== "prime" && s.tier !== "hub") return;
+        const sreg = model.regions[s.regionId];
+        let fs = 12 + 11 * Math.sqrt(RP(sreg) / maxPop0);
+        fs = s.tier === "prime" ? Math.max(fs, 20) : Math.min(fs, 18);
+        const r = 3 + 13 * Math.sqrt(RP(sreg) / maxPop0);
+        placedLabels.push([labelBox(s.x, fy(s.y) - r - 5, s.name, fs), 4]);
+      });
       model.regions.forEach(reg => {
         const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
         // #62: the capital ring is red only on parchment; on a ramp it is ink
         const stroke = reg.isCapital ? (atlas ? "#d62728" : "#1f1a14") : (atlas ? "#b9ab8f" : "#333");
         const sw = reg.isCapital ? 4 : (atlas ? 1 : 1.5);
-        parts.push(`<path d="${d}" data-region="${reg.id}" fill="${atlas ? "#f4ecd8" : cellFill(reg)}" stroke="${stroke}" stroke-width="${sw}"/>`);
+        // native tooltip: town name + this lens's value, shown on hover with no JS
+        const tt = model.settlements.find(s => s.regionId === reg.id);
+        const tip = `${tt ? esc(tt.name) : "region " + reg.id}${atlas ? "" : ": " + esc(String(cellValue(reg)))}`;
+        parts.push(`<path d="${d}" data-region="${reg.id}" fill="${atlas ? parchmentBiome(reg.biome) : cellFill(reg)}" stroke="${stroke}" stroke-width="${sw}"><title>${tip}</title></path>`);
         if (!atlas && SHOW_NUMBERS) { // the one number the map exists to show: halo + contrast, never a ghost
           const fc = cellFill(reg);
           // #62: hex fills parse as hex — the digit regex read "#5a5550" as garbage
@@ -5601,6 +5899,10 @@
           parts.push(`<rect x="${(rx - 8).toFixed(1)}" y="${(ry - 8).toFixed(1)}" width="16" height="16" fill="#111" stroke="#fff" stroke-width="2"/>`);
         }
       });
+      // Paper grain, atlas only: a dark fibrous texture laid OVER the land (not
+      // under it, where the opaque region fills would hide it) so the parchment
+      // reads as grained, not flat. Blends by multiply so it darkens the land.
+      if (atlas) parts.push(`<path d="M0,0H${W}V${W}H0Z" fill="#fff" filter="url(#paper)" opacity="0.18" style="mix-blend-mode:multiply" pointer-events="none"/>`);
 
       // G4: the terrain — contour lines over the fills, then the sea itself.
       // #60: only levels above the water draw — a ring under the sea is noise;
@@ -5613,10 +5915,33 @@
         const d = cl.segs.map(sg2 => `M${sg2[0][0].toFixed(1)},${fy(sg2[0][1]).toFixed(1)}L${sg2[1][0].toFixed(1)},${fy(sg2[1][1]).toFixed(1)}`).join("");
         parts.push(`<path class="contour" d="${d}" fill="none" stroke="#6d604c" stroke-width="1" opacity="0.3"/>`);
       });
+      const seaClipPaths = []; // the roughened sea outlines, to punch holes in the land clip
       model.seaShapes.forEach(S => {
-        const dec = (rg) => rg.length > 240 ? rg.filter((_, i2) => i2 % 3 === 0) : rg.length > 120 ? rg.filter((_, i2) => i2 % 2 === 0) : rg;
-        const sub = (rg) => bsplineClosed(dec(rg).map(pt => [pt[0], fy(pt[1])]));
+        // decimate lightly (heavy decimation is what made the coast blobby),
+        // then roughen: insert a displaced midpoint on each edge, pushed along
+        // the edge normal by a seam-free roughness profile so some stretches
+        // stay calm (bays) and others crag (headlands). Render-only; the
+        // exported S.outer polygon is untouched.
+        const dec = (rg) => rg.length > 320 ? rg.filter((_, i2) => i2 % 2 === 0) : rg;
+        const roughen = (rg) => {
+          const n = rg.length; if (n < 4) return rg;
+          const out = [];
+          for (let i2 = 0; i2 < n; i2++) {
+            const a = rg[i2], b = rg[(i2 + 1) % n];
+            out.push(a);
+            const t = i2 / n; // seam-free: profile is periodic in t
+            let rough = 0.5 + 0.5 * Math.cos(2 * Math.PI * (3 * t + 0.11)) * Math.cos(2 * Math.PI * (7 * t + 0.53));
+            rough = rough < 0.25 ? 0 : rough; // calm stretches stay smooth
+            const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
+            const nx = -dy / len, ny = dx / len; // edge normal
+            const disp = jit(a[0], a[1], i2 * 7 + 3) * Math.sqrt(len) * 1.3 * rough;
+            out.push([(a[0] + b[0]) / 2 + nx * disp, (a[1] + b[1]) / 2 + ny * disp]);
+          }
+          return out;
+        };
+        const sub = (rg) => bsplineClosed(roughen(dec(rg)).map(pt => [pt[0], fy(pt[1])]));
         const d = [S.outer, ...S.holes].map(sub).join(" ");
+        seaClipPaths.push(d); // remember the exact water outline for the land clip
         // V2: the shore glows — one path in defs, three translucent ring
         // strokes by reference, then the water itself (memory: 1 copy, not 4)
         const sid = "seashape" + model.seaShapes.indexOf(S);
@@ -5634,10 +5959,40 @@
           if (Math.abs(aa) > 1e-6) { cx /= 3 * aa; cy /= 3 * aa;
             const arcId = "sealbl" + model.seaShapes.indexOf(S);
             const spread = Math.min(190, 34 + S.name.length * 13);
-            parts.push(`<defs><path id="${arcId}" d="M${(cx - spread).toFixed(1)},${(fy(cy) + 9).toFixed(1)} Q${cx.toFixed(1)},${(fy(cy) - 9).toFixed(1)} ${(cx + spread).toFixed(1)},${(fy(cy) + 9).toFixed(1)}"/></defs>`);
-            parts.push(`<text font-size="15" font-style="italic" letter-spacing="${Math.min(6, 2 + spread / 60).toFixed(1)}" fill="#1d4f7a" opacity="0.78"><textPath href="#${arcId}" startOffset="50%" text-anchor="middle">${esc(S.name)}</textPath></text>`);
+            if (tryLabel(labelBox(cx, fy(cy), S.name, 15), 2)) {
+              parts.push(`<defs><path id="${arcId}" d="M${(cx - spread).toFixed(1)},${(fy(cy) + 9).toFixed(1)} Q${cx.toFixed(1)},${(fy(cy) - 9).toFixed(1)} ${(cx + spread).toFixed(1)},${(fy(cy) + 9).toFixed(1)}"/></defs>`);
+              parts.push(`<text font-size="15" font-style="italic" letter-spacing="${Math.min(6, 2 + spread / 60).toFixed(1)}" fill="#1d4f7a" opacity="0.78"><textPath href="#${arcId}" startOffset="50%" text-anchor="middle">${esc(S.name)}</textPath></text>`);
+            }
           }
         }
+      });
+      // LAKES: inland water. Same roughened-outline treatment as the sea, a
+      // touch lighter, and added to the land clip so rivers stop at the shore.
+      (model.lakeShapes || []).forEach((S, li) => {
+        const dec = (rg) => rg.length > 320 ? rg.filter((_, i2) => i2 % 2 === 0) : rg;
+        const roughen = (rg) => {
+          const n = rg.length; if (n < 4) return rg;
+          const out = [];
+          for (let i2 = 0; i2 < n; i2++) {
+            const a = rg[i2], b = rg[(i2 + 1) % n];
+            out.push(a);
+            const t = i2 / n;
+            let rough = 0.5 + 0.5 * Math.cos(2 * Math.PI * (2 * t + 0.2)) * Math.cos(2 * Math.PI * (5 * t + 0.4));
+            rough = rough < 0.35 ? 0 : rough; // lakeshores are gentler than coasts
+            const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
+            const nx = -dy / len, ny = dx / len;
+            const disp = jit(a[0], a[1], i2 * 5 + 9) * Math.sqrt(len) * 0.9 * rough;
+            out.push([(a[0] + b[0]) / 2 + nx * disp, (a[1] + b[1]) / 2 + ny * disp]);
+          }
+          return out;
+        };
+        const sub = (rg) => bsplineClosed(roughen(dec(rg)).map(pt => [pt[0], fy(pt[1])]));
+        const d = [S.outer, ...S.holes].map(sub).join(" ");
+        seaClipPaths.push(d); // rivers stop at the lakeshore too
+        const lid = "lakeshape" + li;
+        parts.push(`<defs><path id="${lid}" d="${d}" fill="none"/></defs>`);
+        if (atlas) parts.push(`<use href="#${lid}" stroke="#9dbdd9" stroke-width="8" opacity="0.14" stroke-linejoin="round"/>`);
+        parts.push(`<path class="lake" d="${d}" fill-rule="evenodd" fill="#5b8fb0" fill-opacity="0.6" stroke="#3f6f8f" stroke-width="1.2"/>`);
       });
 
       // Roads (under everything else): width by class, tracks dashed
@@ -5723,16 +6078,44 @@
       // R1: the rivers ride their beds — RV.trace IS the centerline (the
       // fine downhill walk over the continuous field; the chain stays the
       // drinking order). Tapered two-bank ribbon over a white casing (#60).
+      // Clip the whole river group to the LAND (a full-canvas rect with the sea
+      // outlines punched out, evenodd) so any bed reaching the coast is masked
+      // at the water's edge (casing and all) instead of lying on the sea.
+      // ONE path (rect subpath + each sea outline as a subpath) with evenodd so
+      // the sea punches holes in the canvas rect: the clip region is the land.
+      const landD = `M0,0H${W}V${W}H0Z ` + seaClipPaths.join(" ");
+      parts.push(`<clipPath id="landClip"><path d="${landD}" clip-rule="evenodd"/></clipPath>`);
+      parts.push(`<g clip-path="url(#landClip)">`);
+      // corner-cutting pass (render-only; the exported trace keeps its points):
+      // two rounds of 1/4-3/4 subdivision turn corridor corners into bends.
+      // A river leans into its turns; it does not take them at right angles
+      const relaxBed = (P) => {
+        for (let r = 0; r < 2; r++) {
+          if (P.length < 3) return P;
+          const out = [P[0]];
+          for (let i = 0; i + 1 < P.length; i++) {
+            const a = P[i], b = P[i + 1];
+            out.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25],
+                     [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]);
+          }
+          out.push(P[P.length - 1]);
+          P = out;
+        }
+        return P;
+      };
       model.rivers.forEach(RV => {
-        const ctr = (RV.trace || []).map(p => [p[0], fy(p[1])]);
+        const ctr = relaxBed((RV.trace || []).map(p => [p[0], fy(p[1])]));
         if (ctr.length < 2) return;
         const left = [], right = [];
         const wMul = atlas ? 1 : 0.6; // #63: data mode thins the ribbon — context, not subject
+        // width by discharge: accumulated flow (own length + tributaries) makes
+        // a trunk below a confluence read broader than a headwater creek.
+        const mag = Math.min(1, ((RV.flow || (RV.chain || []).length || 2)) / 10);
         for (let k = 0; k < ctr.length; k++) {
           const a2 = ctr[Math.max(0, k - 1)], b2 = ctr[Math.min(ctr.length - 1, k + 1)];
           const dx = b2[0] - a2[0], dy = b2[1] - a2[1], L2 = Math.hypot(dx, dy) || 1;
           const nx = -dy / L2, ny = dx / L2;
-          const hw = (0.9 + 2.6 * (k / (ctr.length - 1))) * wMul; // source thin, mouth broad
+          const hw = (0.9 + 2.6 * (k / (ctr.length - 1))) * wMul * (0.6 + 0.9 * mag); // source thin, mouth broad; scaled by discharge
           left.push([ctr[k][0] + nx * hw, ctr[k][1] + ny * hw]);
           right.push([ctr[k][0] - nx * hw, ctr[k][1] - ny * hw]);
         }
@@ -5742,9 +6125,13 @@
         parts.push(`<path class="river" d="${dRiv}" fill="${atlas ? "#3d7ab5" : "#6b90ad"}" opacity="0.65" stroke="none"/>`);
         if (poi) {
           const mc = RV.trace[Math.floor(RV.trace.length / 2)]; // the name sits on the bed
-          parts.push(`<text x="${mc[0].toFixed(1)}" y="${(fy(mc[1]) + 18).toFixed(1)}" font-size="12" font-style="italic" text-anchor="middle" fill="#3d7ab5" paint-order="stroke" stroke="#fff" stroke-width="3">${RV.kind === "River" ? "the " + esc(RV.name) : esc(RV.name) + " " + esc(RV.kind)}</text>`);
+          const rlbl = RV.kind === "River" ? "the " + RV.name : RV.name + " " + RV.kind;
+          if (tryLabel(labelBox(mc[0], fy(mc[1]) + 18, rlbl, 12), 1)) {
+            parts.push(`<text x="${mc[0].toFixed(1)}" y="${(fy(mc[1]) + 18).toFixed(1)}" font-size="12" font-style="italic" text-anchor="middle" fill="#3d7ab5" paint-order="stroke" stroke="#fff" stroke-width="3">${RV.kind === "River" ? "the " + esc(RV.name) : esc(RV.name) + " " + esc(RV.kind)}</text>`);
+          }
         }
       });
+      parts.push(`</g>`); // end land-clipped river group
 
       // M1: the mountains are MASS — hachures down both flanks, peaks at
       // the crests; the axis survives only as a faint guide under its name.
@@ -5764,7 +6151,9 @@
         parts.push(`<path class="ridge" d="${dR}" fill="none" stroke="#4a3421" stroke-width="2" stroke-dasharray="1 6" stroke-linejoin="round" stroke-linecap="round" opacity="0.3"/>`);
         if (poi) {
           const mid = R.pts[Math.floor(R.pts.length / 2)];
-          parts.push(`<text x="${mid[0].toFixed(1)}" y="${(fy(mid[1]) - 10).toFixed(1)}" font-size="13" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(R.name)} ${esc(R.kind)}</text>`);
+          if (tryLabel(labelBox(mid[0], fy(mid[1]) - 10, R.name + " " + R.kind, 13), 1)) {
+            parts.push(`<text x="${mid[0].toFixed(1)}" y="${(fy(mid[1]) - 10).toFixed(1)}" font-size="13" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(R.name)} ${esc(R.kind)}</text>`);
+          }
         }
       });
       // V2-B: the range is a PROFILE — small inked mountain shapes stamped
@@ -5893,9 +6282,13 @@
         const off = !RG(sreg);
         const fill = off ? "#8a8a8a" : (isPrime ? "#d62728" : (s.tier === "hub" ? "#fff" : "#ccc"));
         const dash = off ? ` stroke-dasharray="4 3"` : "";
-        parts.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${fill}" stroke="#000" stroke-width="${isPrime ? 2 : 1.2}"${dash}/>`);
+        parts.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${fill}" stroke="#000" stroke-width="${isPrime ? 2 : 1.2}"${dash} filter="url(#softShadow)"/>`);
         if (isPrime || s.tier === "hub") {
-          parts.push(`<text x="${cx.toFixed(1)}" y="${(cy - r - 5).toFixed(1)}" font-size="${isPrime ? 21 : 14}" text-anchor="middle" fill="#000" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="4">${esc(s.name)}</text>`);
+          // label size tracks population (like the dot), not a two-value tier,
+          // so a big hub reads louder than a small one; the seat keeps a floor.
+          let fsize = 12 + 11 * Math.sqrt(RP(sreg) / maxPop);
+          fsize = isPrime ? Math.max(fsize, 20) : Math.min(fsize, 18);
+          parts.push(`<text x="${cx.toFixed(1)}" y="${(cy - r - 5).toFixed(1)}" font-size="${fsize.toFixed(1)}" text-anchor="middle" fill="#000" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="4">${esc(s.name)}</text>`);
         }
       });
       // Wind arrow (top-left; display coords flip y)
@@ -5910,6 +6303,15 @@
         parts.push(`<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(x2 + hx + px * 8).toFixed(1)},${(y2 + hy + py * 8).toFixed(1)} ${(x2 + hx - px * 8).toFixed(1)},${(y2 + hy - py * 8).toFixed(1)}" fill="#000" opacity="0.65"/>`);
         parts.push(`<text x="${cx0}" y="${cy0 + 58}" font-size="16" text-anchor="middle" fill="#000" opacity="0.6" paint-order="stroke" stroke="#fff" stroke-width="3">wind</text>`);
       }
+      // Compass (bottom-right): north is screen-up (world is y-up, display flips
+      // y). Placed clear of the wind arrow (top-left) and epoch label (top-right)
+      // so the compass and the wind arrow are never read as one thing.
+      {
+        const nx = W - 52, ny = W - 66;
+        parts.push(`<line x1="${nx}" y1="${ny}" x2="${nx}" y2="${ny + 40}" stroke="#000" stroke-width="3" opacity="0.6"/>`);
+        parts.push(`<polygon points="${nx},${ny - 8} ${nx - 6},${ny + 6} ${nx + 6},${ny + 6}" fill="#000" opacity="0.6"/>`);
+        parts.push(`<text x="${nx}" y="${ny - 12}" font-size="15" font-weight="700" text-anchor="middle" fill="#000" opacity="0.7" paint-order="stroke" stroke="#fff" stroke-width="3">N</text>`);
+      }
       if (params.ep > 0) {
         parts.push(`<text x="960" y="46" font-size="26" text-anchor="end" fill="#000" opacity="0.65" paint-order="stroke" stroke="#fff" stroke-width="4">epoch ${Math.min(scrubEpoch, snaps.length - 1)}/${params.ep}</text>`);
       }
@@ -5918,6 +6320,11 @@
         const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
         parts.push(`<path class="sel" d="${d}" fill="none" stroke="#d9b96c" stroke-width="5" pointer-events="none"/>`);
       }
+      // Frame: a soft corner vignette to center the eye, and a thin double
+      // neatline just inside the edge (the classic map border).
+      parts.push(`<path d="M0,0H${W}V${W}H0Z" fill="url(#vignette)" pointer-events="none"/>`);
+      parts.push(`<path d="M6,6H${W - 6}V${W - 6}H6Z" fill="none" stroke="#8a7a5c" stroke-width="1" opacity="0.6" pointer-events="none"/>`);
+      parts.push(`<path d="M10,10H${W - 10}V${W - 10}H10Z" fill="none" stroke="#8a7a5c" stroke-width="0.5" opacity="0.4" pointer-events="none"/>`);
       parts.push(`</svg>`);
       const stage = document.getElementById("stage");
       stage.innerHTML = parts.join("");
@@ -6192,6 +6599,19 @@
       toast("world recomputed — same rock, new society"); // the rewrite is never silent
     }
 
+    // Coalesce rapid re-render requests (view/POI/mode toggles, scrub drags)
+    // into one paint per frame, so a fast drag does not rebuild the SVG dozens
+    // of times. Model recompute stays synchronous; only the redraw is deferred.
+    let _renderPending = false;
+    function scheduleRender() {
+      if (_renderPending || !model) return;
+      // no frame scheduler (jsdom, old embedders): paint now, correctness
+      // beats coalescing wherever there is no frame to coalesce into
+      if (typeof requestAnimationFrame !== "function") { render(model, params); return; }
+      _renderPending = true;
+      requestAnimationFrame(() => { _renderPending = false; render(model, params); });
+    }
+
     // ---- URL hash <-> params (shareable, reproducible worlds) ---------------
     function writeHash() {
       const p = new URLSearchParams();
@@ -6325,7 +6745,7 @@
       });
 
       document.querySelectorAll('input[name="view"]').forEach(el =>
-        el.addEventListener("change", (e) => { view = e.target.value; if (model) render(model, params); }));
+        el.addEventListener("change", (e) => { view = e.target.value; scheduleRender(); }));
 
       // #63: the mode toggle re-renders only — the model never recomputes
       const setMode = (m) => {
@@ -6333,11 +6753,11 @@
         mapMode = m;
         $("modeAtlas").classList.toggle("on", m === "atlas");
         $("modeData").classList.toggle("on", m === "data");
-        if (model) render(model, params);
+        scheduleRender();
       };
       $("modeAtlas").addEventListener("click", () => setMode("atlas"));
       $("modeData").addEventListener("click", () => setMode("data"));
-      $("showPoiCk").addEventListener("change", (e) => { showPoi = e.target.checked; if (model) render(model, params); });
+      $("showPoiCk").addEventListener("change", (e) => { showPoi = e.target.checked; scheduleRender(); });
 
       $("iq").addEventListener("input", (e) => {
         params.iq = +e.target.value;
@@ -6351,7 +6771,7 @@
       $("scrub").addEventListener("input", (e) => {
         scrubEpoch = +e.target.value;
         $("scrubVal").textContent = `${scrubEpoch}/${params.ep}`;
-        if (model) render(model, params);
+        scheduleRender();
       });
 
       $("dlSeries").addEventListener("click", () => {

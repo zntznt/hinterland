@@ -11,47 +11,47 @@ read these worlds, see the [field guide](field-guide.md).
 
 | metric | min | median | max |
 |---|---|---|---|
-| wealth gini (between places) | 0.19 | 0.41 | 0.67 |
-| gini drift (close − founding) | -0.15 | 0.02 | 0.23 |
-| within-place share of person inequality % | 19 | 40 | 60 |
-| owners' rows' share of all coin % | 33.30 | 48.90 | 78.90 |
-| rank-size alpha (Zipf ≈ 1) | 0.98 | 1.24 | 1.52 |
-| urban primacy (1st/2nd) | 1 | 1.30 | 3.20 |
-| sky advantage behind the wall (mean) | 0 | 49.60 | 76.20 |
-| off-grid share | 0 | 0.33 | 0.75 |
-| mountain-shadow share | 0.13 | 0.46 | 0.79 |
-| corr(blight, wealth) | -0.52 | -0.10 | 0.48 |
-| events per run | 10 | 23 | 37 |
-| seizures | 0 | 4 | 10 |
-| max abandonment | 34 | 42 | 78 |
-| max toll burden | 10 | 45 | 100 |
-| gate concentration | 0 | 0.75 | 1 |
+| wealth gini (between places) | 0.26 | 0.40 | 0.67 |
+| gini drift (close − founding) | -0.11 | 0.03 | 0.24 |
+| within-place share of person inequality % | 22 | 43 | 60 |
+| owners' rows' share of all coin % | 33.20 | 50.10 | 69.80 |
+| rank-size alpha (Zipf ≈ 1) | 0.98 | 1.23 | 1.52 |
+| urban primacy (1st/2nd) | 1 | 1.40 | 3.20 |
+| sky advantage behind the wall (mean) | 0 | 47.10 | 72.80 |
+| off-grid share | 0 | 0.33 | 0.67 |
+| mountain-shadow share | 0.13 | 0.42 | 0.75 |
+| corr(blight, wealth) | -0.71 | -0.09 | 0.51 |
+| events per run | 13 | 25 | 37 |
+| seizures | 0 | 5 | 10 |
+| max abandonment | 34 | 41 | 78 |
+| max toll burden | 13 | 53 | 100 |
+| gate concentration | 0.33 | 0.75 | 1 |
 
 Sanity anchors, measured on this sweep: blight–wealth correlation stays
 negative at the default dump bias (the poison lands on the poor) in
-53/80 worlds; a mountain shadow exists in
+50/80 worlds; a mountain shadow exists in
 80/80; the event engine fired in
 80/80; the Dominion landed in
 40/80; a rising won somewhere in
-61/80; and in the median world a region map
-is blind to 39% of person-level inequality — the class
+56/80; and in the median world a region map
+is blind to 43% of person-level inequality — the class
 ledger lives inside the walls.
 
 ## The atlas
 
-### The World That Closed Its Gap — the realm of Kragdelve
+### The World That Closed Its Gap — the realm of High
 
-*the deepest gini fall of the sweep — find its turning point.* In the reign of Quillowell: wealth gini 0.19, 13% off-grid, 1 war, 9 seizures, 1 succession crisis, max abandonment 51.
+*the deepest gini fall of the sweep — find its turning point.* In the reign of Briar: wealth gini 0.41, 42% off-grid, 0 wars, 1 seizure, 1 succession crisis, max abandonment 36.
 
-> Year 1075. The seat, chastened by the years behind it, decreed a Toll Amnesty: the gates still stand, but the levies are capped by decree. The chronicle notes that it took a wound to buy a mercy.
+> Year 1075. The seat, chastened by the years behind it, decreed the Crown Granary: a levy on the fat years and bread in the lean ones — the first decree in the realm's history to move coin downhill. The chronicle notes that it took a wound to buy a mercy.
 
-[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-6&regions=24&ep=10)
+[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-73&regions=24&ep=10)
 
 ### The Entrenched World — the realm of Raverell
 
-*the steepest entrenchment — the loops ran and nothing pushed back.* In the reign of Briarnmere: wealth gini 0.67, 58% off-grid, 0 wars, 1 seizure, 1 succession crisis, max abandonment 48.
+*the steepest entrenchment — the loops ran and nothing pushed back.* In the reign of Briarnmere: wealth gini 0.67, 42% off-grid, 0 wars, 1 seizure, 1 succession crisis, max abandonment 48.
 
-> The works at Raverell Strand and Quillmere Haven turned aetherstone to lumen, and the trunk lines ran from their yards to the seat. The Temple kept holy ground at Lorne (by Surzhark) and Ellithielle (by Nether Thozzek) — out where the sacred substance lies and the Crown's writ runs thin. 16 of the realm's settlements sat off the conduit at the founding, in darkness: connected by road — everything is connected by road — but unserved, because the ledgers said serving them would not pay.
+> The works at Raverell Strand and Quillmere Haven turned aetherstone to lumen, and the trunk lines ran from their yards to the seat. The Temple kept holy ground at Lorne (by Surzhark) and Ellithielle (by Nether Thozzek) — out where the sacred substance lies and the Crown's writ runs thin. 15 of the realm's settlements sat off the conduit at the founding, in darkness: connected by road — everything is connected by road — but unserved, because the ledgers said serving them would not pay.
 
 [Open this world](https://zntznt.github.io/hinterland/#seed=atlas-49&regions=24&ep=10)
 
@@ -65,7 +65,7 @@ ledger lives inside the walls.
 
 ### The Occupied Realm — the realm of Ivere
 
-*the Dominion's deepest hold of the sweep.* In the reign of Mergate: wealth gini 0.50, 46% off-grid, 0 wars, 1 seizure, 1 succession crisis, max abandonment 41.
+*the Dominion's deepest hold of the sweep.* In the reign of Mergate: wealth gini 0.48, 29% off-grid, 0 wars, 1 seizure, 1 succession crisis, max abandonment 40.
 
 > Year 1050. The Dominion's sails stood off Ivere Fen Harbor at first light, and by winter its writ ran over 8 regions. There was no war to record: the fleet was the argument. The quays now toll for a power beyond the sea, the yield of the occupied country is assessed at the water, and the wires came with the garrison — the first country in the realm to be wired entire, because its cargo is wanted elsewhere. The Dominion's own registers file it as the Landing at Ivere Fen.
 
@@ -79,73 +79,73 @@ ledger lives inside the walls.
 
 [Open this world](https://zntznt.github.io/hinterland/#seed=atlas-29&regions=24&ep=10)
 
-### The Ledger's Realm — the realm of Quill
+### The Ledger's Realm — the realm of Ivere
 
-*the most oligarchic world: one power holds the gates.* In the reign of Ulven: wealth gini 0.42, 25% off-grid, 0 wars, 2 seizures, 4 succession crises, max abandonment 38.
+*the most oligarchic world: one power holds the gates.* In the reign of Mergate: wealth gini 0.48, 29% off-grid, 0 wars, 1 seizure, 1 succession crisis, max abandonment 40.
 
-> The toll ledgers run deepest with the magnates, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the magnates standing nearest to blows.
+> The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the magnates standing nearest to blows.
 
-[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-4&regions=24&ep=10)
+[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-7&regions=24&ep=10)
 
 ### The Unequal Country — the realm of Raverell
 
-*the widest wealth gap of the sweep.* In the reign of Briarnmere: wealth gini 0.67, 58% off-grid, 0 wars, 1 seizure, 1 succession crisis, max abandonment 48.
+*the widest wealth gap of the sweep.* In the reign of Briarnmere: wealth gini 0.67, 42% off-grid, 0 wars, 1 seizure, 1 succession crisis, max abandonment 48.
 
-> The works at Raverell Strand and Quillmere Haven turned aetherstone to lumen, and the trunk lines ran from their yards to the seat. The Temple kept holy ground at Lorne (by Surzhark) and Ellithielle (by Nether Thozzek) — out where the sacred substance lies and the Crown's writ runs thin. 16 of the realm's settlements sat off the conduit at the founding, in darkness: connected by road — everything is connected by road — but unserved, because the ledgers said serving them would not pay.
+> The works at Raverell Strand and Quillmere Haven turned aetherstone to lumen, and the trunk lines ran from their yards to the seat. The Temple kept holy ground at Lorne (by Surzhark) and Ellithielle (by Nether Thozzek) — out where the sacred substance lies and the Crown's writ runs thin. 15 of the realm's settlements sat off the conduit at the founding, in darkness: connected by road — everything is connected by road — but unserved, because the ledgers said serving them would not pay.
 
 [Open this world](https://zntznt.github.io/hinterland/#seed=atlas-49&regions=24&ep=10)
 
-### The Level Country — the realm of Kragdelve
+### The Level Country — the realm of Broormouth
 
-*the narrowest wealth gap — note what it still fails to level.* In the reign of Quillowell: wealth gini 0.19, 13% off-grid, 1 war, 9 seizures, 1 succession crisis, max abandonment 51.
+*the narrowest wealth gap — note what it still fails to level.* In the reign of Calverton: wealth gini 0.26, 25% off-grid, 1 war, 9 seizures, 2 succession crises, max abandonment 42.
 
-> Of the realm's 4 gates — the bridges, the passes, the quays — the Crown keeps 3, the Temple 0, and the magnates 0; 1 stand untolled. Every levy on the list is paid by people who did not choose the road.
+> Of the realm's 6 gates — the bridges, the passes, the quays — the Crown keeps 5, the Temple 0, and the magnates 1; 0 stand untolled. Every levy on the list is paid by people who did not choose the road.
 
-[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-6&regions=24&ep=10)
+[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-1&regions=24&ep=10)
 
-### The Dark Realm — the realm of Sordford
+### The Dark Realm — the realm of Marnwell
 
-*the most off-grid world: the ledgers said no, everywhere.* In the reign of Cramhold: wealth gini 0.47, 75% off-grid, 1 war, 0 seizures, 2 succession crises, max abandonment 43.
+*the most off-grid world: the ledgers said no, everywhere.* In the reign of Tholt: wealth gini 0.49, 67% off-grid, 0 wars, 4 seizures, 3 succession crises, max abandonment 42.
 
-> The works at Dehold and Sordford turned aetherstone to lumen, and the trunk lines ran from their yards to the seat. The Temple kept holy ground at Galisaline (by Brathhold) and Velle (by Everwitholt) — out where the sacred substance lies and the Crown's writ runs thin. 18 of the realm's settlements sat off the conduit at the founding, in darkness: connected by road — everything is connected by road — but unserved, because the ledgers said serving them would not pay.
+> The works at Pelvere and Marnwell turned aetherstone to lumen, and the trunk lines ran from their yards to the seat. The Temple kept holy ground at Olithe (by Fenholt) and Thielle (by Dovrazzek Tor) — out where the sacred substance lies and the Crown's writ runs thin. 16 of the realm's settlements sat off the conduit at the founding, in darkness: connected by road — everything is connected by road — but unserved, because the ledgers said serving them would not pay.
 
-[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-70&regions=24&ep=10)
+[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-68&regions=24&ep=10)
 
-### The Walled Realm — the realm of Ivereness
+### The Walled Realm — the realm of Umbergate
 
-*the most mountain-shadowed world.* In the reign of Sorriarth: wealth gini 0.55, 29% off-grid, 0 wars, 4 seizures, 2 succession crises, max abandonment 41.
+*the most mountain-shadowed world.* In the reign of Mermerbriar: wealth gini 0.42, 21% off-grid, 1 war, 3 seizures, 1 succession crisis, max abandonment 40.
 
 > (this world keeps its counsel)
 
-[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-46&regions=24&ep=10)
+[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-47&regions=24&ep=10)
 
-### The Burning Years — the realm of Nether
+### The Burning Years — the realm of Haldmere
 
-*the most violent history of the sweep.* In the reign of Foxmook: wealth gini 0.29, 21% off-grid, 1 war, 10 seizures, 3 succession crises, max abandonment 62.
+*the most violent history of the sweep.* In the reign of Crannock: wealth gini 0.34, 42% off-grid, 1 war, 10 seizures, 4 succession crises, max abandonment 37.
 
-> Year 1150. War came to Nether Narzharzek, as it comes to ground that great powers claim and none can hold. The powers that met there were the Crown and the magnates; the ground was merely where they met. When the fighting burned out, the seat was the poorer by a third of its people and a quarter of its wealth, and the mines and works were ruined ground. The Crown's garrison arrived after the blood, and stayed. The scribes head the page: the War of 1150.
+> Year 1125. War came to Haldmere, as it comes to ground that great powers claim and none can hold. The powers that met there were the Crown and the magnates; the ground was merely where they met. When the fighting burned out, the seat was the poorer by a third of its people and a quarter of its wealth, and the mines and works were ruined ground. The Crown's garrison arrived after the blood, and stayed. The scribes head the page: the War of 1125.
 
-[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-13&regions=24&ep=10)
+[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-72&regions=24&ep=10)
 
-### The Quiet Years — the realm of Glarre
+### The Quiet Years — the realm of Millow
 
-*the calmest history — the founding order simply compounded.* In the reign of Weldeholt: wealth gini 0.50, 38% off-grid, 1 war, 0 seizures, 0 succession crises, max abandonment 38.
+*the calmest history — the founding order simply compounded.* In the reign of Osterook: wealth gini 0.44, 38% off-grid, 0 wars, 2 seizures, 2 succession crises, max abandonment 49.
 
 > The chronicle records no upheavals.
 
-[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-31&regions=24&ep=10)
+[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-9&regions=24&ep=10)
 
-### The Poisoned Mouth — the realm of Ivenbriar
+### The Poisoned Mouth — the realm of Quill
 
-*the heaviest downstream blight.* In the reign of Ostere: wealth gini 0.47, 25% off-grid, 1 war, 8 seizures, 1 succession crisis, max abandonment 41.
+*the heaviest downstream blight.* In the reign of Ulven: wealth gini 0.37, 29% off-grid, 1 war, 5 seizures, 4 succession crises, max abandonment 40.
 
-> The Quill comes down off the high ground by Thozzurn-on-Quill and runs through 6 regions to the border. The towns along it drink in order: Thozzurn-on-Quill drinks it clean, and Collowmouth, at the mouth, drinks whatever every town and works upstream let fall into the water. The order was set by the land before anyone built anything, and no one who lives at the mouth chose it.
+> The Kelsdenholt comes down off the high ground by Keldhamholt Ford and runs through 5 regions to the border. The towns along it drink in order: Keldhamholt Ford drinks it clean, and Quill, at the mouth, drinks whatever every town and works upstream let fall into the water. The order was set by the land before anyone built anything, and no one who lives at the mouth chose it.
 
-[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-79&regions=24&ep=10)
+[Open this world](https://zntznt.github.io/hinterland/#seed=atlas-4&regions=24&ep=10)
 
 ### The Ghost Country — the realm of Skalness
 
-*the deepest abandonment scar.* In the reign of Haldhalven: wealth gini 0.41, 21% off-grid, 1 war, 2 seizures, 1 succession crisis, max abandonment 78.
+*the deepest abandonment scar.* In the reign of Haldhalven: wealth gini 0.47, 25% off-grid, 1 war, 2 seizures, 1 succession crisis, max abandonment 78.
 
 > Varvarzek is the emptiest of the ghost country: its best years are a memory the roads no longer visit.
 
@@ -153,15 +153,15 @@ ledger lives inside the walls.
 
 ### The Tolled Road — the realm of Glarmouth
 
-*the most gate-taxed region of the sweep.* In the reign of Ulvenbriar: wealth gini 0.54, 38% off-grid, 1 war, 7 seizures, 2 succession crises, max abandonment 45.
+*the most gate-taxed region of the sweep.* In the reign of Ulvenbriar: wealth gini 0.53, 38% off-grid, 1 war, 9 seizures, 2 succession crises, max abandonment 41.
 
-> Of the realm's 4 gates — the bridges, the passes, the quays — the Crown keeps 2, the Temple 0, and the magnates 2; 0 stand untolled. Every levy on the list is paid by people who did not choose the road.
+> Of the realm's 6 gates — the bridges, the passes, the quays — the Crown keeps 4, the Temple 0, and the magnates 2; 0 stand untolled. Every levy on the list is paid by people who did not choose the road.
 
 [Open this world](https://zntznt.github.io/hinterland/#seed=atlas-40&regions=24&ep=10)
 
 ### The Town That Freed Itself — the realm of Thollow
 
-*a rising won on ground the Dominion had claimed.* In the reign of Cramholt: wealth gini 0.53, 21% off-grid, 1 war, 5 seizures, 0 succession crises, max abandonment 40.
+*a rising won on ground the Dominion had claimed.* In the reign of Cramholt: wealth gini 0.55, 25% off-grid, 1 war, 5 seizures, 0 succession crises, max abandonment 39.
 
 > Year 1100. Meldness rose. The wardline broke before the mob — and the mob held. Meldness keeps what it makes now, and its gates toll no one; the ledgers record it as a dangerous precedent, and the town records it as the first good year. The people keep the date as the Meldness Rising.
 

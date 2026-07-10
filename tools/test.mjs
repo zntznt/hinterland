@@ -1501,10 +1501,20 @@ console.log("# The strata H1 acceptance: class exists within the walls");
     const Z = await gen("#seed=h1-init&regions=30&ep=0");
     const P = regionsOf(Z.gj).map(f => f.properties);
     const tierOf = new Map(settlesOf(Z.gj).map(st => [st.properties.region_id, st.properties.tier]));
-    const bad = P.filter(r => r.elite_share !== Math.min(92, Math.max(8, Math.round(
-      24 + 0.32 * r.refining_capacity + 0.12 * r.endowment_t0 +
-      (tierOf.get(r.region_id) === "prime" ? 8 : tierOf.get(r.region_id) === "hub" ? 4 : 0)))));
-    if (bad.length === 0) ok(`ep=0 elite_share recomputes exactly from structure (30/30 regions; no dice in the founding split)`);
+    // #91: the counting house is founding STRUCTURE too — a town founded rich
+    // banks the coin to its owners' row from day one, so elite_share carries its
+    // +6 even at ep=0. Still no dice: the boost recomputes exactly from the
+    // exported `structures` column (a counting_house town has it).
+    const clamp8 = (v) => Math.min(92, Math.max(8, v));
+    const bad = P.filter(r => {
+      // the founding split is clamped first (matching the app), THEN the counting
+      // house adds its +6 and the ledger re-clamps — two clamps, same as the app.
+      const base = clamp8(Math.round(24 + 0.32 * r.refining_capacity + 0.12 * r.endowment_t0 +
+        (tierOf.get(r.region_id) === "prime" ? 8 : tierOf.get(r.region_id) === "hub" ? 4 : 0)));
+      const withCH = (r.structures || "").split(" ").includes("counting_house") ? clamp8(base + 6) : base;
+      return r.elite_share !== withCH;
+    });
+    if (bad.length === 0) ok(`ep=0 elite_share recomputes exactly from structure incl. the counting house (30/30 regions; no dice in the founding split)`);
     else fail(`ep=0 init mismatch in ${bad.length} regions`);
   }
   // the sweep: measured before calibrating (40-world knob sweep: elite_share

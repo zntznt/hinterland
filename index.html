@@ -7270,6 +7270,23 @@
         const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
         parts.push(`<path class="sel" d="${d}" fill="none" stroke="#d9b96c" stroke-width="5" pointer-events="none"/>`);
       }
+      // U3: the SELECTED FEATURE glows — a halo so the reader sees what the
+      // side card is describing. Drawn last (above the map, under the frame),
+      // non-interactive so it never eats the next click.
+      if (selFeat) {
+        const halo = (x, y, r) => parts.push(`<circle cx="${x.toFixed(1)}" cy="${fy(y).toFixed(1)}" r="${r}" fill="none" stroke="#c2670a" stroke-width="2.5" opacity="0.9" pointer-events="none"/>`);
+        const k = selFeat.kind, id = selFeat.id;
+        if (k === "ridge") { const R = model.ridges.find(r => r.id === id); if (R) parts.push(`<path d="${catRom(R.pts.map(p => [p[0], fy(p[1])]))}" fill="none" stroke="#c2670a" stroke-width="4" opacity="0.85" stroke-linecap="round" pointer-events="none"/>`); }
+        else if (k === "river") { const RV = model.rivers.find(r => r.id === id); if (RV && RV.trace) parts.push(`<path d="${catRom(RV.trace.map(p => [p[0], fy(p[1])]))}" fill="none" stroke="#c2670a" stroke-width="4" opacity="0.85" stroke-linecap="round" pointer-events="none"/>`); }
+        else if (k === "pass") { const p = model.passes[id]; if (p) halo(p.x, p.y, 15); }
+        else if (k === "port") { const r = model.regions.filter(rr => rr.isPort === 1)[id]; if (r) halo(r.shorePt[0], r.shorePt[1], 15); }
+        else if (k === "bridge") { const b = model.bridges[id]; if (b) halo(b.x, b.y, 15); }
+        else if (k === "tower") { const r = model.regions.filter(rr => rr.hasTower === 1)[id]; if (r) halo(r.towerPt[0], r.towerPt[1], 15); }
+        else if (k === "ruin") { const r = model.ruins[id]; if (r) { const reg = model.regions[r.regionIdx]; halo(reg.wildPt[0], reg.wildPt[1], 15); } }
+        else if (k === "deadhold") { const r = model.regions.filter(rr => !rr.settled && rr.abandonedEpoch >= 0)[id]; if (r) halo(r.c[0], r.c[1], 15); }
+        else if (k === "sanct") { const s = model.sanctionedSites[id]; if (s) halo(s.x, s.y, 15); }
+        else if (k === "maelstrom" && model.maelstrom) halo(clamp(model.maelstrom.x, 22, W - 22), clamp(model.maelstrom.y, 22, W - 22), 17);
+      }
       // Frame: a soft corner vignette to center the eye, and a thin double
       // neatline just inside the edge (the classic map border).
       parts.push(`<path d="M0,0H${W}V${W}H0Z" fill="url(#vignette)" pointer-events="none"/>`);
@@ -7344,13 +7361,124 @@
 
     // ---- The inspector (U2): one click, the whole ledger ---------------------
     let inspectId = -1, pinArm = false;
+    // U3: the SELECTED FEATURE — a ridge, river, pass, or wild-layer glyph the
+    // reader clicked. Mutually exclusive with a region: clicking a feature shows
+    // its own card, clicking a region (or dead water) clears it. {kind, id}.
+    let selFeat = null;
+
+    // U3: the feature card — a ridge/river/pass/port/etc reads its own data.
+    // Returns true if it painted a feature (so renderInspector can return early).
+    function renderFeatureCard() {
+      const card = document.getElementById("inspector");
+      if (!selFeat || !model) return false;
+      const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
+      const yr = (e) => 1000 + 25 * e;
+      const townAt = (idx) => (model.settlements.find(s => s.regionId === model.regions[idx].id) || { name: model.regions[idx].placeName || "open country" }).name;
+      let name = "", sub = "", L = [];
+      if (selFeat.kind === "ridge") {
+        const R = model.ridges.find(r => r.id === selFeat.id); if (!R) { selFeat = null; return false; }
+        const myPasses = model.passes.filter(p => p.ridgeId === R.id);
+        const spurs = model.ridges.filter(r => r.isSpur).length;
+        name = `${R.name} ${R.kind}`;
+        sub = `mountain range · ${R.isSpur ? "spur" : "main range"} #${R.id}`;
+        L.push(`<div class="insp-sec">THE RANGE</div><table>` +
+          row("grade", `${R.kind} · peak elevation ${R.maxElev}`) +
+          row("form", `${R.pts.length}-node crest${R.isSpur ? " (a spur off a main range)" : ""}`) +
+          row("passes", myPasses.length ? myPasses.map(p => p.name || "an unnamed pass").join(" · ") : "no pass crosses it — a full wall") +
+          `</table>`);
+        if (spurs && !R.isSpur) L.push(`<div class="insp-ev">the realm's ranges throw ${spurs} spur${spurs === 1 ? "" : "s"} between them</div>`);
+      } else if (selFeat.kind === "river") {
+        const RV = model.rivers.find(r => r.id === selFeat.id); if (!RV) { selFeat = null; return false; }
+        const chainLen = model.regions.filter(r => r.riverId === RV.id).length;
+        const into = RV.confluenceInto !== undefined && RV.confluenceInto >= 0 ? (model.rivers.find(r => r.id === RV.confluenceInto) || {}).name : null;
+        const mouthReg = RV.chain && RV.chain.length ? model.regions[RV.chain[RV.chain.length - 1]] : null;
+        name = RV.kind === "River" ? "the " + RV.name : `${RV.name} ${RV.kind}`;
+        sub = `watercourse · ${RV.kind.toLowerCase()} #${RV.id}`;
+        L.push(`<div class="insp-sec">THE WATER</div><table>` +
+          row("grade", `${RV.kind} · ${chainLen} region${chainLen === 1 ? "" : "s"} on its course`) +
+          row("joins", into ? `flows into the ${into}` : "runs its own course to the sea or a lake") +
+          (mouthReg ? row("mouth", `reaches ${mouthReg.onCoast === 1 ? "the coast" : "still water"} at ${townAt(RV.chain[RV.chain.length - 1])}`) : "") +
+          `</table>`);
+      } else if (selFeat.kind === "pass") {
+        const p = model.passes[selFeat.id]; if (!p) { selFeat = null; return false; }
+        const R = model.ridges.find(r => r.id === p.ridgeId);
+        name = p.name || "the pass";
+        sub = `mountain pass${R ? " through the " + R.name + " " + R.kind : ""}`;
+        L.push(`<div class="insp-sec">THE CROSSING</div><table>` +
+          row("through", R ? `${R.name} ${R.kind} (peak ${R.maxElev})` : "a range") +
+          row("worth", "the one gap an army or a caravan takes instead of the wall") +
+          `</table>`);
+      } else {
+        // wild-layer point features: {kind, id} where id indexes the model array
+        const F = FEATURE_META[selFeat.kind];
+        const item = F.get(selFeat.id); if (!item) { selFeat = null; return false; }
+        name = F.name(item); sub = F.sub(item);
+        L.push(`<div class="insp-sec">${F.cap}</div><table>${F.rows(item, row)}</table>`);
+      }
+      card.style.display = "block";
+      document.getElementById("inspName").textContent = name;
+      document.getElementById("inspSub").textContent = sub;
+      document.getElementById("inspBody").innerHTML = L.join("");
+      return true;
+    }
+
+    // per-kind readers for the wild-layer point features (ports, bridges, ruins,
+    // deadholds, towers, shrines, the maelstrom). get() returns the datum; the
+    // rest read its fields for the card.
+    const FEATURE_META = {
+      port: { get: (i) => model.regions.filter(r => r.isPort === 1)[i],
+        name: (r) => harborName((model.settlements.find(s => s.regionId === r.id) || { name: r.placeName }).name), sub: () => "port · where the realm meets the water", cap: "THE HARBOR",
+        rows: (r, row) => row("held by", r.heldBy || "no one") + row("sea reach", `${r.seaAccess}`) },
+      bridge: { get: (i) => model.bridges[i],
+        name: (b) => `${(model.settlements.find(s => s.regionId === model.regions[b.regionIdx].id) || { name: model.regions[b.regionIdx].placeName }).name} Bridge`, sub: (b) => `span over the ${(model.rivers.find(r => r.id === b.riverId) || {}).name || "river"}`, cap: "THE SPAN",
+        rows: (b, row) => row("held by", b.heldBy || "no one") + row("worth", "a gate on the river: whoever holds it holds the crossing") },
+      tower: { get: (i) => model.regions.filter(r => r.hasTower === 1)[i],
+        name: (r) => `${(model.settlements.find(s => s.regionId === r.id) || { name: r.placeName }).name} Tower`, sub: () => "apostate tower · out where no writ runs", cap: "THE TOWER",
+        rows: (r, row) => row("stands where", "governance failed and the conduit never came") },
+      ruin: { get: (i) => model.ruins[i],
+        name: (r) => `the ${r.type} ${r.name}`, sub: (r) => `ruin (${r.type}) · the past on the land`, cap: "THE RUIN",
+        rows: (r, row) => row("peril / yield", `${r.peril} / ${r.yield}`) + row("kind", r.type === "delve" ? "old workings, still worth the digging" : r.type === "tomb" ? "a barrow best left shut" : "a deadhold, poisoned before living memory") },
+      deadhold: { get: (i) => model.regions.filter(r => !r.settled && r.abandonedEpoch >= 0)[i],
+        name: (r) => "the ruins of " + (r.placeName || "a forgotten hold"), sub: (r) => `deadhold · a town that emptied in ${1000 + 25 * r.abandonedEpoch}`, cap: "THE DEADHOLD",
+        rows: (r, row) => row("fell", `${1000 + 25 * r.abandonedEpoch}`) + row("rebirths", r.rebirths ? `came back ${r.rebirths}× before` : "never came back") + row("the ground", "still what it was — only the people are gone") },
+      sanct: { get: (i) => model.sanctionedSites[i],
+        name: (s) => `the shrine ${s.name}`, sub: () => "sanctioned site · holy ground", cap: "THE SHRINE",
+        rows: (s, row) => row("consecrated", "where the Temple planted its standard, often after the harm") },
+      maelstrom: { get: () => model.maelstrom,
+        name: (m) => m.name, sub: () => "the maelstrom · a turning of the sea", cap: "THE MAELSTROM",
+        rows: (m, row) => row("side", `the ${m.side} water`) + row("sailors", "shun it — ports keep clear of its reach") }
+    };
+
     function renderInspector() {
       const card = document.getElementById("inspector");
+      if (selFeat && renderFeatureCard()) return; // U3: a feature is selected
       if (inspectId < 0 || !model || inspectId >= model.regions.length) { card.style.display = "none"; return; }
       card.style.display = "block"; // the stylesheet hides it; inline must override
       const reg = model.regions[inspectId];
       const st = model.settlements.find(s => s.regionId === reg.id);
       const yr = (e) => 1000 + 25 * e;
+      // living world: a dead zone is LAND with no town. It has no settlement, so
+      // the society sections (which read `st`) do not apply — show the ground and
+      // its story instead of crashing on a missing settlement.
+      if (!st) {
+        document.getElementById("inspName").textContent = reg.placeName || "open country";
+        document.getElementById("inspSub").textContent = `dead zone · region #${reg.id} · ${reg.biome}`;
+        const drow = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
+        const D = [`<div class="insp-sec">THE LAND</div><table>` +
+          drow("elevation / rugged", `${reg.elevation} / ${reg.ruggedness}`) +
+          drow("climate", `temp ${reg.temperature} · rain ${reg.rainfall} · fertility ${reg.fertility}`) +
+          drow("livability", `${reg.livability !== undefined ? reg.livability : 0} · the land could hold life, but no one holds it`) +
+          drow("ore", `${reg.E} in the ground${reg.exhausted ? " · DEAD LODE" : ""}`) +
+          `</table>`];
+        D.push(`<div class="insp-sec">THE GHOST COUNTRY</div><div class="insp-ev">` +
+          (reg.abandonedEpoch >= 0 ? `a town stood here and emptied in <b>${yr(reg.abandonedEpoch)}</b>${reg.rebirths ? ` — it had come back ${reg.rebirths}× before` : ""}. The ground is still what it was; only the people are gone.` : `no one ever settled this ground.`) +
+          `</div>`);
+        const dev = model.events.filter(ev => ev.region_id === reg.id);
+        if (dev.length) D.push(`<div class="insp-sec">ITS STORY</div>` +
+          dev.map(ev => `<div class="insp-ev"><b>${yr(ev.epoch)}</b> — ${ev.name && ev.name.startsWith("the ") ? ev.name : ev.type.replace(/_/g, " ")}</div>`).join(""));
+        document.getElementById("inspBody").innerHTML = D.join("");
+        return;
+      }
       document.getElementById("inspName").textContent = st.name + (reg.epithet ? ", " + reg.epithet : "");
       document.getElementById("inspSub").textContent =
         `${reg.tier} · region #${reg.id} · ${reg.biome}${reg.occupied ? " · OCCUPIED" : ""}`;
@@ -7542,6 +7670,7 @@
       document.getElementById("scrubVal").textContent = `${params.ep}/${params.ep}`;
       delete model._seatRun;
       if (inspectId >= model.regions.length) inspectId = -1;
+      selFeat = null; // U3: a new world invalidates any selected feature
       render(model, params);
       renderInspector();
       updateCf();
@@ -7640,24 +7769,66 @@
         recomputeAttributes(); // society only — geology and polygons untouched
         return;
       }
-      // U2: a plain click INSPECTS — the region path carries its id
-      const t = ev.target && ev.target.getAttribute ? ev.target.getAttribute("data-region") : null;
-      if (t !== null && t !== undefined && t !== "") {
-        inspectId = +t;
-      } else { // clicked a glyph or the water: nearest town by map point
-        const svg = ev.currentTarget, rect = svg.getBoundingClientRect();
-        if (!rect.width || !rect.height) return;
-        const wx = ((ev.clientX - rect.left) / rect.width) * W;
-        const wy = W - ((ev.clientY - rect.top) / rect.height) * W;
-        let bi = -1, bd = Infinity;
-        model.regions.forEach((reg, i) => {
-          const d2 = Math.hypot(reg.c[0] - wx, reg.c[1] - wy);
-          if (d2 < bd) { bd = d2; bi = i; }
-        });
-        inspectId = bi;
+      // U3: resolve the click. A direct hit on a region path (it carries its id,
+      // no coords needed) inspects that region. Otherwise use the click point to
+      // hit-test the FEATURES the reader can now inspect (terrain + wild layer),
+      // and only then fall back to the nearest town.
+      const svg = ev.currentTarget, rect = svg.getBoundingClientRect();
+      const haveXY = rect.width && rect.height && typeof ev.clientX === "number";
+      const wx = haveXY ? ((ev.clientX - rect.left) / rect.width) * W : null;
+      const wy = haveXY ? W - ((ev.clientY - rect.top) / rect.height) * W : null;
+      const feat = haveXY ? hitTestFeature(wx, wy) : null;
+      if (feat) {
+        selFeat = feat; inspectId = -1; // a feature card supersedes the region
+      } else {
+        selFeat = null;
+        // U2: the region path carries its id; else nearest town by map point
+        const t = ev.target && ev.target.getAttribute ? ev.target.getAttribute("data-region") : null;
+        if (t !== null && t !== undefined && t !== "") {
+          inspectId = +t;
+        } else if (haveXY) {
+          let bi = -1, bd = Infinity;
+          model.regions.forEach((reg, i) => {
+            const d2 = Math.hypot(reg.c[0] - wx, reg.c[1] - wy);
+            if (d2 < bd) { bd = d2; bi = i; }
+          });
+          inspectId = bi;
+        } else return; // no target and no usable coords: nothing to inspect
       }
       render(model, params);
       renderInspector();
+    }
+
+    // U3: find the feature nearest a click, within a pixel-ish threshold in world
+    // units. POINT glyphs (passes, ports, ruins, ...) win over LINE features
+    // (ridges, rivers) so clicking a pass on a ridge selects the pass; both win
+    // over the region beneath. Returns {kind, id} or null.
+    function hitTestFeature(wx, wy) {
+      if (!model) return null;
+      const atlas = mapMode === "atlas", poi = atlas || showPoi; // only what is DRAWN is clickable
+      const PT = 20, LN = 14; // grab radius: points are forgiving, lines tighter
+      const d2 = (x, y) => Math.hypot(x - wx, y - wy);
+      let best = null, bestD = Infinity;
+      const tryPt = (x, y, kind, id, r) => { const d = d2(x, y); if (d < r && d < bestD) { bestD = d; best = { kind, id }; } };
+      // point features (checked first, ties broken by proximity). The wild layer
+      // draws under `poi`; passes/peaks are atlas ink; ports draw always.
+      model.regions.filter(r => r.isPort === 1).forEach((r, i) => tryPt(r.shorePt[0], r.shorePt[1], "port", i, PT));
+      if (poi) {
+        model.bridges.forEach((b, i) => tryPt(b.x, b.y, "bridge", i, PT));
+        model.regions.filter(r => r.hasTower === 1).forEach((r, i) => tryPt(r.towerPt[0], r.towerPt[1], "tower", i, PT));
+        model.ruins.forEach((r, i) => { const reg = model.regions[r.regionIdx]; tryPt(reg.wildPt[0], reg.wildPt[1], "ruin", i, PT); });
+        model.regions.filter(r => !r.settled && r.abandonedEpoch >= 0).forEach((r, i) => tryPt(r.c[0], r.c[1], "deadhold", i, PT));
+        model.sanctionedSites.forEach((s, i) => tryPt(s.x, s.y, "sanct", i, PT));
+        if (model.maelstrom) tryPt(model.maelstrom.x, model.maelstrom.y, "maelstrom", 0, PT);
+      }
+      if (atlas) model.passes.forEach((p, i) => { const R = model.ridges.find(r => r.id === p.ridgeId); if (R && R.maxElev < 60) return; tryPt(p.x, p.y, "pass", i, PT); });
+      if (best) return best; // a point glyph was hit — it wins over lines
+      // line features: nearest point on the polyline. Ridges are atlas ink;
+      // rivers draw in both genres.
+      const nearPoly = (pts) => { let m = Infinity; for (const p of pts) { const d = d2(p[0], p[1]); if (d < m) m = d; } return m; };
+      if (atlas) model.ridges.forEach(R => { const d = nearPoly(R.pts); if (d < LN && d < bestD) { bestD = d; best = { kind: "ridge", id: R.id }; } });
+      model.rivers.forEach(RV => { const d = nearPoly(RV.trace || []); if (d < LN && d < bestD) { bestD = d; best = { kind: "river", id: RV.id }; } });
+      return best;
     }
 
     function toast(msg) {
@@ -7738,7 +7909,7 @@
         pinArm = !pinArm;
         $("pinCap").classList.toggle("armed", pinArm);
       });
-      $("inspClose").addEventListener("click", () => { inspectId = -1; renderInspector(); if (model) render(model, params); });
+      $("inspClose").addEventListener("click", () => { inspectId = -1; selFeat = null; renderInspector(); if (model) render(model, params); });
       $("cfBtnGrid").addEventListener("click", () => {
         if (cfOn && cfMode === "gt") { cfOn = false; } else { cfOn = true; cfMode = "gt"; }
         updateCf();

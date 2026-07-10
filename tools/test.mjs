@@ -238,13 +238,17 @@ function validate(gj, tag) {
     const compSum = Math.round((p.burden_env_per_1k + p.burden_water_per_1k + p.burden_unmet_per_1k) * 10) / 10;
     if (Math.abs(p.disease_burden_per_1k - compSum) > 0.05)
       return fail(`${tag}: burden ${p.disease_burden_per_1k} != component sum ${compSum}`);
-    // Phase 6: bloc classification must be the exact argmax of the exported reach fields
-    for (const key of ["temple_reach", "magnate_reach"]) {
+    // Phase 6: bloc classification must be the exact argmax of the exported reach
+    // fields. #93: crown's pull is now crown_reach (centrality + the Crown's
+    // treasury fortune), not raw centrality — the three reaches fold in the
+    // faction's fortune so blocs re-contest as the balance shifts, and the argmax
+    // stays recomputable from the exported columns.
+    for (const key of ["temple_reach", "magnate_reach", "crown_reach"]) {
       const v = p[key];
       if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad ${key} ${v}`);
     }
     const TOL = 12, FLOOR = 25;
-    const fields = [["crown", p.centrality_to_seat], ["temple", p.temple_reach], ["magnate", p.magnate_reach]].sort((a, b) => b[1] - a[1]);
+    const fields = [["crown", p.crown_reach], ["temple", p.temple_reach], ["magnate", p.magnate_reach]].sort((a, b) => b[1] - a[1]);
     const expectBloc = p.occupied === 1 ? "dominion"
       : fields[0][1] < FLOOR ? "ungoverned" : (fields[0][1] - fields[1][1] < TOL ? "contested" : fields[0][0]);
     if (p.dominant_bloc !== expectBloc) return fail(`${tag}: bloc ${p.dominant_bloc} != argmax ${expectBloc}`);

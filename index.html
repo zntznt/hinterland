@@ -3707,14 +3707,29 @@
       // Temple reach follows the LIVE shrines; magnate reach the SURVIVING
       // refineries.
       regions.forEach(reg => { reg.blocChanges = 0; reg.bloc = undefined; });
+      // #93: declared before computeBlocs so the per-epoch re-contest can read a
+      // faction's fortune. Starts at 0 (founding politics unchanged); the F2
+      // toll-war loop fills it each epoch.
+      const treasuries = { crown: 0, temple: 0, magnate: 0 };
       const computeBlocs = () => {
         const templeCdNow = costDistances(regions, sanctIdxs).dist;
         const refNow = regions.map((_, i) => i).filter(i => regions[i].refining > 0);
         const magCdNow = costDistances(regions, refNow).dist;
         regions.forEach((reg, i) => {
-          reg.templeReach = Math.round(100 * Math.exp(-(isFinite(templeCdNow[i]) ? templeCdNow[i] : 1e9) / 300));
-          reg.magnateReach = Math.round(100 * Math.exp(-(isFinite(magCdNow[i]) ? magCdNow[i] : 1e9) / 300));
-          const fields = [["crown", reg.centrality], ["temple", reg.templeReach], ["magnate", reg.magnateReach]];
+          // #93: a faction's REACH follows its FORTUNE, not only distance. The
+          // base is geography (temple/refinery cost-distance, seat centrality),
+          // static — so blocs almost never re-contested. Fold the faction's
+          // treasury (its winnings from the toll wars) INTO the reach itself, so
+          // a winning faction's grip extends and contested ground changes hands
+          // as the balance of power shifts. Bounded + 0 at founding (treasuries
+          // start at 0, so the founding reach and politics are unchanged). These
+          // ARE the exported reach columns, so dominant_bloc stays the exact
+          // argmax of what the file carries — the recomputability contract holds.
+          const boost = (F) => Math.min(treasuries[F], 40) * 0.25;
+          reg.templeReach = clamp(Math.round(100 * Math.exp(-(isFinite(templeCdNow[i]) ? templeCdNow[i] : 1e9) / 300) + boost("temple")), 0, 100);
+          reg.magnateReach = clamp(Math.round(100 * Math.exp(-(isFinite(magCdNow[i]) ? magCdNow[i] : 1e9) / 300) + boost("magnate")), 0, 100);
+          reg.crownReach = clamp(Math.round(reg.centrality + boost("crown")), 0, 100); // the seat's pull = centrality + the Crown's fortune
+          const fields = [["crown", reg.crownReach], ["temple", reg.templeReach], ["magnate", reg.magnateReach]];
           fields.sort((a, b) => b[1] - a[1]); // stable: crown wins exact ties deterministically
           const b = fields[0][1] < BLOC_FLOOR ? "ungoverned"
             : (fields[0][1] - fields[1][1] < BLOC_TOL ? "contested" : fields[0][0]);
@@ -3817,8 +3832,7 @@
       const towerBurnT = 42 + rF() * 15;   // the bar past which the strong burn the strange
       const raiseCoin = rF() < 0.6;
       const raiseEpoch = 3 + Math.floor(rF() * evWindow(6));
-      // F2: treasuries, tensions, and the war bar
-      const treasuries = { crown: 0, temple: 0, magnate: 0 };
+      // F2: tensions and the war bar (treasuries declared above for #93)
       const pairKey = (a, b) => [a, b].sort().join("_");
       const tensions = { crown_magnate: 0, crown_temple: 0, magnate_temple: 0 };
       const T_WAR = 55 + rF() * 20;
@@ -4221,6 +4235,11 @@
             }
           });
           for (const k of Object.keys(tensions)) tensions[k] *= 0.92;
+          // #93: re-contest the map each epoch now that the treasuries have moved
+          // — a faction that won the year's gates extends its pull, so contested
+          // ground changes hands as the balance of power shifts (blocs were
+          // near-frozen: only 5% of cells ever flipped). blocChanges counts it.
+          computeBlocs();
           // F2: war becomes policy — a pair past the bar spends its grievance
           if (warIdx === -1) {
             let hot = null;
@@ -5251,6 +5270,7 @@
             service_gap_idx: reg.serviceGap,
             temple_reach: reg.templeReach,
             magnate_reach: reg.magnateReach,
+            crown_reach: (reg.crownReach !== undefined ? reg.crownReach : reg.centrality), // #93: the seat's pull incl. the Crown's fortune; bloc argmax uses this, not raw centrality
             dominant_bloc: reg.occupied ? "dominion" : reg.bloc,
             market_access: reg.marketAccess,
             pilgrim_flux: reg.pilgrimFlux,

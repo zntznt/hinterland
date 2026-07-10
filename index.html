@@ -989,12 +989,12 @@
         <div class="sec-title">TIME</div>
         <div class="row">
           <label>Epochs <span class="val" id="epVal"></span></label>
-          <input type="range" id="ep" min="0" max="12" step="1" />
+          <input type="range" id="ep" min="0" max="24" step="1" />
           <div class="hint">Run the world forward: ore depletes, wealth compounds, people migrate, the grid chases the winners, the seat decrees, towns rise. 0 = the founding snapshot.</div>
         </div>
         <div class="row" id="scrubRow" style="display:none">
           <label>View epoch <span class="val" id="scrubVal"></span></label>
-          <input type="range" id="scrub" min="0" max="12" step="1" />
+          <input type="range" id="scrub" min="0" max="24" step="1" />
           <div class="hint">Scrub history &mdash; 25 years per step.</div>
         </div>
       </div>
@@ -7597,7 +7597,7 @@
         db: w("db", DEFAULTS.db),
         iq: w("iq", DEFAULTS.iq),
         hb: p.get("hb") === "0" ? 0 : 1,
-        ep: clamp(Math.round(num("ep", DEFAULTS.ep)), 0, 12),
+        ep: clamp(Math.round(num("ep", DEFAULTS.ep)), 0, 24),
         capital: null
       };
       if (p.has("cx") && p.has("cy") && isFinite(+p.get("cx")) && isFinite(+p.get("cy")))

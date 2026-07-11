@@ -4969,6 +4969,19 @@
           has.includes("guildhall") ? "works" :
           has.includes("market") ? "market" :
           has.includes("tavern") ? "hamlet" : "outpost";
+        // #91 step 2: the INSTITUTIONAL CHANNEL into the metrics. A counting
+        // house concentrates ownership — finance banks the region's coin to the
+        // owners' row, the sharpest structural driver of inequality. Bump
+        // elite_share where one stands (bounded), then re-derive class_gap from
+        // the new share so the exported ledger stays internally exact (the suite
+        // recomputes class_gap from elite_share/elite_pop_pct, and can verify the
+        // bump traces to the exported `structures` column: a counting_house town
+        // carries +6 to its owners' row). Other structure->metric wirings follow.
+        if (has.includes("counting_house")) {
+          reg.eliteShare = clamp(Math.round(reg.eliteShare + 6), 8, 92);
+          reg.classGap = Math.round(
+            ((reg.eliteShare / reg.elitePopPct) / ((100 - reg.eliteShare) / (100 - reg.elitePopPct))) * 10) / 10;
+        }
       });
 
       // E3/E6: names walked from the region's own substream, register AND
@@ -5694,7 +5707,12 @@
           // reads the same zeroed wealth/elite_share the main export carries.
           const dead = e === lastFrame && !reg.settled;
           const wealthE = dead ? 0 : S.wealth[i];
-          const eliteE = dead ? 0 : S.eliteShare[i];
+          // #91: the final frame IS the main map, so a settled cell's elite_share
+          // there must carry the counting-house boost the main export applied
+          // AFTER the loop (the snapshot was taken mid-loop, pre-structure). Use
+          // the final reg.eliteShare on the last frame; intermediate frames keep
+          // the snapshot (the town had no counting-house boost yet those years).
+          const eliteE = dead ? 0 : (e === lastFrame && reg.settled ? Math.round(reg.eliteShare) : S.eliteShare[i]);
           features.push({
             type: "Feature",
             properties: {

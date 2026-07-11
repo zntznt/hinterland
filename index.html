@@ -6237,7 +6237,68 @@
       };
       const moran = moranOf(R.map(r => r.wealth));
       const moranBlight = moranOf(R.map(r => r.blight));
+
+      // #86: THE AGES. The realm names its own eras from its socioeconomic state,
+      // the way a legend calls a stretch of years an Age of Heroes. Read each
+      // epoch's condition off the snapshots (recomputable: the same wealth/pop/
+      // toll/grid the series export carries), classify it, then coalesce runs of
+      // the same character into named ages. So the timeline becomes a
+      // PERIODIZATION of inequality — you can point and say the gap opened during
+      // the Age of the Gates. Every boundary traces to the exported epoch series.
+      const ages = (() => {
+        const snaps = model.epochSnaps || [];
+        if (snaps.length < 2) return []; // a static world (ep=0) has no ages
+        const settledAt = (S) => S.pop.map((p, i) => ({ p, w: S.wealth[i], toll: S.toll[i], grid: S.onGrid[i] })).filter(x => x.p > 0);
+        const per = snaps.map((S, e) => {
+          const live = settledAt(S);
+          const gini = giniOf(live.map(x => x.w));
+          const deadFrac = S.pop.length ? (S.pop.filter(p => p === 0).length / S.pop.length) : 0;
+          const tollTake = S.toll.reduce((a, b) => a + b, 0);
+          const gridFrac = S.onGrid.length ? (S.onGrid.filter(Boolean).length / S.onGrid.length) : 0;
+          return { e, gini, deadFrac, tollTake, gridFrac };
+        });
+        // per-epoch CHARACTER from how the condition changed since the last epoch
+        const maxToll = Math.max(...per.map(p => p.tollTake), 1);
+        const label = (i) => {
+          const p = per[i], q = i > 0 ? per[i - 1] : p;
+          if (p.deadFrac - q.deadFrac > 0.04) return "desolation";       // dead zones spreading
+          if (q.deadFrac - p.deadFrac > 0.03) return "restoration";      // the ghost country coming back
+          if (p.tollTake >= 0.75 * maxToll && p.tollTake > 0) return "gates"; // the chokepoint economy at its height
+          if (p.gini - q.gini > 0.015 || p.gridFrac - q.gridFrac > 0.02) return "accumulation"; // wealth compounding, grid reaching
+          return "quiet";                                                // the years passed as the founding arranged them
+        };
+        const NAME = { accumulation: "the Age of Accumulation", gates: "the Age of the Gates", desolation: "the Long Desolation", restoration: "the Restoration", quiet: "the Quiet Years" };
+        // per-epoch character, then SMOOTH it: a single blip year is not an age.
+        // Absorb any epoch whose character differs from BOTH neighbours into the
+        // run around it, so an age is a genuine stretch, not a flicker.
+        const raw = per.map((_, i) => label(i));
+        const sm = raw.slice();
+        for (let i = 1; i < sm.length - 1; i++)
+          if (raw[i] !== raw[i - 1] && raw[i] !== raw[i + 1] && raw[i - 1] === raw[i + 1]) sm[i] = raw[i - 1];
+        // coalesce consecutive same-character epochs into ages
+        let out = [];
+        for (let i = 0; i < sm.length; i++) {
+          if (out.length && out[out.length - 1].character === sm[i]) out[out.length - 1].to_epoch = i;
+          else out.push({ character: sm[i], name: NAME[sm[i]], from_epoch: i, to_epoch: i });
+        }
+        // merge any age still only ONE epoch long into its longer neighbour, so
+        // the periodization is a handful of real eras, not a year-by-year list
+        if (out.length > 1) {
+          const merged = [out[0]];
+          for (let i = 1; i < out.length; i++) {
+            const prev = merged[merged.length - 1], cur = out[i];
+            const curLen = cur.to_epoch - cur.from_epoch + 1;
+            if (curLen === 1 && i < out.length) { prev.to_epoch = cur.to_epoch; } // absorb the singleton into what came before
+            else merged.push(cur);
+          }
+          out = merged;
+        }
+        // stamp each age's measured gini span so the periodization is auditable
+        return out.map(a => ({ ...a, gini_start: per[a.from_epoch].gini, gini_end: per[a.to_epoch].gini }));
+      })();
+
       return {
+        ages,
         zipf,
         sky,
         sovereignty,
@@ -6424,6 +6485,20 @@
         L.push(``);
         L.push(`## The Years`);
         L.push(``);
+        // #86: the realm's own ages open The Years — a periodization the reader
+        // can point at ("the gap opened in the Age of the Gates").
+        {
+          const FA = computeFindings(model).ages;
+          if (FA && FA.length) {
+            const span = (a) => `${year(a.from_epoch)}–${year(a.to_epoch)}`;
+            const spread = (a) => a.gini_end > a.gini_start + 0.02 ? "the gap widened"
+              : a.gini_start > a.gini_end + 0.02 ? "the gap narrowed" : "the gap held";
+            const bits = FA.map(a => `**${a.name}** (${span(a)}), when ${spread(a)}`);
+            L.push(`The chronicle divides these years into ages, named for what the realm was living through: ${list(bits)}. ` +
+              `The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.`);
+            L.push(``);
+          }
+        }
         if (model.events.length === 0) {
           L.push(`The chronicle records no upheavals: the years passed as the founding had arranged them, ` +
             `which is not the same as saying they passed kindly. The grid crawled where the money went, ` +

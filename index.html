@@ -747,35 +747,77 @@
     font:700 11px/1 var(--sans); letter-spacing:.2em; text-transform:uppercase; color:var(--muted);
   }
 
-  /* ---- masthead ---- */
-  .masthead { background:var(--dark); color:#f0ead9; border-bottom:3px solid var(--gold); }
-  .masthead-inner { max-width:1340px; margin:0 auto; padding:22px 24px 18px; display:flex; gap:28px; align-items:flex-end; flex-wrap:wrap; }
-  .brand { flex:1 1 480px; min-width:300px; }
-  .eyebrow { color:var(--gold); margin-bottom:8px; }
-  h1 { font:700 clamp(22px, 3.2vw, 32px)/1.15 var(--serif); margin:0 0 8px; letter-spacing:-0.01em; }
-  p.sub { margin:0; color:#c9c0ac; max-width:76ch; font-size:13.5px; }
-  p.sub b { color:#f0ead9; }
-  .actions { display:flex; flex-direction:column; gap:7px; min-width:250px; }
+  /* ---- masthead: thin and sticky — the plate owns the viewport ---- */
+  :root { --mast-h: 52px; }
+  .masthead { position:sticky; top:0; z-index:50; height:var(--mast-h); background:var(--dark); color:#f0ead9; border-bottom:2px solid var(--gold); }
+  .masthead-inner { height:100%; padding:0 18px; display:flex; gap:18px; align-items:center; justify-content:space-between; }
+  .brand-line { display:flex; align-items:baseline; gap:14px; min-width:0; }
+  .eyebrow { color:var(--gold); }
+  .brand-line h1 { font:700 17px/1 var(--serif); margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mast-tag { color:#8d8471; display:none; }
+  @media (min-width:960px) { .mast-tag { display:inline; } }
+  .mast-actions { display:flex; align-items:center; gap:14px; flex:none; }
+  .mast-link { color:var(--gold); font:600 12px var(--sans); letter-spacing:.06em; text-decoration:none; white-space:nowrap; }
+  .mast-link:hover { text-decoration:underline; }
 
-  /* ---- findings band ---- */
-  #findingsBox { background:var(--dark2); color:#f4efe2; border-bottom:1px solid rgba(217,185,108,.35); }
-  .findings-inner { max-width:1340px; margin:0 auto; padding:16px 24px 18px; }
-  .findings-title { color:var(--gold); margin-bottom:8px; }
-  #findingsText { font:15px/1.65 var(--serif); max-width:110ch; }
-  #findingsText b { color:var(--gold); font-weight:700; }
+  /* ---- the plate: a viewport-height map, letterboxed square stage ----
+     The letterbox is the FRAME, never the SVG: click-to-region math needs the
+     SVG's CSS box square. The gutters are the mat the drawers slide over. */
+  #plate { position:relative; height:calc(100dvh - var(--mast-h)); display:flex; align-items:center; justify-content:center;
+    padding:14px 48px; background:var(--tex-paper), var(--paper); transition:padding .2s ease; }
+  /* an open drawer claims its gutter so it never covers the square */
+  body.controls-open #plate { padding-left:356px; }
+  body.inspect-open #plate { padding-right:356px; }
+  @media (prefers-reduced-motion:reduce) { #plate { transition:none; } }
+  #plate::after { content:""; position:absolute; inset:0; pointer-events:none; background:var(--tex-vignette); }
+  .plate-square { position:relative; width:min(100%, calc(100dvh - var(--mast-h) - 28px)); aspect-ratio:1/1;
+    border:var(--rule); outline:3px double var(--ink-neatline); outline-offset:3px; background:#f6f2e8; z-index:1; }
+  #plateHud { position:absolute; inset:0; pointer-events:none; z-index:var(--z-hud); font:11px var(--sans); }
+  .hud { position:absolute; display:flex; align-items:center; gap:10px; pointer-events:auto;
+    background:rgba(251,248,241,.9); border:var(--rule); padding:5px 9px; }
+  .hud-tl { top:10px; left:10px; }
+  .hud-tr { top:10px; right:10px; }
+  .hud-br { bottom:10px; right:10px; flex-direction:column; align-items:flex-end; gap:4px; max-width:220px; }
+  .hud-br #legendLabel { text-align:right; }
+  .hud-bc { bottom:10px; left:50%; transform:translateX(-50%); width:min(280px,34%); }
+  /* the scale bar floats bare on the map so its 20% width stays an honest 20 leagues */
+  .hud-bl { bottom:10px; left:10px; width:20%; background:none; border:none; padding:0; flex-direction:column; align-items:flex-start; gap:2px; }
+  #scaleBar { width:100%; }
+  .scale-rule { width:100%; height:6px; border-bottom:2px solid var(--ink-ridge); position:relative; }
+  .scale-rule::before, .scale-rule::after { content:""; position:absolute; bottom:0; width:2px; height:6px; background:var(--ink-ridge); }
+  .scale-rule::before { left:0; } .scale-rule::after { right:0; }
+  .scale-cap { font:10px var(--sans); color:var(--ink); letter-spacing:.08em; text-shadow:0 0 3px #f6f2e8, 0 0 3px #f6f2e8; }
+  #scrubRow { display:flex; flex-direction:column; width:100%; }
+  #scrubRow label { font-weight:600; display:flex; justify-content:space-between; gap:10px; }
+  #scrubRow input[type=range] { margin:4px 0 0; }
+  .edge-tab { position:absolute; top:50%; transform:translateY(-50%); z-index:calc(var(--z-drawer) - 2);
+    writing-mode:vertical-rl; letter-spacing:.22em; font:700 11px var(--sans); color:var(--ink);
+    padding:16px 7px; background:var(--card); border:1px solid var(--ink-neatline); box-shadow:var(--shadow); }
+  .edge-tab:hover { background:#f1ecdf; }
+  .edge-left { left:0; border-left:none; }
+  .edge-right { right:0; border-right:none; }
 
-  /* ---- layout ---- */
-  .layout { max-width:1340px; margin:20px auto 0; padding:0 24px; display:grid;
-    grid-template-columns: 280px minmax(0,1fr) 260px; gap:18px; align-items:start; }
-  @media (max-width:1080px) { .layout { grid-template-columns: 280px minmax(0,1fr); } .side { grid-column:1 / -1; } }
-  @media (max-width:760px)  { .layout { grid-template-columns: 1fr; } .controls { position:static; } }
+  /* ---- drawers: overlay the mat, never push the plate ---- */
+  .drawer { position:fixed; top:var(--mast-h); bottom:0; width:min(340px,92vw); overflow-y:auto;
+    background:var(--tex-paper), var(--card); box-shadow:var(--shadow); z-index:var(--z-drawer);
+    transition:transform .2s ease; border-top:3px double var(--ink-neatline); }
+  .drawer-left { left:0; border-right:var(--rule); transform:translateX(-103%); }
+  .drawer-right { right:0; border-left:var(--rule); transform:translateX(103%); }
+  .drawer.open { transform:none; }
+  /* the drawers are the PLATE's furniture: when the reader scrolls into the
+     report the plate leaves, and its drawers retreat with it (state kept) */
+  body.plate-away .drawer-left { transform:translateX(-103%); }
+  body.plate-away .drawer-right { transform:translateX(103%); }
+  @media (prefers-reduced-motion:reduce) { .drawer { transition:none; } }
+  .drawer::-webkit-scrollbar { width:8px; } .drawer::-webkit-scrollbar-thumb { background:var(--line); border-radius:4px; }
+  .drawer-head { display:flex; justify-content:space-between; align-items:center; padding:10px 14px 8px; border-bottom:var(--rule); }
+  .drawer-title { font:700 11px/1 var(--sans); letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
+  .drawer-close { border:none; background:none; font:700 14px var(--sans); color:var(--muted); cursor:pointer; padding:2px 6px; }
+  .drawer-note { padding:12px 14px; color:var(--muted); font-size:12px; }
+  #drawerInspect .sidecard { border:none; }
 
-  /* ---- control rail ---- */
-  /* figure grammar: chrome surfaces are plates — square, hairline-ruled, a double
-     rule at the head, grained paper; --shadow is reserved for things that float */
-  .controls { position:sticky; top:14px; max-height:calc(100vh - 28px); overflow-y:auto;
-    background:var(--tex-paper), var(--card); border:var(--rule); border-top:3px double var(--ink-neatline); padding:4px 14px 14px; font-size:13px; }
-  .controls::-webkit-scrollbar { width:8px; } .controls::-webkit-scrollbar-thumb { background:var(--line); border-radius:4px; }
+  /* ---- control stack (lives inside the compose drawer) ---- */
+  .controls { padding:0 14px 14px; font-size:13px; }
   .sec { border-top:1px solid var(--line); padding-top:10px; margin-top:12px; }
   .sec:first-child { border-top:none; margin-top:8px; }
   .sec-title { margin-bottom:10px; }
@@ -800,21 +842,19 @@
   button.ghost:hover { background:#3a342a; }
   button.wide { width:100%; }
 
-  /* ---- map column ---- */
-  .mapcol { min-width:0; }
-  .mapcard { background:var(--tex-paper), var(--card); border:var(--rule); border-top:3px double var(--ink-neatline); overflow:hidden; }
-  .mapbar { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:9px 14px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
-  #legendLabel { font:600 12px var(--sans); color:var(--muted); }
+  /* ---- plate furniture: legend, stage, the lens dock ---- */
+  #legendLabel { font:600 12px var(--sans); color:var(--muted); max-width:260px; }
   .legend-wrap .bar { height:10px; width:170px; border:var(--rule); border-radius:0; }
   .legend-wrap .bar.cats { height:auto; width:auto; border:none; border-radius:0; }
   .legend-wrap.no-ends .ends { display:none; }
   .legend-wrap { width:170px; }
   .legend-wrap .ends { display:flex; justify-content:space-between; color:var(--muted); font-size:10.5px; margin-top:2px; }
-  #stage { background:#f6f2e8; }
+  #stage { position:absolute; inset:0; }
   #stage svg { display:block; width:100%; height:auto; cursor:crosshair; }
   /* map labels take the display serif, not the browser default */
   #stage svg text { font-family: var(--serif); }
-  .viewgrid { margin-top:14px; background:var(--tex-paper), var(--card); border:var(--rule); border-top:3px double var(--ink-neatline); padding:12px 14px 10px; }
+  #lensDock { padding:0 16px; }
+  .viewgrid { margin:16px auto; max-width:1100px; background:var(--tex-paper), var(--card); border:var(--rule); border-top:3px double var(--ink-neatline); padding:12px 14px 10px; }
   .viewgrid .sec-title { margin-bottom:9px; }
   /* ---- lenses + legends + inspector (U2) ---- */
   /* every overlay is click-transparent: clicks land on the region below */
@@ -850,11 +890,12 @@
   #inspector .insp-ev { font:12px var(--sans); margin:2px 0; }
   #inspClose { border:none; background:none; font:700 14px var(--sans); color:var(--muted); cursor:pointer; }
   /* ---- the counterfactual (C1) ---- */
-  #cfBtn { margin-top:10px; width:100%; padding:8px 10px; font:600 13px var(--sans);
+  #cfBtn, #cfBtnGrid, #cfBtnBoth { margin-top:10px; width:100%; padding:8px 10px; font:600 13px var(--sans);
     color:var(--ink); background:var(--card); border:1px solid var(--ink-neatline); border-radius:0;
     cursor:pointer; }
-  #cfBtn:hover { border-color:var(--gold); }
-  #cfBox { max-width:1400px; margin:18px auto 0; padding:0 20px; }
+  #cfBtnGrid, #cfBtnBoth { margin-top:6px; }
+  #cfBtn:hover, #cfBtnGrid:hover, #cfBtnBoth:hover { border-color:var(--gold); }
+  #cfBox { max-width:1200px; margin:18px auto 0; padding:0 20px; scroll-margin-top:calc(var(--mast-h) + 10px); }
   .cf-inner { background:var(--tex-paper), var(--card); border:var(--rule); border-top:3px double var(--ink-neatline);
     padding:16px 18px; }
   .cf-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px; }
@@ -873,65 +914,102 @@
   label.radio input { accent-color:var(--gold); margin:0; flex:none; }
   .glyphkey { color:#93887a; font-size:11.5px; margin-top:9px; line-height:1.5; }
 
-  /* ---- side rail ---- */
-  .side { font-size:12.5px; }
-  .sidecard { background:var(--tex-paper), var(--card); border:var(--rule); border-top:3px double var(--ink-neatline); padding:12px 14px; }
-  .side table { border-collapse:collapse; width:100%; }
-  .side td { padding:4px 6px 4px 0; border-bottom:1px solid #e7e0d0; vertical-align:top; }
-  .side tr:last-child td { border-bottom:none; }
-  .side td:first-child { color:var(--muted); white-space:nowrap; padding-right:10px; }
+  /* ---- the report: standfirst, chronicle body, sidebar, colophon ---- */
+  #report { padding-bottom:34px; }
+  #findingsBox { border-top:3px double var(--ink-neatline); }
+  .findings-inner { max-width:920px; margin:0 auto; padding:26px 24px 6px; }
+  .findings-title { color:var(--oxblood); margin-bottom:14px; }
+  #findingsText { font:clamp(15px,1.5vw,17.5px)/1.65 var(--serif); }
+  #findingsText b { color:var(--oxblood); font-weight:700; }
+  .manifesto { color:var(--muted); font-size:13px; line-height:1.55; max-width:76ch; margin:18px 0 0; padding-top:12px; border-top:1px dashed var(--line); }
+  .manifesto b { color:var(--ink); }
+  .sidecard { background:var(--tex-paper), var(--card); border:var(--rule); border-top:3px double var(--ink-neatline); padding:12px 14px; font-size:12.5px; }
+  .sidecard table { border-collapse:collapse; width:100%; }
+  .sidecard td { padding:4px 6px 4px 0; border-bottom:1px solid #e7e0d0; vertical-align:top; }
+  .sidecard tr:last-child td { border-bottom:none; }
+  .sidecard td:first-child { color:var(--muted); white-space:nowrap; padding-right:10px; }
+  .report-grid { max-width:1200px; margin:22px auto 0; padding:0 24px; display:grid;
+    grid-template-columns:minmax(0,1fr) 300px; gap:22px; align-items:start; }
+  #chronBox .sec-title { margin-bottom:10px; }
+  #chronText { font:14.5px/1.7 var(--serif); max-width:74ch; padding:20px 34px 28px; background:var(--tex-paper), var(--card);
+    border:var(--rule); border-top:3px double var(--ink-neatline); }
+  #colophon { max-width:1200px; margin:28px auto 0; padding:16px 24px 0; border-top:1px solid var(--line); color:var(--muted); font-size:12px; }
+  .colophon-btns { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 14px; }
+  .colophon-links { display:flex; gap:16px; flex-wrap:wrap; align-items:baseline; }
+  #colophon a { color:var(--blue); text-decoration:none; } #colophon a:hover { text-decoration:underline; }
 
-  /* ---- chronicle ---- */
-  #chronBox { max-width:900px; margin:26px auto 20px; padding:0 24px; }
-  #chronBox summary { cursor:pointer; font:700 15px var(--serif); padding:12px 16px; background:var(--tex-paper), var(--card);
-    border:var(--rule); border-top:3px double var(--ink-neatline); list-style-position:inside; }
-  #chronBox summary:hover { background:var(--tex-paper), #f1ecdf; }
-  #chronBox[open] summary { border-bottom:none; }
-  #chronText { font:14.5px/1.7 var(--serif); padding:20px 34px 28px; background:var(--tex-paper), var(--card);
-    border:var(--rule); border-top:1px dashed var(--line); }
-
-  footer { max-width:1340px; margin:8px auto 34px; padding:14px 24px 0; border-top:1px solid var(--line);
-    color:var(--muted); font-size:12px; display:flex; gap:18px; flex-wrap:wrap; }
-  footer a { color:var(--blue); text-decoration:none; } footer a:hover { text-decoration:underline; }
+  /* ---- small screens (full responsive pass is scheduled work) ---- */
+  @media (max-width:900px) { .report-grid { grid-template-columns:1fr; } }
+  @media (max-width:760px) {
+    #plate { height:auto; padding:10px; }
+    .plate-square { width:min(100%, calc(100dvh - var(--mast-h) - 20px)); margin:0 auto; }
+    .hud-tr { display:none; }
+    .edge-tab { padding:12px 6px; }
+    .brand-line h1 { font-size:15px; }
+  }
   .err { color:var(--oxblood); font-weight:600; }
   code { background:#e6dfd0; padding:1px 5px; border-radius:4px; font-size:12px; }
 </style>
 </head>
 <body>
-  <header class="masthead">
+  <header class="masthead" id="masthead">
     <div class="masthead-inner">
-      <div class="brand">
-        <div class="eyebrow">HINTERLAND &middot; A PROCEDURAL ATLAS OF WHO PAYS</div>
+      <div class="brand-line">
+        <span class="eyebrow">HINTERLAND</span>
         <h1>A generator of unequal worlds</h1>
-        <p class="sub">
-          Every map this makes is an <b>argument about inequality</b>: who gets served and who sits in
-          darkness, who breathes the poison and who ships it downstream, who holds the gates and who pays
-          the toll — none of it painted, all of it <b>emergent</b> from blind geology, a cost-gated grid,
-          and factions that seize, tax, and go to war. The fantasy is the carrier; the attribute table is
-          the argument. Seeded, reproducible, QGIS-ready.
-        </p>
+        <span class="eyebrow mast-tag">A PROCEDURAL ATLAS OF WHO PAYS</span>
       </div>
-      <div class="actions">
-        <button id="download" class="primary wide">&#8681; Download GeoJSON</button>
-        <button id="dlSeries" class="ghost wide">&#8681; Epoch series (QGIS temporal)</button>
-        <button id="dlChron" class="ghost wide">&#8681; The chronicle (.md)</button>
-        <button id="dlTables" class="ghost wide">&#8681; Download tables (CSV)</button>
-        <button id="share" class="ghost wide">&#128279; Copy share link</button>
-      </div>
+      <nav class="mast-actions">
+        <button id="share" class="ghost">&#128279; Copy share link</button>
+        <a class="mast-link" href="#report">The report &#8595;</a>
+      </nav>
     </div>
   </header>
 
-  <!-- The findings: the same world, argued -->
-  <section id="findingsBox">
-    <div class="findings-inner">
-      <div class="findings-title">WHAT THIS WORLD SHOWS &mdash; COMPUTED FROM ITS OWN EXPORTED COLUMNS</div>
-      <div id="findingsText"></div>
+  <main>
+  <!-- The plate: the map fills the view; furniture overlays it; the drawers
+       slide over the letterbox mat. #stage's CSS box MUST stay square — the
+       click-to-region math is a linear map of getBoundingClientRect. -->
+  <section id="plate">
+    <button id="tabControls" class="edge-tab edge-left" aria-expanded="false" aria-controls="drawerControls">COMPOSE</button>
+    <div class="plate-square">
+      <div id="stage"></div>
+      <div id="plateHud">
+        <div class="hud hud-tl">
+          <span class="modectl" id="mapModeCtl">
+            <button type="button" id="modeAtlas">atlas</button>
+            <button type="button" id="modeData" class="on">data</button>
+          </span>
+          <label class="poictl"><input type="checkbox" id="showPoiCk" checked /> points of interest</label>
+        </div>
+        <div class="hud hud-tr">
+          <span id="mapHint">click any region &mdash; the inspector opens its ledger</span>
+        </div>
+        <div class="hud hud-bl">
+          <div id="scaleBar"><div class="scale-rule"></div><span class="scale-cap">20 leagues</span></div>
+        </div>
+        <div class="hud hud-br">
+          <span id="legendLabel"></span>
+          <div class="legend-wrap">
+            <div class="bar" id="legendBar"></div>
+            <div class="ends"><span>low</span><span>high</span></div>
+          </div>
+        </div>
+        <div class="hud hud-bc">
+          <div id="scrubRow" style="display:none">
+            <label for="scrub">View epoch <span class="val" id="scrubVal"></span></label>
+            <input type="range" id="scrub" min="0" max="24" step="1" />
+          </div>
+        </div>
+      </div>
     </div>
+    <button id="tabInspect" class="edge-tab edge-right" aria-expanded="false" aria-controls="drawerInspect">LEDGER</button>
   </section>
 
-  <main class="layout">
-    <!-- Controls -->
-    <aside class="controls">
+  <!-- Compose drawer: every generation knob, over the plate's left mat -->
+  <aside id="drawerControls" class="drawer drawer-left" role="complementary" aria-label="Compose the world">
+    <div class="drawer-head"><span class="drawer-title" tabindex="-1">COMPOSE THE WORLD</span><button class="drawer-close" id="ctrlClose" title="close">&#10005;</button></div>
+    <div class="controls">
       <div class="sec">
         <div class="sec-title">THE WORLD</div>
         <div class="row">
@@ -992,8 +1070,8 @@
           <input type="range" id="db" min="0" max="100" step="1" />
           <div class="hint">How much refinery spoil is hauled onto poor land. 0 = blight follows only wind and terrain.</div>
           <button id="cfBtn" type="button">&#8644; the counterfactual: this world at &lambda; = 0</button>
-          <button id="cfBtnGrid" type="button" style="margin-top:6px; width:100%; padding:8px 10px; font:600 13px var(--sans); color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:8px; cursor:pointer;">&#8644; the counterfactual: the FULL GRID (threshold 0)</button>
-          <button id="cfBtnBoth" type="button" style="margin-top:6px; width:100%; padding:8px 10px; font:600 13px var(--sans); color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:8px; cursor:pointer;">&#8644; both mercies at once</button>
+          <button id="cfBtnGrid" type="button">&#8644; the counterfactual: the FULL GRID (threshold 0)</button>
+          <button id="cfBtnBoth" type="button">&#8644; both mercies at once</button>
           <div class="hint">Same rock, same wind, same dice &mdash; only the policy differs. The gap is the policy.</div>
         </div>
       </div>
@@ -1018,33 +1096,14 @@
           <input type="range" id="ep" min="0" max="24" step="1" />
           <div class="hint">Run the world forward: ore depletes, wealth compounds, people migrate, the grid chases the winners, the seat decrees, towns rise. 0 = the founding snapshot.</div>
         </div>
-        <div class="row" id="scrubRow" style="display:none">
-          <label>View epoch <span class="val" id="scrubVal"></span></label>
-          <input type="range" id="scrub" min="0" max="24" step="1" />
-          <div class="hint">Scrub history &mdash; 25 years per step.</div>
-        </div>
       </div>
-    </aside>
+    </div>
+  </aside>
 
-    <!-- Map -->
-    <div class="mapcol">
-      <div class="mapcard">
-        <div class="mapbar">
-          <span class="modectl" id="mapModeCtl">
-            <button type="button" id="modeAtlas">atlas</button>
-            <button type="button" id="modeData" class="on">data</button>
-          </span>
-          <label class="poictl"><input type="checkbox" id="showPoiCk" checked /> points of interest</label>
-          <span id="legendLabel"></span>
-          <div class="legend-wrap">
-            <div class="bar" id="legendBar"></div>
-            <div class="ends"><span>low</span><span>high</span></div>
-          </div>
-          <span id="mapHint">click any region — the inspector opens its ledger</span>
-        </div>
-        <div id="stage"></div>
-      </div>
-      <div class="viewgrid">
+  <!-- The lens dock: the question on the map. The interior is scheduled to
+       become the index of plates; the dock is its reserved slot. -->
+  <section id="lensDock">
+    <div class="viewgrid">
         <div class="sec-title">THE QUESTION ON THE MAP</div>
         <div class="lens-cap">THE ARGUMENT</div>
         <div class="chips">
@@ -1093,26 +1152,39 @@
           <label class="radio"><input type="radio" name="view" value="legib" /> who goes uncounted</label>
         </div>
         <div class="glyphkey">Preview only &mdash; the export always carries every column. &#9632; refinery &middot; gold lines conduit (dashed = off-grid) &middot; H/W/D healer/waterworks/wardstation &middot; &#9650; shrine &middot; G garrison &middot; &#9875; port &middot; &#9670; ruin &middot; &#9820; tower &middot; &#9552; bridge &middot; &#8745; pass &middot; &#9673; maelstrom &middot; &#9055; aerie (violet dashes = the skyway) &middot; &#9873; the Dominion's foothold &middot; red dashes join the twins.</div>
-      </div>
     </div>
-
-    <!-- Readout -->
-    <aside class="side">
-      <div class="sidecard" id="inspector">
-        <div class="insp-head">
-          <div><span class="insp-name" id="inspName"></span> <span class="insp-sub" id="inspSub"></span></div>
-          <button id="inspClose" title="close">&#10005;</button>
-        </div>
-        <div id="inspBody"></div>
-      </div>
-      <div class="sidecard">
-        <div class="sec-title">THIS WORLD</div>
-        <table id="info"></table>
-      </div>
-    </aside>
+  </section>
   </main>
 
-  <!-- The chronicle: the same world, narrated -->
+  <!-- Ledger drawer: the inspector, over the plate's right mat -->
+  <aside id="drawerInspect" class="drawer drawer-right" role="complementary" aria-label="The ledger">
+    <div class="drawer-head"><span class="drawer-title" tabindex="-1">THE LEDGER</span></div>
+    <div class="sidecard" id="inspector">
+      <div class="insp-head">
+        <div><span class="insp-name" id="inspName"></span> <span class="insp-sub" id="inspSub"></span></div>
+        <button id="inspClose" title="close">&#10005;</button>
+      </div>
+      <div id="inspBody"></div>
+    </div>
+    <div class="drawer-note">click any region on the plate &mdash; its ledger opens here</div>
+  </aside>
+
+  <!-- The report: the same world, argued and narrated -->
+  <article id="report">
+    <section id="findingsBox">
+      <div class="findings-inner">
+        <div class="findings-title">WHAT THIS WORLD SHOWS &mdash; COMPUTED FROM ITS OWN EXPORTED COLUMNS</div>
+        <div id="findingsText"></div>
+        <p class="manifesto">
+          Every map this makes is an <b>argument about inequality</b>: who gets served and who sits in
+          darkness, who breathes the poison and who ships it downstream, who holds the gates and who pays
+          the toll — none of it painted, all of it <b>emergent</b> from blind geology, a cost-gated grid,
+          and factions that seize, tax, and go to war. The fantasy is the carrier; the attribute table is
+          the argument. Seeded, reproducible, QGIS-ready.
+        </p>
+      </div>
+    </section>
+
   <!-- The counterfactual (C1): the lambda experiment, on the page -->
   <section id="cfBox" style="display:none">
     <div class="cf-inner">
@@ -1126,19 +1198,37 @@
     </div>
   </section>
 
-  <details id="chronBox">
-    <summary>&#128220; The Chronicle &mdash; the world narrating itself</summary>
-    <div id="chronText"></div>
-  </details>
+    <!-- The chronicle, promoted: the main body text of the report -->
+    <div class="report-grid">
+      <section id="chronBox">
+        <div class="sec-title">THE CHRONICLE &mdash; THE WORLD NARRATING ITSELF</div>
+        <div id="chronText"></div>
+      </section>
+      <aside id="worldPanel">
+        <div class="sidecard">
+          <div class="sec-title">THIS WORLD</div>
+          <table id="info"></table>
+        </div>
+      </aside>
+    </div>
 
-  <footer>
-    <span>Hinterland &mdash; every number on this page recomputes from the exported columns.</span>
-    <a href="docs/atlas.md">The Atlas: 80 worlds, measured</a>
-    &middot;
-    <a href="docs/field-guide.md">The Field Guide: how to read the inequalities</a>
-    <a href="docs/attribute-model.md">The attribute model</a>
-    <a href="https://github.com/zntznt/hinterland">Source</a>
-  </footer>
+    <footer id="colophon">
+      <div class="sec-title">PLATES &amp; DATA</div>
+      <div class="colophon-btns">
+        <button id="download" class="primary">&#8681; Download GeoJSON</button>
+        <button id="dlSeries">&#8681; Epoch series (QGIS temporal)</button>
+        <button id="dlChron">&#8681; The chronicle (.md)</button>
+        <button id="dlTables">&#8681; Download tables (CSV)</button>
+      </div>
+      <div class="colophon-links">
+        <span>Hinterland &mdash; every number on this page recomputes from the exported columns.</span>
+        <a href="docs/atlas.md">The Atlas: 80 worlds, measured</a>
+        <a href="docs/field-guide.md">The Field Guide: how to read the inequalities</a>
+        <a href="docs/attribute-model.md">The attribute model</a>
+        <a href="https://github.com/zntznt/hinterland">Source</a>
+      </div>
+    </footer>
+  </article>
 
   <!-- the one toast: fixed, floats above everything, announced to AT -->
   <div id="toast" role="status" aria-live="polite"></div>
@@ -8002,6 +8092,24 @@
       document.getElementById("hb").checked = params.hb === 0;
     }
 
+    // ---- Drawers (the shell): overlays on the plate's mat. Visibility is a
+    // class on the DRAWER; renderInspector keeps owning #inspector's inline
+    // display — two independent switches, so the inspector logic never changed.
+    const UI_KEY = "hl.ui";
+    function uiLoad() { try { return JSON.parse(localStorage.getItem(UI_KEY)) || {}; } catch (_) { return {}; } }
+    function uiSave(patch) { try { localStorage.setItem(UI_KEY, JSON.stringify({ ...uiLoad(), ...patch })); } catch (_) {} }
+    function setDrawer(which, open) {
+      const el = document.getElementById(which === "controls" ? "drawerControls" : "drawerInspect");
+      const tab = document.getElementById(which === "controls" ? "tabControls" : "tabInspect");
+      el.classList.toggle("open", open);
+      tab.setAttribute("aria-expanded", String(open));
+      document.body.classList.toggle(which === "controls" ? "controls-open" : "inspect-open", open);
+      uiSave({ [which]: open });
+    }
+    function drawerOpen(which) {
+      return document.getElementById(which === "controls" ? "drawerControls" : "drawerInspect").classList.contains("open");
+    }
+
     function onMapClick(ev) {
       if (pinArm) { // the armed pin: this click moves the seat
         pinArm = false;
@@ -8039,6 +8147,7 @@
           inspectId = bi;
         } else return; // no target and no usable coords: nothing to inspect
       }
+      setDrawer("inspect", true); // the ledger slides in with its subject
       render(model, params);
       renderInspector();
     }
@@ -8148,7 +8257,23 @@
         pinArm = !pinArm;
         $("pinCap").classList.toggle("armed", pinArm);
       });
-      $("inspClose").addEventListener("click", () => { inspectId = -1; selFeat = null; renderInspector(); if (model) render(model, params); });
+      $("inspClose").addEventListener("click", () => { inspectId = -1; selFeat = null; setDrawer("inspect", false); renderInspector(); if (model) render(model, params); });
+
+      // the shell: edge tabs toggle the drawers; open-state persists locally
+      // (the hash describes the WORLD; chrome state never rides a share link)
+      $("tabControls").addEventListener("click", () => setDrawer("controls", !drawerOpen("controls")));
+      $("tabInspect").addEventListener("click", () => setDrawer("inspect", !drawerOpen("inspect")));
+      $("ctrlClose").addEventListener("click", () => setDrawer("controls", false));
+      const ui = uiLoad();
+      const wide = typeof matchMedia === "function" ? matchMedia("(min-width: 1080px)").matches : true;
+      setDrawer("controls", ui.controls !== undefined ? !!ui.controls : wide);
+      if (ui.inspect) setDrawer("inspect", true);
+      // the drawers follow the plate: scrolled into the report, they retreat
+      if (typeof IntersectionObserver === "function") {
+        new IntersectionObserver((es) =>
+          document.body.classList.toggle("plate-away", !es[0].isIntersecting),
+          { threshold: 0.12 }).observe(document.getElementById("plate"));
+      }
       $("cfBtnGrid").addEventListener("click", () => {
         if (cfOn && cfMode === "gt") { cfOn = false; } else { cfOn = true; cfMode = "gt"; }
         updateCf();

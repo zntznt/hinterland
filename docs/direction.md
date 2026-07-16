@@ -123,6 +123,46 @@ What varies is how much artifice each region commands — a level, not an era.
 
 ## 3. The economic re-founding: breaking zero-sum, arming both edges
 
+### 3.0 The world outside the map (the region's defining fact)
+
+**The Hinterland is a region, not a world.** Not a planet, not necessarily even a
+country — a province with a name the empires mispronounce. The map's edge is not
+the edge of anything real, and the single largest force acting on every column in
+the export originates OFF the map: world prices for aetherstone, imperial attention
+cycles, distant wars, doctrines and fashions born elsewhere, the pull of the
+metropole on the region's young. The current model is a closed system; a closed
+region is a modeling error, not a simplification.
+
+**The mechanism: a third seed.** Alongside the world seed (the rock) and G5's fate
+seed (local luck), a **`world=` parameter** keys a stream family that generates the
+OUTSIDE as an exogenous time series the region consumes but cannot affect:
+
+- a **regime chain** — a Markov chain over world conditions (long boom / trade war /
+  imperial rivalry / doctrinal panic / distant war / imperial retrenchment), with
+  realistic persistence (regimes last years, not epochs) — this is the "up our
+  markov game" demand applied at the MACRO scale: markov as world-history engine,
+  not just word coinage;
+- derived **series** consumed by the region's dynamics: the aetherstone price index
+  (income shock to every seam and works), imperial attention (how hard the reach
+  mechanisms of §3.6 press), foreign demand (the trade pole's strength), doctrine
+  pressure (which reforms the creditors demand), the metropole's pull (emigration
+  rate, §3.2 migration).
+
+**The observability law (epistemically load-bearing):** the outside is never
+rendered — no second map, no simulated empire. It exists in the region exactly as
+it exists in a real hinterland: as **texts and numbers that arrive** — exchange
+prices, gazette digests, sermons citing foreign doctors, recruiters' handbills,
+letters from the emigrated. The loom (§4) gains a gazette register for precisely
+this. That is also the honest version of the owner's observation that modern
+consciousness is deterritorialized: the region's people increasingly think about,
+talk about, and orient toward places they will never see — and the voices must show
+it (§3.4's attention column, §4's imported-coinage tier).
+
+**Why this is the falsifiability keystone:** with an exogenous world, the region can
+do everything right and be ruined by a price collapse, or do everything wrong and be
+rescued by a boom — P4 (consequence has length) at the world scale. No verdict can
+be read off the policies alone; you have to look at the data. Which is the app.
+
 ### 3.1 The growth channel (the one new state variable)
 
 Each region gains an **artifice index** `A` (0–100): its command of magically-enabled
@@ -186,6 +226,12 @@ clearly, not only the world the old argument expected:
   change, or only how much?).
 - **volatility**: per-region boom/bust amplitude.
 - **order/liberty**: policing level vs voice suppression (once §5 lands).
+- **attention (local ↔ metropolitan)**: where a region's mind lives — driven by
+  schooling, grid access, imperial reach, emigration ties; feeds brain drain,
+  trust, and the voices' subject matter (§4). The deterritorialization of
+  consciousness as a measurable column: the modern condition, instrumented.
+- **exposure**: how much of a region's income rides the world price vs local
+  demand — the vulnerability-to-elsewhere lens.
 - `injustice` survives, renamed in presentation to what it is — a labeled composite
   (`blight × poverty`) — one plate among 55+, not the boot lens. The boot lens
   becomes the neutral wealth or a new composite the owner picks.
@@ -206,14 +252,55 @@ shapes, *all of which must appear in the calibration sweep* (§7). "The gap wide
 while the poorest fifth grew richer than any founding generation" becomes a world
 the engine can generate **and narrate** — today it can do neither.
 
-### 3.6 International politics (v1 scope, owner to size)
+### 3.6 Imperial reach (replacing "foreign powers as event source")
 
-Generalize the Dominion into 2–3 foreign powers with distinct postures (mercantile /
-territorial / doctrinal), sourced from the fate-facing streams: export demand
-cycles, embargoes, faction patronage, embassies (already a G5 dilemma), and
-annexation as one posture's endgame rather than the only foreign event. Minimum
-viable: keep ONE power but give it the posture wheel; full version: three named
-powers with generative names/registers (§4).
+The Dominion today is Viking-model empire: it lands, it takes tribute. Real
+contemporary empire — the register the owner wants (empires exist NOW; they mostly
+never invade) — works by **reach**, and annexation is the rare limit case, not the
+main event. The empires press on the Hinterland through:
+
+| reach mechanism | in-world form | lands on existing columns |
+|---|---|---|
+| concessions | foreign capital owns the works; profits repatriate | `retention` becomes partly a FOREIGN claim — the column is already dependency theory's "who keeps what it makes," now applied one level up |
+| debt + conditionality | the grid financed by imperial loans; service drains the seat; creditors DEMAND reforms | reforms arrive from outside, not only from `iq` — structural adjustment as an event class |
+| standards | ore sells only at the Concordat grade; certification fees; local variants die | market access gated on compliance |
+| culture + attention | doctrines, fashions, schooling in the imperial tongue; the young orient toward the metropole | the §3.4 attention column; §4's imported coinage; brain drain via migration |
+| diaspora + remittance | people leave the map; coin flows back; some return changed | emigration as a region fact; a wealth inflow decoupled from local production |
+| embargo / sanction | the price series gated by politics elsewhere | §3.0's regime chain |
+| garrison / annexation | the current Dominion machinery, kept — as the LIMIT case when reach fails or the ore matters enough | existing occupation columns |
+
+**The fractal reframe (nearly free, deeply clarifying):** the model already applies
+core–periphery economics to the *internal* seat–frontier axis — retention,
+centrality, off-grid darkness, even a `comprador_ratio` finding. The pivot is one
+sentence: **the seat is itself somebody's periphery.** The same mechanisms, one
+level up, mostly off-map. The counting house's second edge (§3.2) sharpens
+accordingly: it doesn't just hoard — it *intermediates* between world capital and
+local works, and whether that reads as development finance or comprador extraction
+depends on the regime chain and the retention split. The model's own vocabulary has
+been waiting for this frame.
+
+**Why the empires care at all (the FFXII structure):** Ivalice's Dalmasca is a small
+kingdom between two empires because of where it sits and what it holds. The
+Hinterland's answer is the ore: **aetherstone is why imperial attention exists**, and
+the attention series (§3.0) should be keyed partly to the region's *remaining
+endowment* — so a depleting region lives the full arc: courted, developed,
+squeezed, and then — the double edge nobody expects — *abandoned*, which is both
+ruin (markets leave) and freedom (the levies stop). Resource curse as geopolitics,
+not just local economics.
+
+**Internal politics rescaled:** a region's "seat" is not a sovereign crown; it is a
+capital-with-a-governor answerable partly to an off-map metropole. Crown/temple/
+magnate survive as the governor's office, the church (a ministry above, the old
+faith below), and the syndicates — but above all three stands the off-map power
+whose demands arrive as §3.0 texts. This makes G5's reign mode BETTER drama: you
+play the regional administrator between the metropole's demands and the region's
+needs — comply, resist, or skim — the colonial-governor dilemma, which is a richer
+seat to occupy than an absolute king's.
+
+v1 scope (owner to size): ONE empire fully mechanized (reach table above) + the
+regime chain; a second rival power can arrive later as competition FOR the region
+(playing empires against each other is the classic small-place move and a natural
+dilemma class).
 
 ---
 
@@ -233,7 +320,15 @@ determinism — is not a feature of the voices panel; it is **the house prose en
 | dilemma cards (G5) | the ministerial brief | authored card text |
 | voices — oral | the street | (new, per G5 spec) |
 | voices — written | the ledger/censorate | (new, per G5 spec) |
+| the gazette | world news arriving in-region: price notices, foreign dispatches, imperial circulars — the ONLY way the outside is ever seen (§3.0's observability law) | (new) |
 | names | toponymic + NEW: corporate, precinct, paper, god-under-the-city, foreign-power registers | existing name registers, extended |
+
+**The imported tier (imperialism, audible):** coinage gains a third source — the
+imperial tongue, a distinct markov name-register. Loanwords penetrate local voices
+at a rate driven by the attention column: frontier oral voices stay dialect-pure
+longest, the capital's written record fills with Concordat terms first. Cultural
+penetration becomes something you can HEAR in the generated text and MEASURE in a
+column — the same fact twice, which is the house pattern.
 
 **Rules of the loom** (inherited from the voices spec, promoted to house law):
 fragments are clause templates, never complete sentences; fragment classes are gated
@@ -582,13 +677,31 @@ phase authors content against physics a later phase replaces.
   diagnosis becomes `tools/sweep.mjs` — the knob-reach and sameness-ceiling
   measurements join the suite as tracked numbers.
 - **Phase B — the economic re-founding (§3), one mechanism per PR.**
-  Suggested order: B1 artifice index + income scaling; B2 investment pool (banks'
-  second edge); B3 migration frontier term; B4 disposal doctrine (retire λ); B5
-  ordinary elite erosion/churn; B6 tariff-upkeep coupling + decay; B7 reform long
-  edges; B8 revolt outcome distribution; B9 order axis; B10 mix de-collinearization
-  + knob retirements; B11 foreign powers v1. EVERY PR ships its falsifiability test
-  (§7) and regenerates fixtures deliberately. The old thesis must remain
-  *reachable* (extraction worlds still exist); it just stops being the only world.
+  Suggested order: **B0 the world outside** (`world=` param, regime chain, price/
+  attention/demand series consumed as boundary conditions — lands FIRST in B
+  because every later mechanism should be authored against an open region, not a
+  closed one); B1 artifice index + income scaling; B2 investment pool (banks'
+  second edge, comprador split per §3.6); B3 migration frontier term + emigration/
+  remittances; B4 disposal doctrine (retire λ); B5 ordinary elite erosion/churn;
+  B6 tariff-upkeep coupling + decay; B7 reform long edges + creditor-imposed
+  measures; B8 revolt outcome distribution; B9 order axis; B10 mix
+  de-collinearization + knob retirements; B11 imperial reach v1 (§3.6 table).
+  EVERY PR ships its falsifiability test (§7) and regenerates fixtures
+  deliberately. The old thesis must remain *reachable* (extraction worlds still
+  exist); it just stops being the only world.
+
+  **The minimum coherent pivot** (the smallest B-subset after which the model is
+  honest even if shallow, and a safe place to pause): B0 + B1 + B2 + the §3.5
+  verdict axes + Phase A's neutral lenses. Below that line, stopping mid-B leaves
+  a chimera (some mechanisms double-edged, others sign-locked) whose failures read
+  as bugs; at or above it, every further B-PR is pure deepening.
+
+  **The two failure modes, named:** the old engine's sin was MONOTONE (one story
+  always); the naive fix's sin is MUSH (double edges canceling in expectation, so
+  sliders go dead again — sameness through symmetry). The design rule that avoids
+  both: edges must be asymmetric in TIME and STATE, never balanced in expectation —
+  concentration finances in credit-rich booms and hoards in busts, so the world has
+  REGIMES, not noise. §7.3's verdict-diversity floor is the tripwire for mush.
 - **Phase C — the setting re-skin.** Vocabulary, registers, tier names, export
   naming policy (aliases vs versioned renames — owner decision), README/field-guide
   rewrite. Cheap after B; painful before it.
@@ -615,8 +728,12 @@ Beyond the house suite, the pivot adds a standing acceptance block:
    where it inverts: blight lands on the rich; a periphery out-grows the core; the
    owners' row shrinks across a run without a catastrophe; a reform measurably
    backfires; the grid reaches the poor first under the spread doctrine; primacy
-   falls; a police state stagnates while an open rival booms. Each exhibit is a
-   URL in the atlas — a world you can open.
+   falls; a police state stagnates while an open rival booms; a world boom rescues
+   a badly-governed region and a price collapse ruins a well-governed one. Each
+   exhibit is a URL in the atlas — a world you can open. **Density requirement:**
+   an inversion must occur at meaningful frequency somewhere in the calibration
+   sweep (measured, then pinned per relation), not merely exist in one absurd
+   corner of knob space — existence proofs can be gamed; distributions cannot.
 2. **Knob reach.** Every shipped knob's extremes change at least one *relation*
    (sign or class), not just magnitudes, on the calibration sweep. (Today iq and
    db>50 would fail this — that's the point.)
@@ -641,6 +758,18 @@ Beyond the house suite, the pivot adds a standing acceptance block:
    possibility space (I'd argue yes; it's honest about the project's history)?
 6. **Voices companion spec**: paste the drafting agent's marked block into this
    repo (docs/voices-spec.md) so the reference in §5.1 resolves.
+7. **The world seed's hash contract**: does `world=` default to the world seed
+   (today's closed region reproduced exactly — the back-compat answer) or to a
+   fixed "concordat era" so every region shares one outside by default (regions
+   become comparable across seeds — the atlas answer)? Both are defensible; pick.
+8. **How much outside**: one empire fully mechanized vs two rivals in v1 (§3.6);
+   and does the region's own history ever leak OUT (a won revolt making foreign
+   gazettes — flavor-only, or a small attention feedback)? Recommend flavor-only
+   in v1: the region moves the world's texts, never its series.
+9. **The governor frame**: does the reign mode (G5) play the sovereign seat (as
+   drafted) or the §3.6 regional administrator between metropole and region?
+   Recommend the governor — it is the truer seat for a hinterland and the richer
+   dilemma space (comply / resist / skim).
 
 ---
 

@@ -956,6 +956,13 @@
   .sidecard td { padding:4px 6px 4px 0; border-bottom:1px solid #e7e0d0; vertical-align:top; }
   .sidecard tr:last-child td { border-bottom:none; }
   .sidecard td:first-child { color:var(--muted); white-space:nowrap; padding-right:10px; }
+  #powersPanel { margin-bottom:16px; }
+  .pw-bar { display:inline-block; width:84px; height:9px; background:var(--line); vertical-align:middle; }
+  .pw-bar i { display:block; height:100%; }
+  /* the tension track shades the 55–75 band where a war can catch */
+  .pw-bar.pw-tension { background:linear-gradient(to right, var(--line) 0 55%, rgba(122,31,31,.28) 55% 75%, var(--line) 75% 100%); }
+  .pw-bar.pw-tension i { background:var(--oxblood); }
+  #powersPanel .insp-ev { font:12px var(--sans); margin:2px 0; }
   .report-grid { max-width:1200px; margin:22px auto 0; padding:0 24px; display:grid;
     grid-template-columns:minmax(0,1fr) 300px; gap:22px; align-items:start; }
   #chronBox .sec-title { margin-bottom:10px; }
@@ -1197,6 +1204,7 @@
         <div id="chronText"></div>
       </section>
       <aside id="worldPanel">
+        <div class="sidecard" id="powersPanel"></div>
         <div class="sidecard">
           <div class="sec-title">THIS WORLD</div>
           <table id="info"></table>
@@ -6091,7 +6099,8 @@
       foundage:   { lo: [247, 243, 233], hi: [112, 84, 56],   label: "founding age (how old the town is)" },
       legacy:     { lo: [250, 244, 227], hi: [161, 120, 38],  label: "legacy advantage (born ahead)" },
       refining:   { lo: [252, 240, 230], hi: [176, 88, 26],   label: "refining capacity (where value is added)" },
-      finance:    { lo: [246, 242, 250], hi: [63, 0, 125],    label: "elite share — ¤ marks the counting houses (+6 to the owners' row where finance sits)" }
+      finance:    { lo: [246, 242, 250], hi: [63, 0, 125],    label: "elite share — ¤ marks the counting houses (+6 to the owners' row where finance sits)" },
+      flips:      { lo: [246, 244, 240], hi: [122, 31, 31],   label: "bloc flips (ground that changed hands as fortunes shifted)" }
     };
     // #62: many ramps bottom out near-white, so a view where one region spikes
     // (injustice/burden/tolls, maroon hi) reads as a single loud cell on blank
@@ -6165,9 +6174,13 @@
       market: pctLens("THE COIN", "who reaches the market", r => r.marketAccess),
       seaacc: pctLens("THE COIN", "who reaches the water", r => r.seaAccess),
       centrality: pctLens("THE COIN", "who reaches the seat", r => r.centrality),
+      // #93: the bloc lens reads the SNAPSHOT, so scrubbing shows the map
+      // re-contesting as fortunes shift (snapshots carry dominion-mapped bloc)
       bloc: { group: "THE STATE", q: "who rules here", cats: BLOC_COLORS, catLabel: "dominant bloc",
-        value: (r, C) => (C.RO(r) === 1 ? "dominion" : r.bloc).slice(0, 3),
-        fill: (r, C) => BLOC_COLORS[C.RO(r) === 1 ? "dominion" : r.bloc] },
+        value: (r, C) => (C.live.bloc ? C.live.bloc[r.id] : (C.RO(r) === 1 ? "dominion" : r.bloc)).slice(0, 3),
+        fill: (r, C) => BLOC_COLORS[C.live.bloc ? C.live.bloc[r.id] : (C.RO(r) === 1 ? "dominion" : r.bloc)] },
+      flips: { group: "THE STATE", q: "who changed hands", featured: true,
+        t: r => Math.min((r.blocChanges || 0) / 4, 1), value: r => r.blocChanges || 0 },
       services: pctLens("THE STATE", "who gets served", r => r.arcaneServices),
       gap: pctLens("THE STATE", "who was left unserved", r => r.serviceGap),
       blight: pctLens("THE STATE", "who breathes the poison", (r, C) => C.RB(r)),
@@ -7361,6 +7374,8 @@
         const tr2 = (model.rivers.find(rv => rv.id === b.riverId) || {}).trace || [];
         let bx = b.x, by = b.y, bd2 = Infinity;
         for (const p of tr2) { const d = Math.hypot(p[0] - b.x, p[1] - b.y); if (d < bd2) { bd2 = d; bx = p[0]; by = p[1]; } }
+        // #93: a held gate wears its holder's ring — who owns the crossing
+        if (b.heldBy && b.heldBy !== "none") parts.push(`<circle class="gatering" cx="${bx.toFixed(1)}" cy="${fy(by).toFixed(1)}" r="11" fill="none" stroke="${BLOC_COLORS[b.heldBy]}" stroke-width="2.5" opacity="0.85"/>`);
         parts.push(`<text class="bridge" x="${bx.toFixed(1)}" y="${(fy(by) + 6).toFixed(1)}" font-size="15" font-weight="700" text-anchor="middle" fill="#6b5844" paint-order="stroke" stroke="#fff" stroke-width="3">═</text>`);
       });
       if (poi && model.maelstrom) {
@@ -7393,6 +7408,8 @@
 
       // G3: the ports — ⚓ where the realm meets the water
       model.regions.filter(r => r.isPort === 1).forEach(reg => {
+        // #93: port holdings stamp heldBy on the region itself
+        if (reg.heldBy && reg.heldBy !== "none") parts.push(`<circle class="gatering" cx="${reg.shorePt[0].toFixed(1)}" cy="${fy(reg.shorePt[1]).toFixed(1)}" r="12" fill="none" stroke="${BLOC_COLORS[reg.heldBy]}" stroke-width="2.5" opacity="0.85"/>`);
         parts.push(`<text class="port" x="${reg.shorePt[0].toFixed(1)}" y="${(fy(reg.shorePt[1]) + 6).toFixed(1)}" font-size="18" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="3">⚓</text>`);
       });
 
@@ -7520,6 +7537,7 @@
       if (atlas) model.passes.forEach(p => {
         const R = model.ridges.find(r => r.id === p.ridgeId);
         if (R && R.maxElev < 60) return; // orphaned pass on a barely-there ridge
+        if (p.heldBy && p.heldBy !== "none") parts.push(`<circle class="gatering" cx="${p.x.toFixed(1)}" cy="${fy(p.y).toFixed(1)}" r="11" fill="none" stroke="${BLOC_COLORS[p.heldBy]}" stroke-width="2.5" opacity="0.85"/>`);
         parts.push(`<text class="pass" x="${p.x.toFixed(1)}" y="${(fy(p.y) + 6).toFixed(1)}" font-size="17" font-weight="700" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">∩</text>`);
         if (poi) parts.push(`<text x="${p.x.toFixed(1)}" y="${(fy(p.y) + 20).toFixed(1)}" font-size="10" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="2.5" opacity="0.85">${esc(p.name)}</text>`);
       });
@@ -7745,6 +7763,7 @@
         ["CRS", "planar 0–1000 (y-up)"]
       ];
       document.getElementById("info").innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+      document.getElementById("powersPanel").innerHTML = powersHTML(model);
     }
 
     // ---- The inspector (U2): one click, the whole ledger ---------------------
@@ -7795,6 +7814,7 @@
         L.push(`<div class="insp-sec">THE CROSSING</div><table>` +
           row("through", R ? `${R.name} ${R.kind} (peak ${R.maxElev})` : "a range") +
           row("worth", "the one gap an army or a caravan takes instead of the wall") +
+          row("held by", p.heldBy && p.heldBy !== "none" ? p.heldBy : "no one — a free crossing") +
           `</table>`);
       } else {
         // wild-layer point features: {kind, id} where id indexes the model array
@@ -8185,6 +8205,24 @@
         }
       }
       document.getElementById("hb").checked = params.hb === 0;
+    }
+
+    // ---- The powers (#93): treasuries, tensions, and the gate ledger -------
+    function powersHTML(model) {
+      const FACTIONS = ["crown", "temple", "magnate"];
+      const maxT = Math.max(...FACTIONS.map(f => model.treasuries[f]), 1);
+      const holdCount = (f) => model.holdings.filter(h => h.heldBy === f).length;
+      const bar = (f) => { const n = holdCount(f); return `<tr><td>${f}</td><td><span class="pw-bar"><i style="width:${Math.round(100 * model.treasuries[f] / maxT)}%; background:${BLOC_COLORS[f]}"></i></span> ${Math.round(model.treasuries[f])} coin · ${n} gate${n === 1 ? "" : "s"}</td></tr>`; };
+      const TN = { crown_magnate: "crown ↔ magnate", crown_temple: "crown ↔ temple", magnate_temple: "magnate ↔ temple" };
+      // war fires when a tension clears a per-world bar rolled in 55–75; the
+      // gauge shades that band rather than faking a precise line
+      const gauge = (k) => { const v = Math.round(model.tensions[k]); return `<tr><td>${TN[k]}</td><td><span class="pw-bar pw-tension"><i style="width:${Math.min(100, v)}%"></i></span> ${v}${v >= 55 ? " · war-ripe" : ""}</td></tr>`; };
+      const ledger = model.events.filter(ev => ["war", "seizure", "treaty", "annexation"].includes(ev.type))
+        .map(ev => `<div class="insp-ev"><b>${1000 + 25 * ev.epoch}</b> — ${esc(ev.name || ev.type.replace(/_/g, " "))}</div>`).join("");
+      return `<div class="sec-title">THE POWERS</div><table>` +
+        FACTIONS.map(bar).join("") + Object.keys(TN).map(gauge).join("") + `</table>` +
+        (ledger ? `<div class="lens-cap">SEIZURES, TREATIES, WARS</div>${ledger}`
+                : `<div class="insp-ev">no gate changed hands; no war came.</div>`);
     }
 
     // ---- The timeline (#86): the realm's ages under the scrubber -----------

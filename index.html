@@ -963,6 +963,7 @@
   .pw-bar.pw-tension { background:linear-gradient(to right, var(--line) 0 55%, rgba(122,31,31,.28) 55% 75%, var(--line) 75% 100%); }
   .pw-bar.pw-tension i { background:var(--oxblood); }
   #powersPanel .insp-ev { font:12px var(--sans); margin:2px 0; }
+  .spark { width:74px; height:16px; vertical-align:middle; margin-right:4px; background:rgba(244,236,216,.5); border-bottom:1px solid var(--line); }
   .report-grid { max-width:1200px; margin:22px auto 0; padding:0 24px; display:grid;
     grid-template-columns:minmax(0,1fr) 300px; gap:22px; align-items:start; }
   #chronBox .sec-title { margin-bottom:10px; }
@@ -6100,7 +6101,8 @@
       legacy:     { lo: [250, 244, 227], hi: [161, 120, 38],  label: "legacy advantage (born ahead)" },
       refining:   { lo: [252, 240, 230], hi: [176, 88, 26],   label: "refining capacity (where value is added)" },
       finance:    { lo: [246, 242, 250], hi: [63, 0, 125],    label: "elite share — ¤ marks the counting houses (+6 to the owners' row where finance sits)" },
-      flips:      { lo: [246, 244, 240], hi: [122, 31, 31],   label: "bloc flips (ground that changed hands as fortunes shifted)" }
+      flips:      { lo: [246, 244, 240], hi: [122, 31, 31],   label: "bloc flips (ground that changed hands as fortunes shifted)" },
+      elitedelta: { lo: [179, 88, 6],    hi: [84, 39, 136],   label: "owners' row since the founding (shrank → grew)" } // diverging like delta: readable to every kind of eye
     };
     // #62: many ramps bottom out near-white, so a view where one region spikes
     // (injustice/burden/tolls, maroon hi) reads as a single loud cell on blank
@@ -6109,7 +6111,7 @@
     // lift, so the already-tinted ramps (retention/mobility) just deepen a touch;
     // delta is diverging and bloc is categorical, so both are skipped.
     for (const k in RAMPS) {
-      if (k === "delta" || k === "bloc") continue;
+      if (k === "delta" || k === "elitedelta" || k === "bloc") continue; // diverging/categorical: no floor-lift
       const r = RAMPS[k], lift = 0.12;
       r.lo = r.lo.map((c, i) => Math.round(c + (r.hi[i] - c) * lift));
     }
@@ -6158,6 +6160,10 @@
       delta: { group: "THE ARGUMENT", q: "who rose, who fell",
         t: (r, C) => clamp((C.RW(r) - r.wealthT0 + 40) / 80, 0, 1),
         value: (r, C) => { const d = C.RW(r) - r.wealthT0; return (d > 0 ? "+" : "") + d; } },
+      // #93: elite drift as its own plate — scrub-aware since SE reads the snapshot
+      elitedelta: { group: "THE ARGUMENT", q: "whose owners' row grew", featured: true,
+        t: (r, C) => clamp((C.SE(r) - (C.snaps[0] ? C.snaps[0].eliteShare[r.id] : C.SE(r)) + 20) / 40, 0, 1),
+        value: (r, C) => { const d = C.SE(r) - (C.snaps[0] ? C.snaps[0].eliteShare[r.id] : C.SE(r)); return (d > 0 ? "+" : "") + d; } },
       biome: { group: "THE LAND", q: "what the land is", cats: BIOME_COLORS, catLabel: "biome",
         value: r => r.biome.slice(0, 5), fill: r => BIOME_COLORS[r.biome] },
       elev: pctLens("THE LAND", "how high it stands", r => r.elevation),
@@ -7161,7 +7167,7 @@
       };
       // The lens registry does the switching; C hands each lens the scrub-aware
       // accessors above. Categoricals have no t (paint 0) and override fill.
-      const C = { live, RW, RE, RB, RP, RG, SE, RO, TRIBV, dens, maxDensity, maxBurden };
+      const C = { live, snaps, RW, RE, RB, RP, RG, SE, RO, TRIBV, dens, maxDensity, maxBurden };
       const cellT = (reg) => LENS.t ? LENS.t(reg, C) : 0;
       const cellValue = (reg) => LENS.value(reg, C);
       const cellFill = (reg) => LENS.fill ? LENS.fill(reg, C) : rampColor(ramp, cellT(reg));
@@ -7210,9 +7216,15 @@
         const hasCH = !atlas && lensId === "finance" && reg.structures && reg.structures.includes("counting_house");
         const stroke = reg.isCapital ? (atlas ? "#d62728" : "#1f1a14") : hasCH ? "#d9b96c" : (atlas ? "#b9ab8f" : "#333");
         const sw = reg.isCapital ? 4 : hasCH ? 4 : (atlas ? 1 : 1.5);
-        // native tooltip: town name + this lens's value, shown on hover with no JS
+        // native tooltip: name — the question: value, plus the drift clause when
+        // the owners' row moved enough to matter; still a plain <title>, no JS
         const tt = model.settlements.find(s => s.regionId === reg.id);
-        const tip = `${tt ? esc(tt.name) : "region " + reg.id}${atlas ? "" : ": " + esc(String(cellValue(reg)))}`;
+        const dE = snaps.length > 1 ? SE(reg) - snaps[0].eliteShare[reg.id] : 0;
+        const tip = atlas
+          ? `${tt ? esc(tt.name) : "region " + reg.id}`
+          : `${tt ? esc(tt.name) : "region " + reg.id} — ${LENS.q}: ${esc(String(cellValue(reg)))}` +
+            (reg.siteCharacter && reg.siteCharacter !== "none" && reg.siteCharacter !== "outpost" ? ` · ${reg.siteCharacter}` : "") +
+            (Math.abs(dE) >= 3 ? ` · owners' row ${dE > 0 ? "+" : ""}${dE} since founding` : "");
         parts.push(`<path d="${d}" data-region="${reg.id}" fill="${atlas ? parchmentBiome(reg.biome) : cellFill(reg)}" stroke="${stroke}" stroke-width="${sw}"><title>${tip}</title></path>`);
         if (!atlas && SHOW_NUMBERS) { // the one number the map exists to show: halo + contrast, never a ghost
           const fc = cellFill(reg);
@@ -7906,6 +7918,25 @@
         (model.dominion ? row("tribute", `${reg.occupied ? 3 : (reg.bloc === "crown" ? 1 : 2)} per year to the Dominion`) : "") +
         row("reach", `market ${reg.marketAccess} · sea ${reg.seaAccess} · seat ${reg.centrality} · sky +${reg.skyAdvantage}%`) +
         `</table>`);
+      { // #93: THE DRIFT — the region's history drawn, cursor on the scrubbed epoch
+        const snaps = model.epochSnaps || [];
+        if (snaps.length > 1) {
+          const ser = (k) => snaps.map(S => S[k][reg.id]);
+          const cur = Math.min(scrubEpoch, snaps.length - 1);
+          const dRow = (label, k) => { const s = ser(k); return row(label, `${sparkSVG(s, cur)} ${s[0]} → ${s[s.length - 1]}`); };
+          const wSer = ser("wealth");
+          const peakE = wSer.indexOf(Math.max(...wSer));
+          const eSer = ser("eliteShare");
+          const dElite = eSer[eSer.length - 1] - eSer[0];
+          L.push(`<div class="insp-sec">THE DRIFT</div><table>` +
+            dRow("wealth", "wealth") +
+            dRow("owners' share", "eliteShare") +
+            dRow("souls", "pop") +
+            dRow("blight", "blight") +
+            row("trajectory", `${reg.boomBust} · peaked ${1000 + 25 * peakE} at wealth ${wSer[peakE]} · owners' row ${dElite >= 0 ? "+" : ""}${dElite} since founding`) +
+            `</table>`);
+        }
+      }
       L.push(`<div class="insp-sec">THE TWO ROWS</div><table>` +
         row("the owners", `${reg.elitePopPct} in 100 people hold ${reg.eliteShare} of every 100 coins`) +
         row("the gap", `an owner lives ${reg.classGap}× better than a laborer here`) +
@@ -8205,6 +8236,19 @@
         }
       }
       document.getElementById("hb").checked = params.hb === 0;
+    }
+
+    // ---- The drift (#93): a region's history as sparklines ------------------
+    // Pure string builder; preserveAspectRatio=none stretches to the table cell,
+    // so only shapes live inside. The gold cursor marks the scrubbed epoch.
+    function sparkSVG(vals, cursor) {
+      if (!vals || vals.length < 2) return "";
+      const SW = 120, SH = 22, mn = Math.min(...vals), span = (Math.max(...vals) - mn) || 1;
+      const X = (i) => (i / (vals.length - 1)) * SW, Y = (v) => SH - 3 - ((v - mn) / span) * (SH - 6);
+      return `<svg class="spark" viewBox="0 0 ${SW} ${SH}" preserveAspectRatio="none">` +
+        `<polyline points="${vals.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="#221d16" stroke-width="1.2" opacity="0.75"/>` +
+        (cursor != null && cursor < vals.length ? `<line x1="${X(cursor).toFixed(1)}" y1="0" x2="${X(cursor).toFixed(1)}" y2="${SH}" stroke="#d9b96c" stroke-width="1.5"/>` : "") +
+        `</svg>`;
     }
 
     // ---- The powers (#93): treasuries, tensions, and the gate ledger -------
@@ -8516,6 +8560,7 @@
         scrubEpoch = +e.target.value;
         $("scrubVal").textContent = `${scrubEpoch}/${params.ep}`;
         updateAgeLabel();
+        renderInspector(); // the drift cursor tracks the timeline
         scheduleRender();
       });
 

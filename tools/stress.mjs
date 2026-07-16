@@ -1358,7 +1358,9 @@ if (failures === 0) ok("all 120 generations structurally valid (skeleton, bands,
 // boot draws NONE — re-pinned: the old expectation predated the two-genre
 // split and had failed ever since. The atlas flip below checks the ink.)
 const svg = A1.doc.querySelector("#stage svg");
-const nCircles = svg ? svg.querySelectorAll("circle").length : 0;
+// gate rings (#93) are ownership ink around held pass/bridge/port glyphs, not
+// settlement dots — excluded so the one-dot-per-settlement pin keeps its bite
+const nCircles = svg ? svg.querySelectorAll("circle:not(.gatering)").length : 0;
 const nRects = svg ? svg.querySelectorAll("rect:not(.coast)").length : 0;
 const nFac = svg ? svg.querySelectorAll("text.fac").length : 0;
 const nSanct = svg ? svg.querySelectorAll("text.sanct").length : 0;

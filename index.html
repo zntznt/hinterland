@@ -5705,7 +5705,7 @@
                     magnate: model.dynasties.magnate.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })) },
           skyway: { name: model.skywayName, ports: model.regions.filter(r => r.isSkyport === 1).map(r => r.id) },
           dominion: model.dominion ? { arrived_epoch: model.dominion.arrived, foothold: model.regions[model.dominion.foothold].id, occupied_n: model.regions.filter(r => r.occupied).length } : null,
-          findings: computeFindings(model),
+          findings: getFindings(model),
           tensions: { crown_magnate: Math.round(model.tensions.crown_magnate), crown_temple: Math.round(model.tensions.crown_temple), magnate_temple: Math.round(model.tensions.magnate_temple) },
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
           space: "planar 0..1000, y-up (flat-plane CRS)"
@@ -5925,7 +5925,7 @@
     const csvOf = (header, rows) =>
       [header.join(","), ...rows.map(r => r.map(csvCell).join(","))].join("\n") + "\n";
     function toCsvTables(model) {
-      const F = computeFindings(model);
+      const F = getFindings(model);
       const eventRows = model.events.map(ev => [
         ev.epoch, 1000 + 25 * ev.epoch, ev.type, ev.region_id, ev.name, ev.outcome,
         ev.faction !== undefined ? ev.faction : (ev.factions ? ev.factions.join("|") : undefined),
@@ -6016,6 +6016,63 @@
       const m = (a, b) => Math.round(a + (b - a) * t);
       return `rgb(${m(ramp.lo[0], ramp.hi[0])},${m(ramp.lo[1], ramp.hi[1])},${m(ramp.lo[2], ramp.hi[2])})`;
     }
+
+    // ---- The lens registry ---------------------------------------------------
+    // One entry per map lens, replacing the three parallel ternary chains that
+    // render() used to switch on. Each entry carries how the lens paints (t →
+    // 0..1 against RAMPS[id], or cats/fill for categoricals), what it prints as
+    // the region value, and the browse metadata (group, q — the question the
+    // plate answers) that the lens index reads. C is the per-render context of
+    // scrub-aware accessors built inside render(), so every lens stays live
+    // under the epoch scrubber for free.
+    // Most lenses read one 0–100 field: t = field/100, value = the raw field.
+    const pctLens = (group, q, get) =>
+      ({ group, q, t: (r, C) => get(r, C) / 100, value: (r, C) => get(r, C) });
+    const LENSES = {
+      injustice: { group: "THE ARGUMENT", q: "who bears the injustice",
+        t: (r, C) => (C.RB(r) / 100) * (1 - C.RW(r) / 100),
+        value: (r, C) => Math.round(100 * (C.RB(r) / 100) * (1 - C.RW(r) / 100)) },
+      class: pctLens("THE ARGUMENT", "who owns the town", (r, C) => C.SE(r)),
+      sky: pctLens("THE ARGUMENT", "who escapes the ground", r => r.skyAdvantage),
+      delta: { group: "THE ARGUMENT", q: "who rose, who fell",
+        t: (r, C) => clamp((C.RW(r) - r.wealthT0 + 40) / 80, 0, 1),
+        value: (r, C) => { const d = C.RW(r) - r.wealthT0; return (d > 0 ? "+" : "") + d; } },
+      biome: { group: "THE LAND", q: "what the land is", cats: BIOME_COLORS, catLabel: "biome",
+        value: r => r.biome.slice(0, 5), fill: r => BIOME_COLORS[r.biome] },
+      elev: pctLens("THE LAND", "how high it stands", r => r.elevation),
+      rug: pctLens("THE LAND", "how rough the going", r => r.ruggedness),
+      temp: pctLens("THE LAND", "how warm the year", r => r.temperature),
+      rain: pctLens("THE LAND", "where the rain falls", r => r.rainfall),
+      fert: pctLens("THE LAND", "where the farms pay", r => r.fertility),
+      endowment: pctLens("THE LAND", "where the ore lies", (r, C) => C.RE(r)),
+      wealth: pctLens("THE COIN", "who holds the coin", (r, C) => C.RW(r)),
+      retention: pctLens("THE COIN", "who keeps what it makes", r => r.retention),
+      tolls: pctLens("THE COIN", "who pays at the gates", r => r.tollBurden),
+      tribute: { group: "THE COIN", q: "who pays the Dominion",
+        t: (r, C) => C.TRIBV(r) / 3, value: (r, C) => C.TRIBV(r) },
+      market: pctLens("THE COIN", "who reaches the market", r => r.marketAccess),
+      seaacc: pctLens("THE COIN", "who reaches the water", r => r.seaAccess),
+      centrality: pctLens("THE COIN", "who reaches the seat", r => r.centrality),
+      bloc: { group: "THE STATE", q: "who rules here", cats: BLOC_COLORS, catLabel: "dominant bloc",
+        value: (r, C) => (C.RO(r) === 1 ? "dominion" : r.bloc).slice(0, 3),
+        fill: (r, C) => BLOC_COLORS[C.RO(r) === 1 ? "dominion" : r.bloc] },
+      services: pctLens("THE STATE", "who gets served", r => r.arcaneServices),
+      gap: pctLens("THE STATE", "who was left unserved", r => r.serviceGap),
+      blight: pctLens("THE STATE", "who breathes the poison", (r, C) => C.RB(r)),
+      burden: { group: "THE STATE", q: "who gets sick",
+        t: (r, C) => r.burden / C.maxBurden, value: r => r.burden.toFixed(1) },
+      egap: pctLens("THE STATE", "where the law runs out", r => r.enforceGap),
+      smug: pctLens("THE STATE", "where the shadow trades", r => r.smuggling),
+      density: { group: "THE PEOPLE", q: "how many souls",
+        t: (r, C) => Math.sqrt(C.dens(r) / C.maxDensity),
+        value: (r, C) => (Math.round(C.dens(r) * 10) / 10).toFixed(1) },
+      traj: { group: "THE PEOPLE", q: "boom and bust", cats: TRAJ_COLORS, catLabel: "trajectory",
+        value: r => r.boomBust.slice(0, 4), fill: r => TRAJ_COLORS[r.boomBust] },
+      trust: pctLens("THE PEOPLE", "who believes the realm", r => r.socialTrust),
+      mobility: pctLens("THE PEOPLE", "who can rise", r => r.mobility),
+      aband: pctLens("THE PEOPLE", "who was left behind", r => r.abandonment),
+      legib: pctLens("THE PEOPLE", "who goes uncounted", r => r.legibility)
+    };
     const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     const fy = (y) => W - y; // flip y for display so preview matches QGIS (y-up)
     // V2: the organic pen — PREVIEW-ONLY geometry. Exports never touch these.
@@ -6060,6 +6117,11 @@
     // Every number here is computed from the SAME fields the export carries
     // (rounded anchors included), so the panel, the chronicle's verdict, and
     // hinterland.findings in the file are all exactly recomputable by anyone.
+    // computeFindings is pure in the model, but render() needs it in as many as
+    // seven places per paint (chronicle ×3, findings band, twins line, info
+    // table ×2). Memo on the model object itself: recomputeAttributes builds a
+    // fresh model, so the cache can never go stale — same pattern as _seatRun.
+    function getFindings(model) { return model._F || (model._F = computeFindings(model)); }
     function computeFindings(model) {
       const R = model.regions;
       const n = R.length;
@@ -6517,7 +6579,7 @@
         // #86: the realm's own ages open The Years — a periodization the reader
         // can point at ("the gap opened in the Age of the Gates").
         {
-          const FA = computeFindings(model).ages;
+          const FA = getFindings(model).ages;
           if (FA && FA.length) {
             const span = (a) => `${year(a.from_epoch)}–${year(a.to_epoch)}`;
             const spread = (a) => a.gini_end > a.gini_start + 0.02 ? "the gap widened"
@@ -6722,7 +6784,7 @@
       }
       { // H1: the chronicle counts the owners' row (no phrasing dice:
         // the older histories keep their exact words)
-        const FS = computeFindings(model);
+        const FS = getFindings(model);
         if (FS.owners && FS.class_gap !== null) {
           const ct0 = town(FS.company_town);
           L.push(``);
@@ -6751,7 +6813,7 @@
         : `At the record's close the conduit reaches every settlement of the realm. The chronicle notes it without comment, so that later readers may check whether it lasted.`);
       // A1: the chronicler is required to close with what the numbers say
       {
-        const F = computeFindings(model);
+        const F = getFindings(model);
         L.push(``);
         L.push(`## What the Record Shows`);
         L.push(``);
@@ -6807,7 +6869,7 @@
     }
 
     function findingsHTML(model) {
-      const F = computeFindings(model);
+      const F = getFindings(model);
       const town = (id) => model.settlements.find(st => st.regionId === id) || { name: ((model.regions.find(r => r.id === id) || {}).placeName) || "the wild", regionId: id, tier: "none", population: 0 };
       const reg = (id) => model.regions.find(r => r.id === id);
       const L = [];
@@ -6892,7 +6954,9 @@
     function render(model, params) {
       document.getElementById("chronText").innerHTML = chronHTML(composeChronicle(model, params));
       document.getElementById("findingsText").innerHTML = findingsHTML(model);
-      const ramp = RAMPS[view];
+      const lensId = LENSES[view] ? view : "injustice"; // an unknown lens (hand-edited hash) falls back
+      const LENS = LENSES[lensId];
+      const ramp = RAMPS[lensId]; // undefined for traj/biome — categoricals never dereference it
       // #63: two genres, one switch — atlas is the pen's map (no lens),
       // data is the lens (terrain demoted); the model is never touched
       const atlas = mapMode === "atlas";
@@ -6934,72 +6998,12 @@
         // clamp to the frame so an edge region's glyph never draws off-canvas
         return [clamp(reg.c[0] + RING8[i][0] * R, 10, W - 10), clamp(fy(reg.c[1]) + RING8[i][1] * R, 10, W - 10)];
       };
-      const cellT = (reg) =>
-        view === "wealth" ? RW(reg) / 100 :
-        view === "class" ? SE(reg) / 100 :
-        view === "sky" ? reg.skyAdvantage / 100 :
-        view === "delta" ? clamp((RW(reg) - reg.wealthT0 + 40) / 80, 0, 1) :
-        view === "elev" ? reg.elevation / 100 :
-        view === "rug" ? reg.ruggedness / 100 :
-        view === "temp" ? reg.temperature / 100 :
-        view === "rain" ? reg.rainfall / 100 :
-        view === "fert" ? reg.fertility / 100 :
-        view === "retention" ? reg.retention / 100 :
-        view === "tolls" ? reg.tollBurden / 100 :
-        view === "tribute" ? TRIBV(reg) / 3 :
-        view === "seaacc" ? reg.seaAccess / 100 :
-        view === "smug" ? reg.smuggling / 100 :
-        view === "trust" ? reg.socialTrust / 100 :
-        view === "mobility" ? reg.mobility / 100 :
-        view === "endowment" ? RE(reg) / 100 :
-        view === "centrality" ? reg.centrality / 100 :
-        view === "services" ? reg.arcaneServices / 100 :
-        view === "blight" ? RB(reg) / 100 :
-        view === "injustice" ? (RB(reg) / 100) * (1 - RW(reg) / 100) :
-        view === "burden" ? reg.burden / maxBurden :
-        view === "gap" ? reg.serviceGap / 100 :
-        view === "bloc" || view === "traj" || view === "biome" ? 0 : // categorical — fill overridden below
-        view === "market" ? reg.marketAccess / 100 :
-        view === "egap" ? reg.enforceGap / 100 :
-        view === "aband" ? reg.abandonment / 100 :
-        view === "legib" ? reg.legibility / 100 :
-        Math.sqrt(dens(reg) / maxDensity);
-      const cellValue = (reg) =>
-        view === "wealth" ? RW(reg) :
-        view === "class" ? SE(reg) :
-        view === "sky" ? reg.skyAdvantage :
-        view === "delta" ? (RW(reg) - reg.wealthT0 > 0 ? "+" : "") + (RW(reg) - reg.wealthT0) :
-        view === "elev" ? reg.elevation :
-        view === "rug" ? reg.ruggedness :
-        view === "temp" ? reg.temperature :
-        view === "rain" ? reg.rainfall :
-        view === "fert" ? reg.fertility :
-        view === "retention" ? reg.retention :
-        view === "tolls" ? reg.tollBurden :
-        view === "tribute" ? TRIBV(reg) :
-        view === "seaacc" ? reg.seaAccess :
-        view === "smug" ? reg.smuggling :
-        view === "trust" ? reg.socialTrust :
-        view === "mobility" ? reg.mobility :
-        view === "endowment" ? RE(reg) :
-        view === "centrality" ? reg.centrality :
-        view === "services" ? reg.arcaneServices :
-        view === "blight" ? RB(reg) :
-        view === "injustice" ? Math.round(100 * (RB(reg) / 100) * (1 - RW(reg) / 100)) :
-        view === "burden" ? reg.burden.toFixed(1) :
-        view === "gap" ? reg.serviceGap :
-        view === "bloc" ? (RO(reg) === 1 ? "dominion" : reg.bloc).slice(0, 3) :
-        view === "traj" ? reg.boomBust.slice(0, 4) :
-        view === "biome" ? reg.biome.slice(0, 5) :
-        view === "market" ? reg.marketAccess :
-        view === "egap" ? reg.enforceGap :
-        view === "aband" ? reg.abandonment :
-        view === "legib" ? reg.legibility :
-        (Math.round(dens(reg) * 10) / 10).toFixed(1);
-      const cellFill = (reg) => view === "bloc" ? BLOC_COLORS[RO(reg) === 1 ? "dominion" : reg.bloc]
-        : view === "traj" ? TRAJ_COLORS[reg.boomBust]
-        : view === "biome" ? BIOME_COLORS[reg.biome]
-        : rampColor(ramp, cellT(reg));
+      // The lens registry does the switching; C hands each lens the scrub-aware
+      // accessors above. Categoricals have no t (paint 0) and override fill.
+      const C = { live, RW, RE, RB, RP, RG, SE, RO, TRIBV, dens, maxDensity, maxBurden };
+      const cellT = (reg) => LENS.t ? LENS.t(reg, C) : 0;
+      const cellValue = (reg) => LENS.value(reg, C);
+      const cellFill = (reg) => LENS.fill ? LENS.fill(reg, C) : rampColor(ramp, cellT(reg));
 
       const parts = [`<svg id="map" viewBox="0 0 ${W} ${W}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`];
       // A small filter library: a soft lift for the point marks so they sit
@@ -7181,7 +7185,7 @@
       // #62: amber, not a sixth red, over a white casing; #63: in data mode it
       // surfaces only on the lens it argues for
       if (atlas || view === "injustice") {
-        const F2 = computeFindings(model);
+        const F2 = getFindings(model);
         if (F2.twins) {
           const a = model.regions.find(r => r.id === F2.twins.shadow);
           const b = model.regions.find(r => r.id === F2.twins.open);
@@ -7515,7 +7519,7 @@
 
       { // U2: categorical views get NAMED swatches; choropleths keep the bar
         const bar = document.getElementById("legendBar");
-        const CATS = view === "bloc" ? BLOC_COLORS : view === "biome" ? BIOME_COLORS : view === "traj" ? TRAJ_COLORS : null;
+        const CATS = LENS.cats || null;
         if (atlas) { // #63: no lens on parchment — the legend stands down
           document.getElementById("legendLabel").textContent = "atlas — the land itself";
           bar.classList.remove("cats");
@@ -7523,8 +7527,7 @@
           bar.innerHTML = "";
           bar.style.background = "none";
         } else if (CATS) {
-          document.getElementById("legendLabel").textContent =
-            view === "bloc" ? "dominant bloc" : view === "biome" ? "biome" : "trajectory";
+          document.getElementById("legendLabel").textContent = LENS.catLabel;
           bar.classList.add("cats");
           bar.parentElement.classList.add("no-ends");
           bar.style.background = "none";
@@ -7565,10 +7568,10 @@
           ? model.events.map(ev => `e${ev.epoch}: ${ev.name && ev.name.startsWith("the ") ? ev.name : ev.type.replace("_", " ") + (ev.region_id !== undefined ? " @ #" + ev.region_id : ev.measure ? " (" + ev.measure.replace("_", " ") + ")" : ev.name ? " (" + ev.name + ")" : "")}`).join(" · ")
           : "none — a quiet age"],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
-        ["the owners", (() => { const FR = computeFindings(model); return FR.owners ? `${FR.owners.pop_pct}% of people hold ${FR.owners.coin_pct}% of the coin` : "\u2014"; })()],
+        ["the owners", (() => { const FR = getFindings(model); return FR.owners ? `${FR.owners.pop_pct}% of people hold ${FR.owners.coin_pct}% of the coin` : "\u2014"; })()],
         ["the skyway", (() => { const sp = model.regions.filter(r => r.isSkyport === 1); return sp.length >= 2 ? `${esc(model.skywayName)} Lane — ${sp.length} aeries (${sp.map(r => esc((model.settlements.find(s => s.regionId === r.id) || {name:(model.regions.find(rg=>rg.id===r.id)||{}).placeName||"the aerie"}).name)).join(", ")})` : "no lane worth the lift"; })()],
         ["the dominion", model.dominion ? `arrived ${1000 + 25 * model.dominion.arrived} — ${model.regions.filter(r => r.occupied).length} regions occupied` : "beyond the horizon, this age"],
-        ["rank-size", (() => { const F5 = computeFindings(model); return F5.zipf ? `α ${F5.zipf.alpha.toFixed(2)} · tail fit ${F5.zipf.tail_r2.toFixed(2)} · primacy ${F5.zipf.primacy}×` : "too few towns to fit"; })()],
+        ["rank-size", (() => { const F5 = getFindings(model); return F5.zipf ? `α ${F5.zipf.alpha.toFixed(2)} · tail fit ${F5.zipf.tail_r2.toFixed(2)} · primacy ${F5.zipf.primacy}×` : "too few towns to fit"; })()],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1000 (y-up)"]
       ];
@@ -7827,7 +7830,7 @@
       // restore the world as rolled (stage 3 is pure: byte-identical)
       model = applyAttributes(topology, params, geo);
       const asVals = model.regions.map(r => (r.blight / 100) * (1 - r.wealth / 100));
-      const asF = computeFindings(model);
+      const asF = getFindings(model);
       const asPlagues = model.events.filter(ev => ev.type === "blight_plague").length;
       const asDark = model.regions.filter(r => !r.onConduit).length;
       document.getElementById("cfCapL").innerHTML = `AS ROLLED (&lambda; = ${params.db}, threshold ${params.gt}) &mdash; injustice`;
@@ -7926,7 +7929,28 @@
       p.set("hb", params.hb);
       p.set("ep", params.ep);
       if (params.capital) { p.set("cx", round2(params.capital[0])); p.set("cy", round2(params.capital[1])); }
+      // the lens and mode change what a shared map argues, so they ride along —
+      // but only off-default, so stock links stay exactly as they always were
+      if (view !== "injustice") p.set("lens", view);
+      if (mapMode !== "data") p.set("mode", mapMode);
       history.replaceState(null, "", "#" + p.toString());
+    }
+    // lens/mode arrive OUTSIDE readHash's return shape on purpose: params stays
+    // byte-compatible with every consumer; the view state applies to the DOM here
+    function applyHashView() {
+      const p = new URLSearchParams(location.hash.replace(/^#/, ""));
+      const lens = p.get("lens");
+      if (lens && LENSES[lens]) {
+        view = lens;
+        const r = document.querySelector(`input[name="view"][value="${lens}"]`);
+        if (r) r.checked = true;
+      }
+      const m = p.get("mode") === "atlas" ? "atlas" : "data";
+      if (m !== mapMode) {
+        mapMode = m;
+        document.getElementById("modeAtlas").classList.toggle("on", m === "atlas");
+        document.getElementById("modeData").classList.toggle("on", m === "data");
+      }
     }
     function readHash() {
       const h = location.hash.replace(/^#/, "");
@@ -8080,7 +8104,7 @@
       });
 
       document.querySelectorAll('input[name="view"]').forEach(el =>
-        el.addEventListener("change", (e) => { view = e.target.value; scheduleRender(); }));
+        el.addEventListener("change", (e) => { view = e.target.value; writeHash(); scheduleRender(); }));
 
       // #63: the mode toggle re-renders only — the model never recomputes
       const setMode = (m) => {
@@ -8088,6 +8112,7 @@
         mapMode = m;
         $("modeAtlas").classList.toggle("on", m === "atlas");
         $("modeData").classList.toggle("on", m === "data");
+        writeHash();
         scheduleRender();
       };
       $("modeAtlas").addEventListener("click", () => setMode("atlas"));
@@ -8182,7 +8207,7 @@
         catch (_) { toast("Copy failed — link is in the address bar"); }
       });
 
-      window.addEventListener("hashchange", () => { params = readHash(); syncControls(); regenerateTopology(); });
+      window.addEventListener("hashchange", () => { params = readHash(); applyHashView(); syncControls(); regenerateTopology(); });
     }
 
     // ---- Boot ---------------------------------------------------------------
@@ -8195,6 +8220,7 @@
         return;
       }
       params = readHash();
+      applyHashView();
       syncControls();
       wire();
       regenerateTopology();

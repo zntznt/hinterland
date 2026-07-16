@@ -969,6 +969,19 @@
   #chronBox .sec-title { margin-bottom:10px; }
   #chronText { font:14.5px/1.7 var(--serif); max-width:74ch; padding:20px 34px 28px; background:var(--tex-paper), var(--card);
     border:var(--rule); border-top:3px double var(--ink-neatline); }
+  /* the chronicle as an article: acts, drop caps, pull quotes, the timeline echo */
+  #chronText .chron-tl { margin:0 0 14px; }
+  #chronText .chron-tl svg { display:block; width:100%; height:26px; border:1px solid var(--line); background:rgba(244,236,216,.6); }
+  #chronText h2.chron-title { font:700 26px/1.2 var(--serif); margin:4px 0 6px; }
+  #chronText h3.chron-act { font:700 11px/1 var(--sans); letter-spacing:.2em; text-transform:uppercase; color:var(--oxblood);
+    margin:26px 0 8px; padding-top:14px; border-top:1px solid var(--line); }
+  #chronText p { margin:8px 0; }
+  #chronText p.lede::first-letter { font-size:3.1em; float:left; line-height:.85; padding:2px 6px 0 0; color:var(--oxblood); font-family:var(--serif); }
+  .pullquote { float:right; width:200px; margin:6px 0 10px 18px; padding:10px 0 12px;
+    border-top:3px double var(--ink-neatline); border-bottom:1px solid var(--line); font:italic 17px/1.45 var(--serif); }
+  .pullquote b { color:var(--oxblood); font-style:normal; }
+  #instPanel { margin-bottom:16px; }
+  #instPanel .insp-ev { font:12px var(--sans); margin:6px 0 2px; }
   #colophon { max-width:1200px; margin:28px auto 0; padding:16px 24px 0; border-top:1px solid var(--line); color:var(--muted); font-size:12px; }
   .colophon-btns { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 14px; }
   .colophon-links { display:flex; gap:16px; flex-wrap:wrap; align-items:baseline; }
@@ -1206,6 +1219,7 @@
       </section>
       <aside id="worldPanel">
         <div class="sidecard" id="powersPanel"></div>
+        <div class="sidecard" id="instPanel"></div>
         <div class="sidecard">
           <div class="sec-title">THIS WORLD</div>
           <table id="info"></table>
@@ -7106,20 +7120,40 @@
 
     // U1: the chronicle reader renders its own minimal markdown (the
     // downloaded artifact stays byte-exact; this is presentation only)
-    function chronHTML(md) {
-      const e2 = esc(md);
-      return e2.split(/\n\n+/).map(block => {
-        let b = block;
-        if (b.startsWith("## ")) return `<h3 style="font-family:var(--serif); margin:18px 0 4px">${b.slice(3)}</h3>`;
-        if (b.startsWith("# ")) return `<h2 style="font-family:var(--serif); margin:4px 0 6px">${b.slice(2)}</h2>`;
-        b = b.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
-        b = b.replace(/^\*([^*]+)\*$/gm, "<i>$1</i>");
-        return `<p style="margin:8px 0">${b}</p>`;
-      }).join("");
+    // The chronicle as the report's main article: acts get eyebrow headers and
+    // drop caps, pull quotes are COMPUTED from the findings (never parsed from
+    // prose, so they cannot drift from the record), and a non-interactive echo
+    // of the plate's timeline heads the history it narrates. The downloadable
+    // .md stays byte-exact — this styles the page only, composeChronicle is law.
+    function chronicleArticleHTML(md, model, params) {
+      const F = getFindings(model);
+      const dG = F.gini - F.gini_t0;
+      const pulls = [
+        `<b>${dG <= -0.04 ? "the gap closed" : dG >= 0.04 ? "the world entrenched" : "the world held its shape"}</b> — gini ${F.gini_t0.toFixed(2)} → ${F.gini.toFixed(2)}`
+      ];
+      if (F.owners) pulls.push(`<b>${F.owners.pop_pct}%</b> of the people hold <b>${F.owners.coin_pct}%</b> of the coin`);
+      const echo = timelineHTML(model, params);
+      let acts = 0, dropNext = false;
+      return (echo ? `<div class="chron-tl">${echo}</div>` : "") +
+        esc(md).split(/\n\n+/).map(block => {
+          let b = block;
+          if (b.startsWith("## ")) {
+            acts++;
+            const pull = acts >= 2 && pulls.length ? `<aside class="pullquote">${pulls.shift()}</aside>` : "";
+            dropNext = true;
+            return `${pull}<h3 class="chron-act">${b.slice(3)}</h3>`;
+          }
+          if (b.startsWith("# ")) return `<h2 class="chron-title">${b.slice(2)}</h2>`;
+          b = b.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+          b = b.replace(/^\*([^*]+)\*$/gm, "<i>$1</i>");
+          const cls = dropNext ? ` class="lede"` : "";
+          dropNext = false;
+          return `<p${cls}>${b}</p>`;
+        }).join("");
     }
 
     function render(model, params) {
-      document.getElementById("chronText").innerHTML = chronHTML(composeChronicle(model, params));
+      document.getElementById("chronText").innerHTML = chronicleArticleHTML(composeChronicle(model, params), model, params);
       document.getElementById("findingsText").innerHTML = findingsHTML(model);
       const lensId = LENSES[view] ? view : "injustice"; // an unknown lens (hand-edited hash) falls back
       const LENS = LENSES[lensId];
@@ -7776,6 +7810,7 @@
       ];
       document.getElementById("info").innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
       document.getElementById("powersPanel").innerHTML = powersHTML(model);
+      document.getElementById("instPanel").innerHTML = institutionsHTML(model);
     }
 
     // ---- The inspector (U2): one click, the whole ledger ---------------------
@@ -8236,6 +8271,21 @@
         }
       }
       document.getElementById("hb").checked = params.hb === 0;
+    }
+
+    // ---- The institutions card (#91): the record's built landscape ----------
+    function institutionsHTML(model) {
+      const counts = {};
+      (model.structures || []).forEach(s => { counts[s.type] = (counts[s.type] || 0) + 1; });
+      const ORDER = ["counting_house", "temple", "keep", "library", "guildhall", "market", "tavern"];
+      const rows = ORDER.filter(t => counts[t]).map(t =>
+        `<tr><td>${t.replace(/_/g, " ")}</td><td>${counts[t]}</td></tr>`).join("");
+      if (!rows) return `<div class="sec-title">THE INSTITUTIONS</div><div class="insp-ev">nothing stands but huts and roads.</div>`;
+      const chTowns = model.regions.filter(r => (r.structures || []).includes("counting_house"))
+        .sort((a, b) => b.eliteShare - a.eliteShare);
+      const st = chTowns.length ? model.settlements.find(s => s.regionId === chTowns[0].id) : null;
+      return `<div class="sec-title">THE INSTITUTIONS</div><table>${rows}</table>` +
+        (st ? `<div class="insp-ev">the sharpest counting-house town is <b>${esc(st.name)}</b> — the house banks the coin to the owners' row (+6 elite share).</div>` : "");
     }
 
     // ---- The drift (#93): a region's history as sparklines ------------------

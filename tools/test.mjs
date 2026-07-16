@@ -2811,9 +2811,14 @@ console.log("# The chronicle E4 acceptance: the world narrating itself");
   if (A1.chron === A2.chron && A1.chron.length > 400) ok("chronicle is deterministic (same params => identical text)");
   else fail("chronicle nondeterministic or empty");
   // the on-page reader renders the same words the artifact carries
-  // (markdown markers are presentation; the text must match once stripped)
+  // (markdown markers are presentation; the text must match once stripped).
+  // The article FURNITURE — pull quotes computed from the findings and the
+  // timeline echo — is excluded: it is chrome around the record, not prose,
+  // and the .md artifact deliberately never carries it.
   const strip = (t) => t.replace(/^#{1,2} /gm, "").replace(/\*\*/g, "").replace(/^\*([^*]+)\*$/gm, "$1").replace(/\s+/g, " ").trim();
-  const domChron = [...A1.doc.getElementById("chronText").children].map(el => el.textContent).join(" ");
+  const domChron = [...A1.doc.getElementById("chronText").children]
+    .filter(el => !el.classList.contains("pullquote") && !el.classList.contains("chron-tl"))
+    .map(el => el.textContent).join(" ");
   if (strip(domChron) === strip(A1.chron))
     ok("on-page chronicle carries exactly the downloaded artifact's words");
   else fail("panel/download divergence");

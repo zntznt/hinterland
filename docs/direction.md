@@ -122,6 +122,47 @@ What varies is how much artifice each region commands — a level, not an era.
 
 ---
 
+## 2.5 The camera and the world's shape (decided 2026-07-16)
+
+The plate stops being a fixed square viewport and becomes a **camera**; the world
+stops being a square. Two halves at very different costs, sequenced accordingly.
+
+**The camera (view layer — lands immediately, independent of every other phase).**
+- Mechanism: the main map's viewBox becomes the camera (`cam = {x, y, w, h}`),
+  preserved across `render()`'s innerHTML rebuilds; the counterfactual panes keep
+  whole-world framing (they are comparison thumbnails, not viewports).
+- Interactions: wheel and pinch zoom about the cursor; drag pan with click slop
+  (sub-threshold pointer travel stays a click, so inspect and pin-capital are
+  unharmed); double-click zoom; +/− HUD buttons. **Pan clamps to the world rect —
+  never more land than there is.** Min zoom = contain (the whole plate, neatline
+  and mat intact); **default view = fit width** (the map fills the window's width;
+  tall windows pan north–south).
+- Zoom style: **hybrid semantic.** Geometric scaling during the gesture (smooth,
+  cheap); on settle, one re-render with labels/glyphs compensated to screen size
+  and the existing declutter (`placedLabels`/`tryLabel`) re-run at that zoom — so
+  detail and names GROW as you go deeper, Google-Maps style, on the machinery the
+  render already has.
+- Click math: `getScreenCTM().inverse()` replaces the linear rect map — correct
+  under any viewBox, retiring the old square-box invariant permanently. Hit-test
+  grab radii divide by the zoom factor so targets stay screen-constant.
+- The scale bar recomputes from the camera (the leagues stay honest at every
+  zoom). HUD furniture is HTML siblings and stays screen-fixed, as chrome should.
+- **`cam=` rides the hash off-default only** (the `lens=` precedent): a share
+  link reproduces the exact view being argued about; stock links stay clean.
+- Keyboard: `+`/`−` zoom, Shift+arrows pan (bare arrows remain the epoch scrub).
+
+**The world's shape (model layer — Phase B window, slotted as B0.5).**
+- The world becomes a **fixed 1600×1000 rectangle (16:10)** for every world. `W`
+  generalizes to `WX/WY` across its ~62 use sites; the ~6 tuned distance constants
+  (spoil decay /800, temple/magnate reach /300, healer/conduit reach /250, force
+  /280…) recalibrate against the new diameter — which is why this is a declared
+  model bump with fixture regeneration and suite re-measurement, not a view tweak.
+- Exports declare the CRS as planar 0–1600 × 0–1000 (y-up); the QGIS `.qml`
+  styles and docs update in the same schema bump.
+- **The world's aspect is a WORLD property** — deterministic, exported, identical
+  for every viewer — never derived from the window. Fitting the window is the
+  camera's job, permanently.
+
 ## 3. The economic re-founding: breaking zero-sum, arming both edges
 
 ### 3.0 The world outside the map (the region's defining fact)
@@ -670,6 +711,14 @@ Each phase = a PR series, each PR suite-green, fixtures regenerated ONLY at decl
 model bumps with a CHANGELOG schema entry (the house discipline). Order chosen so no
 phase authors content against physics a later phase replaces.
 
+- **Phase V — the camera (view-only; independent — may run before or parallel to
+  Phase A, since it never touches the model or exports).**
+  V1: the camera itself — viewBox state, wheel/pinch/drag/double-click with click
+  slop, world-rect clamps, contain↔fit-width range, CTM click mapping, zoom-scaled
+  hit radii. V2: the semantic settle — compensated label/glyph re-render, zoom-
+  aware declutter, camera-aware scale bar, `cam=` hash, +/− HUD buttons,
+  Shift+arrow pans. (On the square world today; the camera is shape-agnostic and
+  needs no rework when B0.5 lands.)
 - **Phase A — instrumentation (model-neutral).**
   A1: golden fixture harness (G5 stage 0's first half) — the enforcement mechanism.
   A2: fate seed (G5 stage 0's second half). Schema bump.
@@ -681,7 +730,9 @@ phase authors content against physics a later phase replaces.
   Suggested order: **B0 the world outside** (`world=` param, regime chain, price/
   attention/demand series consumed as boundary conditions — lands FIRST in B
   because every later mechanism should be authored against an open region, not a
-  closed one); B1 artifice index + income scaling; B2 investment pool (banks'
+  closed one); **B0.5 the world's shape** (the 1600×1000 rectangle per §2.5 —
+  rides the same regeneration window as B0, before any mechanism is recalibrated
+  against distances that would only change again); B1 artifice index + income scaling; B2 investment pool (banks'
   second edge, comprador split per §3.6); B3 migration frontier term + emigration/
   remittances; B4 disposal doctrine (retire λ); B5 ordinary elite erosion/churn;
   B6 tariff-upkeep coupling + decay; B7 reform long edges + creditor-imposed
@@ -778,6 +829,14 @@ Beyond the house suite, the pivot adds a standing acceptance block:
 9. **The seat — the governor.** The reign mode plays the region's administrator,
    answerable partly to the off-map metropole; dilemmas gain the
    comply / resist / skim axis; G5's card vocabulary re-anchors to this seat.
+10. **Zoom style — hybrid semantic.** Geometric during the gesture; compensated
+    re-render with zoom-aware declutter on settle (§2.5).
+11. **World shape — fixed 1600×1000 (16:10).** A world property, never a window
+    fit; lands as B0.5 in the Phase B regeneration window.
+12. **Default view — fit width.** Min zoom contains the whole plate; pan clamps
+    at the world's edges.
+13. **Camera in the hash — yes, off-default only** (`cam=`, the `lens=`
+    precedent): share the exact view; stock links stay clean.
 
 ---
 

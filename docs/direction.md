@@ -1,11 +1,12 @@
-# Hinterland: the Instrument Pivot — direction (DRAFT v1)
+# Hinterland: the Instrument Pivot — direction (DECIDED, v3)
 
-> Status: DRAFT for the owner's edit. Nothing here is pinned. This document sets
-> direction for the largest change since the repo began: Hinterland stops being an
-> argument machine and becomes an instrument. It folds four strands into one plan —
-> the epistemic pivot, the setting pivot, the generative-prose pivot, and the
-> already-red-teamed REIGN + VOICES plan (G5) — and resolves the sequencing
-> conflicts between them.
+> Status: **DECIDED 2026-07-16** — every §8 question settled by the owner; this is
+> the working direction. It sets the largest change since the repo began:
+> Hinterland stops being an argument machine and becomes an instrument. Four
+> strands in one plan — the epistemic pivot, the setting pivot (a REGION under
+> imperial reach, arcane-industrial), the generative-prose pivot (the loom), and
+> the red-teamed REIGN + VOICES plan (G5) — with the sequencing conflicts between
+> them resolved. Work proceeds down the §6 ladder.
 
 ---
 
@@ -745,31 +746,38 @@ Beyond the house suite, the pivot adds a standing acceptance block:
 5. **Definition honesty.** Composite metrics (injustice) are labeled as composites
    in every surface that shows them; the suite greps the label.
 
-## 8. Open questions for the owner
+## 8. Decisions (settled by the owner, 2026-07-16)
 
-1. **Naming/back-compat depth**: rename export columns for the new setting (schema
-   break, QGIS styles regenerate) or alias (old names kept as duplicates)?
-2. **Foreign powers v1 scope**: one generalized power with postures, or three named
-   powers? (§3.6)
-3. **The boot lens** once injustice is de-defaulted: wealth? the new growth lens?
-4. **Knob retirements**: fold `bias` and `hb` away as proposed, or keep the panel?
-5. **The old thesis's place**: the extraction world remains generatable — should
-   the docs keep an essay acknowledging the original argument as one region of the
-   possibility space (I'd argue yes; it's honest about the project's history)?
-6. **Voices companion spec**: paste the drafting agent's marked block into this
-   repo (docs/voices-spec.md) so the reference in §5.1 resolves.
-7. **The world seed's hash contract**: does `world=` default to the world seed
-   (today's closed region reproduced exactly — the back-compat answer) or to a
-   fixed "concordat era" so every region shares one outside by default (regions
-   become comparable across seeds — the atlas answer)? Both are defensible; pick.
-8. **How much outside**: one empire fully mechanized vs two rivals in v1 (§3.6);
-   and does the region's own history ever leak OUT (a won revolt making foreign
-   gazettes — flavor-only, or a small attention feedback)? Recommend flavor-only
-   in v1: the region moves the world's texts, never its series.
-9. **The governor frame**: does the reign mode (G5) play the sovereign seat (as
-   drafted) or the §3.6 regional administrator between metropole and region?
-   Recommend the governor — it is the truer seat for a hinterland and the richer
-   dilemma space (comply / resist / skim).
+1. **Schema naming — clean versioned break.** Columns rename once at the Phase C
+   schema bump; the QGIS `.qml` styles regenerate in the same PR (we own them —
+   serialize+parse-in-one-change discipline). Old exports stay readable under
+   their old `schema_version`. No alias columns.
+2. **Empires v1 — two-pole lite.** One empire fully mechanized (the whole §3.6
+   reach table) plus a named RIVAL present in the regime chain, the gazette, and
+   diplomacy dilemmas (courting the second power against the first), without its
+   own full reach machinery until v2. The region's own history leaks out as
+   flavor only: it moves the world's texts, never its series.
+3. **Boot lens — wealth.** The neutral opener; `injustice` becomes one labeled
+   composite plate among many.
+4. **Knob retirements — both.** `bias` folds into the legacy term's definition;
+   `hb` becomes the closed end of the `openness` axis. Old hash params map
+   forward so shared links keep meaning.
+5. **The old thesis — kept as an essay.** A short docs piece: what the project
+   originally argued, why the engine no longer presumes it, and where in the
+   possibility space the extraction worlds live.
+6. **Voices companion spec — owner action item (open):** paste the drafting
+   agent's marked block into this repo as `docs/voices-spec.md` so §5.1's
+   reference resolves. Not a blocker for Phases A–B.
+7. **World seed default — one shared era.** Default `world=` is a fixed constant
+   (the Concordat era): every region generated at defaults lives through the SAME
+   world history; the atlas becomes 80 hinterlands of one world. An explicit
+   `world=` gives a different history.
+8. **Default epochs — `ep: 10`.** Dynamics run out of the box; the founding
+   snapshot remains available at `ep=0`. Default URLs change meaning at the
+   Phase A fixture declaration.
+9. **The seat — the governor.** The reign mode plays the region's administrator,
+   answerable partly to the off-map metropole; dilemmas gain the
+   comply / resist / skim axis; G5's card vocabulary re-anchors to this seat.
 
 ---
 

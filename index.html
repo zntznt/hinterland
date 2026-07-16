@@ -6058,7 +6058,27 @@
       seaacc:     { lo: [240, 247, 250], hi: [13, 71, 105],  label: "sea access (the second pole)" },
       smug:       { lo: [246, 242, 246], hi: [84, 39, 80],   label: "smuggling intensity (the shadow's roads)" },
       trust:      { lo: [247, 244, 238], hi: [32, 84, 120],  label: "social trust (who believes the realm)" },
-      mobility:   { lo: [235, 224, 200], hi: [140, 84, 16],  label: "mobility ceiling (who can rise)" } // floor: the low end must survive a white halo
+      mobility:   { lo: [235, 224, 200], hi: [140, 84, 16],  label: "mobility ceiling (who can rise)" }, // floor: the low end must survive a white halo
+      // the full index: every exported column earns a plate
+      crown:      { lo: [222, 235, 247], hi: [33, 102, 172],  label: "crown reach (the seat's writ)" },
+      temple:     { lo: [237, 231, 242], hi: [106, 61, 154],  label: "temple reach (the god's word)" },
+      magnate:    { lo: [253, 232, 213], hi: [204, 76, 2],    label: "magnate reach (private coin)" },
+      healing:    { lo: [237, 248, 233], hi: [0, 109, 44],    label: "healing reach (who can reach a healer)" },
+      wardline:   { lo: [235, 237, 248], hi: [54, 50, 127],   label: "wardline strength (where the wards hold)" },
+      force:      { lo: [242, 242, 242], hi: [60, 60, 66],    label: "force projection (who the state can compel)" },
+      blackmkt:   { lo: [246, 240, 246], hi: [74, 20, 71],    label: "black market index (the fenced goods)" },
+      predation:  { lo: [253, 240, 237], hi: [152, 0, 30],    label: "predation risk (where the road is robbed)" },
+      delver:     { lo: [248, 240, 227], hi: [124, 80, 30],   label: "delver flux (who digs the ruins)" },
+      pilgrim:    { lo: [244, 242, 248], hi: [96, 80, 138],   label: "pilgrim flux (where the pilgrims walk)" },
+      vuln:       { lo: [253, 240, 244], hi: [174, 28, 84],   label: "vulnerability (fragile when sickness comes)" },
+      safewater:  { lo: [239, 246, 251], hi: [24, 100, 148],  label: "safe water (who drinks safely)" },
+      kinship:    { lo: [249, 241, 231], hi: [130, 74, 34],   label: "kinship reliance (kin, not the realm)" },
+      cultdist:   { lo: [246, 240, 240], hi: [112, 58, 82],   label: "cultural distance (far from the seat's manner)" },
+      segreg:     { lo: [244, 242, 238], hi: [58, 50, 44],    label: "segregation (walled apart)" },
+      churn:      { lo: [250, 246, 226], hi: [150, 110, 10],  label: "tenure churn (the land changed written hands)" },
+      foundage:   { lo: [247, 243, 233], hi: [112, 84, 56],   label: "founding age (how old the town is)" },
+      legacy:     { lo: [250, 244, 227], hi: [161, 120, 38],  label: "legacy advantage (born ahead)" },
+      refining:   { lo: [252, 240, 230], hi: [176, 88, 26],   label: "refining capacity (where value is added)" }
     };
     // #62: many ramps bottom out near-white, so a view where one region spikes
     // (injustice/burden/tolls, maroon hi) reads as a single loud cell on blank
@@ -6073,6 +6093,14 @@
     }
     const BLOC_COLORS = { crown: "#6baed6", temple: "#9e9ac8", magnate: "#fd8d3c", contested: "#cccccc", ungoverned: "#f7f7f7", dominion: "#5a5550" };
     const TRAJ_COLORS = { boom: "#2f9e44", stable: "#d9d9d9", decline: "#f08c00", collapse: "#7a1f1f" };
+    const TENURE_COLORS = { titled: "#6b93b8", mixed: "#a3bd6b", customary: "#cfc06e", contested: "#c96a2b", none: "#f7f7f7" };
+    const CAUSE_COLORS = { poison: "#ae017e", water: "#2b6ba5", unmet: "#62625e", well: "#f7f7f7" };
+    // the dominant driver of a region's disease burden (well = negligible burden)
+    function burdenCause(reg) {
+      const e = reg.burdenEnv || 0, w = reg.burdenWater || 0, u = reg.burdenUnmet || 0;
+      if (e + w + u < 0.5) return "well";
+      return e >= w && e >= u ? "poison" : w >= u ? "water" : "unmet";
+    }
     const BIOME_COLORS = { alpine: "#e8e6e1", badland: "#d9a066", moor: "#a8a58c", marsh: "#7fa88c", forest: "#4f7a4f", steppe: "#cfc06e", grassland: "#a3bd6b" };
     // Atlas land: the biome color blended toward parchment cream (#f4ecd8), so
     // the ground shows climate as a quiet tint, not a data choropleth.
@@ -6141,7 +6169,31 @@
       trust: pctLens("THE PEOPLE", "who believes the realm", r => r.socialTrust),
       mobility: pctLens("THE PEOPLE", "who can rise", r => r.mobility),
       aband: pctLens("THE PEOPLE", "who was left behind", r => r.abandonment),
-      legib: pctLens("THE PEOPLE", "who goes uncounted", r => r.legibility)
+      legib: pctLens("THE PEOPLE", "who goes uncounted", r => r.legibility),
+      // ---- the full index: the columns that only the export used to carry ----
+      crown: pctLens("THE REACH", "how far the seat's writ runs", r => r.crownReach !== undefined ? r.crownReach : r.centrality),
+      temple: pctLens("THE REACH", "how far the god's word carries", r => r.templeReach),
+      magnate: pctLens("THE REACH", "how far the magnates' coin reaches", r => r.magnateReach),
+      healing: pctLens("THE REACH", "who can reach a healer", r => r.healingReach),
+      wardline: pctLens("THE REACH", "where the wards hold", r => r.wardline),
+      force: pctLens("THE REACH", "who the state can compel", r => r.forceProjection),
+      blackmkt: pctLens("THE SHADOW", "where the fenced goods flow", r => r.blackMarket),
+      predation: pctLens("THE SHADOW", "where the road is robbed", r => r.predation),
+      delver: pctLens("THE SHADOW", "who digs the ruins for a wage", r => r.delverFlux),
+      pilgrim: pctLens("THE SHADOW", "where the pilgrims walk", r => r.pilgrimFlux),
+      vuln: pctLens("THE BODY", "who is fragile when sickness comes", r => r.vulnerability),
+      cause: { group: "THE BODY", q: "what makes them sick", cats: CAUSE_COLORS, catLabel: "dominant burden cause",
+        value: r => burdenCause(r), fill: r => CAUSE_COLORS[burdenCause(r)] },
+      safewater: pctLens("THE BODY", "who drinks safely", r => r.safeWater),
+      kinship: pctLens("THE UNSEEN", "who relies on kin, not the realm", r => r.kinship),
+      cultdist: pctLens("THE UNSEEN", "who lives far from the seat's manner", r => r.culturalDistance),
+      segreg: pctLens("THE UNSEEN", "who walls themselves apart", r => r.segregation),
+      tenure: { group: "THE UNSEEN", q: "whose land the registry sees", cats: TENURE_COLORS, catLabel: "tenure regime",
+        value: r => (r.tenure || "none").slice(0, 6), fill: r => TENURE_COLORS[r.tenure] || TENURE_COLORS.none },
+      churn: pctLens("THE UNSEEN", "how often the land changed written hands", r => r.tenureChurn),
+      foundage: pctLens("DEEP TIME", "how old the town is", r => r.foundingAge),
+      legacy: pctLens("DEEP TIME", "who was born ahead", r => r.legacy),
+      refining: pctLens("DEEP TIME", "where the value is added", r => r.refining)
     };
     const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     const fy = (y) => W - y; // flip y for display so preview matches QGIS (y-up)
@@ -7777,7 +7829,8 @@
         row("elevation / rugged", `${reg.elevation} / ${reg.ruggedness}`) +
         row("climate", `temp ${reg.temperature} · rain ${reg.rainfall} · fertility ${reg.fertility}`) +
         row("ore", `${reg.E} in the ground (founded ${reg.endowment0})${reg.exhausted ? " · DEAD LODE" : ""}`) +
-        row("features", [reg.onRiver === 1 ? "river" : "", reg.onCoast === 1 ? "coast" : "", reg.isPass === 1 ? "pass" : "", reg.rangeShadow === 1 ? "mountain shadow" : "", reg.stillair === 1 ? "STILLAIR (no lift)" : ""].filter(Boolean).join(" · ") || "open country") +
+        row("features", [reg.onRiver === 1 ? "river" : "", reg.onCoast === 1 ? "coast" : "", reg.isPass === 1 ? "pass" : "", reg.rangeShadow === 1 ? "mountain shadow" : "", reg.aquifer === 1 ? "aquifer" : "", reg.stillair === 1 ? "STILLAIR (no lift)" : ""].filter(Boolean).join(" · ") || "open country") +
+        row("founded", `${(reg.era || "").replace(/_/g, " ")} · age ${reg.foundingAge} · legacy ${reg.legacy}`) +
         `</table>`);
       L.push(`<div class="insp-sec">THE COIN</div><table>` +
         row("wealth", `${reg.wealth} (founded ${reg.wealthT0}, peak ${reg.peakWealth})`) +
@@ -7801,7 +7854,8 @@
         `</table>`);
       L.push(`<div class="insp-sec">THE PEOPLE</div><table>` +
         row("souls", `${reg.population.toLocaleString("en-US")} (founded ${Math.round(reg.popT0 * (1 + reg.rural)).toLocaleString("en-US")}) · ${reg.boomBust}`) +
-        row("health", `burden ${reg.burden}/1k · safe water ${reg.safeWater}`) +
+        row("health", `burden ${reg.burden}/1k = ${reg.burdenEnv} poison + ${reg.burdenWater} water + ${reg.burdenUnmet} unmet`) +
+        row("care", `healer reach ${reg.healingReach} · safe water ${reg.safeWater} · fragility ${reg.vulnerability}`) +
         row("standing", `trust ${reg.socialTrust} · mobility ${reg.mobility} · uncounted ${reg.uncounted.toLocaleString("en-US")}`) +
         `</table>`);
       const stands = [];

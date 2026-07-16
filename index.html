@@ -897,6 +897,11 @@
   .modectl button { font:600 11px var(--sans); padding:4px 11px; margin:0; border:none; border-radius:0; background:transparent; color:var(--muted); cursor:pointer; }
   .modectl button.on { background:var(--gold); color:#241d10; }
   .poictl { display:inline-flex; align-items:center; gap:5px; font:600 11px var(--sans); color:var(--muted); cursor:pointer; white-space:nowrap; }
+  #keyCard { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:calc(var(--z-toast) - 1);
+    background:var(--tex-paper), var(--card); border:var(--rule); border-top:3px double var(--ink-neatline);
+    box-shadow:var(--shadow); padding:14px 20px 16px; min-width:250px; }
+  #keyCard td { padding:2.5px 0; font:12.5px var(--sans); }
+  #keyCard td:first-child { color:var(--muted); padding-right:16px; font-weight:700; white-space:nowrap; }
   #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--dark); color: #f5efe4;
     font: 600 12.5px var(--sans); padding: 7px 14px; border: 1px solid var(--gold); box-shadow: var(--shadow);
     opacity: 0; pointer-events: none; transition: opacity .25s; z-index: var(--z-toast); }
@@ -990,11 +995,29 @@
   /* ---- small screens (full responsive pass is scheduled work) ---- */
   @media (max-width:900px) { .report-grid { grid-template-columns:1fr; } }
   @media (max-width:760px) {
-    #plate { height:auto; padding:10px; }
+    #plate { height:auto; padding:10px 10px 52px; }
+    /* the gutter-claiming shift is a wide-screen behavior; sheets overlay */
+    body.controls-open #plate { padding-left:10px; }
+    body.inspect-open #plate { padding-right:10px; }
     .plate-square { width:min(100%, calc(100dvh - var(--mast-h) - 20px)); margin:0 auto; }
     .lens-chip-cap { display:none; }
-    .edge-tab { padding:12px 6px; }
     .brand-line h1 { font-size:15px; }
+    .hud-bc { width:56%; }
+    /* drawers become bottom sheets; the edge tabs become a bottom bar */
+    .drawer { top:auto; bottom:0; left:0; right:0; width:auto; max-height:72dvh;
+      border:var(--rule); border-top:3px double var(--ink-neatline); }
+    .drawer-left, .drawer-right { transform:translateY(103%); }
+    .drawer.open { transform:none; }
+    body.plate-away .drawer-left, body.plate-away .drawer-right { transform:translateY(103%); }
+    .edge-tab { position:fixed; top:auto; bottom:0; transform:none; writing-mode:horizontal-tb;
+      width:50%; padding:12px 0; text-align:center; box-shadow:none; border-bottom:none; }
+    .edge-left { left:0; border-left:none; }
+    .edge-right { right:0; border-right:none; border-left:var(--rule); }
+    #lensPanel { width:100%; }
+  }
+  @media (max-width:480px) {
+    .hud-bl { display:none; }
+    .hud-tl .poictl { display:none; }
   }
   .err { color:var(--oxblood); font-weight:600; }
   code { background:#e6dfd0; padding:1px 5px; border-radius:4px; font-size:12px; }
@@ -1244,6 +1267,21 @@
       </div>
     </footer>
   </article>
+
+  <!-- the keys: a small card listing the keyboard grammar -->
+  <div id="keyCard" role="dialog" aria-label="Keyboard shortcuts" style="display:none">
+    <div class="sec-title">THE KEYS</div>
+    <table>
+      <tr><td>l&nbsp;or&nbsp;/</td><td>open the index of plates</td></tr>
+      <tr><td>&larr; &rarr;</td><td>scrub the epochs</td></tr>
+      <tr><td>m</td><td>atlas / data</td></tr>
+      <tr><td>p</td><td>points of interest</td></tr>
+      <tr><td>c</td><td>compose drawer</td></tr>
+      <tr><td>i</td><td>ledger drawer</td></tr>
+      <tr><td>Esc</td><td>close, one layer at a time</td></tr>
+      <tr><td>?</td><td>this card</td></tr>
+    </table>
+  </div>
 
   <!-- the one toast: fixed, floats above everything, announced to AT -->
   <div id="toast" role="status" aria-live="polite"></div>
@@ -8645,6 +8683,45 @@
           document.body.classList.toggle("plate-away", !es[0].isIntersecting),
           { threshold: 0.12 }).observe(document.getElementById("plate"));
       }
+
+      // ---- the keyboard grammar: one listener, guarded off every input ----
+      const keyHelp = (show) => { $("keyCard").style.display = show ? "block" : "none"; };
+      document.addEventListener("keydown", (e) => {
+        if (e.isComposing || e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.target.closest && e.target.closest("input,textarea,select,[contenteditable]")) return;
+        if (e.key === "Escape") {
+          // one layer per press: the pin, the key card, the index, the
+          // selection, then the drawers — the same order a reader backs out in
+          if (pinArm) { pinArm = false; $("pinCap").classList.remove("armed"); return; }
+          if ($("keyCard").style.display !== "none") { keyHelp(false); return; }
+          if ($("lensPanel").classList.contains("open")) { setLensPanel(false); return; }
+          if (inspectId >= 0 || selFeat) { inspectId = -1; selFeat = null; setDrawer("inspect", false); renderInspector(); if (model) render(model, params); return; }
+          if (drawerOpen("inspect")) { setDrawer("inspect", false); return; }
+          if (drawerOpen("controls")) { setDrawer("controls", false); return; }
+          return;
+        }
+        if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && params.ep > 0) {
+          e.preventDefault();
+          const sc = $("scrub");
+          sc.value = clamp(+sc.value + (e.key === "ArrowRight" ? 1 : -1), 0, params.ep);
+          sc.dispatchEvent(new Event("input", { bubbles: true }));
+        } else if (e.key === "m") {
+          setMode(mapMode === "atlas" ? "data" : "atlas");
+        } else if (e.key === "p") {
+          const ck = $("showPoiCk");
+          ck.checked = !ck.checked;
+          ck.dispatchEvent(new Event("change", { bubbles: true }));
+        } else if (e.key === "c") {
+          setDrawer("controls", !drawerOpen("controls"));
+        } else if (e.key === "i") {
+          setDrawer("inspect", !drawerOpen("inspect"));
+        } else if (e.key === "l" || e.key === "/") {
+          e.preventDefault();
+          setLensPanel(true);
+        } else if (e.key === "?") {
+          keyHelp($("keyCard").style.display === "none");
+        }
+      });
       $("cfBtnGrid").addEventListener("click", () => {
         if (cfOn && cfMode === "gt") { cfOn = false; } else { cfOn = true; cfMode = "gt"; }
         updateCf();

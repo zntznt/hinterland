@@ -816,9 +816,14 @@ Beyond the house suite, the pivot adds a standing acceptance block:
 5. **The old thesis — kept as an essay.** A short docs piece: what the project
    originally argued, why the engine no longer presumes it, and where in the
    possibility space the extraction worlds live.
-6. **Voices companion spec — owner action item (open):** paste the drafting
-   agent's marked block into this repo as `docs/voices-spec.md` so §5.1's
-   reference resolves. Not a blocker for Phases A–B.
+6. **Voices companion spec — LANDED as `docs/voices-spec.md` (v2).** The owner
+   supplied the drafting agent's v1; v2 de-medievalizes it (arcane-industrial
+   skins, trades, units, examples) and de-biases it per this document: trajectory
+   terms in the sentiment model, aspiration/elsewhere classes in ORAL, puffery/
+   circular classes in WRITTEN, per-topic SIGNED written skew (the record lies
+   toward the institution's interest, not uniformly toward calm), the generalized
+   censor's corridor, the imperial coin tier, and a new V6 balance invariant so
+   the street can never again be a grievance monotone. §5.1's reference resolves.
 7. **World seed default — one shared era.** Default `world=` is a fixed constant
    (the Concordat era): every region generated at defaults lives through the SAME
    world history; the atlas becomes 80 hinterlands of one world. An explicit

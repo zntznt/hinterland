@@ -788,7 +788,15 @@
   .scale-cap { font:10px var(--sans); color:var(--ink); letter-spacing:.08em; text-shadow:0 0 3px #f6f2e8, 0 0 3px #f6f2e8; }
   #scrubRow { display:flex; flex-direction:column; width:100%; }
   #scrubRow label { font-weight:600; display:flex; justify-content:space-between; gap:10px; }
-  #scrubRow input[type=range] { margin:4px 0 0; }
+  #ageLabel { font-weight:400; font-style:italic; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* the timeline: age bands + gini spark + event ticks, with the native range
+     laid transparently over them so drag and arrow keys come free */
+  .tl-wrap { position:relative; width:100%; margin-top:4px; }
+  #timeline { width:100%; height:34px; }
+  #timeline svg { display:block; width:100%; height:100%; background:rgba(244,236,216,.6); border:1px solid var(--line); }
+  .tl-wrap input[type=range] { position:absolute; inset:0; width:100%; height:100%; margin:0; background:transparent; }
+  .tl-wrap input[type=range]::-webkit-slider-thumb { width:5px; height:32px; border-radius:1px; background:var(--gold); border:1px solid #241d10; }
+  .tl-wrap input[type=range]::-moz-range-thumb { width:5px; height:32px; border-radius:1px; background:var(--gold); border:1px solid #241d10; }
   .edge-tab { position:absolute; top:50%; transform:translateY(-50%); z-index:calc(var(--z-drawer) - 2);
     writing-mode:vertical-rl; letter-spacing:.22em; font:700 11px var(--sans); color:var(--ink);
     padding:16px 7px; background:var(--card); border:1px solid var(--ink-neatline); box-shadow:var(--shadow); }
@@ -1019,8 +1027,11 @@
         </div>
         <div class="hud hud-bc">
           <div id="scrubRow" style="display:none">
-            <label for="scrub">View epoch <span class="val" id="scrubVal"></span></label>
-            <input type="range" id="scrub" min="0" max="24" step="1" />
+            <label for="scrub">View epoch <span class="val" id="scrubVal"></span><span id="ageLabel"></span></label>
+            <div class="tl-wrap">
+              <div id="timeline"></div>
+              <input type="range" id="scrub" min="0" max="24" step="1" />
+            </div>
           </div>
         </div>
       </div>
@@ -7027,6 +7038,12 @@
         }
         L.push(lead);
       }
+      // #86: the periodization, argued up front — the ages are computed from the
+      // same epoch series the timeline draws, so the two surfaces always agree
+      if (F.ages && F.ages.length > 1) {
+        L.push(`The record divides into ages: ` + F.ages.map(a =>
+          `<b>${a.name}</b> (${1000 + 25 * a.from_epoch}–${1000 + 25 * a.to_epoch}, gini ${a.gini_start.toFixed(2)} → ${a.gini_end.toFixed(2)})`).join(", ") + `.`);
+      }
       if (F.owners && F.class_gap !== null) {
         const ct = town(F.company_town);
         L.push(`Within the walls, not between them: <b>${F.owners.pop_pct}%</b> of this realm's people hold <b>${F.owners.coin_pct}%</b> of its coin — the owners' row lives <b>${F.class_gap}×</b> better than the labor it hires` +
@@ -7634,7 +7651,8 @@
         parts.push(`<text x="${nx}" y="${ny - 12}" font-size="15" font-weight="700" text-anchor="middle" fill="#000" opacity="0.7" paint-order="stroke" stroke="#fff" stroke-width="3">N</text>`);
       }
       if (params.ep > 0) {
-        parts.push(`<text x="960" y="46" font-size="26" text-anchor="end" fill="#000" opacity="0.65" paint-order="stroke" stroke="#fff" stroke-width="4">epoch ${Math.min(scrubEpoch, snaps.length - 1)}/${params.ep}</text>`);
+        const ageName = ageAt(getFindings(model).ages, Math.min(scrubEpoch, snaps.length - 1));
+        parts.push(`<text x="960" y="46" font-size="26" text-anchor="end" fill="#000" opacity="0.65" paint-order="stroke" stroke="#fff" stroke-width="4">epoch ${Math.min(scrubEpoch, snaps.length - 1)}/${params.ep}${ageName ? " — " + ageName : ""}</text>`);
       }
       if (inspectId >= 0 && inspectId < model.regions.length) {
         const reg = model.regions[inspectId];
@@ -8055,6 +8073,8 @@
       const sc = document.getElementById("scrub");
       sc.max = params.ep; sc.value = params.ep;
       document.getElementById("scrubVal").textContent = `${params.ep}/${params.ep}`;
+      document.getElementById("timeline").innerHTML = timelineHTML(model, params);
+      updateAgeLabel();
       delete model._seatRun;
       if (inspectId >= model.regions.length) inspectId = -1;
       selFeat = null; // U3: a new world invalidates any selected feature
@@ -8165,6 +8185,56 @@
         }
       }
       document.getElementById("hb").checked = params.hb === 0;
+    }
+
+    // ---- The timeline (#86): the realm's ages under the scrubber -----------
+    const AGE_COLORS = { accumulation: "#5a4a7a", gates: "#7a1f1f", desolation: "#4a4038", restoration: "#2f7a4a", quiet: "#cfc4a8" };
+    // per-epoch between-place gini over settled wealth — the same formula the
+    // findings use, kept UI-side so the exported findings blob never changes
+    function perEpochGini(snaps) {
+      return snaps.map(S => {
+        const xs = S.wealth.filter((_, i) => S.pop[i] > 0).slice().sort((a, b) => a - b);
+        if (!xs.length) return 0;
+        const m = xs.reduce((a, b) => a + b, 0) / xs.length;
+        if (m === 0) return 0;
+        let g = 0;
+        for (let i = 0; i < xs.length; i++) g += (2 * (i + 1) - xs.length - 1) * xs[i];
+        return Math.round(g / (xs.length * xs.length * m) * 100) / 100;
+      });
+    }
+    function ageAt(ages, e) {
+      const a = (ages || []).find(x => e >= x.from_epoch && e <= x.to_epoch);
+      return a ? a.name : "";
+    }
+    function timelineHTML(model, params) {
+      const snaps = model.epochSnaps || [];
+      const N = params.ep;
+      if (!N || snaps.length < 2) return "";
+      const F = getFindings(model);
+      const TW = 300, TH = 34, X = (e) => (e / N) * TW;
+      // preserveAspectRatio=none stretches the strip to its CSS box, so only
+      // shapes live inside (text would distort); words ride the <title>s
+      const parts = [`<svg viewBox="0 0 ${TW} ${TH}" preserveAspectRatio="none">`];
+      for (const a of (F.ages || [])) {
+        // an age spans epochs [from, to] INCLUSIVE: paint through to+1 so
+        // adjacent ages tile the strip with no gap (clamped at the right edge)
+        const w = Math.max(Math.min(X(a.to_epoch + 1), TW) - X(a.from_epoch), 2);
+        parts.push(`<rect x="${X(a.from_epoch).toFixed(1)}" y="0" width="${w.toFixed(1)}" height="${TH}" fill="${AGE_COLORS[a.character] || "#cfc4a8"}" opacity="0.4"><title>${a.name} · ${1000 + 25 * a.from_epoch}–${1000 + 25 * a.to_epoch} · gini ${a.gini_start} → ${a.gini_end}</title></rect>`);
+      }
+      const gs = perEpochGini(snaps);
+      const gmin = Math.min(...gs), span = (Math.max(...gs) - gmin) || 1;
+      parts.push(`<polyline points="${gs.map((g, e) => `${X(e).toFixed(1)},${(TH - 5 - ((g - gmin) / span) * (TH - 12)).toFixed(1)}`).join(" ")}" fill="none" stroke="#221d16" stroke-width="1" opacity="0.7"/>`);
+      for (let e = 0; e <= N; e++)
+        parts.push(`<line x1="${X(e).toFixed(1)}" y1="${TH - 4}" x2="${X(e).toFixed(1)}" y2="${TH}" stroke="#5b544a" stroke-width="0.6"/>`);
+      for (const ev of model.events)
+        parts.push(`<rect x="${(X(ev.epoch) - 1).toFixed(1)}" y="0" width="2" height="6" fill="#c2670a"><title>${1000 + 25 * ev.epoch}: ${esc(ev.name || ev.type.replace(/_/g, " "))}</title></rect>`);
+      parts.push(`</svg>`);
+      return parts.join("");
+    }
+    function updateAgeLabel() {
+      if (!model) return;
+      const name = ageAt(getFindings(model).ages, scrubEpoch);
+      document.getElementById("ageLabel").textContent = name ? `— ${name}` : "";
     }
 
     // ---- The index of plates: the lens browser, generated from LENSES ------
@@ -8407,6 +8477,7 @@
       $("scrub").addEventListener("input", (e) => {
         scrubEpoch = +e.target.value;
         $("scrubVal").textContent = `${scrubEpoch}/${params.ep}`;
+        updateAgeLabel();
         scheduleRender();
       });
 

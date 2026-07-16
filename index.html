@@ -1132,7 +1132,8 @@
     </div>
     <input type="text" id="lensFilter" placeholder="filter the plates&hellip;" autocomplete="off" />
     <div id="lensList"></div>
-    <div class="glyphkey">Preview only &mdash; the export always carries every column. &#9632; refinery &middot; gold lines conduit (dashed = off-grid) &middot; H/W/D healer/waterworks/wardstation &middot; &#9650; shrine &middot; G garrison &middot; &#9875; port &middot; &#9670; ruin &middot; &#9820; tower &middot; &#9552; bridge &middot; &#8745; pass &middot; &#9673; maelstrom &middot; &#9055; aerie (violet dashes = the skyway) &middot; &#9873; the Dominion's foothold &middot; red dashes join the twins.</div>
+    <div class="glyphkey">Preview only &mdash; the export always carries every column. &#9632; refinery &middot; gold lines conduit (dashed = off-grid) &middot; H/W/D healer/waterworks/wardstation &middot; &#9650; shrine &middot; G garrison &middot; &#9875; port &middot; &#9670; ruin &middot; &#9820; tower &middot; &#9552; bridge &middot; &#8745; pass &middot; &#9673; maelstrom &middot; &#9055; aerie (violet dashes = the skyway) &middot; &#9873; the Dominion's foothold &middot; red dashes join the twins.
+      The institutions (on parchment and the institution plates): &#164; counting house &middot; &#8224; temple &middot; &#9814; keep &middot; &#10002; library &middot; &#9874; guildhall &middot; &#9671; market.</div>
   </aside>
   </main>
 
@@ -6078,7 +6079,8 @@
       churn:      { lo: [250, 246, 226], hi: [150, 110, 10],  label: "tenure churn (the land changed written hands)" },
       foundage:   { lo: [247, 243, 233], hi: [112, 84, 56],   label: "founding age (how old the town is)" },
       legacy:     { lo: [250, 244, 227], hi: [161, 120, 38],  label: "legacy advantage (born ahead)" },
-      refining:   { lo: [252, 240, 230], hi: [176, 88, 26],   label: "refining capacity (where value is added)" }
+      refining:   { lo: [252, 240, 230], hi: [176, 88, 26],   label: "refining capacity (where value is added)" },
+      finance:    { lo: [246, 242, 250], hi: [63, 0, 125],    label: "elite share — ¤ marks the counting houses (+6 to the owners' row where finance sits)" }
     };
     // #62: many ramps bottom out near-white, so a view where one region spikes
     // (injustice/burden/tolls, maroon hi) reads as a single loud cell on blank
@@ -6094,6 +6096,7 @@
     const BLOC_COLORS = { crown: "#6baed6", temple: "#9e9ac8", magnate: "#fd8d3c", contested: "#cccccc", ungoverned: "#f7f7f7", dominion: "#5a5550" };
     const TRAJ_COLORS = { boom: "#2f9e44", stable: "#d9d9d9", decline: "#f08c00", collapse: "#7a1f1f" };
     const TENURE_COLORS = { titled: "#6b93b8", mixed: "#a3bd6b", customary: "#cfc06e", contested: "#c96a2b", none: "#f7f7f7" };
+    const SITE_COLORS = { holy: "#9e9ac8", market: "#d9a05b", "fortress-works": "#8c5a2f", fortress: "#6b6560", works: "#c96a2b", hamlet: "#a3bd6b", outpost: "#d8cfbe", none: "#f7f7f7" };
     const CAUSE_COLORS = { poison: "#ae017e", water: "#2b6ba5", unmet: "#62625e", well: "#f7f7f7" };
     // the dominant driver of a region's disease burden (well = negligible burden)
     function burdenCause(reg) {
@@ -6193,7 +6196,13 @@
       churn: pctLens("THE UNSEEN", "how often the land changed written hands", r => r.tenureChurn),
       foundage: pctLens("DEEP TIME", "how old the town is", r => r.foundingAge),
       legacy: pctLens("DEEP TIME", "who was born ahead", r => r.legacy),
-      refining: pctLens("DEEP TIME", "where the value is added", r => r.refining)
+      refining: pctLens("DEEP TIME", "where the value is added", r => r.refining),
+      // ---- the institutions (#91): a town is its buildings ----
+      sitechar: { group: "THE INSTITUTIONS", q: "what kind of place it is", featured: true,
+        cats: SITE_COLORS, catLabel: "site character",
+        value: r => (r.siteCharacter || "none").slice(0, 5), fill: r => SITE_COLORS[r.siteCharacter] || SITE_COLORS.none },
+      finance: { group: "THE INSTITUTIONS", q: "where finance sits", featured: true,
+        t: (r, C) => C.SE(r) / 100, value: (r, C) => C.SE(r) }
     };
     const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     const fy = (y) => W - y; // flip y for display so preview matches QGIS (y-up)
@@ -7165,9 +7174,12 @@
       });
       model.regions.forEach(reg => {
         const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
-        // #62: the capital ring is red only on parchment; on a ramp it is ink
-        const stroke = reg.isCapital ? (atlas ? "#d62728" : "#1f1a14") : (atlas ? "#b9ab8f" : "#333");
-        const sw = reg.isCapital ? 4 : (atlas ? 1 : 1.5);
+        // #62: the capital ring is red only on parchment; on a ramp it is ink.
+        // On the finance lens a counting-house town wears the gold ring — the
+        // cause drawn on the same plate as its effect (the deepened owners' row).
+        const hasCH = !atlas && lensId === "finance" && reg.structures && reg.structures.includes("counting_house");
+        const stroke = reg.isCapital ? (atlas ? "#d62728" : "#1f1a14") : hasCH ? "#d9b96c" : (atlas ? "#b9ab8f" : "#333");
+        const sw = reg.isCapital ? 4 : hasCH ? 4 : (atlas ? 1 : 1.5);
         // native tooltip: town name + this lens's value, shown on hover with no JS
         const tt = model.settlements.find(s => s.regionId === reg.id);
         const tip = `${tt ? esc(tt.name) : "region " + reg.id}${atlas ? "" : ": " + esc(String(cellValue(reg)))}`;
@@ -7529,6 +7541,23 @@
         parts.push(`<text class="fac" x="${(base[0] + dx).toFixed(1)}" y="${(base[1] + 6).toFixed(1)}" font-size="14" font-weight="700" text-anchor="middle" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="3">${ch}</text>`);
       });
 
+      // #91: the institutions — a town IS its buildings. At most three glyphs
+      // by priority (the ledger carries the full list), fanned like H/W/D.
+      // Drawn on parchment always, and on the two institution lenses in data
+      // mode; the tavern never draws (most common, least signal).
+      const STRUCT_STYLE = { counting_house: ["¤", "#3f007d"], temple: ["†", "#54278f"], keep: ["♖", "#26201a"], library: ["✒", "#323060"], guildhall: ["⚒", "#8c5a2f"], market: ["◇", "#b8860b"] };
+      const STRUCT_PRIORITY = ["counting_house", "temple", "keep", "library", "guildhall", "market"];
+      if (atlas || lensId === "sitechar" || lensId === "finance") model.regions.forEach(reg => {
+        if (!reg.structures || !reg.structures.length) return;
+        const show = STRUCT_PRIORITY.filter(t => reg.structures.includes(t)).slice(0, 3);
+        if (!show.length) return;
+        const base = slotAt(reg, 1); // NE: the name label owns N, the value owns S
+        show.forEach((t, i) => {
+          const [ch, color] = STRUCT_STYLE[t];
+          parts.push(`<text class="struct" x="${(base[0] + (i - (show.length - 1) / 2) * 13).toFixed(1)}" y="${(base[1] + 5).toFixed(1)}" font-size="13" font-weight="700" text-anchor="middle" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="3">${ch}</text>`);
+        });
+      });
+
       // L1: the places between — the freeport's black anchor, the
       // sanctuary's star, the hunters' stands, the veil over the still
       // (#63: all of it files under points of interest in data mode)
@@ -7822,7 +7851,7 @@
       }
       document.getElementById("inspName").textContent = st.name + (reg.epithet ? ", " + reg.epithet : "");
       document.getElementById("inspSub").textContent =
-        `${reg.tier} · region #${reg.id} · ${reg.biome}${reg.occupied ? " · OCCUPIED" : ""}`;
+        `${reg.tier} · ${reg.siteCharacter} · region #${reg.id} · ${reg.biome}${reg.occupied ? " · OCCUPIED" : ""}`;
       const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
       const L = [];
       L.push(`<div class="insp-sec">THE LAND</div><table>` +
@@ -7842,6 +7871,9 @@
       L.push(`<div class="insp-sec">THE TWO ROWS</div><table>` +
         row("the owners", `${reg.elitePopPct} in 100 people hold ${reg.eliteShare} of every 100 coins`) +
         row("the gap", `an owner lives ${reg.classGap}× better than a laborer here`) +
+        ((reg.structures || []).includes("counting_house")
+          ? row("why", "finance sits here: the counting house adds +6 to the owners' share")
+          : "") +
         `</table>`);
       // #93: read the bloc dynamism as the oligarchy story, not just the current
       // ruler — ground that changed hands is where the compounding of power shows
@@ -7859,6 +7891,14 @@
         row("standing", `trust ${reg.socialTrust} · mobility ${reg.mobility} · uncounted ${reg.uncounted.toLocaleString("en-US")}`) +
         `</table>`);
       const stands = [];
+      // #91: the institutions lead — they are what the town IS, with the
+      // counting house carrying its mechanism so the cause is never silent
+      const STRUCT_TELL = {
+        counting_house: "a counting house — banks the town's coin to the owners' row (+6 elite share)",
+        temple: "a temple", keep: "a keep", guildhall: "a guildhall",
+        library: "a library", market: "a market", tavern: "a tavern"
+      };
+      (reg.structures || []).forEach(t => { if (STRUCT_TELL[t]) stands.push(STRUCT_TELL[t]); });
       if (reg.refining > 0) stands.push("the works (refinery)");
       if (reg.isPort === 1) stands.push(harborName(st.name));
       if (reg.isFreeport === 1 && model.freeport) stands.push(`${model.freeport.name} (freeport — no writ runs here)`);
@@ -8140,6 +8180,8 @@
     }
     function renderLensList() {
       const groups = [];
+      const featured = Object.keys(LENSES).filter(id => LENSES[id].featured);
+      if (featured.length) groups.push(["FEATURED PLATES", featured, true]);
       if (recentLenses.length) groups.push(["RECENT", recentLenses.slice(0, 5), true]);
       const byGroup = new Map();
       for (const id of Object.keys(LENSES)) {

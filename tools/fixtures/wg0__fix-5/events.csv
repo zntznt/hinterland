@@ -1,0 +1,30 @@
+epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occupied,contested,ruler
+1,1025,settlement_abandoned,0,,,,,,,,,,
+1,1025,settlement_abandoned,4,,,,,,,,,,
+1,1025,settlement_abandoned,5,,,,,,,,,,
+1,1025,settlement_abandoned,6,,,,,,,,,,
+1,1025,settlement_abandoned,9,,,,,,,,,,
+2,1050,drought,8,the Drought of 1050,,,,,,,,,
+3,1075,settlement_abandoned,8,,,,,,,,,,
+3,1075,succession,,Quarzek,,magnate,,,,,,false,1
+4,1100,refinery_collapse,3,,,,,,,,,,
+4,1100,tower_raised,2,,,apostate,,,,,,,
+4,1100,relic_calamity,1,,,,,,,,,,
+5,1125,settlement_founded,4,,,,,,,,,,
+5,1125,annexation,10,the Landing at Haldmouth,,,,,,,3,,
+5,1125,ascendancy,1,the Rise of Varrek,,,,,,,,,
+5,1125,blight_plague,1,the Grey Breath of 1125,,,,,,,,,
+5,1125,revolt,1,the Varrek Rising,crushed,,,,,,,,
+6,1150,refinery_founded,4,,,,,,,,,,
+6,1150,succession,,Vannornweld,,crown,,,,,,false,1
+6,1150,succession,,Urzek,,magnate,,,,,,false,2
+7,1175,succession,,Galcyone,,temple,,,,,,false,1
+7,1175,drought,4,the Drought of 1175,,,,,,,,,
+7,1175,quake,5,the Strag Quake,,,,,,,,,
+7,1175,discovery,3,the Merow Strand Find,,,,,,,,,
+8,1200,discovery,3,the Merow Strand Find,,,,,,,,,
+9,1225,drought,4,the Drought of 1225,,,,,,,,,
+10,1250,settlement_abandoned,4,,,,,,,,,,
+10,1250,succession,,Galithe,,temple,,,,,,false,2
+10,1250,storm,3,the Great Storm of 1250,,,,,,,,,
+10,1250,discovery,3,the Merow Strand Find,,,,,,,,,

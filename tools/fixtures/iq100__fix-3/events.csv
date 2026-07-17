@@ -1,0 +1,30 @@
+epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occupied,contested,ruler
+1,1025,settlement_abandoned,0,,,,,,,,,,
+1,1025,settlement_abandoned,1,,,,,,,,,,
+1,1025,settlement_abandoned,3,,,,,,,,,,
+1,1025,settlement_abandoned,5,,,,,,,,,,
+1,1025,settlement_abandoned,8,,,,,,,,,,
+1,1025,settlement_abandoned,9,,,,,,,,,,
+1,1025,drought,10,the Drought of 1025,,,,,,,,,
+2,1050,drought,2,the Drought of 1050,,,,,,,,,
+3,1075,refinery_collapse,2,,,,,,,,,,
+4,1100,settlement_founded,0,,,,,,,,,,
+4,1100,ore_strike,8,,,,,,,,,,
+4,1100,succession,,Krazzurn,,magnate,,,,,,true,1
+4,1100,drought,10,the Drought of 1100,,,,,,,,,
+4,1100,revolt,8,the Urtazzek Rising,won,,,,,,,,
+5,1125,refinery_founded,4,,,,,,,,,,
+5,1125,succession,,Dunholt,,crown,,,,,,false,1
+5,1125,quake,6,the Deholt-on-Evenbroor Quake,,,,,,,,,
+5,1125,ascendancy,1,the Rise of Vandre,,,,,,,,,
+6,1150,settlement_founded,1,,,,,,,,,,
+6,1150,settlement_abandoned,6,,,,,,,,,,
+6,1150,succession,,Sylvasse,,temple,,,,,,false,1
+6,1150,drought,1,the Drought of 1150,,,,,,,,,
+6,1150,quake,6,the Deholt-on-Evenbroor Quake,,,,,,,,,
+6,1150,storm,0,the Great Storm of 1150,,,,,,,,,
+7,1175,quake,6,the Deholt-on-Evenbroor Quake,,,,,,,,,
+8,1200,succession,,Umbermerell,,crown,,,,,,false,2
+9,1225,succession,,Hulgrumketh,,magnate,,,,,,false,2
+9,1225,storm,0,the Great Storm of 1225,,,,,,,,,
+10,1250,settlement_abandoned,0,,,,,,,,,,

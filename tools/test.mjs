@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { JSDOM } from "jsdom";
 import * as d3d from "d3-delaunay";
+import { cells, captureCell, geojsonDiff, csvDiff, chronicleDiff } from "./fixtures.matrix.mjs";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 // NOTE: the suite generates ~450 full JSDOM worlds. gen() takes one
@@ -3712,6 +3715,48 @@ console.log("# The camera V1/V2 (#116/#117): fit-width default, clamped pan/zoom
 
 // (the Phase 2 acceptance sweep moved to stress.mjs — second process,
 // memory headroom; the organic render fattened per-world DOM weight)
+
+console.log("# The golden fixtures (#118, A1): every export byte-pinned; a moved world must be a declared act");
+{
+  // Re-derive the seed×knob matrix live and hold it against the frozen bytes in
+  // tools/fixtures/. Strict on world state, events and chronicle text; tolerant
+  // only where the allowlist says (schema_version, empty new provenance keys,
+  // unsteered new csv columns). A silent model drift fails HERE; a declared one
+  // regenerates via `node tools/refixture.mjs` and a CHANGELOG schema entry.
+  const fixRoot = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
+  const matrix = cells();
+  let matched = 0;
+  const drift = [];
+  for (const cell of matrix) {
+    let want;
+    try {
+      want = {
+        geojson: readFileSync(join(fixRoot, cell.id, "world.geojson"), "utf8"),
+        eventsCsv: readFileSync(join(fixRoot, cell.id, "events.csv"), "utf8"),
+        chronicle: readFileSync(join(fixRoot, cell.id, "chronicle.md"), "utf8"),
+      };
+    } catch {
+      drift.push(`${cell.id}: fixture missing — run tools/refixture.mjs`);
+      continue;
+    }
+    const got = captureCell(html, cell.hash);
+    const problems = [
+      ...geojsonDiff(want.geojson, got.geojson),
+      ...csvDiff(want.eventsCsv, got.eventsCsv),
+      ...chronicleDiff(want.chronicle, got.chronicle),
+    ];
+    if (problems.length === 0) matched++;
+    else drift.push(`${cell.id}: ${problems.join("; ")}`);
+    // one event-loop breath per world, same memory discipline as gen()
+    await new Promise((r) => setImmediate(r));
+    if (typeof global !== "undefined" && global.gc) global.gc();
+  }
+  if (matrix.length !== 30)
+    fail(`fixture matrix is ${matrix.length} cells, expected 30 (≥6 seeds × default+4 knobs)`);
+  if (drift.length === 0 && matrix.length === 30)
+    ok(`all ${matched} cells (6 seeds × 5 configs, ep=10) export byte-identical to their fixtures`);
+  else for (const d of drift) fail(`fixture drift — ${d}`);
+}
 
 console.log(failures === 0 ? "\nALL PASS (main)" : `\n${failures} FAILURE(S)`);
 process.exitCode = failures ? 1 : 0;

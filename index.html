@@ -786,6 +786,11 @@
   .scale-rule::before, .scale-rule::after { content:""; position:absolute; bottom:0; width:2px; height:6px; background:var(--ink-ridge); }
   .scale-rule::before { left:0; } .scale-rule::after { right:0; }
   .scale-cap { font:10px var(--sans); color:var(--ink); letter-spacing:.08em; text-shadow:0 0 3px #f6f2e8, 0 0 3px #f6f2e8; }
+  /* the camera's zoom furniture: screen-fixed chrome, left mat, vertically centred */
+  .hud-zoom { top:50%; left:10px; transform:translateY(-50%); flex-direction:column; gap:4px; padding:4px; background:rgba(251,248,241,.9); }
+  .hud-zoom button { width:30px; height:30px; padding:0; margin:0; font:700 17px/1 var(--sans); color:var(--ink); border:1px solid var(--ink-neatline); background:var(--card); }
+  .hud-zoom button:hover { background:#f1ecdf; }
+  #camFit { font-size:15px; }
   #scrubRow { display:flex; flex-direction:column; width:100%; }
   #scrubRow label { font-weight:600; display:flex; justify-content:space-between; gap:10px; }
   #ageLabel { font-weight:400; font-style:italic; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -1062,6 +1067,11 @@
         <div class="hud hud-bl">
           <div id="scaleBar"><div class="scale-rule"></div><span class="scale-cap">20 leagues</span></div>
         </div>
+        <div class="hud hud-zoom">
+          <button type="button" id="camZoomIn" title="Zoom in (+)" aria-label="Zoom in">+</button>
+          <button type="button" id="camZoomOut" title="Zoom out (−)" aria-label="Zoom out">&#8722;</button>
+          <button type="button" id="camFit" title="Fit width" aria-label="Fit the whole plate">&#9974;</button>
+        </div>
         <div class="hud hud-br">
           <span id="legendLabel"></span>
           <div class="legend-wrap">
@@ -1274,6 +1284,8 @@
     <table>
       <tr><td>l&nbsp;or&nbsp;/</td><td>open the index of plates</td></tr>
       <tr><td>&larr; &rarr;</td><td>scrub the epochs</td></tr>
+      <tr><td>+ &nbsp;&minus;</td><td>zoom the camera in / out</td></tr>
+      <tr><td>Shift&nbsp;+&nbsp;&larr;&uarr;&darr;&rarr;</td><td>pan the camera</td></tr>
       <tr><td>m</td><td>atlas / data</td></tr>
       <tr><td>p</td><td>points of interest</td></tr>
       <tr><td>c</td><td>compose drawer</td></tr>
@@ -7200,6 +7212,12 @@
       // data is the lens (terrain demoted); the model is never touched
       const atlas = mapMode === "atlas";
       const poi = atlas || showPoi;
+      // Hybrid semantic zoom (§2.5): geometric scaling rides the gesture; on settle
+      // this re-render compensates label/glyph sizes by zc so they hold screen size,
+      // and the declutter below re-runs at zc so MORE names win deeper in. zc is
+      // EXACTLY 1 at fit/contain, so the default plate is unchanged.
+      const zc = labelZoom();
+      const cz = (base, dp) => zc === 1 ? base : +(base * zc).toFixed(dp == null ? 2 : dp);
       // #60 G1: preview-only water guard — ink whose anchor floats is a lie
       const inSea = (x, y) => model.seaShapes.some(S =>
         pointInRing(x, y, S.outer) && !S.holes.some(h => pointInRing(x, y, h)));
@@ -7244,7 +7262,7 @@
       const cellValue = (reg) => LENS.value(reg, C);
       const cellFill = (reg) => LENS.fill ? LENS.fill(reg, C) : rampColor(ramp, cellT(reg));
 
-      const parts = [`<svg id="map" viewBox="0 0 ${W} ${W}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`];
+      const parts = [`<svg id="map" viewBox="${camViewBox()}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`];
       // A small filter library: a soft lift for the point marks so they sit
       // above the map, a fibrous paper texture for the land, and a soft edge
       // vignette. Preview-only; the export never sees any of it.
@@ -7260,7 +7278,10 @@
       // from char count, so no DOM measure/reflow is needed.
       const placedLabels = [];
       const labelBox = (x, y, text, fsize) => {
-        const w = String(text).length * fsize * 0.55, h = fsize;
+        // boxes shrink with zoom (zc<1): the on-screen text holds size while its
+        // world footprint contracts, so the greedy declutter admits more names deeper in.
+        const efs = fsize * zc;
+        const w = String(text).length * efs * 0.55, h = efs;
         return [x - w / 2, y - h, x + w / 2, y]; // text-anchor=middle, baseline at y
       };
       const tryLabel = (box, rank) => {
@@ -7310,7 +7331,7 @@
           }
           const ink = lum < 120 ? "#fff" : "#1a1611";
           const halo = lum < 120 ? "#00000055" : "#ffffff";
-          parts.push(`<text x="${reg.c[0].toFixed(1)}" y="${(fy(reg.c[1]) + 26).toFixed(1)}" font-size="15" font-weight="600" text-anchor="middle" fill="${ink}" paint-order="stroke" stroke="${halo}" stroke-width="3">${cellValue(reg)}</text>`);
+          parts.push(`<text x="${reg.c[0].toFixed(1)}" y="${(fy(reg.c[1]) + cz(26)).toFixed(1)}" font-size="${cz(15)}" font-weight="600" text-anchor="middle" fill="${ink}" paint-order="stroke" stroke="${halo}" stroke-width="${cz(3)}">${cellValue(reg)}</text>`);
         }
         if (reg.refining > 0) { // refinery glyph, a slotted 16x16 square (#61)
           const [rx, ry] = slotAt(reg, 2); // prefer E
@@ -7379,7 +7400,7 @@
             const spread = Math.min(190, 34 + S.name.length * 13);
             if (tryLabel(labelBox(cx, fy(cy), S.name, 15), 2)) {
               parts.push(`<defs><path id="${arcId}" d="M${(cx - spread).toFixed(1)},${(fy(cy) + 9).toFixed(1)} Q${cx.toFixed(1)},${(fy(cy) - 9).toFixed(1)} ${(cx + spread).toFixed(1)},${(fy(cy) + 9).toFixed(1)}"/></defs>`);
-              parts.push(`<text font-size="15" font-style="italic" letter-spacing="${Math.min(6, 2 + spread / 60).toFixed(1)}" fill="#1d4f7a" opacity="0.78"><textPath href="#${arcId}" startOffset="50%" text-anchor="middle">${esc(S.name)}</textPath></text>`);
+              parts.push(`<text font-size="${cz(15)}" font-style="italic" letter-spacing="${Math.min(6, 2 + spread / 60).toFixed(1)}" fill="#1d4f7a" opacity="0.78"><textPath href="#${arcId}" startOffset="50%" text-anchor="middle">${esc(S.name)}</textPath></text>`);
             }
           }
         }
@@ -7447,10 +7468,10 @@
       // (#63: data mode files the wild layer under points of interest)
       if (poi) model.ruins.forEach(r => {
         const reg = model.regions[r.regionIdx];
-        parts.push(`<text class="ruin" x="${reg.wildPt[0].toFixed(1)}" y="${(fy(reg.wildPt[1]) + 5).toFixed(1)}" font-size="16" text-anchor="middle" fill="#4c4c4c" paint-order="stroke" stroke="#fff" stroke-width="3">◆</text>`);
+        parts.push(`<text class="ruin" x="${reg.wildPt[0].toFixed(1)}" y="${(fy(reg.wildPt[1]) + 5).toFixed(1)}" font-size="${cz(16)}" text-anchor="middle" fill="#4c4c4c" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">◆</text>`);
       });
       if (poi) model.regions.filter(r => r.hasTower === 1).forEach(reg => {
-        parts.push(`<text class="tower" x="${reg.towerPt[0].toFixed(1)}" y="${(fy(reg.towerPt[1]) + 6).toFixed(1)}" font-size="17" text-anchor="middle" fill="#3b1f4e" paint-order="stroke" stroke="#fff" stroke-width="3">♜</text>`);
+        parts.push(`<text class="tower" x="${reg.towerPt[0].toFixed(1)}" y="${(fy(reg.towerPt[1]) + 6).toFixed(1)}" font-size="${cz(17)}" text-anchor="middle" fill="#3b1f4e" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">♜</text>`);
       });
       if (poi) model.bridges.forEach(b => {
         // R1: the glyph stands on the bed (nearest trace point); the
@@ -7460,11 +7481,11 @@
         for (const p of tr2) { const d = Math.hypot(p[0] - b.x, p[1] - b.y); if (d < bd2) { bd2 = d; bx = p[0]; by = p[1]; } }
         // #93: a held gate wears its holder's ring — who owns the crossing
         if (b.heldBy && b.heldBy !== "none") parts.push(`<circle class="gatering" cx="${bx.toFixed(1)}" cy="${fy(by).toFixed(1)}" r="11" fill="none" stroke="${BLOC_COLORS[b.heldBy]}" stroke-width="2.5" opacity="0.85"/>`);
-        parts.push(`<text class="bridge" x="${bx.toFixed(1)}" y="${(fy(by) + 6).toFixed(1)}" font-size="15" font-weight="700" text-anchor="middle" fill="#6b5844" paint-order="stroke" stroke="#fff" stroke-width="3">═</text>`);
+        parts.push(`<text class="bridge" x="${bx.toFixed(1)}" y="${(fy(by) + 6).toFixed(1)}" font-size="${cz(15)}" font-weight="700" text-anchor="middle" fill="#6b5844" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">═</text>`);
       });
       if (poi && model.maelstrom) {
         const mx = clamp(model.maelstrom.x, 22, W - 22), my = clamp(model.maelstrom.y, 22, W - 22);
-        parts.push(`<text class="maelstrom" x="${mx.toFixed(1)}" y="${(fy(my) + 7).toFixed(1)}" font-size="20" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="3">◉</text>`);
+        parts.push(`<text class="maelstrom" x="${mx.toFixed(1)}" y="${(fy(my) + 7).toFixed(1)}" font-size="${cz(20)}" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">◉</text>`);
       }
 
       // S1: the skyway — violet dashes between the aeries, above every wall
@@ -7479,7 +7500,7 @@
         }
         sp.forEach(reg => {
           const [x, y] = slotAt(reg, 7); // prefer NW
-          parts.push(`<text class="skyport" x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="17" text-anchor="middle" fill="#3f007d" paint-order="stroke" stroke="#fff" stroke-width="3">⍟</text>`);
+          parts.push(`<text class="skyport" x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="${cz(17)}" text-anchor="middle" fill="#3f007d" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">⍟</text>`);
         });
       }
 
@@ -7487,14 +7508,14 @@
       if (model.dominion) {
         const f = model.regions[model.dominion.foothold];
         const [x, y] = slotAt(f, 1); // prefer NE
-        parts.push(`<text class="dominion" x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="18" text-anchor="middle" fill="#3a2f2a" paint-order="stroke" stroke="#fff" stroke-width="3">⚑</text>`);
+        parts.push(`<text class="dominion" x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="${cz(18)}" text-anchor="middle" fill="#3a2f2a" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">⚑</text>`);
       }
 
       // G3: the ports — ⚓ where the realm meets the water
       model.regions.filter(r => r.isPort === 1).forEach(reg => {
         // #93: port holdings stamp heldBy on the region itself
         if (reg.heldBy && reg.heldBy !== "none") parts.push(`<circle class="gatering" cx="${reg.shorePt[0].toFixed(1)}" cy="${fy(reg.shorePt[1]).toFixed(1)}" r="12" fill="none" stroke="${BLOC_COLORS[reg.heldBy]}" stroke-width="2.5" opacity="0.85"/>`);
-        parts.push(`<text class="port" x="${reg.shorePt[0].toFixed(1)}" y="${(fy(reg.shorePt[1]) + 6).toFixed(1)}" font-size="18" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="3">⚓</text>`);
+        parts.push(`<text class="port" x="${reg.shorePt[0].toFixed(1)}" y="${(fy(reg.shorePt[1]) + 6).toFixed(1)}" font-size="${cz(18)}" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">⚓</text>`);
       });
 
       // R1: the rivers ride their beds — RV.trace IS the centerline (the
@@ -7549,7 +7570,7 @@
           const mc = RV.trace[Math.floor(RV.trace.length / 2)]; // the name sits on the bed
           const rlbl = RV.kind === "River" ? "the " + RV.name : RV.name + " " + RV.kind;
           if (tryLabel(labelBox(mc[0], fy(mc[1]) + 18, rlbl, 12), 1)) {
-            parts.push(`<text x="${mc[0].toFixed(1)}" y="${(fy(mc[1]) + 18).toFixed(1)}" font-size="12" font-style="italic" text-anchor="middle" fill="#3d7ab5" paint-order="stroke" stroke="#fff" stroke-width="3">${RV.kind === "River" ? "the " + esc(RV.name) : esc(RV.name) + " " + esc(RV.kind)}</text>`);
+            parts.push(`<text x="${mc[0].toFixed(1)}" y="${(fy(mc[1]) + 18).toFixed(1)}" font-size="${cz(12)}" font-style="italic" text-anchor="middle" fill="#3d7ab5" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">${RV.kind === "River" ? "the " + esc(RV.name) : esc(RV.name) + " " + esc(RV.kind)}</text>`);
           }
         }
       });
@@ -7574,7 +7595,7 @@
         if (poi) {
           const mid = R.pts[Math.floor(R.pts.length / 2)];
           if (tryLabel(labelBox(mid[0], fy(mid[1]) - 10, R.name + " " + R.kind, 13), 1)) {
-            parts.push(`<text x="${mid[0].toFixed(1)}" y="${(fy(mid[1]) - 10).toFixed(1)}" font-size="13" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">${esc(R.name)} ${esc(R.kind)}</text>`);
+            parts.push(`<text x="${mid[0].toFixed(1)}" y="${(fy(mid[1]) - 10).toFixed(1)}" font-size="${cz(13)}" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">${esc(R.name)} ${esc(R.kind)}</text>`);
           }
         }
       });
@@ -7616,19 +7637,19 @@
       // "Hills" grade that draws almost no relief) are dropped even in atlas.
       if (atlas) model.peaks.forEach(pk => {
         if (inSea(pk.x, pk.y)) return; // #60: no summits at sea
-        parts.push(`<text class="peak" x="${pk.x.toFixed(1)}" y="${(fy(pk.y) + 5).toFixed(1)}" font-size="14" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">▲</text>`);
+        parts.push(`<text class="peak" x="${pk.x.toFixed(1)}" y="${(fy(pk.y) + 5).toFixed(1)}" font-size="${cz(14)}" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">▲</text>`);
       });
       if (atlas) model.passes.forEach(p => {
         const R = model.ridges.find(r => r.id === p.ridgeId);
         if (R && R.maxElev < 60) return; // orphaned pass on a barely-there ridge
         if (p.heldBy && p.heldBy !== "none") parts.push(`<circle class="gatering" cx="${p.x.toFixed(1)}" cy="${fy(p.y).toFixed(1)}" r="11" fill="none" stroke="${BLOC_COLORS[p.heldBy]}" stroke-width="2.5" opacity="0.85"/>`);
-        parts.push(`<text class="pass" x="${p.x.toFixed(1)}" y="${(fy(p.y) + 6).toFixed(1)}" font-size="17" font-weight="700" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="3">∩</text>`);
-        if (poi) parts.push(`<text x="${p.x.toFixed(1)}" y="${(fy(p.y) + 20).toFixed(1)}" font-size="10" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="2.5" opacity="0.85">${esc(p.name)}</text>`);
+        parts.push(`<text class="pass" x="${p.x.toFixed(1)}" y="${(fy(p.y) + 6).toFixed(1)}" font-size="${cz(17)}" font-weight="700" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">∩</text>`);
+        if (poi) parts.push(`<text x="${p.x.toFixed(1)}" y="${(fy(p.y) + 20).toFixed(1)}" font-size="${cz(10)}" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="${cz(2.5)}" opacity="0.85">${esc(p.name)}</text>`);
       });
 
       // Sanctioned sites (Temple): a violet cross — ▲ belongs to the peaks alone
       if (poi) model.sanctionedSites.forEach(s => {
-        parts.push(`<text class="sanct" x="${s.x.toFixed(1)}" y="${(fy(s.y) + 6).toFixed(1)}" font-size="18" text-anchor="middle" fill="#54278f" paint-order="stroke" stroke="#fff" stroke-width="3">✚</text>`);
+        parts.push(`<text class="sanct" x="${s.x.toFixed(1)}" y="${(fy(s.y) + 6).toFixed(1)}" font-size="${cz(18)}" text-anchor="middle" fill="#54278f" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">✚</text>`);
       });
 
       // Event markers: amber ✱ where lived history struck (#62: the ramp owns
@@ -7638,7 +7659,7 @@
       if (poi) model.regions.forEach(reg => {
         if (reg.eventType !== "none" && reg.eventEpoch <= Math.min(scrubEpoch, snaps.length - 1)) {
           const [x, y] = slotAt(reg, 3); // prefer SE
-          parts.push(`<text class="evt" x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="16" text-anchor="middle" fill="#c2670a" paint-order="stroke" stroke="#fff" stroke-width="3">✱</text>`);
+          parts.push(`<text class="evt" x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="${cz(16)}" text-anchor="middle" fill="#c2670a" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">✱</text>`);
         }
       });
 
@@ -7646,7 +7667,7 @@
       model.garrisons.forEach(g => {
         const reg = model.regions.find(r => r.id === g.regionId);
         const [x, y] = slotAt(reg, 6); // prefer W
-        parts.push(`<text class="gar" x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="16" font-weight="700" text-anchor="middle" fill="#26201a" paint-order="stroke" stroke="#fff" stroke-width="3">G</text>`);
+        parts.push(`<text class="gar" x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="${cz(16)}" font-weight="700" text-anchor="middle" fill="#26201a" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">G</text>`);
       });
 
       // Facility glyphs (H = healer, W = waterworks, D = wardstation). The
@@ -7657,7 +7678,7 @@
         const [ch, color, dx] = FAC_STYLE[f.type];
         let base = facSlot.get(f.regionId);
         if (!base) { base = slotAt(model.regions.find(r => r.id === f.regionId), 4); facSlot.set(f.regionId, base); } // prefer S
-        parts.push(`<text class="fac" x="${(base[0] + dx).toFixed(1)}" y="${(base[1] + 6).toFixed(1)}" font-size="14" font-weight="700" text-anchor="middle" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="3">${ch}</text>`);
+        parts.push(`<text class="fac" x="${(base[0] + dx).toFixed(1)}" y="${(base[1] + 6).toFixed(1)}" font-size="${cz(14)}" font-weight="700" text-anchor="middle" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">${ch}</text>`);
       });
 
       // #91: the institutions — a town IS its buildings. At most three glyphs
@@ -7673,7 +7694,7 @@
         const base = slotAt(reg, 1); // NE: the name label owns N, the value owns S
         show.forEach((t, i) => {
           const [ch, color] = STRUCT_STYLE[t];
-          parts.push(`<text class="struct" x="${(base[0] + (i - (show.length - 1) / 2) * 13).toFixed(1)}" y="${(base[1] + 5).toFixed(1)}" font-size="13" font-weight="700" text-anchor="middle" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="3">${ch}</text>`);
+          parts.push(`<text class="struct" x="${(base[0] + (i - (show.length - 1) / 2) * 13).toFixed(1)}" y="${(base[1] + 5).toFixed(1)}" font-size="${cz(13)}" font-weight="700" text-anchor="middle" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">${ch}</text>`);
         });
       });
 
@@ -7683,28 +7704,28 @@
       if (poi && model.freeport) {
         const reg = model.regions.find(r => r.id === model.freeport.regionId);
         const P = reg.shorePt || reg.c;
-        parts.push(`<text x="${P[0].toFixed(1)}" y="${(fy(P[1]) + 6).toFixed(1)}" font-size="18" text-anchor="middle" fill="#1a1a1a" paint-order="stroke" stroke="#fff" stroke-width="3">⚓</text>`);
-        parts.push(`<text x="${P[0].toFixed(1)}" y="${(fy(P[1]) + 21).toFixed(1)}" font-size="10" font-style="italic" text-anchor="middle" fill="#1a1a1a" paint-order="stroke" stroke="#fff" stroke-width="2.5">${esc(model.freeport.name)}</text>`);
+        parts.push(`<text x="${P[0].toFixed(1)}" y="${(fy(P[1]) + 6).toFixed(1)}" font-size="${cz(18)}" text-anchor="middle" fill="#1a1a1a" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">⚓</text>`);
+        parts.push(`<text x="${P[0].toFixed(1)}" y="${(fy(P[1]) + 21).toFixed(1)}" font-size="${cz(10)}" font-style="italic" text-anchor="middle" fill="#1a1a1a" paint-order="stroke" stroke="#fff" stroke-width="${cz(2.5)}">${esc(model.freeport.name)}</text>`);
       }
       if (poi && model.sanctuary) {
-        parts.push(`<text x="${model.sanctuary.x.toFixed(1)}" y="${(fy(model.sanctuary.y) - 16).toFixed(1)}" font-size="16" text-anchor="middle" fill="#8a6d00" paint-order="stroke" stroke="#fff" stroke-width="3">✦</text>`);
-        parts.push(`<text x="${model.sanctuary.x.toFixed(1)}" y="${(fy(model.sanctuary.y) - 30).toFixed(1)}" font-size="10" font-style="italic" text-anchor="middle" fill="#8a6d00" paint-order="stroke" stroke="#fff" stroke-width="2.5">${esc(model.sanctuary.name)}</text>`);
+        parts.push(`<text x="${model.sanctuary.x.toFixed(1)}" y="${(fy(model.sanctuary.y) - 16).toFixed(1)}" font-size="${cz(16)}" text-anchor="middle" fill="#8a6d00" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">✦</text>`);
+        parts.push(`<text x="${model.sanctuary.x.toFixed(1)}" y="${(fy(model.sanctuary.y) - 30).toFixed(1)}" font-size="${cz(10)}" font-style="italic" text-anchor="middle" fill="#8a6d00" paint-order="stroke" stroke="#fff" stroke-width="${cz(2.5)}">${esc(model.sanctuary.name)}</text>`);
       }
       if (poi) model.camps.forEach(cp => {
         const reg = model.regions.find(r => r.id === cp.regionId);
         const [x, y] = slotAt(reg, 5); // prefer SW
-        parts.push(`<text x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="13" font-weight="700" text-anchor="middle" fill="#5c4327" paint-order="stroke" stroke="#fff" stroke-width="3">∧</text>`);
+        parts.push(`<text x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="${cz(13)}" font-weight="700" text-anchor="middle" fill="#5c4327" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">∧</text>`);
       });
       if (poi) {
         const still = model.regions.filter(r => r.stillair === 1);
         still.forEach(reg => {
           const [x, y] = slotAt(reg, 2); // prefer E
-          parts.push(`<text x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="13" text-anchor="middle" fill="#667" paint-order="stroke" stroke="#fff" stroke-width="2.5">⌀</text>`);
+          parts.push(`<text x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" font-size="${cz(13)}" text-anchor="middle" fill="#667" paint-order="stroke" stroke="#fff" stroke-width="${cz(2.5)}">⌀</text>`);
         });
         if (still.length && model.stillName) {
           const cx2 = still.reduce((s2, r) => s2 + r.c[0], 0) / still.length;
           const cy2 = still.reduce((s2, r) => s2 + r.c[1], 0) / still.length;
-          parts.push(`<text x="${cx2.toFixed(1)}" y="${(fy(cy2) - 44).toFixed(1)}" font-size="12" font-style="italic" letter-spacing="2" text-anchor="middle" fill="#556" opacity="0.85" paint-order="stroke" stroke="#fff" stroke-width="2.5">${esc(model.stillName)}</text>`);
+          parts.push(`<text x="${cx2.toFixed(1)}" y="${(fy(cy2) - 44).toFixed(1)}" font-size="${cz(12)}" font-style="italic" letter-spacing="2" text-anchor="middle" fill="#556" opacity="0.85" paint-order="stroke" stroke="#fff" stroke-width="${cz(2.5)}">${esc(model.stillName)}</text>`);
         }
       }
 
@@ -7728,7 +7749,15 @@
           // so a big hub reads louder than a small one; the seat keeps a floor.
           let fsize = 12 + 11 * Math.sqrt(RP(sreg) / maxPop);
           fsize = isPrime ? Math.max(fsize, 20) : Math.min(fsize, 18);
-          parts.push(`<text x="${cx.toFixed(1)}" y="${(cy - r - 5).toFixed(1)}" font-size="${fsize.toFixed(1)}" text-anchor="middle" fill="#000" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="4">${esc(s.name)}</text>`);
+          const dfs = zc === 1 ? fsize.toFixed(1) : (fsize * zc).toFixed(1);
+          parts.push(`<text class="placename" x="${cx.toFixed(1)}" y="${(cy - r - 5).toFixed(1)}" font-size="${dfs}" text-anchor="middle" fill="#000" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="${cz(4)}">${esc(s.name)}</text>`);
+        } else if (zc < 1 && (s.tier === "outpost" || s.tier === "holdfast")) {
+          // deeper zoom earns the smaller seats their names — decluttered like the
+          // rest (rank 3: yields to prime/hub, outranks the decorative water/ridge).
+          const rawfs = 10 + 8 * Math.sqrt(RP(sreg) / maxPop);
+          if (tryLabel(labelBox(cx, cy - r - 5, s.name, rawfs), 3)) {
+            parts.push(`<text class="placename" x="${cx.toFixed(1)}" y="${(cy - r - 5).toFixed(1)}" font-size="${(rawfs * zc).toFixed(1)}" text-anchor="middle" fill="#111" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">${esc(s.name)}</text>`);
+          }
         }
       });
       // Wind arrow (top-left; display coords flip y)
@@ -7786,7 +7815,8 @@
       parts.push(`</svg>`);
       const stage = document.getElementById("stage");
       stage.innerHTML = parts.join("");
-      stage.querySelector("#map").addEventListener("click", onMapClick);
+      wireMap(stage.querySelector("#map"));
+      updateScaleBar();
 
       { // U2: categorical views get NAMED swatches; choropleths keep the bar
         const bar = document.getElementById("legendBar");
@@ -8175,6 +8205,198 @@
     const SHOW_NUMBERS = true;
     let scrubEpoch = 0;    // preview-only: which epoch the map shows
 
+    // ---- The camera (#116/#117): the main map's viewBox becomes a pan/zoom rect
+    // over the world [0,W]². It is a module-level value, so it survives render()'s
+    // innerHTML rebuilds untouched; the counterfactual panes (cfPaneSVG) carry no
+    // #map and keep their whole-world framing. Click math moved to
+    // getScreenCTM().inverse(), so any viewBox is correct — the old square-box
+    // invariant is retired.
+    let cam = null;                 // {x,y,w,h} in SVG user space (= the viewBox), null before first frame
+    let _pendingCam = null;         // {x,y,z} parsed from a cam= hash, materialized once the box is known
+    const CAM_MAX_ZOOM = 16;        // deepest zoom: viewBox = contain / 16
+    const CAM_SLOP = 5;             // px: sub-threshold pointer travel stays a click (inspect/pin unharmed)
+    let suppressClick = false;      // a pan just ended on this pointer — swallow the click it spawns
+    const _ptrs = new Map();        // live pointers (id -> {x,y}) for pan + pinch
+    let _drag = null;               // active one-finger pan
+    let _pinch = null;              // active two-finger zoom
+    let _settleTimer = null;
+
+    function mapSvg() { const s = document.getElementById("stage"); return s ? s.querySelector("#map") : null; }
+    function mapBox() {
+      const svg = mapSvg();
+      if (!svg || typeof svg.getBoundingClientRect !== "function") return null;
+      const b = svg.getBoundingClientRect();
+      return (b && b.width > 0 && b.height > 0) ? b : null;
+    }
+    // the pixel box's aspect (h/w); 1 (square) when unmeasurable — jsdom, or before
+    // the first paint. The plate is CSS-square, so this is ~1 in the browser too.
+    function camAspect() { const b = mapBox(); return b ? b.height / b.width : 1; }
+    // the smallest viewBox at the box's aspect that shows the whole world — min zoom.
+    function camContain() {
+      const a = camAspect();
+      const w = a >= 1 ? W : W / a;
+      const h = a >= 1 ? W * a : W;
+      return { x: (W - w) / 2, y: (W - h) / 2, w, h };
+    }
+    // the default: the world fills the viewport WIDTH (a wider box then pans N–S).
+    function camFitWidth() { return clampRect({ x: 0, y: 0, w: W, h: W * camAspect() }); }
+    function clampRect(c) {
+      const contain = camContain();
+      c.w = Math.min(c.w, contain.w);
+      c.h = Math.min(c.h, contain.h);
+      c.x = c.w >= W ? (W - c.w) / 2 : clamp(c.x, 0, W - c.w);
+      c.y = c.h >= W ? (W - c.h) / 2 : clamp(c.y, 0, W - c.h);
+      return c;
+    }
+    function clampCam() { if (cam) clampRect(cam); }
+    function ensureCam() {
+      if (cam) return;
+      if (_pendingCam) {
+        const a = camAspect(), contain = camContain();
+        const w = clamp(W / _pendingCam.z, contain.w / CAM_MAX_ZOOM, contain.w);
+        cam = { x: _pendingCam.x, y: _pendingCam.y, w, h: w * a };
+        clampCam();
+        _pendingCam = null;
+      } else {
+        cam = camFitWidth();
+      }
+    }
+    const camN = (v) => Math.round(v * 100) / 100;   // 2-dp viewBox numbers, stable strings
+    function camViewBox() { ensureCam(); return `${camN(cam.x)} ${camN(cam.y)} ${camN(cam.w)} ${camN(cam.h)}`; }
+    function applyCam() {   // cheap: update the live viewBox during a gesture, no full re-render
+      const svg = mapSvg();
+      if (svg && cam) svg.setAttribute("viewBox", camViewBox());
+      updateScaleBar();
+    }
+    // zoom compensation for labels/glyphs: world-unit sizes × this hold screen size.
+    // EXACTLY 1 at fit/contain, so the default render stays byte-for-byte unchanged.
+    function labelZoom() { ensureCam(); return clamp(cam.w / W, 1 / CAM_MAX_ZOOM, 1); }
+    function camIsDefault() {
+      ensureCam();
+      const f = camFitWidth();
+      return Math.abs(cam.x - f.x) < 0.5 && Math.abs(cam.y - f.y) < 0.5 &&
+             Math.abs(cam.w - f.w) < 0.5 && Math.abs(cam.h - f.h) < 0.5;
+    }
+    // client (screen) px -> SVG user coords, correct under any viewBox/pan/zoom.
+    // null when unavailable (jsdom, or a detached node) so callers fall back safely.
+    function clientToUser(svg, clientX, clientY) {
+      if (!svg || typeof svg.getScreenCTM !== "function" || typeof svg.createSVGPoint !== "function") return null;
+      const m = svg.getScreenCTM();
+      if (!m || typeof m.inverse !== "function") return null;
+      const pt = svg.createSVGPoint(); pt.x = clientX; pt.y = clientY;
+      const loc = pt.matrixTransform(m.inverse());
+      return (isFinite(loc.x) && isFinite(loc.y)) ? { x: loc.x, y: loc.y } : null;
+    }
+    // set the viewBox width to targetW, keeping the given screen point pinned.
+    function zoomToWidthAbout(svg, clientX, clientY, targetW) {
+      ensureCam();
+      const contain = camContain();
+      targetW = clamp(targetW, contain.w / CAM_MAX_ZOOM, contain.w);
+      const before = clientToUser(svg, clientX, clientY);
+      const scale = targetW / cam.w;
+      if (before) { cam.x = before.x - (before.x - cam.x) * scale; cam.y = before.y - (before.y - cam.y) * scale; }
+      cam.w = targetW; cam.h = cam.h * scale;
+      clampCam(); applyCam(); scheduleSettle();
+    }
+    function zoomAbout(svg, clientX, clientY, factor) { ensureCam(); zoomToWidthAbout(svg, clientX, clientY, cam.w * factor); }
+    // zoom about the viewport centre — used by the HUD buttons + keyboard (no CTM
+    // needed, so it works headlessly); renders synchronously since it is discrete.
+    function zoomAboutCenter(factor) {
+      ensureCam();
+      const cx = cam.x + cam.w / 2, cy = cam.y + cam.h / 2;
+      const contain = camContain();
+      const nw = clamp(cam.w * factor, contain.w / CAM_MAX_ZOOM, contain.w);
+      const scale = nw / cam.w;
+      cam.w = nw; cam.h = cam.h * scale;
+      cam.x = cx - cam.w / 2; cam.y = cy - cam.h / 2;
+      clampCam(); camRenderNow();
+    }
+    function camRenderNow() { if (model) render(model, params); else applyCam(); writeHash(); }
+    // debounced "semantic settle" for continuous gestures: one re-render with the
+    // declutter re-run and labels/glyphs re-sized for the new zoom (§2.5 hybrid).
+    function scheduleSettle() {
+      if (typeof setTimeout !== "function") { if (model) render(model, params); writeHash(); return; }
+      if (_settleTimer) clearTimeout(_settleTimer);
+      _settleTimer = setTimeout(() => { _settleTimer = null; if (model) render(model, params); writeHash(); }, 130);
+    }
+    function updateScaleBar() {
+      const cap = document.querySelector("#scaleBar .scale-cap");
+      if (!cap || !cam) return;
+      // the bar is a fixed 20% of the viewport; W world units read as 100 leagues,
+      // so 20% of a cam.w-wide view is (20 * cam.w / W) leagues — honest at any zoom.
+      const leagues = 20 * cam.w / W;
+      const nice = leagues >= 10 ? Math.round(leagues) : Math.round(leagues * 10) / 10;
+      cap.textContent = `${nice} leagues`;
+    }
+
+    // ---- Map pointer wiring: pan + pinch + wheel + double-click zoom, re-bound on
+    // every render (the old #map dies with the innerHTML rebuild, taking its
+    // listeners). onMapClick stays on the click event so a plain tap still inspects.
+    function wireMap(svg) {
+      if (!svg) return;
+      svg.addEventListener("click", onMapClick);
+      svg.addEventListener("dblclick", onMapDblClick);
+      svg.addEventListener("wheel", onMapWheel, { passive: false });
+      svg.addEventListener("pointerdown", onMapPointerDown);
+      svg.addEventListener("pointermove", onMapPointerMove);
+      svg.addEventListener("pointerup", onMapPointerUp);
+      svg.addEventListener("pointercancel", onMapPointerUp);
+    }
+    function onMapWheel(e) {
+      e.preventDefault();
+      // scroll up (deltaY<0) zooms in; about the cursor
+      zoomAbout(e.currentTarget, e.clientX, e.clientY, Math.exp((e.deltaY || 0) * 0.0015));
+    }
+    function onMapDblClick(e) { e.preventDefault(); zoomAbout(e.currentTarget, e.clientX, e.clientY, 0.5); }
+    function onMapPointerDown(e) {
+      const svg = e.currentTarget;
+      suppressClick = false;   // a new gesture starts clean: never let a stale flag swallow this tap
+      _ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (_ptrs.size === 2) {                       // a pinch takes over from any pan
+        _drag = null;
+        const [a, b] = [..._ptrs.values()];
+        ensureCam();
+        _pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, camw0: cam.w };
+        return;
+      }
+      if (e.pointerType === "mouse" && e.button !== 0) return;   // left button only
+      ensureCam();
+      _drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, camx0: cam.x, camy0: cam.y, moved: false };
+      if (svg.setPointerCapture) { try { svg.setPointerCapture(e.pointerId); } catch (_) {} }
+    }
+    function onMapPointerMove(e) {
+      if (_ptrs.has(e.pointerId)) _ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (_pinch && _ptrs.size >= 2) {
+        const [a, b] = [..._ptrs.values()];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (d > 0) zoomToWidthAbout(e.currentTarget, (a.x + b.x) / 2, (a.y + b.y) / 2, _pinch.camw0 * (_pinch.d0 / d));
+        return;
+      }
+      if (!_drag || e.pointerId !== _drag.id) return;
+      const b = mapBox();
+      if (!b) return;
+      const dx = e.clientX - _drag.x0, dy = e.clientY - _drag.y0;
+      if (!_drag.moved && Math.hypot(dx, dy) <= CAM_SLOP) return;   // still a click
+      _drag.moved = true;
+      cam.x = _drag.camx0 - dx * cam.w / b.width;
+      cam.y = _drag.camy0 - dy * cam.h / b.height;
+      clampCam(); applyCam();
+    }
+    function onMapPointerUp(e) {
+      const wasPinch = !!_pinch;
+      _ptrs.delete(e.pointerId);
+      if (_ptrs.size < 2) _pinch = null;
+      let dragged = false;
+      if (_drag && e.pointerId === _drag.id) {
+        const svg = e.currentTarget;
+        if (svg && svg.releasePointerCapture) { try { svg.releasePointerCapture(e.pointerId); } catch (_) {} }
+        dragged = _drag.moved;
+        if (dragged) suppressClick = true;   // the click this pointerup spawns is a pan artefact
+        _drag = null;
+      }
+      if (dragged || wasPinch) scheduleSettle();
+    }
+
     function regenerateTopology() {
       topology = buildTopology(params);
       geo = buildGeology(topology, params);   // stage 2: seed + topology only
@@ -8241,6 +8463,9 @@
       // but only off-default, so stock links stay exactly as they always were
       if (view !== "injustice") p.set("lens", view);
       if (mapMode !== "data") p.set("mode", mapMode);
+      // the camera rides too, off-default only (the lens= precedent): a share link
+      // reproduces the exact view; a fit-width/contain view keeps the link clean.
+      if (cam && !camIsDefault()) p.set("cam", `${round2(cam.x)},${round2(cam.y)},${round2(W / cam.w)}`);
       history.replaceState(null, "", "#" + p.toString());
     }
     // lens/mode arrive OUTSIDE readHash's return shape on purpose: params stays
@@ -8259,6 +8484,17 @@
         document.getElementById("modeAtlas").classList.toggle("on", m === "atlas");
         document.getElementById("modeData").classList.toggle("on", m === "data");
       }
+      // the camera: the hash fully drives the frame on load/hashchange. cam is
+      // rebuilt from cam= (or the default) by ensureCam once the box is known.
+      // (Our own writeHash uses replaceState, which never fires hashchange — so
+      // interacting never round-trips back through here and resets the view.)
+      const camStr = p.get("cam");
+      _pendingCam = null;
+      if (camStr) {
+        const a = camStr.split(",").map(Number);
+        if (a.length === 3 && a.every(isFinite) && a[2] > 0) _pendingCam = { x: a[0], y: a[1], z: a[2] };
+      }
+      cam = null;
       syncLensChip();
     }
     function readHash() {
@@ -8486,13 +8722,17 @@
     }
 
     function onMapClick(ev) {
+      if (suppressClick) { suppressClick = false; return; }   // a pan ended here — not a click
+      if (ev.detail && ev.detail > 1) return;                 // the 2nd tap of a double-click; onMapDblClick zooms
+      const svg = ev.currentTarget;
+      // click math via getScreenCTM().inverse(): correct under any viewBox (the
+      // camera's pan/zoom), retiring the old linear square-box map. null headlessly.
+      const loc = clientToUser(svg, ev.clientX, ev.clientY);
       if (pinArm) { // the armed pin: this click moves the seat
         pinArm = false;
         document.getElementById("pinCap").classList.remove("armed");
-        const svg = ev.currentTarget, rect = svg.getBoundingClientRect();
-        const wx = ((ev.clientX - rect.left) / rect.width) * W;
-        const wyDisplay = ((ev.clientY - rect.top) / rect.height) * W;
-        params.capital = [clamp(round2(wx), 0, W), clamp(round2(W - wyDisplay), 0, W)]; // un-flip y
+        if (!loc) return;
+        params.capital = [clamp(round2(loc.x), 0, W), clamp(round2(W - loc.y), 0, W)]; // un-flip y
         recomputeAttributes(); // society only — geology and polygons untouched
         return;
       }
@@ -8500,10 +8740,9 @@
       // no coords needed) inspects that region. Otherwise use the click point to
       // hit-test the FEATURES the reader can now inspect (terrain + wild layer),
       // and only then fall back to the nearest town.
-      const svg = ev.currentTarget, rect = svg.getBoundingClientRect();
-      const haveXY = rect.width && rect.height && typeof ev.clientX === "number";
-      const wx = haveXY ? ((ev.clientX - rect.left) / rect.width) * W : null;
-      const wy = haveXY ? W - ((ev.clientY - rect.top) / rect.height) * W : null;
+      const haveXY = !!loc;
+      const wx = haveXY ? loc.x : null;
+      const wy = haveXY ? W - loc.y : null;
       const feat = haveXY ? hitTestFeature(wx, wy) : null;
       if (feat) {
         selFeat = feat; inspectId = -1; // a feature card supersedes the region
@@ -8534,7 +8773,10 @@
     function hitTestFeature(wx, wy) {
       if (!model) return null;
       const atlas = mapMode === "atlas", poi = atlas || showPoi; // only what is DRAWN is clickable
-      const PT = 20, LN = 14; // grab radius: points are forgiving, lines tighter
+      // grab radii divide by the zoom factor so targets stay screen-constant: at
+      // 4× the world-unit radius is 4× smaller, i.e. the same number of pixels.
+      const z = cam ? (W / cam.w) : 1;
+      const PT = 20 / z, LN = 14 / z; // points are forgiving, lines tighter
       const d2 = (x, y) => Math.hypot(x - wx, y - wy);
       let best = null, bestD = Infinity;
       const tryPt = (x, y, kind, id, r) => { const d = d2(x, y); if (d < r && d < bestD) { bestD = d; best = { kind, id }; } };
@@ -8666,6 +8908,21 @@
         pinArm = !pinArm;
         $("pinCap").classList.toggle("armed", pinArm);
       });
+
+      // the camera's HUD: discrete steps (2× per press) about the viewport centre,
+      // plus a reset to the default fit-width frame.
+      $("camZoomIn").addEventListener("click", () => zoomAboutCenter(0.5));
+      $("camZoomOut").addEventListener("click", () => zoomAboutCenter(2));
+      $("camFit").addEventListener("click", () => { cam = camFitWidth(); camRenderNow(); });
+      // the box aspect can only change on resize; keep the frame centred + valid
+      // (the CSS-square plate makes this a no-op in practice, but tall embeds pan).
+      if (typeof window !== "undefined") window.addEventListener("resize", () => {
+        if (!cam) return;
+        const cx = cam.x + cam.w / 2, cy = cam.y + cam.h / 2;
+        cam.h = cam.w * camAspect();
+        cam.x = cx - cam.w / 2; cam.y = cy - cam.h / 2;
+        clampCam(); applyCam();
+      });
       $("inspClose").addEventListener("click", () => { inspectId = -1; selFeat = null; setDrawer("inspect", false); renderInspector(); if (model) render(model, params); });
 
       // the shell: edge tabs toggle the drawers; open-state persists locally
@@ -8700,7 +8957,20 @@
           if (drawerOpen("controls")) { setDrawer("controls", false); return; }
           return;
         }
-        if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && params.ep > 0) {
+        if (e.key === "+" || e.key === "=") {           // '=' is the unshifted '+' key
+          e.preventDefault(); zoomAboutCenter(0.5);
+        } else if (e.key === "-" || e.key === "_") {
+          e.preventDefault(); zoomAboutCenter(2);
+        } else if (e.shiftKey && (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown")) {
+          e.preventDefault();                            // Shift+arrows pan; bare arrows stay the epoch scrub
+          ensureCam();
+          const sx = cam.w * 0.15, sy = cam.h * 0.15;
+          if (e.key === "ArrowLeft") cam.x -= sx;
+          else if (e.key === "ArrowRight") cam.x += sx;
+          else if (e.key === "ArrowUp") cam.y -= sy;     // user-space up = north (fy flips y)
+          else cam.y += sy;
+          clampCam(); camRenderNow();
+        } else if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && params.ep > 0) {
           e.preventDefault();
           const sc = $("scrub");
           sc.value = clamp(+sc.value + (e.key === "ArrowRight" ? 1 : -1), 0, params.ep);

@@ -1108,6 +1108,14 @@
           <div class="hint">Any text or number. Drives the whole world.</div>
         </div>
         <div class="row">
+          <label for="fate">Fate</label>
+          <div class="inline">
+            <input type="text" id="fate" inputmode="text" placeholder="(same as the seed)" />
+            <button id="diceFate" title="Reroll the luck">&#127922;</button>
+          </div>
+          <div class="hint">Same rock, different luck. Blank = the seed's own fate. A reroll shakes only the politics — geology, names and founding hold.</div>
+        </div>
+        <div class="row">
           <label>Regions <span class="val" id="regionsVal"></span></label>
           <input type="range" id="regions" min="5" max="64" step="1" />
         </div>
@@ -1310,7 +1318,7 @@
 
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
-    const SCHEMA_VERSION = 39;
+    const SCHEMA_VERSION = 40;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
@@ -1330,7 +1338,7 @@
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
 
     const DEFAULTS = {
-      seed: "hinterland", regions: 24, relax: 2, bias: 80,
+      seed: "hinterland", fate: "", regions: 24, relax: 2, bias: 80,
       we: 35, wf: 25, wt: 30, wg: 10,   // income-mix weights
       gt: 35,                            // grid threshold (0 = conduit reaches everyone)
       db: 60,                            // dump bias λ (0 = blight follows only wind/terrain)
@@ -3302,6 +3310,12 @@
     // -> skeleton -> population. No step reads anything computed after it.
     function applyAttributes(regions, params, geo) {
       const sx = streams(params.seed);
+      // A2 (#119): the fate seed — same rock, different luck. The world's
+      // POLITICS (events, factions, institutions, revolts, the Dominion, the
+      // dynasties) draw from fx; its geology, founding, siting and naming stay
+      // on sx. Empty fate falls back to the seed, so fx === sx draw-for-draw and
+      // the default world is byte-identical — the pivot the fixture pin proves.
+      const fx = streams(params.fate || params.seed);
 
       // STAGE-3 PURITY (C1): the loop writes depletion back into
       // reg.endowment for the export, so a SECOND society run on the same
@@ -3982,7 +3996,7 @@
 
       // D3 event machinery: seeded triggers, epoch-stamped consequences.
       const events = [];
-      const rEv = sx("events");
+      const rEv = fx("events");
       // #88: the scheduling WINDOW for a one-shot event. Historically each was
       // `min(ep, CAP)` — a fixed early cap tuned for a ~12-epoch world, so a
       // longer history front-loaded all its politics into the first ~third and
@@ -4006,7 +4020,7 @@
       let firstWoundIdx = -1, firstWoundEpoch = -1, consecrated = false;
       // F1 faction machinery: its own stream, so the older histories only
       // shift where the new mechanics genuinely touch them
-      const rF = sx("factions");
+      const rF = fx("factions");
       const SEIZE_PREF = {
         crown: { pass: 1.25, bridge: 1.0, port: 0.9 },
         temple: { pass: 0.95, bridge: 0.95, port: 0.9 },
@@ -4024,14 +4038,14 @@
       // F3: the treaty that follows the war
       let warFactions = null, warEpochFired = -1, treatyDone = false;
       // V1: institutions and the revolt — the counter-currents' dice
-      const rIns = sx("institutions");
+      const rIns = fx("institutions");
       const respCoin = rIns();                 // <0.45 reform, <0.75 reaction, else nothing
-      const rV = sx("revolt");
+      const rV = fx("revolt");
       const revoltBar = 95 + rV() * 25;
       let responded = false, revoltIdx = -1, revoltWon = false;
       // X1: THE DOMINION — the power beyond the sea. The same door the
       // trade leaves through is the door an empire can walk in.
-      const rX = sx("dominion");
+      const rX = fx("dominion");
       const dominionCoin = rX() < 0.5;
       // the Dominion favors an early arrival (a fleet does not wait a realm out),
       // so its window stays the smallest — it still scales, but lands sooner.
@@ -4039,7 +4053,7 @@
       let dominionAt = -1, footholdIdx = -1; // occupied/occupiedEpoch reset at wealth init
       // E5: the dynasty structure — reigns drawn blind before time runs;
       // the names come later (after the world has taken all of its own)
-      const rD = sx("dynasty");
+      const rD = fx("dynasty");
       const dynasties = { crown: [], temple: [], magnate: [] };
       for (const F of ["crown", "temple", "magnate"]) {
         dynasties[F].push({ from: 0, contested: false });
@@ -5842,7 +5856,7 @@
         name: "hinterland",
         hinterland: {
           schema_version: SCHEMA_VERSION,
-          seed: String(params.seed), regions: params.regions, relax: params.relax,
+          seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), regions: params.regions, relax: params.relax,
           bias: params.bias,
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt,
@@ -6045,7 +6059,7 @@
           skyway: { name: model.skywayName, ports: model.regions.filter(r => r.isSkyport === 1).map(r => r.id) },
           dominion: model.dominion ? { arrived_epoch: model.dominion.arrived, foothold: model.regions[model.dominion.foothold].id, occupied_n: model.regions.filter(r => r.occupied).length } : null,
           years_per_epoch: 25,
-          seed: String(params.seed), regions: params.regions, relax: params.relax,
+          seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), regions: params.regions, relax: params.relax,
           bias: params.bias,
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt, dump_bias: params.db,
@@ -7849,6 +7863,7 @@
       const refineries = model.regions.filter(r => r.refining > 0).length;
       const rows = [
         ["seed", esc(params.seed)],
+        ...(params.fate ? [["fate", esc(params.fate)]] : []),
         ["regions", model.regions.length],
         ["capital", `${esc(model.capitalName)} (region #${model.capital.id})`],
         ["income mix", `ext ${params.we} / ref ${params.wf} / trade ${params.wt} / grad ${params.wg}`],
@@ -8448,6 +8463,7 @@
     function writeHash() {
       const p = new URLSearchParams();
       p.set("seed", params.seed);
+      if (params.fate) p.set("fate", params.fate);   // off-default only (the lens= precedent)
       p.set("regions", params.regions);
       p.set("relax", params.relax);
       p.set("bias", params.bias);
@@ -8506,6 +8522,7 @@
       const w = (key, def) => clamp(Math.round(num(key, def)), 0, 100);
       const out = {
         seed: p.get("seed") || DEFAULTS.seed,
+        fate: (p.get("fate") || DEFAULTS.fate).trim(),
         regions: clamp(Math.round(num("regions", DEFAULTS.regions)), 5, 64),
         relax: clamp(Math.round(num("relax", DEFAULTS.relax)), 0, 8),
         bias: w("bias", DEFAULTS.bias),
@@ -8526,7 +8543,7 @@
     // ---- UI sync ------------------------------------------------------------
     function syncControls() {
       const set = (id, v) => { document.getElementById(id).value = v; };
-      set("seed", params.seed); set("regions", params.regions); set("relax", params.relax);
+      set("seed", params.seed); set("fate", params.fate); set("regions", params.regions); set("relax", params.relax);
       set("bias", params.bias); set("we", params.we); set("wf", params.wf);
       set("wt", params.wt); set("wg", params.wg); set("gt", params.gt); set("db", params.db); set("ep", params.ep);
       document.getElementById("regionsVal").textContent = params.regions;
@@ -8810,6 +8827,15 @@
         params.seed = makeName(mulberry32((hashStr(params.seed) ^ (params.regions << 8) ^ params.bias) >>> 0)) +
           "-" + (1000 + Math.floor((Date.now ? (Date.now() % 9000) : 0)));
         params.capital = null; syncControls(); regenerateTopology();
+      });
+      $("fate").addEventListener("change", (e) => { params.fate = e.target.value.trim(); regenerateTopology(); });
+      $("diceFate").addEventListener("click", () => {
+        // a random 5-char token, then deterministic: the luck reshuffles, the rock holds.
+        // capital is untouched — fate never moves geology or the seat.
+        const rr = mulberry32((hashStr(params.fate || params.seed) ^ (params.regions << 4) ^ ((Date.now ? Date.now() : 0) >>> 0)) >>> 0);
+        const ch = "abcdefghijkmnpqrstuvwxyz23456789";
+        let tok = ""; for (let i = 0; i < 5; i++) tok += ch[Math.floor(rr() * ch.length)];
+        params.fate = tok; syncControls(); regenerateTopology();
       });
 
       $("regions").addEventListener("input", (e) => { params.regions = +e.target.value; $("regionsVal").textContent = params.regions; params.capital = null; regenerateTopology(); });

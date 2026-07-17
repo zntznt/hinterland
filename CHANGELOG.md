@@ -1,6 +1,19 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v40** (the fate seed A2): same rock, different luck (issue #119). A second
+  RNG family `fx = streams(params.fate || params.seed)` runs beside `sx`, and
+  exactly six political tags re-key to it — `events`, `factions`,
+  `institutions`, `revolt`, `dominion`, `dynasty`. Geology, founding, siting and
+  naming stay on `sx`, so two fates on one seed share a byte-identical founding
+  snapshot (ep=0) and diverge only in their histories. `fate` defaults to empty
+  and falls back to the seed, so `fx === sx` draw-for-draw and the default world
+  is unchanged — the golden fixtures (v39-addendum) stay green untouched, the
+  first proof the allowlist works: `schema_version` bumps 39→40 (allowlisted)
+  and `fate` rides the hash and provenance OFF-DEFAULT ONLY (the `lens=`
+  precedent), so a default export never carries the key. A reroll die in THE
+  WORLD reshuffles the luck (random 5-char token, then deterministic) without
+  moving the seat or the rock.
 - **v39 addendum (A1, the byte-pin — no format change)**: the golden fixture
   harness lands (issue #118). `tools/fixtures/` freezes the exports of a
   seed×knob matrix — 6 seeds × { default + `db=0` / `gt=0` / `wg=0` / `iq=100` }

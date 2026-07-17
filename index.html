@@ -1061,7 +1061,7 @@
         </div>
         <div class="hud hud-tc">
           <button id="lensChip" aria-haspopup="dialog" aria-expanded="false" aria-controls="lensPanel">
-            <span class="lens-chip-cap">THE QUESTION</span> <span id="lensChipQ">who bears the injustice</span> &#9662;
+            <span class="lens-chip-cap">THE QUESTION</span> <span id="lensChipQ">who holds the coin</span> &#9662;
           </button>
         </div>
         <div class="hud hud-bl">
@@ -6180,7 +6180,9 @@
       refining:   { lo: [252, 240, 230], hi: [176, 88, 26],   label: "refining capacity (where value is added)" },
       finance:    { lo: [246, 242, 250], hi: [63, 0, 125],    label: "elite share — ¤ marks the counting houses (+6 to the owners' row where finance sits)" },
       flips:      { lo: [246, 244, 240], hi: [122, 31, 31],   label: "bloc flips (ground that changed hands as fortunes shifted)" },
-      elitedelta: { lo: [179, 88, 6],    hi: [84, 39, 136],   label: "owners' row since the founding (shrank → grew)" } // diverging like delta: readable to every kind of eye
+      elitedelta: { lo: [179, 88, 6],    hi: [84, 39, 136],   label: "owners' row since the founding (shrank → grew)" }, // diverging like delta: readable to every kind of eye
+      growth:     { lo: [140, 81, 10],   hi: [1, 102, 94],    label: "wealth growth since founding (shrank → multiplied)" }, // diverging (BrBG): the ground that grew vs the ground that shrank
+      volatility: { lo: [255, 247, 236], hi: [179, 0, 0],     label: "volatility (boom/bust amplitude)" }
     };
     // #62: many ramps bottom out near-white, so a view where one region spikes
     // (injustice/burden/tolls, maroon hi) reads as a single loud cell on blank
@@ -6189,7 +6191,7 @@
     // lift, so the already-tinted ramps (retention/mobility) just deepen a touch;
     // delta is diverging and bloc is categorical, so both are skipped.
     for (const k in RAMPS) {
-      if (k === "delta" || k === "elitedelta" || k === "bloc") continue; // diverging/categorical: no floor-lift
+      if (k === "delta" || k === "elitedelta" || k === "growth" || k === "bloc") continue; // diverging/categorical: no floor-lift
       const r = RAMPS[k], lift = 0.12;
       r.lo = r.lo.map((c, i) => Math.round(c + (r.hi[i] - c) * lift));
     }
@@ -6230,7 +6232,7 @@
     const pctLens = (group, q, get) =>
       ({ group, q, t: (r, C) => get(r, C) / 100, value: (r, C) => get(r, C) });
     const LENSES = {
-      injustice: { group: "THE ARGUMENT", q: "who bears the injustice",
+      injustice: { group: "THE ARGUMENT", q: "blight × poverty (a composite)",
         t: (r, C) => (C.RB(r) / 100) * (1 - C.RW(r) / 100),
         value: (r, C) => Math.round(100 * (C.RB(r) / 100) * (1 - C.RW(r) / 100)) },
       class: pctLens("THE ARGUMENT", "who owns the town", (r, C) => C.SE(r)),
@@ -6242,6 +6244,15 @@
       elitedelta: { group: "THE ARGUMENT", q: "whose owners' row grew", featured: true,
         t: (r, C) => clamp((C.SE(r) - (C.snaps[0] ? C.snaps[0].eliteShare[r.id] : C.SE(r)) + 20) / 40, 0, 1),
         value: (r, C) => { const d = C.SE(r) - (C.snaps[0] ? C.snaps[0].eliteShare[r.id] : C.SE(r)); return (d > 0 ? "+" : "") + d; } },
+      // A3 (#120): the neutral shape instruments — see any world, not the one
+      // the old argument expected. growth reads live under the scrubber; volatility
+      // reads the whole run's amplitude (max−min wealth across every epoch).
+      growth: { group: "THE SHAPE", q: "how much the ground multiplied",
+        t: (r, C) => { const g = (C.RW(r) - r.wealthT0) / Math.max(1, r.wealthT0); return clamp(g / 2 + 0.5, 0, 1); },
+        value: (r, C) => { const g = r.wealthT0 > 0 ? Math.round(100 * (C.RW(r) - r.wealthT0) / r.wealthT0) : 0; return (g > 0 ? "+" : "") + g + "%"; } },
+      volatility: { group: "THE SHAPE", q: "who boomed and busted",
+        t: (r, C) => { const ws = C.snaps.map(s => s.wealth[r.id]); return clamp((Math.max(...ws) - Math.min(...ws)) / 60, 0, 1); },
+        value: (r, C) => { const ws = C.snaps.map(s => s.wealth[r.id]); return Math.max(...ws) - Math.min(...ws); } },
       biome: { group: "THE LAND", q: "what the land is", cats: BIOME_COLORS, catLabel: "biome",
         value: r => r.biome.slice(0, 5), fill: r => BIOME_COLORS[r.biome] },
       elev: pctLens("THE LAND", "how high it stands", r => r.elevation),
@@ -6627,10 +6638,55 @@
         return out.map(a => ({ ...a, gini_start: per[a.from_epoch].gini, gini_end: per[a.to_epoch].gini }));
       })();
 
+      // A3 (#120): the neutral shape instruments — founding→close, measured on
+      // the SETTLED realm (same set at both ends, matching gini/gini_t0 above),
+      // so a pile of abandoned zeros can never fake growth or a fallen floor.
+      const settled = R.filter(r => r.settled);
+      const sN = settled.length;
+      const snapsF = model.epochSnaps, lastF = snapsF.length - 1;
+      const totW = settled.reduce((s, r) => s + r.wealth, 0);
+      const totW0 = settled.reduce((s, r) => s + r.wealthT0, 0);
+      // per-capita = the wealth index the AVERAGE PERSON lives at: each region's
+      // wealth weighted by its population (0–100), not the summed index over a
+      // headcount (which would read ~0 — wealth is an index, not a coin pile).
+      const wmean = (getW, frame) => {
+        let sw = 0, sp = 0;
+        for (const r of settled) { const p = snapsF[frame] ? snapsF[frame].pop[r.id] : r.settlementPop; sw += getW(r) * p; sp += p; }
+        return sp ? r1(sw / sp) : 0;
+      };
+      // growth: total and per-capita wealth, close vs founding (the pie can move)
+      const growth = { total: totW, total_t0: totW0, per_capita: wmean(r => r.wealth, lastF), per_capita_t0: wmean(r => r.wealthT0, 0) };
+      // the floor: the p10 of regional wealth, close vs founding (did the poorest ground rise?)
+      const p10 = (get) => { const t = settled.map(get).sort((a, b) => a - b); return t.length ? t[Math.floor(0.1 * (t.length - 1))] : 0; };
+      const floor = { p10: p10(r => r.wealth), p10_t0: p10(r => r.wealthT0) };
+      // absolute mobility: share of settled regions richer than their founding selves
+      const absMobility = sN ? Math.round(100 * settled.filter(r => r.wealth > r.wealthT0).length / sN) / 100 : 0;
+      // rank churn: Spearman rho of wealth ranks, founding→close (1 = the order froze;
+      // low/negative = who is rich actually changed). Ties broken by id, so ranks are
+      // distinct and the classic 1 - 6Σd²/(n(n²−1)) form is exact.
+      const rankChurn = (() => {
+        if (sN < 2) return null;
+        const rank = (get) => {
+          const idx = settled.map((_, i) => i).sort((a, b) => get(settled[a]) - get(settled[b]) || settled[a].id - settled[b].id);
+          const rk = []; idx.forEach((si, r) => { rk[si] = r; }); return rk;
+        };
+        const r0 = rank(r => r.wealthT0), rC = rank(r => r.wealth);
+        let d2 = 0; for (let i = 0; i < sN; i++) d2 += (r0[i] - rC[i]) ** 2;
+        return Math.round((1 - 6 * d2 / (sN * (sN * sN - 1))) * 100) / 100;
+      })();
+      // volatility: per-region boom/bust amplitude (max−min wealth across epochs), realm mean
+      const ampOf = (r) => { const ws = snapsF.map(s => s.wealth[r.id]); return Math.max(...ws) - Math.min(...ws); };
+      const volatility = sN ? Math.round(10 * mean(settled.map(ampOf))) / 10 : 0;
+
       return {
         ages,
         zipf,
         sky,
+        growth,
+        floor,
+        absolute_mobility: absMobility,
+        rank_churn: rankChurn,
+        volatility,
         sovereignty,
         rain_split: rainSplit,
         gini_people: giniPeople,
@@ -7219,7 +7275,7 @@
     function render(model, params) {
       document.getElementById("chronText").innerHTML = chronicleArticleHTML(composeChronicle(model, params), model, params);
       document.getElementById("findingsText").innerHTML = findingsHTML(model);
-      const lensId = LENSES[view] ? view : "injustice"; // an unknown lens (hand-edited hash) falls back
+      const lensId = LENSES[view] ? view : "wealth"; // an unknown lens (hand-edited hash) falls back
       const LENS = LENSES[lensId];
       const ramp = RAMPS[lensId]; // undefined for traj/biome — categoricals never dereference it
       // #63: two genres, one switch — atlas is the pen's map (no lens),
@@ -8212,7 +8268,7 @@
     let topology = null;   // regions with geology baked in (stages 1+2)
     let geo = null;        // world-level geology (wind)
     let model = null;
-    let view = "injustice";   // boot into the argument, not the scenery
+    let view = "wealth";   // A3 (#120, decision 3): boot into the neutral coin, not a verdict
     let mapMode = "data";  // #63: atlas = the pen's map, data = the lens; render-only
     let showPoi = true;    // #63: data mode files the gazetteer under one checkbox
     // #63 wants the numbers hover-only in data mode; the suite counts them,
@@ -8477,7 +8533,7 @@
       if (params.capital) { p.set("cx", round2(params.capital[0])); p.set("cy", round2(params.capital[1])); }
       // the lens and mode change what a shared map argues, so they ride along —
       // but only off-default, so stock links stay exactly as they always were
-      if (view !== "injustice") p.set("lens", view);
+      if (view !== "wealth") p.set("lens", view);
       if (mapMode !== "data") p.set("mode", mapMode);
       // the camera rides too, off-default only (the lens= precedent): a share link
       // reproduces the exact view; a fit-width/contain view keeps the link clean.

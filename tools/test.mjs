@@ -2147,8 +2147,8 @@ console.log("# The argument surface A1 acceptance: the app says what it measures
   // first contact: the mission is on screen, the default view is the argument
   if (A1.doc.querySelector("h1").textContent.includes("unequal worlds")) ok("the page states its mission in the header");
   else fail("neutral header");
-  if (A1.doc.querySelector("input[name=view]:checked").value === "injustice") ok("the map boots into the injustice view, not the scenery");
-  else fail("boots into scenery");
+  if (A1.doc.querySelector("input[name=view]:checked").value === "wealth") ok("the map boots into the neutral wealth view (A3, decision 3), not a verdict");
+  else fail("boots into the wrong lens");
   const panel = A1.doc.getElementById("findingsText").textContent;
   if (panel.length > 200 && /×/.test(panel) && /poorest fifth/.test(panel)) ok("the findings panel argues in plain language with this world's numbers");
   else fail("findings panel empty or numberless");
@@ -3715,6 +3715,51 @@ console.log("# The camera V1/V2 (#116/#117): fit-width default, clamped pan/zoom
 
 // (the Phase 2 acceptance sweep moved to stress.mjs — second process,
 // memory headroom; the organic render fattened per-world DOM weight)
+
+console.log("# The neutral instruments (#120, A3): the shape findings, two new lenses, the wealth boot");
+{
+  // the five shape findings are present and sane across a 31-seed smoke
+  let sane31 = 0; let firstBad = "";
+  for (let i = 0; i < 31; i++) {
+    const g = await gen(`#seed=a3-${i}&regions=18&ep=10`);
+    const F = g.gj.hinterland.findings;
+    const ok5 =
+      F.growth && Number.isFinite(F.growth.total) && Number.isFinite(F.growth.total_t0) &&
+      F.growth.per_capita >= 0 && F.growth.per_capita <= 100 &&
+      F.growth.per_capita_t0 >= 0 && F.growth.per_capita_t0 <= 100 &&
+      F.floor && F.floor.p10 >= 0 && F.floor.p10 <= 100 && F.floor.p10_t0 >= 0 && F.floor.p10_t0 <= 100 &&
+      typeof F.absolute_mobility === "number" && F.absolute_mobility >= 0 && F.absolute_mobility <= 1 &&
+      (F.rank_churn === null || (F.rank_churn >= -1 && F.rank_churn <= 1)) &&
+      Number.isFinite(F.volatility) && F.volatility >= 0 && F.volatility <= 100;
+    if (ok5) sane31++;
+    else if (!firstBad) firstBad = `a3-${i}: ${JSON.stringify({ growth: F.growth, floor: F.floor, m: F.absolute_mobility, c: F.rank_churn, v: F.volatility })}`;
+  }
+  if (sane31 === 31) ok("the five shape findings (growth/floor/absolute_mobility/rank_churn/volatility) paint sane values across 31 seeds");
+  else fail(`shape findings out of range in ${31 - sane31}/31: ${firstBad}`);
+
+  // the two new lenses render with no NaN and label the legend
+  const Q = await gen("#seed=a3&regions=18&ep=10", true);
+  const map = Q.doc.getElementById("map");
+  let lensOk = true;
+  for (const [lens, needle] of [["growth", "growth since founding"], ["volatility", "boom/bust amplitude"]]) {
+    const r = Q.doc.querySelector(`input[name=view][value="${lens}"]`);
+    if (!r) { lensOk = false; fail(`new lens ${lens} missing from the index`); continue; }
+    r.checked = true; r.dispatchEvent(new Q.window.Event("change", { bubbles: true }));
+    const legend = (Q.doc.getElementById("legendLabel") || {}).textContent || "";
+    if (map.innerHTML.includes("NaN") || !legend.includes(needle)) {
+      lensOk = false; fail(`lens ${lens} bad paint: NaN=${map.innerHTML.includes("NaN")} legend="${legend}"`);
+    }
+  }
+  if (lensOk) ok("the growth and volatility lenses paint the map with no NaN and label the legend");
+
+  // injustice survives, relabeled to its composite in the index (legend already carries it)
+  const inj = Q.doc.querySelector('input[name=view][value="injustice"]');
+  const injLabel = inj && inj.closest("label") ? inj.closest("label").textContent : "";
+  if (inj && /composite/i.test(injLabel))
+    ok(`injustice survives as a labeled composite in the index ("${injLabel.trim().slice(0, 34)}")`);
+  else fail(`injustice not relabeled as a composite: "${injLabel}"`);
+  Q.window.close();
+}
 
 console.log("# The fate seed (#119, A2): same rock, different luck");
 {

@@ -2152,11 +2152,16 @@ console.log("# The argument surface A1 acceptance: the app says what it measures
   const panel = A1.doc.getElementById("findingsText").textContent;
   if (panel.length > 200 && /×/.test(panel) && /poorest fifth/.test(panel)) ok("the findings panel argues in plain language with this world's numbers");
   else fail("findings panel empty or numberless");
-  // the twins are drawn when they exist
+  // the twins are drawn ON THE LENS THEY ARGUE FOR (injustice, by design #63).
+  // The boot lens is now the neutral wealth (A3, #120), so select injustice to
+  // assert the exhibit, then restore wealth so later reads of A1 see the default.
   const F = A1.gj.hinterland.findings;
+  const setLens = (v) => { const r = A1.doc.querySelector(`input[name=view][value="${v}"]`); r.checked = true; r.dispatchEvent(new A1.window.Event("change", { bubbles: true })); };
+  setLens("injustice");
   const twinLines = A1.doc.querySelectorAll("#stage svg line.twin").length;
-  if (twinLines === (F.twins ? 1 : 0)) ok(`the twin exhibit is drawn when the twins exist (${twinLines} line, twins ${F.twins ? "present" : "absent"})`);
+  if (twinLines === (F.twins ? 1 : 0)) ok(`the twin exhibit is drawn on the injustice lens when the twins exist (${twinLines} line, twins ${F.twins ? "present" : "absent"})`);
   else fail(`twin line mismatch: ${twinLines} vs ${JSON.stringify(F.twins)}`);
+  setLens("wealth");
   // the chronicle concludes
   const R = RA10;
   if (R.chron.includes("What the Record Shows") && R.chron.includes("no villain wrote it"))

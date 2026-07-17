@@ -1,6 +1,21 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v39 addendum (A1, the byte-pin — no format change)**: the golden fixture
+  harness lands (issue #118). `tools/fixtures/` freezes the exports of a
+  seed×knob matrix — 6 seeds × { default + `db=0` / `gt=0` / `wg=0` / `iq=100` }
+  × { `world.geojson`, `events.csv`, `chronicle.md` }, 30 cells at 12 regions,
+  `ep=10` — and the suite's last check re-derives every cell live and asserts
+  it equal **modulo an explicit allowlist** (schema_version; provenance keys
+  emitted only when a new param is non-empty; csv columns added only when
+  steered). This is the enforcement every later pivot PR answers to: a model
+  change that moves a world moves these bytes, and the check fails until the
+  move is DECLARED — `node tools/refixture.mjs` to regenerate, `git diff
+  tools/fixtures` to read what moved, and a line HERE saying why. A fixture
+  change with no schema-history note is exactly what the pin exists to catch.
+  The matrix and the compare live in `tools/fixtures.matrix.mjs`, imported by
+  both the checker (`test.mjs`) and the writer (`refixture.mjs`) so the two
+  cannot diverge. No export bytes change; `schema_version` stays 39.
 - **v39** (the river finds its bed): a river's LineString was its 3–7
   settlement anchors drawn point-to-point — on the map the water wandered
   sideways and could die inland, which no river does. Now each river ships

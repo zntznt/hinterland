@@ -2871,15 +2871,15 @@ console.log("# The chronicle E4 acceptance: the world narrating itself");
 console.log("# schema v4 + URL handling");
 
 const prov = A1.gj.hinterland;
-// re-pinned 38 -> 39: v39 re-grounds river geometry — the LineString is now
-// the traced bed (RV.trace) and the downstream order ships as chain_regions;
-// chains, region columns, and the carriage are byte-unchanged
-if (prov && prov.schema_version === 39 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+// re-pinned 39 -> 40: v40 adds the fate seed (#119). schema_version bumps; the
+// default export is otherwise byte-identical (empty fate === seed), and `fate`
+// rides provenance only when set — so a default world never carries the key.
+if (prov && prov.schema_version === 40 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
-    prov.grid_threshold === 35 && prov.dump_bias === 60 &&
+    prov.grid_threshold === 35 && prov.dump_bias === 60 && !("fate" in prov) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=39 + weights + knobs (incl. responsiveness + harbors) + epochs(default 0) + empty timeline");
+  ok("provenance carries schema_version=40 + weights + knobs (incl. responsiveness + harbors) + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await gen("#seed=&regions=&we=&wg=");
@@ -3715,6 +3715,52 @@ console.log("# The camera V1/V2 (#116/#117): fit-width default, clamped pan/zoom
 
 // (the Phase 2 acceptance sweep moved to stress.mjs — second process,
 // memory headroom; the organic render fattened per-world DOM weight)
+
+console.log("# The fate seed (#119, A2): same rock, different luck");
+{
+  // byte-compat: an explicit fate equal to the seed === the empty default, since
+  // fx = streams(fate||seed) falls back to streams(seed) draw-for-draw.
+  const base = await gen("#seed=fateseed&regions=16&ep=10");
+  const same = await gen("#seed=fateseed&fate=fateseed&regions=16&ep=10");
+  if (JSON.stringify(base.gj.features) === JSON.stringify(same.gj.features))
+    ok("fate falls back to the seed: fate=seed === empty fate, world byte-identical");
+  else fail("fate fallback drifted from the seed's own draws");
+
+  // isolation: same seed, two fates. The founding snapshot (ep=0) is
+  // pre-political — the six streams never fire before time runs — so geology,
+  // toponymy, siting and the whole founding are byte-identical across fates.
+  const g0a = await gen("#seed=fateseed&fate=alpha&regions=16");
+  const g0b = await gen("#seed=fateseed&fate=bravo&regions=16");
+  if (JSON.stringify(g0a.gj.features) === JSON.stringify(g0b.gj.features))
+    ok("two fates share one founding snapshot (ep=0): geology, toponymy and siting are the seed's, not the fate's");
+  else fail("fate leaked into the founding snapshot");
+
+  // at ep>0 the histories diverge: same rock, different luck.
+  const fA = await gen("#seed=fateseed&fate=alpha&regions=16&ep=10");
+  const fB = await gen("#seed=fateseed&fate=bravo&regions=16&ep=10");
+  if (JSON.stringify(fA.gj.hinterland.events) !== JSON.stringify(fB.gj.hinterland.events))
+    ok(`two fates diverge in events — the luck rewrote the history (${fA.gj.hinterland.events.length} vs ${fB.gj.hinterland.events.length} events)`);
+  else fail("fate did not change the event timeline");
+  // the IMMUTABLE geology (ruggedness, fertility) survives both histories; only
+  // depletion (endowment mined down) and the political columns move with the fate.
+  const staticGeo = (g) => JSON.stringify(regionsOf(g).map(f => [f.properties.terrain_ruggedness, f.properties.fertility]));
+  if (staticGeo(fA.gj) === staticGeo(fB.gj) && staticGeo(fA.gj) === staticGeo(base.gj))
+    ok("the immutable geology (ruggedness, fertility) holds under both histories — fate never touched the rock");
+  else fail("fate disturbed immutable geology");
+
+  // determinism: seed+fate replays byte-identically, twice
+  const r1 = await gen("#seed=fateseed&fate=alpha&regions=16&ep=10");
+  const r2 = await gen("#seed=fateseed&fate=alpha&regions=16&ep=10");
+  if (JSON.stringify(r1.gj) === JSON.stringify(r2.gj) && r1.chron === r2.chron)
+    ok("seed+fate replays byte-identically, twice (the luck is deterministic once set)");
+  else fail("seed+fate replay drifted");
+
+  // fate rides provenance off-default only (the lens= precedent): a default
+  // world carries no fate key at all; an explicit fate carries it verbatim.
+  if (base.gj.hinterland.fate === undefined && fA.gj.hinterland.fate === "alpha")
+    ok("fate rides provenance only when set (default export carries no fate key)");
+  else fail(`fate provenance wrong: base=${base.gj.hinterland.fate} explicit=${fA.gj.hinterland.fate}`);
+}
 
 console.log("# The golden fixtures (#118, A1): every export byte-pinned; a moved world must be a declared act");
 {

@@ -3629,6 +3629,87 @@ console.log("# QGIS substrates Q1 acceptance (#55/#56): edges, moran, CSV tables
   Q1.window.close();
 }
 
+console.log("# The camera V1/V2 (#116/#117): fit-width default, clamped pan/zoom, semantic settle, honest scale, cam= in the hash");
+{
+  // a self-contained DOM so we can re-download after the camera moves and prove
+  // the export never budged. The plate box is unmeasured in jsdom (0×0), so the
+  // aspect reads square — exactly the browser's CSS-square plate — and the
+  // discrete HUD buttons zoom about the centre with no getScreenCTM needed.
+  const mk = (hash) => {
+    let captured = null;
+    const dom = new JSDOM(html, { runScripts: "dangerously", url: "https://h.test/" + (hash || ""),
+      beforeParse(w) {
+        w.d3 = { Delaunay: d3d.Delaunay, Voronoi: d3d.Voronoi };
+        const RB = w.Blob;
+        w.Blob = class extends RB { constructor(p, o) { super(p, o); captured = p.join(""); } };
+        w.URL.createObjectURL = () => "blob:x"; w.URL.revokeObjectURL = () => {};
+        w.HTMLAnchorElement.prototype.click = function () {};
+      } });
+    return { dom, doc: dom.window.document, win: dom.window, dl: () => { dom.window.document.getElementById("download").click(); return captured; } };
+  };
+  const C = mk("#seed=alpha&regions=32&ep=10");
+  const doc = C.doc, win = C.win;
+  const vb = () => doc.querySelector("#stage #map").getAttribute("viewBox");
+  const cap = () => doc.querySelector("#scaleBar .scale-cap").textContent;
+  const placed = () => doc.querySelectorAll("#stage svg text.placename").length;
+
+  // fit-width is the boot default: the whole square world, and an honest 20 leagues
+  if (vb() === "0 0 1000 1000") ok("the camera boots to fit-width: the whole plate frames on load");
+  else fail(`default viewBox ${vb()} != 0 0 1000 1000`);
+  if (cap() === "20 leagues") ok("the scale bar reads 20 leagues at fit"); else fail(`scale cap ${cap()}`);
+
+  const exportAtFit = C.dl();
+  const nFit = placed();
+
+  // + twice: geometric 2× then 4×, clamped and centred on the world
+  doc.getElementById("camZoomIn").click();
+  const vb2 = vb(), cap2 = cap();
+  doc.getElementById("camZoomIn").click();
+  const vb4 = vb(), cap4 = cap();
+  const n4 = placed();
+
+  if (vb2 === "250 250 500 500" && vb4 === "375 375 250 250")
+    ok(`zoom is geometric + centred + clamped to [0,W]² (2× ${vb2}, 4× ${vb4})`);
+  else fail(`zoom viewBox wrong: 2× ${vb2}, 4× ${vb4}`);
+
+  // the scale bar stays honest: 20 : 10 : 5 leagues across fit : 2× : 4× (assert ratio)
+  const leagues = (t) => parseFloat(t);
+  if (cap2 === "10 leagues" && cap4 === "5 leagues" &&
+      Math.abs(leagues(cap()) * 4 - 20) < 1e-6 && Math.abs(leagues(cap2) / leagues(cap4) - 2) < 1e-6)
+    ok(`the scale bar recomputes from cam.w — honest at every zoom (fit 20, 2× ${cap2}, 4× ${cap4}; ratio 4:2:1)`);
+  else fail(`scale bar dishonest under zoom: fit 20, 2× ${cap2}, 4× ${cap4}`);
+
+  // the semantic settle: MORE names win deeper in (measured; pinned at >=30%)
+  if (n4 >= nFit * 1.3)
+    ok(`the semantic settle earns the smaller seats their names: ${nFit} placed at fit, ${n4} at 4× (+${Math.round((n4/nFit-1)*100)}%)`);
+  else fail(`only ${n4} placenames at 4× vs ${nFit} at fit (need >=30% more)`);
+
+  // the camera never touches the model: the export is byte-identical after the move
+  if (C.dl() === exportAtFit) ok("exports stay byte-identical while the camera pans and zooms (view layer only)");
+  else fail("the camera corrupted the export");
+
+  // cam= rides the hash off-default only (the lens= precedent)
+  const h = win.location.hash;
+  if (h.includes("cam=") && !h.includes("cx="))
+    ok("cam= joins the hash when the view is off-default, and only then (stock links stay clean)");
+  else fail(`cam= not written off-default: ${h}`);
+
+  // round-trip: a fresh load of that link reproduces the exact 4× view
+  const RT = mk(h);
+  const rtvb = RT.doc.querySelector("#stage #map").getAttribute("viewBox");
+  if (rtvb === vb4) ok(`cam= round-trips: a shared link reproduces the exact view (${rtvb})`);
+  else fail(`cam= round-trip drifted: ${rtvb} != ${vb4}`);
+  RT.dom.window.close();
+
+  // fit again: the frame resets and the link goes clean
+  doc.getElementById("camFit").click();
+  if (vb() === "0 0 1000 1000" && !win.location.hash.includes("cam="))
+    ok("the fit button restores the default frame and drops cam= from the link");
+  else fail(`fit did not reset cleanly: ${vb()} / ${win.location.hash}`);
+
+  win.close();
+}
+
 // (the Phase 2 acceptance sweep moved to stress.mjs — second process,
 // memory headroom; the organic render fattened per-world DOM weight)
 

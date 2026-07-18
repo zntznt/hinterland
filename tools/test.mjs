@@ -1824,7 +1824,7 @@ console.log("# The map is a map M1: coastline, dry towns, places, mountain mass"
   else fail("sea level malformed");
 }
 
-console.log("# The counterfactual C1: the lambda experiment on the page, on a pure stage 3");
+console.log("# The counterfactual C1: the disposal experiment on the page, on a pure stage 3");
 
 {
   // a boot that can be driven after load (sliders, buttons, re-downloads)
@@ -1904,7 +1904,7 @@ console.log("# The counterfactual C1: the lambda experiment on the page, on a pu
     const Z = boot("#seed=alpha&regions=24&ep=10&db=0");
     Z.dl();
     Z.doc.getElementById("cfBtn").click();
-    if (/physics alone/.test(Z.doc.getElementById("cfNote").textContent)) ok("a lambda=0 world knows it: 'this world already runs on physics alone'");
+    if (/disperses its spoil/.test(Z.doc.getElementById("cfNote").textContent)) ok("an already-dispersed world knows it: 'this world already disperses its spoil'");
     else fail("no-op counterfactual not explained");
     Q.dom.window.close(); Z.dom.window.close();
   }
@@ -1924,7 +1924,7 @@ console.log("# The counterfactual C1: the lambda experiment on the page, on a pu
       if (d > 0) policyWorse++;
     }
     if (policyWorse >= tested * 0.7)
-      ok(`THE GAP IS A POLICY: the dumping raises the poorest fifth's blight burden over physics-only in ${policyWorse}/${tested} worlds (deltas ${gaps.join(", ")})`);
+      ok(`THE GAP IS A POLICY: concentrate raises the poorest fifth's blight burden over the dispersed baseline in ${policyWorse}/${tested} worlds (deltas ${gaps.join(", ")})`);
     else fail(`policy gap absent: ${policyWorse}/${tested} (${gaps.join(", ")})`);
   }
 }
@@ -2896,13 +2896,13 @@ const prov = A1.gj.hinterland;
 // re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
 // the default carries the Concordat-era `world` block (regime chain + series), and
 // `fate` still rides provenance only when set — so a default world has no fate key.
-if (prov && prov.schema_version === 45 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+if (prov && prov.schema_version === 46 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
-    prov.grid_threshold === 35 && prov.dump_bias === 60 && !("fate" in prov) &&
+    prov.grid_threshold === 35 && prov.dump_bias === 60 && prov.disposal_doctrine === "concentrate" && !("fate" in prov) &&
     prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=45 + weights + knobs + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
+  ok("provenance carries schema_version=46 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await gen("#seed=&regions=&we=&wg=");
@@ -2978,7 +2978,7 @@ console.log("# Phase 3 acceptance: neutral zero, darkness, grid economics");
   else fail(`services not gated: ${good}/${tested}`);
 }
 
-console.log("# Phase 4 acceptance: blight physics, dump bias, the λ-sweep");
+console.log("# The disposal doctrine (#126, B4): blight physics, the three regimes, the sign unlocked");
 
 // (v) db change: society only; blight responds.
 {
@@ -2991,7 +2991,8 @@ console.log("# Phase 4 acceptance: blight physics, dump bias, the λ-sweep");
   else fail("dump-bias had no effect on blight");
 }
 
-// (vi) λ=0 physics anchor: the worst-blighted region sits at/near a refinery.
+// (vi) DISPERSE physics anchor: with no hand aiming it (db=0), the worst-blighted
+// region sits at/near a refinery — the poison lands by geography.
 {
   let anchored = 0; const N = 12;
   for (let i = 0; i < N; i++) {
@@ -3005,31 +3006,94 @@ console.log("# Phase 4 acceptance: blight physics, dump bias, the λ-sweep");
     });
     if (near) anchored++;
   }
-  if (anchored >= N * 0.8) ok(`λ=0: worst blight anchors to a refinery plume (${anchored}/${N} seeds)`);
-  else fail(`λ=0 blight not physical: ${anchored}/${N}`);
+  if (anchored >= N * 0.8) ok(`disperse: worst blight anchors to a refinery plume (${anchored}/${N} seeds)`);
+  else fail(`disperse blight not physical: ${anchored}/${N}`);
 }
 
-// (vii) THE λ-SWEEP: corr(blight, wealth) negative at default λ, weaker at λ=0.
-// The gap is the measured policy share of the injustice.
+// (vii) B4 (#126) — THE SIGN UNLOCKED. Under the retired λ, spoil was aimed at the
+// poor and corr(blight, wealth) was LOCKED negative ("injustice is blight × poverty
+// after blight was aimed at poverty" — the near-tautology the pivot names). The
+// disposal doctrine breaks the lock: CONCENTRATE (the poor margin + the written-off
+// zone) still reads negative, but DISPERSE lets the plume and the spoil settle by
+// geography — near the industrial, WEALTHY core — so the poison lands on the rich and
+// the correlation reads POSITIVE. Across the sweep it now spans BOTH signs: the model
+// can no longer be counted on to put the blight on the poor. That is the whole point.
 {
-  let c60 = 0, c0 = 0; const N = 24;
+  const corrs = []; const N = 16;
   for (let i = 0; i < N; i++) {
-    const g60 = (await gen(`#seed=sweep${i}&regions=24&db=60`)).gj;
-    const g0 = (await gen(`#seed=sweep${i}&regions=24&db=0`)).gj;
-    c60 += pearson(col(g60, "blight_load"), col(g60, "wealth"));
-    c0 += pearson(col(g0, "blight_load"), col(g0, "wealth"));
+    for (const db of [15, 50, 85]) { // disperse, concentrate, treat
+      const g = (await gen(`#seed=dbsw${i}&regions=20&db=${db}&ep=10`)).gj;
+      const R = regionsOf(g).map(f => f.properties).filter(r => r.is_settled);
+      if (R.length >= 3) corrs.push(pearson(R.map(r => r.blight_load), R.map(r => r.wealth)));
+    }
   }
-  c60 /= N; c0 /= N;
-  const gap = c0 - c60;
-  // (G3 recalibration: the sea adds a blight-independent wealth pole,
-  // slightly diluting the raw correlation; the POLICY GAP is what matters.
-  // Re-pinned c60 -0.15 -> -0.05 under the water-access rework: water is a
-  // SECOND blight-independent wealth pole (a dry rich town, a well-fed one),
-  // diluting the raw corr further to -0.07, but the gap stays large: 0.73,
-  // measured, which is the whole point. Policy, not geography, is the story.)
-  if (c60 <= -0.05 && gap >= 0.15)
-    ok(`λ-sweep: corr(blight,wealth) = ${c60.toFixed(2)} at λ=60 vs ${c0.toFixed(2)} at λ=0 — policy share ${gap.toFixed(2)}`);
-  else fail(`λ-sweep weak: λ=60 corr ${c60.toFixed(2)}, λ=0 corr ${c0.toFixed(2)}, gap ${gap.toFixed(2)}`);
+  corrs.sort((a, b) => a - b);
+  const lo = corrs[0], hi = corrs[corrs.length - 1];
+  const neg = corrs.filter(c => c < -0.15).length, pos = corrs.filter(c => c > 0.15).length;
+  if (lo < -0.2 && hi > 0.5 && neg >= 2 && pos >= 5)
+    ok(`the doctrine unlocks the sign: corr(blight,wealth) spans ${lo.toFixed(2)} (concentrate — on the poor) to ${hi.toFixed(2)} (disperse — on the rich); ${neg} clearly negative, ${pos} clearly positive worlds. The old poverty-lock is gone.`);
+  else fail(`blight-wealth correlation not spanning both signs: [${lo.toFixed(2)}, ${hi.toFixed(2)}], neg ${neg}, pos ${pos}`);
+}
+
+// (viii) B4 (#126): the three regimes, the db mapping, and the marquee exhibits.
+{
+  const regsOf = (g) => g.features.filter(f => f.properties.kind === "region").map(f => f.properties);
+
+  // the doctrine + sacrifice-zone columns ship, and the db knob maps forward to the
+  // three regimes (old db= links keep meaning: 0–33 disperse, 34–66 concentrate,
+  // 67–100 treat).
+  const dDisp = (await gen("#seed=dmap&regions=20&db=10&ep=10")).gj.hinterland;
+  const dConc = (await gen("#seed=dmap&regions=20&db=50&ep=10")).gj.hinterland;
+  const dTreat = (await gen("#seed=dmap&regions=20&db=90&ep=10")).gj.hinterland;
+  if (dDisp.disposal_doctrine === "disperse" && dConc.disposal_doctrine === "concentrate" && dTreat.disposal_doctrine === "treat"
+      && Number.isInteger(dConc.sacrifice_zone))
+    ok(`the db knob maps to three regimes: 0–33 disperse, 34–66 concentrate, 67–100 treat — and concentrate names its sacrifice zone (region ${dConc.sacrifice_zone})`);
+  else fail(`doctrine mapping/columns wrong: ${dDisp.disposal_doctrine}/${dConc.disposal_doctrine}/${dTreat.disposal_doctrine}, sz ${dConc.sacrifice_zone}`);
+
+  // EXHIBIT (a): the sacrifice zone stayed empty — the concentrate poison landed
+  // where few live and few came, so the harm was contained (the doctrine "worked").
+  let contained = 0, containedSeed = null;
+  for (let i = 0; i < 24; i++) {
+    const g = (await gen(`#seed=dbz-${i}&regions=20&db=50&ep=10`)).gj;
+    const z = regsOf(g).find(r => r.region_id === g.hinterland.sacrifice_zone);
+    if (z && z.blight_load >= 45 && z.population <= z.population_t0 * 0.7) {
+      contained++; if (!containedSeed) containedSeed = `dbz-${i}`;
+    }
+  }
+  if (contained >= 8) ok(`the contained sacrifice: ${contained}/24 concentrate worlds blight a zone the people left or never filled — harm contained (${containedSeed})`);
+  else fail(`contained sacrifice too rare: ${contained}/24`);
+
+  // EXHIBIT (b): the SAME doctrine RUINED by later migration INTO the zone. The
+  // written-off cheap land drew a settler rush before the poison ramped in; the
+  // series shows the zone's population rise above its founding while its blight
+  // climbed — P4 harm, delayed and contingent on where people later moved.
+  let ruined = 0, ruinedSeed = null;
+  for (let i = 0; i < 32; i++) {
+    const { gj, series } = await gen(`#seed=dbz-${i}&regions=20&db=50&ep=10`);
+    const z0 = regsOf(gj).find(r => r.region_id === gj.hinterland.sacrifice_zone);
+    if (!z0) continue;
+    const frames = series.features.filter(f => f.properties.kind === "region" && f.properties.region_id === gj.hinterland.sacrifice_zone)
+      .map(f => ({ pop: f.properties.population, bl: f.properties.blight_load }))
+      .filter(f => typeof f.pop === "number" && typeof f.bl === "number");
+    if (frames.some(f => f.pop > z0.population_t0 * 1.12) && frames.some(f => f.bl >= 50)) {
+      ruined++; if (!ruinedSeed) ruinedSeed = `dbz-${i}`;
+    }
+  }
+  if (ruined >= 1) ok(`the ruined sacrifice: ${ruined}/32 concentrate worlds saw migration fill the cheap zone before the poison arrived — P4 delayed harm (${ruinedSeed})`);
+  else fail(`no ruined-by-migration sacrifice zone in 32 worlds`);
+
+  // EXHIBIT (c): the poison on the RICH. In disperse the plume settles by geography,
+  // near the industrial WEALTHY core — worlds where the richest ground carries the
+  // most blight (positive corr): the marquee inversion of "injustice = blight×poverty".
+  let onRich = 0, richSeed = null;
+  for (let i = 0; i < 24; i++) {
+    const R = regsOf((await gen(`#seed=dbz-${i}&regions=20&db=15&ep=10`)).gj).filter(r => r.is_settled);
+    if (R.length >= 5 && pearson(R.map(r => r.blight_load), R.map(r => r.wealth)) >= 0.4) {
+      onRich++; if (!richSeed) richSeed = `dbz-${i}`;
+    }
+  }
+  if (onRich >= 8) ok(`the poison on the rich: ${onRich}/24 disperse worlds put the blight on the WEALTHIEST ground (corr ≥ 0.4 — ${richSeed}); the injustice tautology is broken`);
+  else fail(`blight-on-rich too rare: ${onRich}/24`);
 }
 
 console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");

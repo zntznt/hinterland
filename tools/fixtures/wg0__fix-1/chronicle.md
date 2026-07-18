@@ -28,11 +28,11 @@ The rivers are crossed at Linden Bridge alone; everywhere else the banks are mar
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1000), when the gap held, **the Long Desolation** (1025–1050), when the gap narrowed, **the Age of the Gates** (1075–1150), when the gap widened and **the Age of Accumulation** (1175–1250), when the gap held. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
-
-**Year 1025.** In this year the sickness came to Linden, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the River Fever of 1025.
+The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1000), when the gap held, **the Long Desolation** (1025–1050), when the gap narrowed and **the Age of the Gates** (1075–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1050.** A storm came off the water and stood over the coast for three days. Korgar took the worst of it, as the exposed shore always does; the Great Storm of 1050 is the name the survivors gave the year.
+
+**Year 1050.** In this year the sickness came to Linden, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Water-Rot of 1050.
 
 **Year 1075.** The works at Forby fell silent. The fields that fed them had given all they had, and the magnates did not stay for the funeral. The trunk lines still stand there, carrying nothing.
 
@@ -44,17 +44,17 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1075.** A storm came off the water and stood over the coast for three days. Korgar took the worst of it, as the exposed shore always does; the Great Storm of 1075 is the name the survivors gave the year.
 
-**Year 1075.** The seat, chastened by the years behind it, decreed the Crown Granary: a levy on the fat years and bread in the lean ones — the first decree in the realm's history to move coin downhill. The chronicle notes that it took a wound to buy a mercy.
-
-**Year 1075.** The Temple came to Linden, to the ground of its suffering, and consecrated it as Velle. Pilgrims walk that road now. Where the Crown's writ had failed and the magnates' ledgers saw nothing worth the ink, the faith planted its standard — after the harm, claiming the ground.
-
 **Year 1100.** The old Sovereign died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Merby took the seat, over objections not all of which were buried with their holders.
-
-**Year 1100.** In this year the Temple took the gate at Linden — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the toll was posted by winter.
 
 **Year 1100.** A storm came off the water and stood over the coast for three days. Korgar took the worst of it, as the exposed shore always does; the Great Storm of 1100 is the name the survivors gave the year.
 
+**Year 1100.** The seat, chastened by the years behind it, decreed the Crown Granary: a levy on the fat years and bread in the lean ones — the first decree in the realm's history to move coin downhill. The chronicle notes that it took a wound to buy a mercy.
+
+**Year 1100.** The Temple came to Linden, to the ground of its suffering, and consecrated it as Velle. Pilgrims walk that road now. Where the Crown's writ had failed and the magnates' ledgers saw nothing worth the ink, the faith planted its standard — after the harm, claiming the ground.
+
 **Year 1125.** The magnates raised new works at Forby, where the money had gone. The charter was sealed at Forby, and the trunk line followed within the season.
+
+**Year 1125.** In this year the Temple took the gate at Linden — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the toll was posted by winter.
 
 **Year 1125.** In this year the sickness came to Forby, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Grey Breath of 1125.
 
@@ -98,12 +98,12 @@ Of the realm's 4 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the Temple standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 6.5 in every hundred of the realm's people hold 67.6 of every hundred coins, and live 30.1 times better than those who work for them. Nowhere is the ledger sharper than at Forby, where 75 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 71 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 6.5 in every hundred of the realm's people hold 67.3 of every hundred coins, and live 29.6 times better than those who work for them. Nowhere is the ledger sharper than at Forby, where 75 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 73 parts in a hundred of the whole spread.
 
 5 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world closed some of its gap: the spread of fortunes measured 0.27 at the founding and 0.22 at the close, and the turning point was the Crown Granary of 1075. The poorest fifth of the realm carries 1 times the blight of the richest fifth. 5 regions sit off the conduit because the ledgers said serving them would not pay. Linden drinks 29 points of other towns' poison for the crime of standing at the mouth. 3 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 6.5 in a hundred hold 67.6 of every hundred coins, and stand 30.1 times apart from the rest. The skyway would abolish 29.1 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. The Zharrok divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Varvek and Glarhold stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world closed some of its gap: the spread of fortunes measured 0.28 at the founding and 0.22 at the close, and the turning point was the Crown Granary of 1100. The poorest fifth of the realm carries 0.7 times the blight of the richest fifth. 5 regions sit off the conduit because the ledgers said serving them would not pay. Linden drinks 32 points of other towns' poison for the crime of standing at the mouth. 3 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 6.5 in a hundred hold 67.3 of every hundred coins, and stand 29.6 times apart from the rest. The skyway would abolish 29.1 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. The Zharrok divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Varvek and Glarhold stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

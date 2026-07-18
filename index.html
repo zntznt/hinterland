@@ -1332,16 +1332,16 @@
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
     const FLY_BOARD = 35;     // boarding the lift-barge: the fixed price of the sky
-    const OCC_R = 450;        // the Dominion's garrison line: cost-radius of the occupied zone
-    const SEA_L = 400;        // sea_access decay length over the cost graph
+    const OCC_R = 600;        // the Dominion's garrison line: cost-radius of the occupied zone (B0.5: ×1.334 for the 1600×1000 world)
+    const SEA_L = 534;        // sea_access decay length over the cost graph (B0.5: 400 ×1.334)
     const FORD_MULT = 2.2;    // crossing a river off-bridge: wide water is a wall too
-    const WILD_R = 220;       // euclidean reach of a ruin's peril / a tower's shadow
+    const WILD_R = 294;       // euclidean reach of a ruin's peril / a tower's shadow (B0.5: 220 ×1.334)
     const RIVER_EDGE = 0.6;   // barge transport: river edges are cheap
     const RIVER_CARRY = 0.3;  // share of a riverine region's blight shipped downstream
     const RIVER_DECAY = 0.75; // per-step decay of the carried load
     const RIDGE_WALL = 4.5;  // edge-cost multiplier for crossing a ridge off-pass
     const PASS_MULT = 1.4;   // crossing at a pass: a climb, not a wall
-    const PASS_R = 90;       // how close a crossing must be to a pass to count as one
+    const PASS_R = 120;      // how close a crossing must be to a pass to count as one (B0.5: 90 ×1.334)
     const BLOC_TOL = 12;    // top-two reach gap below this => contested
     const BLOC_FLOOR = 25;  // all reaches below this => ungoverned
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost

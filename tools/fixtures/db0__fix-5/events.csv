@@ -11,7 +11,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 4,1100,relic_calamity,9,,,,,,,,,,
 4,1100,reform,,,,,crown_granary,,,,,,
 4,1100,revolt,9,the Vaskalgrelk Rising,won,,,,,,,,
-5,1125,annexation,3,the Landing at Merow Strand,,,,,,,1,,
+5,1125,annexation,3,the Landing at Merow Strand,,,,,,,2,,
 5,1125,seizure,9,,,temple,,,,,,,
 5,1125,ascendancy,9,the Rise of Vaskalgrelk,,,,,,,,,
 6,1150,settlement_founded,2,,,,,,,,,,
@@ -28,7 +28,6 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 8,1200,seizure,9,,,temple,,,,,,,
 8,1200,discovery,3,the Merow Strand Find,,,,,,,,,
 9,1225,drought,4,the Drought of 1225,,,,,,,,,
-10,1250,settlement_abandoned,4,,,,,,,,,,
 10,1250,succession,,Galithe,,temple,,,,,,false,2
 10,1250,storm,0,the Great Storm of 1250,,,,,,,,,
 10,1250,discovery,3,the Merow Strand Find,,,,,,,,,

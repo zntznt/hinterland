@@ -17,25 +17,22 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 4,1100,treaty,0,the Peace of Dunholt,,crown|magnate,,crown,0,0,,,
 4,1100,revolt,1,the Grossvar Rising,won,,,,,,,,
 5,1125,settlement_founded,10,,,,,,,,,,
-5,1125,annexation,11,the Landing at Morgremmok Strand,,,,,,,5,,
+5,1125,annexation,11,the Landing at Morgremmok Strand,,,,,,,7,,
 5,1125,drought,2,the Drought of 1125,,,,,,,,,
-6,1150,settlement_abandoned,2,,,,,,,,,,
 7,1175,refinery_collapse,0,,,,,,,,,,
 7,1175,succession,,Ophyre,,temple,,,,,,false,2
 7,1175,succession,,Vulzar,,magnate,,,,,,true,1
 7,1175,flood,4,the Grothmouth Flood,,,,,,,,,
-8,1200,drought,3,the Drought of 1200,,,,,,,,,
+8,1200,drought,2,the Drought of 1200,,,,,,,,,
 8,1200,flood,4,the Grothmouth Flood,,,,,,,,,
 8,1200,quake,6,the Dhorn Quake,,,,,,,,,
-9,1225,settlement_abandoned,3,,,,,,,,,,
 9,1225,settlement_abandoned,4,,,,,,,,,,
 9,1225,refinery_founded,11,,,,,,,,,,
 9,1225,succession,,Ulverby,,crown,,,,,,false,2
-9,1225,drought,7,the Drought of 1225,,,,,,,,,
+9,1225,drought,2,the Drought of 1225,,,,,,,,,
 9,1225,flood,4,the Grothmouth Flood,,,,,,,,,
 9,1225,quake,6,the Dhorn Quake,,,,,,,,,
 9,1225,discovery,9,the Nettlewick Find,,,,,,,,,
 10,1250,settlement_abandoned,6,,,,,,,,,,
-10,1250,settlement_abandoned,7,,,,,,,,,,
 10,1250,succession,,Amine,,temple,,,,,,true,3
 10,1250,quake,6,the Dhorn Quake,,,,,,,,,

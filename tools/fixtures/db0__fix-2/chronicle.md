@@ -22,11 +22,15 @@ The old world is not gone: the delve called Halgar gapes in the old workings by 
 
 Beyond the last writ-stone, by Pallowmere, the lawless keep a harbor of their own: Elfield Quay. No charter names it, no gate tolls it, and the assessors who visit do not go twice. What the realm will not carry on its books leaves the country there, and the ground around it keeps what the gates would have taken.
 
+Where the beasts are worth a bounty and the garrisons never come, hunters keep Druk Camp by Surzek. The stands thin the predation on their ground, the trophies are fenced where nothing is taxed, and for the poorest the bounty is the one rung of a ladder the realm never built.
+
+An apostate keeps Pallowmere Tower, out where the wardline fails and the conduit never came — selling in the darkness what the grid will not carry. The Temple calls it heresy; the magnates call it competition; the people it heals call it the only healer who ever came.
+
 The rivers are crossed at Surzek Bridge alone; everywhere else the banks are marsh and the water must be forded, and the fords are where the wagons drown. Whoever holds a bridge holds a queue of people who cannot go around.
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1150), when the gap held, **the Quiet Years** (1175–1200), when the gap held and **the Long Desolation** (1225–1250), when the gap narrowed. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1075), when the gap held, **the Quiet Years** (1100–1200), when the gap held and **the Long Desolation** (1225–1250), when the gap held. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1025.** Plague took Dunholt. The blight had sat heavy on that country for years, and when the sickness came it found a town already half-poisoned. A third of the people were carried off or fled. The roads named it the Long Cough of 1025.
 
@@ -50,7 +54,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1100.** Grossvar rose. The wardline broke before the mob — and the mob held. Grossvar keeps what it makes now, and its gates toll no one; the ledgers record it as a dangerous precedent, and the town records it as the first good year. The people keep the date as the Grossvar Rising.
 
-**Year 1125.** The Dominion's sails stood off Morgremmok Strand at first light, and by winter its writ ran over 5 regions. There was no war to record: the fleet was the argument. The quays now toll for a power beyond the sea, the yield of the occupied country is assessed at the water, and the wires came with the garrison — the first country in the realm to be wired entire, because its cargo is wanted elsewhere. The Dominion's own registers file it as the Landing at Morgremmok Strand.
+**Year 1125.** The Dominion's sails stood off Morgremmok Strand at first light, and by winter its writ ran over 7 regions. There was no war to record: the fleet was the argument. The quays now toll for a power beyond the sea, the yield of the occupied country is assessed at the water, and the wires came with the garrison — the first country in the realm to be wired entire, because its cargo is wanted elsewhere. The Dominion's own registers file it as the Landing at Morgremmok Strand.
 
 **Year 1125.** The rains failed over Peldhald, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1125.
 
@@ -62,7 +66,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1175.** The river rose over Grothmouth and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Grothmouth Flood, the accounts call it, and they do not agree on the toll.
 
-**Year 1200.** The rains failed over Oxenholt, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1200.
+**Year 1200.** The rains failed over Peldhald, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1200.
 
 **Year 1200.** The river rose over Grothmouth and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Grothmouth Flood, the accounts call it, and they do not agree on the toll.
 
@@ -72,7 +76,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1225.** The old Sovereign died, and Ulverby took the seat without incident — which the chronicle records precisely because it is rare.
 
-**Year 1225.** The rains failed over Pallowmere, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1225.
+**Year 1225.** The rains failed over Peldhald, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1225.
 
 **Year 1225.** The river rose over Grothmouth and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Grothmouth Flood, the accounts call it, and they do not agree on the toll.
 
@@ -84,14 +88,13 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1250.** The ground moved under Dhorn, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Dhorn Quake.
 
-The chronicle closes its count of the years with the names they left behind. The realm now speaks of Dunholt the Yoked, Grossvar the Free, Peldhald the Hollow, Oxenholt the Hollow, Grothmouth the Hollow, Surzek the Yoked, Dhorn the Hollow, Pallowmere the Hollow, Ramholt the Yoked, Sethielith the Yoked and Morgremmok Strand the Yoked — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
+The chronicle closes its count of the years with the names they left behind. The realm now speaks of Dunholt the Yoked, Grossvar the Free, Peldhald the Yoked, Grothmouth the Hollow, Surzek the Yoked, Dhorn the Hollow, Ramholt the Yoked, Nettlewick the Yoked, Sethielith the Yoked and Morgremmok Strand the Yoked — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
 
 ## The State of the Realm — year 1250
 
-Of the realm's 6 settled regions, 3 held steady and 3 collapsed outright.
-6 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Grossvar, Peldhald, Oxenholt and Grothmouth among others; the roads have stopped going.
+Of the realm's 9 settled regions, 6 held steady and 3 collapsed outright.
+3 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Grossvar, Grothmouth and Dhorn; the roads have stopped going.
 And 2 places have come back as something else — Sethielith and Morgremmok Strand stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
-Nettlewick rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
 
 The Crown holds 8 regions, the Temple 1, the magnates 0; 2 are contested between them, and 1 answer to no one at all.
 
@@ -99,14 +102,14 @@ Of the realm's 5 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the Temple standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 4 in every hundred of the realm's people hold 41.1 of every hundred coins, and live 16.5 times better than those who work for them. Nowhere is the ledger sharper than at Dunholt, where 60 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 75 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.7 in every hundred of the realm's people hold 39.6 of every hundred coins, and live 17.2 times better than those who work for them. Nowhere is the ledger sharper than at Dunholt, where 60 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 45 parts in a hundred of the whole spread.
 
-And over all of it stands the Dominion, which holds 5 regions from its foothold at Morgremmok Strand and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns; the chronicle is required to note the difference between reigning and ruling.
+And over all of it stands the Dominion, which holds 7 regions from its foothold at Morgremmok Strand and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns; the chronicle is required to note the difference between reigning and ruling.
 
 4 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.18, and the turning point was the Toll Amnesty of 1075. The poorest fifth of the realm carries 3.2 times the blight of the richest fifth. Behind the Krakkethak wall, the median settlement earns 100 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay. Grothmouth drinks 4 points of other towns' poison for the crime of standing at the mouth. 5 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 4 in a hundred hold 41.1 of every hundred coins, and stand 16.5 times apart from the rest. The skyway would abolish 67 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 5 regions occupied, the yield assessed at the quay, the free country keeping 1.5 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The Krakkethak divides even the weather: the rain falls at 38 on one side and 2 in its lee, and no one on the dry side chose the wind.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.29 at the founding and 0.38 at the close, and the turning point was the Toll Amnesty of 1075. The poorest fifth of the realm carries 3 times the blight of the richest fifth. Behind the Krakkethak wall, the median settlement earns 100 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay, and sickness runs 1.4 times heavier there than in the lit core. Grothmouth drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.7 in a hundred hold 39.6 of every hundred coins, and stand 17.2 times apart from the rest. The skyway would abolish 67 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 7 regions occupied, the yield assessed at the quay, the free country keeping 1.7 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The Krakkethak divides even the weather: the rain falls at 38 on one side and 2 in its lee, and no one on the dry side chose the wind.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

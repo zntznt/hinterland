@@ -86,6 +86,7 @@ The chronicle closes its count of the years with the names they left behind. The
 
 Of the realm's 1 settled regions, 1 collapsed outright.
 11 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Rushdalvere, Dunholdham, Quillwor and High Trossvaskar among others; the roads have stopped going.
+Vanmermere is the emptiest of the ghost country: its best years are a memory the roads no longer visit.
 Vanmermere rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
 
 The Crown holds 9 regions, the Temple 1, the magnates 0; 1 are contested between them, and 1 answer to no one at all.

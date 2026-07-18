@@ -2883,7 +2883,7 @@ if (prov && prov.schema_version === 41 && prov.epochs === 0 && prov.responsivene
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && !("fate" in prov) &&
-    prov.world && prov.world.seed === "concordat" && Array.isArray(prov.world.regime_chain) &&
+    prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
   ok("provenance carries schema_version=41 + weights + knobs + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
@@ -3824,7 +3824,7 @@ console.log("# The world outside (#121, B0): a third seed — the region is ruin
   const D = await gen("#seed=wo&regions=18&ep=10");
   const W = D.gj.hinterland.world;
   const ALLOWED = ["long_boom", "trade_war", "imperial_rivalry", "doctrinal_panic", "distant_war", "retrenchment"];
-  const seriesOk = W && W.seed === "concordat" &&
+  const seriesOk = W && W.seed === "concordat-settlement" &&
     W.regime_chain.length === 10 && W.price_index.length === 10 &&
     W.regime_chain.every(r => ALLOWED.includes(r)) &&
     W.price_index.every(p => p >= 0.6 && p <= 1.5) &&

@@ -28,7 +28,7 @@ The rivers are crossed at Quillwor Bridge alone; everywhere else the banks are m
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1100), when the gap widened, **the Long Desolation** (1125–1150), when the gap widened, **the Age of Accumulation** (1175–1200), when the gap narrowed and **the Quiet Years** (1225–1250), when the gap narrowed. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1100), when the gap widened, **the Long Desolation** (1125–1150), when the gap widened and **the Quiet Years** (1175–1250), when the gap narrowed. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1025.** In this year the sickness came to Vanmermere, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Ash Fever of 1025.
 
@@ -89,6 +89,7 @@ The chronicle closes its count of the years with the names they left behind. The
 Of the realm's 6 settled regions, 2 held steady and 4 collapsed outright.
 6 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Rushdalvere, High Trossvaskar, Umbere and Forby among others; the roads have stopped going.
 And 3 places have come back as something else — Harrukketh, Linden and Delwick stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
+Vanmermere is the emptiest of the ghost country: its best years are a memory the roads no longer visit.
 Harrukketh rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
 
 The Crown holds 9 regions, the Temple 1, the magnates 0; 1 are contested between them, and 1 answer to no one at all.
@@ -97,12 +98,12 @@ Of the realm's 4 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the Temple standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 5.8 in every hundred of the realm's people hold 61.5 of every hundred coins, and live 25.8 times better than those who work for them. Nowhere is the ledger sharper than at Vanmermere, where 64 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 74 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 5.8 in every hundred of the realm's people hold 61.5 of every hundred coins, and live 25.7 times better than those who work for them. Nowhere is the ledger sharper than at Vanmermere, where 64 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 75 parts in a hundred of the whole spread.
 
 4 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.29, and the turning point was the Toll Amnesty of 1075. The poorest fifth of the realm carries 0.7 times the blight of the richest fifth. 4 regions sit off the conduit because the ledgers said serving them would not pay, and sickness runs 1.5 times heavier there than in the lit core. Narnness drinks 15 points of other towns' poison for the crime of standing at the mouth. 6 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 5.8 in a hundred hold 61.5 of every hundred coins, and stand 25.8 times apart from the rest. The skyway would abolish 35.2 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. The Zharrok divides even the weather: the rain falls at 35 on one side and 14 in its lee, and no one on the dry side chose the wind.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.28, and the turning point was the Toll Amnesty of 1075. The poorest fifth of the realm carries 0.7 times the blight of the richest fifth. 4 regions sit off the conduit because the ledgers said serving them would not pay, and sickness runs 1.5 times heavier there than in the lit core. Narnness drinks 15 points of other towns' poison for the crime of standing at the mouth. 6 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 5.8 in a hundred hold 61.5 of every hundred coins, and stand 25.7 times apart from the rest. The skyway would abolish 35.2 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. The Zharrok divides even the weather: the rain falls at 35 on one side and 14 in its lee, and no one on the dry side chose the wind.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

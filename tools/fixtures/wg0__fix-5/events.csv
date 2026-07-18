@@ -24,7 +24,6 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 7,1175,discovery,3,the Merow Strand Find,,,,,,,,,
 8,1200,discovery,3,the Merow Strand Find,,,,,,,,,
 9,1225,drought,4,the Drought of 1225,,,,,,,,,
-10,1250,settlement_abandoned,4,,,,,,,,,,
 10,1250,succession,,Galithe,,temple,,,,,,false,2
 10,1250,storm,3,the Great Storm of 1250,,,,,,,,,
 10,1250,discovery,3,the Merow Strand Find,,,,,,,,,

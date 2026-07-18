@@ -1118,7 +1118,7 @@
         <div class="row">
           <label for="world">World</label>
           <div class="inline">
-            <input type="text" id="world" inputmode="text" placeholder="concordat" />
+            <input type="text" id="world" inputmode="text" placeholder="concordat-settlement" />
             <button id="diceWorld" title="Roll a different world history">&#127922;</button>
           </div>
           <div class="hint">The world outside — prices, empires, distant wars. Default is the shared Concordat era. A different world can rescue a doomed region or ruin a thriving one; it never touches the rock.</div>
@@ -1346,7 +1346,7 @@
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
 
     const DEFAULTS = {
-      seed: "hinterland", fate: "", world: "concordat", regions: 24, relax: 2, bias: 80,
+      seed: "hinterland", fate: "", world: "concordat-settlement", regions: 24, relax: 2, bias: 80,
       we: 35, wf: 25, wt: 30, wg: 10,   // income-mix weights
       gt: 35,                            // grid threshold (0 = conduit reaches everyone)
       db: 60,                            // dump bias λ (0 = blight follows only wind/terrain)
@@ -1404,7 +1404,7 @@
     function worldStreams(worldSeed, nEpochs) {
       const w = streams(String(worldSeed));
       const rReg = w("regime"), rJit = w("jitter");
-      const P_STAY = 0.62; // geometric run-length: median 2, mean ~2.6 epochs
+      const P_STAY = 0.72; // geometric run-length: median ~2-3, mean ~3.6 epochs — long enough for a price regime to compound into wealth
       const chain = [], price = [], attention = [], demand = [], doctrine = [], metropole = [];
       let cur = Math.floor(rReg() * WORLD_REGIMES.length);
       for (let e = 0; e < Math.max(0, nEpochs); e++) {
@@ -3582,9 +3582,12 @@
       const rNoise = sx("wealth");
       const total = params.we + params.wf + params.wt + params.wg;
       // priceMult (B0 #121): the world aetherstone price index shocks the
-      // aetherstone-linked income — extraction (selling ore) and refining
-      // (selling aether) — leaving trade, the legacy gradient and water alone.
-      // Defaults to 1 (the founding is pre-history: no world price has acted).
+      // region's EXPORT INCOME. Aetherstone is the region's main export, so a
+      // world price swing moves the whole earning economy, not one term — the
+      // shock scales the composed income. Sustained (regimes persist), this
+      // compounds against the 0.6 wealth carryover toward wealth ∝ price, which
+      // is what lets a boom rescue and a bust ruin. Defaults to 1 (the founding
+      // is pre-history: no world price has acted, so ep=0 is world-invariant).
       const income = (reg, priceMult = 1) => {
         const t = maxD > 0 ? 1 - reg.dist / maxD : 1;
         const legacy = lerp(5, 100, Math.pow(t, k)) / 100;         // == old formula
@@ -3592,7 +3595,7 @@
         const ref = reg.refining / 100;
         const trade = (0.65 * reg.centrality + 0.35 * reg.seaAccess) / 100; // two poles: the seat and the sea
         const base = total > 0
-          ? (params.we * ext * priceMult + params.wf * ref * priceMult + params.wt * trade + params.wg * legacy) / total
+          ? priceMult * (params.we * ext + params.wf * ref + params.wt * trade + params.wg * legacy) / total
           : 0.5; // all weights zero: no income model — flat
         // WATER is a precondition, not a fourth income stream: no economy
         // sustains itself without it, so it MULTIPLIES the base rather than

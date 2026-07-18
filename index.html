@@ -3801,6 +3801,7 @@
       // V1: the loop's own parameters are now history-mutable — reforms and
       // reactions shift them mid-run, and the free town escapes the tolls
       let disposalOverride = null, gtShift = 0, tollScale = 1, freeTownIdx = -1, granaryOn = false;
+      let blightEpoch = 0; // B4 (#126): concentrate's poison RAMPS with the works — 0 at the founding, full late (P4 delay)
       // #93: a maturing realm wires more of itself. gtEase lowers the hook-up bar
       // a touch each epoch so the grid keeps ratcheting outward through the
       // history instead of freezing after the founding expansion. It is 0 at
@@ -3877,14 +3878,23 @@
       // most peripheral settled seat the realm is willing to write off. It does NOT
       // chase the poor each epoch (that was λ) — it is a fixed place on the map, and
       // history alone decides whether anyone comes to live in it.
-      let sacrificeZone = -1, szBest = Infinity;
+      // The sacrifice zone: a currently-SPARSE seat (few to harm now = "contained")
+      // that is ALSO exactly what B3's frontier term fills — cheap, peripheral, and
+      // grid-wired. So the realm writes off an empty margin, and if the centuries
+      // turn its cheap land into a frontier the squeezed core flees to, the poison
+      // is already there waiting (P4). Empty enough to write off, attractive enough
+      // to fill: the two faces of the same choice.
+      let sacrificeZone = -1, szBest = -Infinity;
       regions.forEach((reg, i) => {
-        if (!reg.settled) return;
-        // poor + peripheral, but reachable enough that B3 migration COULD later
-        // flow in and turn a contained sacrifice into a populated one (P4).
-        const v = reg.wealth + 0.4 * reg.centrality - (onGrid[i] ? 12 : 0);
-        if (v < szBest || (v === szBest && sacrificeZone >= 0 && i < sacrificeZone)) { szBest = v; sacrificeZone = i; }
+        if (!reg.settled || reg.settlementPop > 1200) return; // must be sparse now
+        const cheap = clamp((52 - reg.wealth) / 52, 0, 1);
+        const periph = clamp((52 - reg.centrality) / 52, 0, 1);
+        const potential = cheap * periph * (onGrid[i] ? 1 : 0.4); // what the frontier fills
+        if (potential > szBest || (potential === szBest && sacrificeZone >= 0 && i < sacrificeZone)) { szBest = potential; sacrificeZone = i; }
       });
+      if (sacrificeZone < 0) { // fallback: the emptiest settled ground
+        let m = Infinity; regions.forEach((reg, i) => { if (reg.settled && reg.settlementPop < m) { m = reg.settlementPop; sacrificeZone = i; } });
+      }
       const computeBlight = () => { // recomputed each epoch; the doctrine reads current state
         const windRad = geo.windDeg * Math.PI / 180;
         const wvx = Math.cos(windRad), wvy = Math.sin(windRad);
@@ -3904,14 +3914,22 @@
           });
           const SPOIL = 5 * C;
           if (doctrine === "concentrate" && sacrificeZone >= 0) {
-            // most of it onto the one written-off zone (the exhibit's sacrifice
-            // ground) — but the rest hauled onto the poor MARGIN, so at the realm
-            // scale the doctrine reads as poverty-seeking (blight on the poor,
-            // negative wealth-correlation) even as one zone bears the brunt.
-            blightRaw[sacrificeZone] += 0.65 * SPOIL;
+            // the zone's share RAMPS with the works (P4): ~nothing at the founding,
+            // full only by mid-run. So a cheap, empty zone reads as attractive
+            // frontier EARLY — B3 migration can flow in — and the poison arrives
+            // LATER, onto whoever came. The rest hauls onto the poor MARGIN, so the
+            // realm-scale reading stays poverty-seeking (blight on the poor, a
+            // negative wealth-correlation) even as one zone bears the concentrated brunt.
+            const ramp = clamp(blightEpoch / 6, 0, 1);
+            const zoneShare = 0.65 * ramp;
+            blightRaw[sacrificeZone] += zoneShare * SPOIL;
+            const margin = SPOIL - zoneShare * SPOIL;
             let wsum = 0;
-            const wts = regions.map(reg => { const w = Math.pow(1 - reg.wealth / 100, 6); wsum += w; return w; });
-            if (wsum > 0) regions.forEach((_, i) => { blightRaw[i] += 0.35 * SPOIL * (wts[i] / wsum); });
+            // the margin goes to the OTHER poor regions, never back onto the zone —
+            // the zone's load is ONLY its ramped share, so the early-clean window
+            // (the rush's chance) is real and not undone by the poverty spread.
+            const wts = regions.map((reg, idx) => { const w = (idx === sacrificeZone) ? 0 : Math.pow(1 - reg.wealth / 100, 6); wsum += w; return w; });
+            if (wsum > 0) regions.forEach((_, i) => { blightRaw[i] += margin * (wts[i] / wsum); });
           } else {
             // DISPERSE (and TREAT's pre-cleanup spread): distance decay ONLY, no
             // poverty exponent — no hand aims the spoil at the poor; it lands by
@@ -4401,6 +4419,7 @@
         const settledElite = regions.filter(r => r.settled).map(r => r.eliteShare);
         const meanElite = settledElite.length ? settledElite.reduce((a, b) => a + b, 0) / settledElite.length : 55;
         const rentPush = clamp((meanElite - 58) / 14, 0, 1); // only higher-rent realms push labor out; the ordinary world still drifts toward its winners
+        const isConcentrate = disposalOverride ? disposalOverride === "concentrate" : (params.db >= 34 && params.db < 67);
         const attract = regions.map((reg, i) => {
           const base = 0.5 * reg.wealth + 25 * (onGrid[i] ? 1 : 0) + 0.25 * (100 - reg.blight);
           const rentDrag = 0.4 * Math.max(0, reg.eliteShare - 62);     // the squeezed leave the dear core
@@ -4408,7 +4427,16 @@
             * clamp((52 - reg.wealth) / 52, 0, 1)             // the land is still cheap
             * clamp((52 - reg.centrality) / 52, 0, 1)         // and it is the periphery
             * (onGrid[i] ? 1 : 0.35);                         // the grid carries the boom outward
-          return base - rentDrag + frontier;
+          // B4 (#126): the OPENED FRONTIER. Concentrate writes the sacrifice zone off
+          // as cheap land — and cheap land, while it is still CLEAN, draws a settler
+          // rush (P4). The pull fades as the concentrated poison ramps in, so a zone
+          // that filled early is left holding the blight it was promised would stay
+          // empty. Whether the rush wins the race with the poison is the contingency:
+          // some worlds fill and are ruined, others never fill and stay contained.
+          const rush = (i === sacrificeZone && isConcentrate)
+            ? 26 * clamp(1 - reg.blight / 55, 0, 1) * (onGrid[i] ? 1 : 0.5)
+            : 0;
+          return base - rentDrag + frontier + rush;
         });
         const delta = new Array(regions.length).fill(0);
         roadEdges.forEach(edge => {
@@ -4815,6 +4843,7 @@
           events.push({ epoch: e + 1, type: shock.kind, region_id: reg.id });
         }
         computeTolls(); // next epoch pays whoever holds the gates NOW
+        blightEpoch = e + 1; // B4: the concentrate ramp reads the current year
         computeBlight();   // the poison follows the poor wherever they end up
         computeLivability(); // and the land's worth-living-in is re-reckoned
         regions.forEach(reg => { // plague: maximum contamination + real population, once per region

@@ -6,7 +6,7 @@
 
 In the beginning of this record the realm counted 12 settled regions, and Gladen held the seat. The wind stood out of the northeast, as it does in that country, and everything else followed from the ground: where the aetherstone lay, where the land would carry a road, and where it would not.
 
-No charter drew the towns to size. The centuries did: good land compounded, the fairs drew the valleys in, and by year 1000 the largest town held 13,396 souls to the median town's 2,794 — a hierarchy grown, not granted, and steeper every century the compounding ran.
+No charter drew the towns to size. The centuries did: good land compounded, the fairs drew the valleys in, and by year 1000 the largest town held 13,369 souls to the median town's 2,746 — a hierarchy grown, not granted, and steeper every century the compounding ran.
 
 The works at Gladen turned aetherstone to lumen, and the trunk lines ran from their yards to the seat. The Temple kept holy ground at Delliothe (by Thraldek Delf) — out where the sacred substance lies and the Crown's writ runs thin. 6 of the realm's settlements sat off the conduit at the founding, in darkness: connected by road — everything is connected by road — but unserved, because the ledgers said serving them would not pay.
 
@@ -24,11 +24,13 @@ Beyond the last writ-stone, by Thraldek Delf, the lawless keep a harbor of their
 
 High above the roads, by Urtazzek, stands Lionne Refuge — holy ground the Temple never consecrated and cannot forgive. It heals whoever climbs to it and asks no writ; the census does not climb at all, so the people it shelters are people the realm cannot count. Pilgrims walk to it beside the sanctioned roads, which the Temple is reminded of every festival.
 
+Where the beasts are worth a bounty and the garrisons never come, hunters keep Ferk Camp by Elworrow. The stands thin the predation on their ground, the trophies are fenced where nothing is taxed, and for the poorest the bounty is the one rung of a ladder the realm never built.
+
 The rivers are crossed at Iverby Bridge alone; everywhere else the banks are marsh and the water must be forded, and the fords are where the wagons drown. Whoever holds a bridge holds a queue of people who cannot go around.
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Quiet Years** (1000–1025), when the gap narrowed and **the Age of the Gates** (1050–1250), when the gap held. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Quiet Years** (1000–1050), when the gap narrowed and **the Age of the Gates** (1075–1250), when the gap held. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1025.** In this year the magnates took the gate at Gladen — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the toll was posted by winter.
 
@@ -89,12 +91,12 @@ Of the realm's 5 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the magnates standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.8 in every hundred of the realm's people hold 54.5 of every hundred coins, and live 30 times better than those who work for them. Nowhere is the ledger sharper than at Gladen, where 92 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 51 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.8 in every hundred of the realm's people hold 53.9 of every hundred coins, and live 29.5 times better than those who work for them. Nowhere is the ledger sharper than at Gladen, where 92 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 52 parts in a hundred of the whole spread.
 
 3 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.31; no reform came, no rising came, and the loops ran unopposed. The poorest fifth of the realm carries 5.6 times the blight of the richest fifth. Behind the Durnharrek wall, the median settlement earns 61 in the hundred less than the open country at the same remove. 3 regions sit off the conduit because the ledgers said serving them would not pay. Iverby drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.8 in a hundred hold 54.5 of every hundred coins, and stand 30 times apart from the rest. The skyway would abolish 38.7 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.31; no reform came, no rising came, and the loops ran unopposed. The poorest fifth of the realm carries 5.4 times the blight of the richest fifth. Behind the Durnharrek wall, the median settlement earns 63 in the hundred less than the open country at the same remove. 3 regions sit off the conduit because the ledgers said serving them would not pay. Iverby drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.8 in a hundred hold 53.9 of every hundred coins, and stand 29.5 times apart from the rest. The skyway would abolish 38.7 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

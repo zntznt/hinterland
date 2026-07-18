@@ -20,7 +20,7 @@ The sea lies to the east; the charts name it Yell Sea. The realm's gate is Merow
 
 The old world is not gone: the delve called Dhozzurtask gapes in the old workings by Vaskalgrelk, the tomb of Halione keeps its silence in the barrens by Kharruk Tor and the deadhold of Synthel stands empty by Mermerby, and its ground is poisoned yet. Delvers walk the Ivermere road every season, because risk is a wage where nothing else pays one; not all of them walk back, and what they carry out is sold in no sanctioned market.
 
-Where the beasts are worth a bounty and the garrisons never come, hunters keep Zolt Camp by Ivermere. The stands thin the predation on their ground, the trophies are fenced where nothing is taxed, and for the poorest the bounty is the one rung of a ladder the realm never built.
+Where the beasts are worth a bounty and the garrisons never come, hunters keep Durn Camp by Tarnmerwick. The stands thin the predation on their ground, the trophies are fenced where nothing is taxed, and for the poorest the bounty is the one rung of a ladder the realm never built.
 
 Apostates keep Yeldham Strand Tower and Nettle Tower, out where the wardline fails and the conduit never came — selling in the darkness what the grid will not carry. The Temple calls it heresy; the magnates call it competition; the people it heals call it the only healer who ever came.
 
@@ -28,7 +28,7 @@ The rivers are crossed at Nettle Bridge and Melwor Bridge; everywhere else the b
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Quiet Years** (1000–1025), when the gap narrowed, **the Age of the Gates** (1050–1100), when the gap held, **the Age of Accumulation** (1125–1175), when the gap widened and **the Long Desolation** (1200–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Quiet Years** (1000–1025), when the gap narrowed, **the Age of the Gates** (1050–1100), when the gap held and **the Age of Accumulation** (1125–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1025.** In this year the magnates took the gate at Merow Strand — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the toll was posted by winter.
 
@@ -48,7 +48,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1100.** Vaskalgrelk rose. The wardline broke before the mob — and the mob held. Vaskalgrelk keeps what it makes now, and its gates toll no one; the ledgers record it as a dangerous precedent, and the town records it as the first good year. The people keep the date as the Vaskalgrelk Rising.
 
-**Year 1125.** The Dominion's sails stood off Merow Strand at first light, and by winter its writ ran over 1 regions. There was no war to record: the fleet was the argument. The quays now toll for a power beyond the sea, the yield of the occupied country is assessed at the water, and the wires came with the garrison — the first country in the realm to be wired entire, because its cargo is wanted elsewhere. The Dominion's own registers file it as the Landing at Merow Strand.
+**Year 1125.** The Dominion's sails stood off Merow Strand at first light, and by winter its writ ran over 2 regions. There was no war to record: the fleet was the argument. The quays now toll for a power beyond the sea, the yield of the occupied country is assessed at the water, and the wires came with the garrison — the first country in the realm to be wired entire, because its cargo is wanted elsewhere. The Dominion's own registers file it as the Landing at Merow Strand.
 
 **Year 1125.** The Temple pressed its claim on the crossing at Vaskalgrelk. No blood is recorded; the ledger did the taking, and the toll did the keeping.
 
@@ -84,27 +84,27 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1250.** Fortune turned at Merow Strand: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Merow Strand Find.
 
-The chronicle closes its count of the years with the names they left behind. The realm now speaks of Kharruk Tor the Hollow, Merow Strand the Yoked, Folden the Hollow, Vaskalgrelk the Free and Mermerby the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
+The chronicle closes its count of the years with the names they left behind. The realm now speaks of Kharruk Tor the Hollow, Merow Strand the Yoked, Folden the Yoked, Vaskalgrelk the Free and Mermerby the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
 
 ## The State of the Realm — year 1250
 
-Of the realm's 8 settled regions, 8 held steady.
-4 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Kharruk Tor, Folden, Vaskalgrelk and Mermerby; the roads have stopped going.
+Of the realm's 9 settled regions, 9 held steady.
+3 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Kharruk Tor, Vaskalgrelk and Mermerby; the roads have stopped going.
 
 The Crown holds 8 regions, the Temple 1, the magnates 0; 2 are contested between them, and 1 answer to no one at all.
 
-Of the realm's 6 gates — the bridges, the passes, the quays — the Crown keeps 2, the Temple 1, and the magnates 0; 2 stand untolled. Every levy on the list is paid by people who did not choose the road.
+Of the realm's 6 gates — the bridges, the passes, the quays — the Crown keeps 1, the Temple 1, and the magnates 0; 2 stand untolled. Every levy on the list is paid by people who did not choose the road.
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the Temple standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.8 in every hundred of the realm's people hold 62.9 of every hundred coins, and live 43 times better than those who work for them. Nowhere is the ledger sharper than at Merow Strand, where 79 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 21 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.9 in every hundred of the realm's people hold 60.2 of every hundred coins, and live 37 times better than those who work for them. Nowhere is the ledger sharper than at Merow Strand, where 79 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 22 parts in a hundred of the whole spread.
 
-And over all of it stands the Dominion, which holds 1 regions from its foothold at Merow Strand and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns; the chronicle is required to note the difference between reigning and ruling.
+And over all of it stands the Dominion, which holds 2 regions from its foothold at Merow Strand and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns; the chronicle is required to note the difference between reigning and ruling.
 
 4 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.51 at the founding and 0.57 at the close, and the turning point was the Crown Granary of 1100. The poorest fifth of the realm carries 1.6 times the blight of the richest fifth. Behind the Strek wall, the median settlement earns 57 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay. Nettle drinks 1 points of other towns' poison for the crime of standing at the mouth. 7 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.8 in a hundred hold 62.9 of every hundred coins, and stand 43 times apart from the rest. The skyway would abolish 46.5 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 1 regions occupied, the yield assessed at the quay, the free country keeping 0.7 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The Strek divides even the weather: the rain falls at 40 on one side and 8 in its lee, and no one on the dry side chose the wind. And Tarnmerwick and Kharruk Tor stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.48 at the founding and 0.54 at the close, and the turning point was the Crown Granary of 1100. The poorest fifth of the realm carries 1.7 times the blight of the richest fifth. Behind the Strek wall, the median settlement earns 63 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay. Nettle drinks 1 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.9 in a hundred hold 60.2 of every hundred coins, and stand 37 times apart from the rest. The skyway would abolish 46.5 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 2 regions occupied, the yield assessed at the quay, the free country keeping 0.9 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The Strek divides even the weather: the rain falls at 40 on one side and 8 in its lee, and no one on the dry side chose the wind. And Tarnmerwick and Kharruk Tor stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

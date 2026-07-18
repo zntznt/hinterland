@@ -3,11 +3,11 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 1,1025,settlement_abandoned,1,,,,,,,,,,
 1,1025,settlement_abandoned,2,,,,,,,,,,
 1,1025,settlement_abandoned,4,,,,,,,,,,
-1,1025,settlement_abandoned,6,,,,,,,,,,
 1,1025,settlement_abandoned,7,,,,,,,,,,
 1,1025,settlement_abandoned,9,,,,,,,,,,
 1,1025,settlement_abandoned,10,,,,,,,,,,
 1,1025,settlement_abandoned,11,,,,,,,,,,
+2,1050,settlement_abandoned,6,,,,,,,,,,
 2,1050,drought,5,the Drought of 1050,,,,,,,,,
 3,1075,war,5,the War of 1075,,crown|magnate,,,,,,,
 3,1075,succession,,Ilmare,,temple,,,,,,false,1

@@ -19,13 +19,13 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 4,1100,succession,,Vassandre,,temple,,,,,,false,1
 4,1100,treaty,0,the Peace of Dunholt,,crown|magnate,,crown,0,0,,,
 4,1100,revolt,1,the Grossvar Rising,won,,,,,,,,
-5,1125,annexation,11,the Landing at Morgremmok Strand,,,,,,,5,,
-5,1125,drought,0,the Drought of 1125,,,,,,,,,
+5,1125,settlement_founded,10,,,,,,,,,,
+5,1125,annexation,11,the Landing at Morgremmok Strand,,,,,,,7,,
+5,1125,drought,10,the Drought of 1125,,,,,,,,,
 7,1175,refinery_collapse,0,,,,,,,,,,
 7,1175,succession,,Ophyre,,temple,,,,,,false,2
 7,1175,succession,,Vulzar,,magnate,,,,,,true,1
 7,1175,flood,4,the Grothmouth Flood,,,,,,,,,
-8,1200,settlement_founded,10,,,,,,,,,,
 8,1200,drought,10,the Drought of 1200,,,,,,,,,
 8,1200,flood,4,the Grothmouth Flood,,,,,,,,,
 8,1200,quake,6,the Dhorn Quake,,,,,,,,,

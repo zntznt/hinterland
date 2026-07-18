@@ -16,7 +16,13 @@
   declare the CRS as **planar 0–1600 × 0–1000, y-up**; the QGIS README and the
   edge-cost buckets update in the same bump. `schema_version` 41→42; declared
   fixture regeneration; both suites re-pinned against the rectangle (the camera
-  viewBoxes recomputed, distance-dependent thresholds re-measured).
+  viewBoxes recomputed, distance-dependent thresholds re-measured). One emergent
+  finding worth naming: the wider realm **steepens the urban hierarchy from
+  Zipf-like (α≈1.2) to PRIMATE (α median ≈1.8)** — a bigger hinterland for the
+  capital to dominate. The rank-size claim is re-pinned to primacy accordingly
+  (the Zipf calc is coordinate-free, so this is geography, not a bug). Four other
+  distance-dependent thresholds (plagues, ruin-shadow, twins, risings-on-occupied
+  ground) re-measured; `PASS_R` stays 90 (a local crossing tolerance, not a reach).
 - **v41** (the world outside B0): the Hinterland stops being a closed system
   (issue #121). A THIRD seed — `world=`, default the shared **Concordat era**
   (decision 7) — keys `worldStreams()`, a Markov **regime chain** over six world

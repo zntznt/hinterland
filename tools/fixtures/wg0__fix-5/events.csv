@@ -3,23 +3,22 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 1,1025,settlement_abandoned,9,,,,,,,,,,
 1,1025,settlement_abandoned,10,,,,,,,,,,
 1,1025,seizure,3,,,magnate,,,,,,,
+2,1050,settlement_founded,2,,,,,,,,,,
 2,1050,drought,4,the Drought of 1050,,,,,,,,,
 3,1075,succession,,Quarzek,,magnate,,,,,,false,1
 4,1100,refinery_collapse,3,,,,,,,,,,
 4,1100,seizure,3,,,crown,,,,,,,
-4,1100,tower_raised,11,,,apostate,,,,,,,
+4,1100,tower_raised,2,,,apostate,,,,,,,
 4,1100,relic_calamity,9,,,,,,,,,,
 4,1100,reform,,,,,crown_granary,,,,,,
 4,1100,revolt,9,the Vaskalgrelk Rising,won,,,,,,,,
 5,1125,annexation,3,the Landing at Merow Strand,,,,,,,2,,
 5,1125,seizure,9,,,temple,,,,,,,
 5,1125,ascendancy,9,the Rise of Vaskalgrelk,,,,,,,,,
-6,1150,settlement_founded,2,,,,,,,,,,
 6,1150,refinery_founded,3,,,,,,,,,,
 6,1150,war,2,the Kharruk Tor War,,crown|temple,,,,,,,
 6,1150,succession,,Vannornweld,,crown,,,,,,false,1
 6,1150,succession,,Urzek,,magnate,,,,,,false,2
-7,1175,settlement_abandoned,0,,,,,,,,,,
 7,1175,succession,,Galcyone,,temple,,,,,,false,1
 7,1175,treaty,2,the Peace of Kharruk Tor,,crown|temple,,crown,1,3,,,
 7,1175,drought,4,the Drought of 1175,,,,,,,,,
@@ -30,5 +29,5 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 8,1200,discovery,3,the Merow Strand Find,,,,,,,,,
 9,1225,drought,4,the Drought of 1225,,,,,,,,,
 10,1250,succession,,Galithe,,temple,,,,,,false,2
-10,1250,storm,3,the Great Storm of 1250,,,,,,,,,
+10,1250,storm,0,the Great Storm of 1250,,,,,,,,,
 10,1250,discovery,3,the Merow Strand Find,,,,,,,,,

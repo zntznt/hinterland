@@ -1579,13 +1579,8 @@ console.log("# The strata H1 acceptance: class exists within the walls");
   if (crushSeen >= 2 && crushRises === crushSeen)
     ok(`a crushed revolt expropriates: owners' share rose >=5 points under the garrison in every living region (${crushRises}/${crushSeen}; a region the world killed that same epoch has no owners' row to seize)`);
   else fail(`crushed revolts didn't move the ledger: ${crushRises}/${crushSeen}`);
-  // B4 (#126) re-pin 20 -> 10: the disposal doctrine cut the plague COUNT (under the
-  // default concentrate, the poison rides an empty sacrifice zone + a thin poor
-  // margin instead of soaking crowded poor towns as the old λ did), so fewer regions
-  // reach the plague blight bar. The LEVELING claim is untouched — labor's share
-  // still rises at essentially every plague (13/13 measured); only the sample shrank.
-  if (plagueSeen >= 10 && plagueDrops >= plagueSeen * 0.85)
-    ok(`the plague levels: labor's share rose at ${plagueDrops}/${plagueSeen} plagues — fewer plagues now the poison rides an empty zone, but the leveling holds`);
+  if (plagueSeen >= 20 && plagueDrops >= plagueSeen * 0.85)
+    ok(`the plague levels: labor's share rose at ${plagueDrops}/${plagueSeen} plagues — the exceptions are gate-holding towns whose rents out-ran the shock (measured 67/69 in the design sweep)`);
   else fail(`plague didn't level: ${plagueDrops}/${plagueSeen}`);
   // the argument surface carries the class ledger
   const panel = A1.doc.getElementById("findingsText").textContent;

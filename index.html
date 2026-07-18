@@ -3922,14 +3922,17 @@
             // realm-scale reading stays poverty-seeking (blight on the poor, a
             // negative wealth-correlation) even as one zone bears the concentrated brunt.
             const ramp = clamp(blightEpoch / 6, 0, 1);
-            const zoneShare = 0.65 * ramp;
+            const zoneShare = 0.55 * ramp;
             blightRaw[sacrificeZone] += zoneShare * SPOIL;
             const margin = SPOIL - zoneShare * SPOIL;
             let wsum = 0;
-            // the margin goes to the OTHER poor regions, never back onto the zone —
-            // the zone's load is ONLY its ramped share, so the early-clean window
-            // (the rush's chance) is real and not undone by the poverty spread.
-            const wts = regions.map((reg, idx) => { const w = (idx === sacrificeZone) ? 0 : Math.pow(1 - reg.wealth / 100, 6); wsum += w; return w; });
+            // the margin goes to the poor where the poor LIVE — population×poverty
+            // weighted, never onto the zone or empty ground — so the poison harms
+            // PEOPLE: it plagues the crowded poor towns and gives the Temple living
+            // ground to consecrate, while the realm-scale reading stays poverty-seeking
+            // (blight on the poor, a negative wealth-correlation) and the ramp keeps
+            // the zone's own early window clean for the rush.
+            const wts = regions.map((reg, idx) => { const w = (idx === sacrificeZone || !reg.settled) ? 0 : Math.pow(1 - reg.wealth / 100, 6) * clamp(reg.settlementPop / 1200, 0.15, 1); wsum += w; return w; });
             if (wsum > 0) regions.forEach((_, i) => { blightRaw[i] += margin * (wts[i] / wsum); });
           } else {
             // DISPERSE (and TREAT's pre-cleanup spread): distance decay ONLY, no
@@ -4859,7 +4862,11 @@
             reg.eventType = "blight_plague"; reg.eventEpoch = e + 1; // latest event wins the columns
             reg.eventSeverity = 60 + Math.round(rEv() * 30);
             events.push({ epoch: e + 1, type: "blight_plague", region_id: reg.id });
-            if (firstWoundIdx === -1) { firstWoundIdx = regions.indexOf(reg); firstWoundEpoch = e + 1; }
+            // B4 (#126): the Temple consecrates the ground of suffering — but NOT the
+            // written-off sacrifice zone, which the concentrate doctrine dooms to die
+            // (a shrine on it would be a dead shrine the moment the poison takes it).
+            // The faith finds the next living wound instead.
+            if (firstWoundIdx === -1 && regions.indexOf(reg) !== sacrificeZone) { firstWoundIdx = regions.indexOf(reg); firstWoundEpoch = e + 1; }
           }
         });
         if (calamityCoin && e + 1 === calamityEpoch && calamitySite >= 0) { // the unexplained erupts

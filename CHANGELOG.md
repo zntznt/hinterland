@@ -15,8 +15,10 @@
   world starves it. New `artifice_index` column (main + epoch series), an
   `A`-per-epoch snapshot, the **artifice lens** ("where the works learn") in THE
   SHAPE, and an artifice spark in THE DRIFT. `schema_version` 42→43; declared
-  fixture regeneration. Exhibit: a high-artifice periphery out-earning a low-
-  artifice core — the falsifiability keystone made local.
+  fixture regeneration. Exhibit (pinned):
+  `#seed=piv-19&regions=18&ep=10` — a high-artifice periphery (region 7, A=67,
+  wealth 29) out-earns the low-artifice SEAT itself (region 15, A=51, wealth 15):
+  the works learned faster than the capital, and artifice beat centrality.
 - **v42** (the world becomes a rectangle B0.5): the world stops being a square
   (issue #122, §2.5 decision 11). `W = 1000` generalizes to **`WX = 1600, WY =
   1000`** (a fixed 16:10 rectangle for every world) across ~90 coordinate sites —

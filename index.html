@@ -1335,7 +1335,7 @@
     const OCC_R = 600;        // the Dominion's garrison line: cost-radius of the occupied zone (B0.5: ×1.334 for the 1600×1000 world)
     const SEA_L = 534;        // sea_access decay length over the cost graph (B0.5: 400 ×1.334)
     const FORD_MULT = 2.2;    // crossing a river off-bridge: wide water is a wall too
-    const WILD_R = 294;       // euclidean reach of a ruin's peril / a tower's shadow (B0.5: 220 ×1.334)
+    const WILD_R = 220;       // euclidean reach of a ruin's peril / a tower's shadow (B0.5: a LOCAL euclidean peril radius, not a cost-graph reach — unscaled, like PASS_R)
     const RIVER_EDGE = 0.6;   // barge transport: river edges are cheap
     const RIVER_CARRY = 0.3;  // share of a riverine region's blight shipped downstream
     const RIVER_DECAY = 0.75; // per-step decay of the carried load

@@ -24,7 +24,7 @@ Beyond the last writ-stone, by Sebriar, the lawless keep a harbor of their own: 
 
 High above the roads, by Zoltgard, stands Haine Refuge — holy ground the Temple never consecrated and cannot forgive. It heals whoever climbs to it and asks no writ; the census does not climb at all, so the people it shelters are people the realm cannot count. Pilgrims walk to it beside the sanctioned roads, which the Temple is reminded of every festival.
 
-Where the beasts are worth a bounty and the garrisons never come, hunters keep Tash Camp by High Lorvasonne. The stands thin the predation on their ground, the trophies are fenced where nothing is taxed, and for the poorest the bounty is the one rung of a ladder the realm never built.
+Where the beasts are worth a bounty and the garrisons never come, hunters keep Brak Camp by Wexbraverby. The stands thin the predation on their ground, the trophies are fenced where nothing is taxed, and for the poorest the bounty is the one rung of a ladder the realm never built.
 
 The rivers are crossed at Glare Bridge and High Lorvasonne Bridge; everywhere else the banks are marsh and the water must be forded, and the fords are where the wagons drown. Whoever holds a bridge holds a queue of people who cannot go around.
 

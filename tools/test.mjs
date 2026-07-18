@@ -2872,13 +2872,16 @@ console.log("# The chronicle E4 acceptance: the world narrating itself");
     ok("no internals leak into the prose");
   else fail("prose leaks internals");
 
-  // a consecration world: the new shrine is dedicated by name
-  const C = await gen("#seed=d6-1&regions=24&ep=10");
+  // a consecration world: the new shrine is dedicated by name (d6-2 on the
+  // 1600×1000 world — d6-1's rectangle history no longer consecrates; guarded
+  // so a seed without a consecration fails a check instead of crashing the run)
+  const C = await gen("#seed=d6-2&regions=24&ep=10");
   const cons = (C.gj.hinterland.events || []).find(ev => ev.type === "consecration");
-  const shrineName = sanctOf(C.gj).find(st => st.properties.region_id === cons.region_id).properties.site_name;
-  if (cons && C.chron.includes("consecrated it as " + shrineName))
-    ok(`the consecration is narrated with its dedication (${shrineName} on seed d6-1)`);
-  else fail("consecration not narrated");
+  const consSite = cons ? sanctOf(C.gj).find(st => st.properties.region_id === cons.region_id) : null;
+  const shrineName = consSite ? consSite.properties.site_name : null;
+  if (cons && shrineName && C.chron.includes("consecrated it as " + shrineName))
+    ok(`the consecration is narrated with its dedication (${shrineName} on seed d6-2)`);
+  else fail(`consecration not narrated (cons=${!!cons}, shrine=${shrineName})`);
 
   // the founding snapshot has no years to tell
   const Z = RA0;

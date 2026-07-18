@@ -22,8 +22,6 @@ The old world is not gone: the delve called Zarvorrok gapes in the old workings 
 
 High above the roads, by Durtash Delf, stands Sole Refuge — holy ground the Temple never consecrated and cannot forgive. It heals whoever climbs to it and asks no writ; the census does not climb at all, so the people it shelters are people the realm cannot count. Pilgrims walk to it beside the sanctioned roads, which the Temple is reminded of every festival.
 
-Where the beasts are worth a bounty and the garrisons never come, hunters keep Brak Camp by Drukdelve. The stands thin the predation on their ground, the trophies are fenced where nothing is taxed, and for the poorest the bounty is the one rung of a ladder the realm never built.
-
 An apostate keeps Alvengard Tower, out where the wardline fails and the conduit never came — selling in the darkness what the grid will not carry. The Temple calls it heresy; the magnates call it competition; the people it heals call it the only healer who ever came.
 
 The rivers are crossed at Gnarmere Bridge and Birchstead Bridge; everywhere else the banks are marsh and the water must be forded, and the fords are where the wagons drown. Whoever holds a bridge holds a queue of people who cannot go around.

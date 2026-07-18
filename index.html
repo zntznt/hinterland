@@ -704,7 +704,7 @@
   centrality, refining, retention, wealth, tiers, population, conduit, arcane
   services). Moving the capital or any slider never reshuffles geology.
 
-  CRS (spec §5 option 1): FLAT PLANE, x,y in [0,1000], y-up in data/GeoJSON;
+  CRS (spec §5 option 1): FLAT PLANE, x in [0,1600], y in [0,1000], y-up in data/GeoJSON;
   the SVG preview flips y so it matches QGIS orientation.
 
   Dependency: d3-delaunay via CDN (needs internet even when opened from disk).
@@ -1325,22 +1325,23 @@
     "use strict";
 
     // ---- Constants ----------------------------------------------------------
-    const W = 1000;        // world is [0,W] x [0,W], planar, y-up
-    const SCHEMA_VERSION = 41;
+    const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
+    const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
+    const SCHEMA_VERSION = 42;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
     const FLY_BOARD = 35;     // boarding the lift-barge: the fixed price of the sky
-    const OCC_R = 450;        // the Dominion's garrison line: cost-radius of the occupied zone
-    const SEA_L = 400;        // sea_access decay length over the cost graph
+    const OCC_R = 600;        // the Dominion's garrison line: cost-radius of the occupied zone (B0.5: ×1.334 for the 1600×1000 world)
+    const SEA_L = 534;        // sea_access decay length over the cost graph (B0.5: 400 ×1.334)
     const FORD_MULT = 2.2;    // crossing a river off-bridge: wide water is a wall too
-    const WILD_R = 220;       // euclidean reach of a ruin's peril / a tower's shadow
+    const WILD_R = 220;       // euclidean reach of a ruin's peril / a tower's shadow (B0.5: a LOCAL euclidean peril radius, not a cost-graph reach — unscaled, like PASS_R)
     const RIVER_EDGE = 0.6;   // barge transport: river edges are cheap
     const RIVER_CARRY = 0.3;  // share of a riverine region's blight shipped downstream
     const RIVER_DECAY = 0.75; // per-step decay of the carried load
     const RIDGE_WALL = 4.5;  // edge-cost multiplier for crossing a ridge off-pass
     const PASS_MULT = 1.4;   // crossing at a pass: a climb, not a wall
-    const PASS_R = 90;       // how close a crossing must be to a pass to count as one
+    const PASS_R = 90;       // how close a crossing must be to a pass to count as one (B0.5: a LOCAL crossing tolerance, not a reach — unscaled)
     const BLOC_TOL = 12;    // top-two reach gap below this => contested
     const BLOC_FLOOR = 25;  // all reaches below this => ungoverned
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
@@ -1578,7 +1579,7 @@
     // ---- Voronoi + Lloyd's relaxation --------------------------------------
     function relaxPts(pts, iters) {
       for (let it = 0; it < iters; it++) {
-        const vor = d3.Delaunay.from(pts).voronoi([0, 0, W, W]);
+        const vor = d3.Delaunay.from(pts).voronoi([0, 0, WX, WY]);
         pts = pts.map((p, i) => { const c = vor.cellPolygon(i); return c ? centroid(c) : p; });
       }
       return pts;
@@ -1587,10 +1588,10 @@
     // ---- Stage 1: topology (seed / regions / relax) --------------------------
     function buildTopology(params) {
       const r = streams(params.seed)("topo");
-      let seeds = Array.from({ length: params.regions }, () => [r() * W, r() * W]);
+      let seeds = Array.from({ length: params.regions }, () => [r() * WX, r() * WY]);
       seeds = relaxPts(seeds, params.relax);
       const del = d3.Delaunay.from(seeds);
-      const vor = del.voronoi([0, 0, W, W]);
+      const vor = del.voronoi([0, 0, WX, WY]);
       const regions = [];
       const regionIdxBySeed = new Array(seeds.length).fill(-1);
       seeds.forEach((s, i) => {
@@ -1706,7 +1707,7 @@
     // Smooth signed-bump noise field factory: sum of K gaussian bumps.
     function bumpField(rng, count, rLo, rHi) {
       const bs = Array.from({ length: count }, () => ({
-        x: rng() * W, y: rng() * W,
+        x: rng() * WX, y: rng() * WY,
         amp: rng() * 2 - 1,
         radius: rLo + rng() * (rHi - rLo)
       }));
@@ -1721,7 +1722,7 @@
       const rg = sg("geology");
       const lodeCount = 2 + Math.floor(rg() * 3); // 2–4 lodes
       const lodes = Array.from({ length: lodeCount }, () => ({
-        x: rg() * W, y: rg() * W,
+        x: rg() * WX, y: rg() * WY,
         strength: 0.5 + rg() * 0.5,
         radius: 80 + rg() * 140
       }));
@@ -1740,7 +1741,7 @@
       // that feeds NO income today — the raw material of abandonment.
       const deadCount = 1 + Math.floor(rg() * 2); // 1–2 dead lodes
       const dead = Array.from({ length: deadCount }, () => ({
-        x: rg() * W, y: rg() * W, radius: 80 + rg() * 120
+        x: rg() * WX, y: rg() * WY, radius: 80 + rg() * 120
       }));
       regions.forEach(reg => {
         let e = 0;
@@ -1771,7 +1772,7 @@
 
       // One HIDDEN lode: ore that was always there, not yet found. Blind
       // geology, revealed (maybe) by an in-run strike.
-      const hid = { x: rg() * W, y: rg() * W, strength: 0.6 + rg() * 0.4, radius: 90 + rg() * 110 };
+      const hid = { x: rg() * WX, y: rg() * WY, strength: 0.6 + rg() * 0.4, radius: 90 + rg() * 110 };
       regions.forEach(reg => {
         const d = Math.hypot(reg.c[0] - hid.x, reg.c[1] - hid.y);
         const v = hid.strength * Math.exp(-(d * d) / (2 * hid.radius * hid.radius));
@@ -1804,7 +1805,7 @@
           phase += (2 * Math.PI * STEPC) / wavelen;
           const th = axis + amp * Math.sin(phase) + (rr() - 0.5) * 0.12; // curve + slight grain
           x += Math.cos(th) * STEPC; y += Math.sin(th) * STEPC; travelled += STEPC;
-          if (x < -60 || x > W + 60 || y < -60 || y > W + 60) break;
+          if (x < -60 || x > WX + 60 || y < -60 || y > WY + 60) break;
           pts.push([x, y]);
         }
         return pts;
@@ -1825,15 +1826,15 @@
           // wander straight out an edge; aiming it inward keeps the range on
           // the map, and the fallback below guarantees one always lands.
           const startEdge = Math.floor(rr() * 4);
-          const sx = startEdge === 0 ? 40 : startEdge === 1 ? W - 40 : 100 + rr() * (W - 200);
-          const sy = startEdge === 2 ? 40 : startEdge === 3 ? W - 40 : 100 + rr() * (W - 200);
-          const tx = W / 2 + (rr() - 0.5) * W * 0.5, ty = W / 2 + (rr() - 0.5) * W * 0.5;
+          const sx = startEdge === 0 ? 40 : startEdge === 1 ? WX - 40 : 100 + rr() * (WX - 200);
+          const sy = startEdge === 2 ? 40 : startEdge === 3 ? WY - 40 : 100 + rr() * (WY - 200);
+          const tx = WX / 2 + (rr() - 0.5) * WX * 0.5, ty = WY / 2 + (rr() - 0.5) * WY * 0.5;
           const axis = Math.atan2(ty - sy, tx - sx);
           const extent = 620 + rr() * 460;              // varied length, not corner-to-corner
           const wavelen = 320 + rr() * 260;             // long-wavelength curve of the whole range
           const amp = (0.28 + rr() * 0.22) * (attempt < 5 ? 1 : 0.5); // calmer curve if the first tries fell off
           const walked = walkCrest(sx, sy, axis, extent, wavelen, amp, seedK);
-          const pieces = clipPolyline(walked, 0, 0, W, W);
+          const pieces = clipPolyline(walked, 0, 0, WX, WY);
           for (const pl of pieces) if (!main || polyLen(pl) > polyLen(main)) main = pl;
           if (main && polyLen(main) < 320) main = null;  // fell off the box: redraw
         }
@@ -1844,7 +1845,7 @@
           const axis = Math.PI * (0.15 + rr() * 0.2) + (rr() < 0.5 ? 0 : Math.PI / 2);
           const sx = 120 + rr() * 120, sy = 120 + rr() * 120;
           const walked = walkCrest(sx, sy, axis, 900, 500, 0.16, seedK);
-          const pieces = clipPolyline(walked, 0, 0, W, W).sort((a, b) => polyLen(b) - polyLen(a));
+          const pieces = clipPolyline(walked, 0, 0, WX, WY).sort((a, b) => polyLen(b) - polyLen(a));
           if (pieces[0] && polyLen(pieces[0]) >= 300) main = pieces[0];
         }
         if (!main) continue;
@@ -1861,7 +1862,7 @@
           const segA = Math.atan2(seg[1], seg[0]);
           const spurAxis = segA + (rr() < 0.5 ? 1 : -1) * (0.7 + rr() * 0.5); // fork angle
           const spur = walkCrest(bp[0], bp[1], spurAxis, 260 + rr() * 240, 240 + rr() * 160, 0.3 + rr() * 0.2, seedK + 7);
-          const spurClipped = clipPolyline(spur, 0, 0, W, W).sort((a, b) => polyLen(b) - polyLen(a))[0];
+          const spurClipped = clipPolyline(spur, 0, 0, WX, WY).sort((a, b) => polyLen(b) - polyLen(a))[0];
           if (spurClipped && polyLen(spurClipped) > 180) {
             const sk2 = seedK + 7;
             ridges.push({ id: ridges.length, pts: spurClipped.map(p => [round2(p[0]), round2(p[1])]), seedK: sk2, profile: (t) => crestProfile(t, sk2), isSpur: true });
@@ -1925,7 +1926,7 @@
       const distToSeaEdge = (x, y) => {
         const wx = x + 130 * warpX(x, y), wy = y + 130 * warpY(x, y);
         return Math.min(...seaSides.map(side =>
-          side === "west" ? wx : side === "east" ? W - wx : side === "south" ? wy : W - wy));
+          side === "west" ? wx : side === "east" ? WX - wx : side === "south" ? wy : WY - wy));
       };
       const elevNoise = bumpField(sg("elevation"), 6, 120, 300);
       // M1: the shore is a COASTLINE, not a strip. The old shelf clamped a
@@ -1947,7 +1948,7 @@
       const coveNoise = bumpField(sg("coves"), 40, 18, 40);   // cove / small-bay scale
       const crenNoise = bumpField(sg("crenels"), 70, 9, 20);  // crenellation / rock scale
       const elevAt = (x, y) => {
-        const t = clamp(distToSeaEdge(x, y) / W, 0, 1);
+        const t = clamp(distToSeaEdge(x, y) / Math.max(WX, WY), 0, 1);
         let e = 12 + 58 * Math.pow(t, 1.15);                       // the land tilts off the water
         // tectonic uplift, but MODULATED along the crest: a massif reaches
         // full height, a saddle only partway, so the range has a skyline of
@@ -1966,7 +1967,7 @@
         // out to sea where it rises (a peninsula/cape). This is what breaks
         // the "tilted toast edge": the coast no longer parallels the map
         // border, it bites in and juts out.
-        const ds = clamp(distToSeaEdge(x, y) + 78 * gulfNoise(x, y), -40, W);
+        const ds = clamp(distToSeaEdge(x, y) + 78 * gulfNoise(x, y), -40, Math.max(WX, WY));
         const sh = clamp(0.5 + 0.5 * shoreNoise(x, y), 0, 1);
         const band = 16 + 70 * sh;
         if (ds < band) {
@@ -2065,7 +2066,7 @@
       // from the wall. The chain order IS the downstream order.
       const rv2 = sg("rivers");
       const isBorder = regions.map(reg =>
-        reg.ring.some(([x, y]) => x <= 0.01 || x >= W - 0.01 || y <= 0.01 || y >= W - 0.01));
+        reg.ring.some(([x, y]) => x <= 0.01 || x >= WX - 0.01 || y <= 0.01 || y >= WY - 0.01));
       const rivers = [];
       regions.forEach(reg => { reg.onRiver = 0; reg.riverId = -1; reg.riverPos = -1; });
       // a few rivers, more on bigger maps, kept sparse so beds do not crowd
@@ -2187,11 +2188,11 @@
       // transient grid arrays (flood mask, label, marching squares) and the
       // retained coastline vertex count from ballooning the way 128 did (the
       // suite generates hundreds of worlds; 128 exhausted memory).
-      const GN = 96, CS = W / GN;
+      const GN = 96, CSX = WX / GN, CSY = WY / GN;
       const nodeElev = [];
       for (let gy = 0; gy <= GN; gy++) {
         const row = [];
-        for (let gx = 0; gx <= GN; gx++) row.push(elevAt(gx * CS, gy * CS));
+        for (let gx = 0; gx <= GN; gx++) row.push(elevAt(gx * CSX, gy * CSY));
         nodeElev.push(row);
       }
       const raisedHolm = new Set(); // grid nodes lifted for a town with no dry ground
@@ -2239,7 +2240,7 @@
           const ea = eAt(gxa, gya), eb = eAt(gxb, gyb);
           let t = 0.5;
           if ((ea < level) !== (eb < level) && ea !== eb) t = clamp((level - ea) / (eb - ea), 0.02, 0.98);
-          return [ (gxa + (gxb - gxa) * t) * CS, (gya + (gyb - gya) * t) * CS ];
+          return [ (gxa + (gxb - gxa) * t) * CSX, (gya + (gyb - gya) * t) * CSY ];
         };
         for (let gy = -1; gy <= GN; gy++) for (let gx = -1; gx <= GN; gx++) {
           const tl = F4(gx, gy), tr = F4(gx + 1, gy), br = F4(gx + 1, gy + 1), bl = F4(gx, gy + 1);
@@ -2284,7 +2285,7 @@
             ring.push(nxt.slice());
           }
           if (ring.length >= 4 && key5(ring[0]) === key5(ring[ring.length - 1]))
-            rawRings.push(ring.map(pt => [round2(clamp(pt[0], 0, W)), round2(clamp(pt[1], 0, W))]));
+            rawRings.push(ring.map(pt => [round2(clamp(pt[0], 0, WX)), round2(clamp(pt[1], 0, WY))]));
         }
         // rings NEST — an island is a ring inside a sea ring: a hole
         const ringArea = (rg) => {
@@ -2332,7 +2333,7 @@
               const e2 = elevAt(p[0], p[1]);
               if (e2 > bestE + 1e-9) { bestE = e2; best = p; }
             }
-            const cgx = Math.round(best[0] / CS), cgy = Math.round(best[1] / CS);
+            const cgx = Math.round(best[0] / CSX), cgy = Math.round(best[1] / CSY);
             for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
               if (Math.hypot(dx, dy) > 2.2) continue;
               raisedHolm.add((cgx + dx) + ":" + (cgy + dy));
@@ -2355,7 +2356,7 @@
         // town anchors on the grid, so a lake never drowns a settlement
         const townNodes = new Set();
         regions.forEach(reg => {
-          const gx = Math.round(reg.c[0] / CS), gy = Math.round(reg.c[1] / CS);
+          const gx = Math.round(reg.c[0] / CSX), gy = Math.round(reg.c[1] / CSY);
           for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) townNodes.add((gx + dx) + ":" + (gy + dy));
         });
         // a lake is a DEEP pit: nodes well below sea level (not a broad low
@@ -2522,7 +2523,7 @@
           let bd = Infinity;
           best = [x, 0];
           for (const side of seaSides) { // no traced sea at all: the border ends it
-            const p = side === "west" ? [0, y] : side === "east" ? [W, y] : side === "south" ? [x, 0] : [x, W];
+            const p = side === "west" ? [0, y] : side === "east" ? [WX, y] : side === "south" ? [x, 0] : [x, WY];
             const d = Math.hypot(p[0] - x, p[1] - y);
             if (d < bd) { bd = d; best = p; }
           }
@@ -2561,7 +2562,7 @@
           const pts = [[x, y]];
           const intoWater = (dx2, dy2) => { // 2 extra steps: the mouth visibly enters the sea
             for (let e2 = 0; e2 < 2; e2++) {
-              const nx2 = clamp(x + dx2 * STEP, 0, W), ny2 = clamp(y + dy2 * STEP, 0, W);
+              const nx2 = clamp(x + dx2 * STEP, 0, WX), ny2 = clamp(y + dy2 * STEP, 0, WY);
               if (!inSeaPoly(nx2, ny2)) break; // never back OUT onto an island bank
               x = nx2; y = ny2;
               pts.push([x, y]);
@@ -2739,11 +2740,11 @@
                 // another river's bed is a wall while the corridor is live;
                 // meeting it is a decision (the merge below), not a drift
                 if (corridorLive && tracedBeds.length && nearBed(px, py, 6)) sc += 400;
-                if (px < 0 || px > W || py < 0 || py > W) {
+                if (px < 0 || px > WX || py < 0 || py > WY) {
                   // dry borders are walls; only a sea side lets the river
                   // out, and never before the corridor is complete
-                  const wetExit = (px < 0 && seaSides.includes("west")) || (px > W && seaSides.includes("east")) ||
-                    (py < 0 && seaSides.includes("south")) || (py > W && seaSides.includes("north"));
+                  const wetExit = (px < 0 && seaSides.includes("west")) || (px > WX && seaSides.includes("east")) ||
+                    (py < 0 && seaSides.includes("south")) || (py > WY && seaSides.includes("north"));
                   if (corridorLive || !wetExit) sc += 1000;
                 }
                 if (sc < bs) { bs = sc; bth = th; }
@@ -2815,7 +2816,7 @@
             // only a served corridor (or the forced fallback) may end wet —
             // a burst can hop a submerged strait mid-corridor and walk on
             if ((forced || ci + 1 >= chain.length) && inSeaPoly(x, y)) { intoWater(dxs, dys); break; }
-            if (x < 0 || x > W || y < 0 || y > W) { pts[pts.length - 1] = [clamp(x, 0, W), clamp(y, 0, W)]; break; }
+            if (x < 0 || x > WX || y < 0 || y > WY) { pts[pts.length - 1] = [clamp(x, 0, WX), clamp(y, 0, WY)]; break; }
             // tight loop OR a lap around a wide basin: both are stuck
             const orbit = (pts.length > 12 && Math.hypot(x - pts[pts.length - 13][0], y - pts[pts.length - 13][1]) < STEP) ||
               (pts.length > 40 && Math.hypot(x - pts[pts.length - 41][0], y - pts[pts.length - 41][1]) < 3 * STEP);
@@ -2825,11 +2826,11 @@
           // absolute fallback (never observed in measurement, kept for the
           // guarantee): if even the forced walk ran out, end ON the border —
           // a river may leave the map, it may not die mid-land
-          if (!merged && !trunkBed && !inSeaPoly(x, y) && x > 0 && x < W && y > 0 && y < W) {
-            const dW = Math.min(x, W - x), dH = Math.min(y, W - y);
-            pts.push(dW <= dH ? [x < W - x ? 0 : W, y] : [x, y < W - y ? 0 : W]);
+          if (!merged && !trunkBed && !inSeaPoly(x, y) && x > 0 && x < WX && y > 0 && y < WY) {
+            const dW = Math.min(x, WX - x), dH = Math.min(y, WY - y);
+            pts.push(dW <= dH ? [x < WX - x ? 0 : WX, y] : [x, y < WY - y ? 0 : WY]);
           }
-          let rpts = pts.map(p => [round2(clamp(p[0], 0, W)), round2(clamp(p[1], 0, W))]);
+          let rpts = pts.map(p => [round2(clamp(p[0], 0, WX)), round2(clamp(p[1], 0, WY))]);
           // SELF-CROSSING GUARANTEE, applied to the RAW walk before anything
           // else reads it: a river never crosses its own bed. Where a later
           // segment cuts an earlier one it closes an oxbow; splice both to
@@ -3094,13 +3095,13 @@
       const wvx4 = Math.cos(windRad4), wvy4 = Math.sin(windRad4);
       regions.forEach(reg => {
         const [ax, ay] = reg.c;
-        reg.temperature = clamp(Math.round(88 - 46 * (ay / W) - 0.35 * reg.elevation + (rc4() - 0.5) * 8), 0, 100);
+        reg.temperature = clamp(Math.round(88 - 46 * (ay / WY) - 0.35 * reg.elevation + (rc4() - 0.5) * 8), 0, 100);
         let px = ax, py = ay, peak = 0, dist = 0;
-        while (px >= -25 && px <= W + 25 && py >= -25 && py <= W + 25 && dist < 2200) {
+        while (px >= -25 && px <= WX + 25 && py >= -25 && py <= WY + 25 && dist < 2200) {
           px -= wvx4 * 25; py -= wvy4 * 25; dist += 25;
-          if (px >= 0 && px <= W && py >= 0 && py <= W) peak = Math.max(peak, elevAt(px, py));
+          if (px >= 0 && px <= WX && py >= 0 && py <= WY) peak = Math.max(peak, elevAt(px, py));
         }
-        const exitSide = px < 0 ? "west" : px > W ? "east" : py < 0 ? "south" : "north";
+        const exitSide = px < 0 ? "west" : px > WX ? "east" : py < 0 ? "south" : "north";
         const fromSea = seaSides.includes(exitSide);
         const shadow = 0.5 * Math.max(0, peak - reg.elevation - 8);
         reg.rainfall = clamp(Math.round((fromSea ? 92 : 50) - 0.028 * dist - shadow + (rc4() - 0.5) * 10), 2, 100);
@@ -3177,7 +3178,7 @@
           return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
         };
         for (let gy = 0; gy < GN; gy++) for (let gx = 0; gx < GN; gx++) {
-          const x0 = gx * CS, y0 = gy * CS, x1 = (gx + 1) * CS, y1 = (gy + 1) * CS;
+          const x0 = gx * CSX, y0 = gy * CSY, x1 = (gx + 1) * CSX, y1 = (gy + 1) * CSY;
           const vtl = nodeElev[gy][gx], vtr = nodeElev[gy][gx + 1], vbr = nodeElev[gy + 1][gx + 1], vbl = nodeElev[gy + 1][gx];
           const code = (vtl >= level ? 8 : 0) + (vtr >= level ? 4 : 0) + (vbr >= level ? 2 : 0) + (vbl >= level ? 1 : 0);
           if (code === 0 || code === 15) continue;
@@ -3206,7 +3207,7 @@
           return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
         };
         for (let gy = 0; gy < GN; gy++) for (let gx = 0; gx < GN; gx++) {
-          const x0 = gx * CS, y0 = gy * CS, x1 = (gx + 1) * CS, y1 = (gy + 1) * CS;
+          const x0 = gx * CSX, y0 = gy * CSY, x1 = (gx + 1) * CSX, y1 = (gy + 1) * CSY;
           const vtl = nodeElev[gy][gx], vtr = nodeElev[gy][gx + 1], vbr = nodeElev[gy + 1][gx + 1], vbl = nodeElev[gy + 1][gx];
           const code = (vtl >= level ? 8 : 0) + (vtr >= level ? 4 : 0) + (vbr >= level ? 2 : 0) + (vbl >= level ? 1 : 0);
           if (code === 0 || code === 15) continue;
@@ -3324,8 +3325,8 @@
         const side = seaSides[Math.floor(rm() * seaSides.length)];
         const t = round2(200 + rm() * 600);
         maelstrom = { side,
-          x: side === "west" ? 0 : side === "east" ? W : t,
-          y: side === "south" ? 0 : side === "north" ? W : t };
+          x: side === "west" ? 0 : side === "east" ? WX : t,
+          y: side === "south" ? 0 : side === "north" ? WY : t };
       }
 
       return { windDeg, ridges, passes, rivers, seaSides, bridges, ruins, maelstrom, seaShapes, lakeShapes, seaLevel, contours, contoursFine, hachures, peaks };
@@ -3867,7 +3868,10 @@
           let wsum = 0;
           const wts = regions.map(reg => {
             const d = Math.hypot(reg.c[0] - rf.c[0], reg.c[1] - rf.c[1]);
-            const w = Math.exp(-d / 800) * Math.pow(1 - reg.wealth / 100, 10 * lam);
+            // Distance-decay constants (here and templeReach/magnateReach/conduit/
+            // healingReach/forceProjection) were rescaled ×1.334 for the 1600×1000
+            // world so reach reads the same in world-units (B0.5, #122).
+            const w = Math.exp(-d / 1068) * Math.pow(1 - reg.wealth / 100, 10 * lam);
             wsum += w; return w;
           });
           if (wsum > 0) regions.forEach((_, i) => { blightRaw[i] += SPOIL * (wts[i] / wsum); });
@@ -3987,8 +3991,8 @@
           // ARE the exported reach columns, so dominant_bloc stays the exact
           // argmax of what the file carries — the recomputability contract holds.
           const boost = (F) => Math.min(treasuries[F], 40) * 0.25;
-          reg.templeReach = clamp(Math.round(100 * Math.exp(-(isFinite(templeCdNow[i]) ? templeCdNow[i] : 1e9) / 300) + boost("temple")), 0, 100);
-          reg.magnateReach = clamp(Math.round(100 * Math.exp(-(isFinite(magCdNow[i]) ? magCdNow[i] : 1e9) / 300) + boost("magnate")), 0, 100);
+          reg.templeReach = clamp(Math.round(100 * Math.exp(-(isFinite(templeCdNow[i]) ? templeCdNow[i] : 1e9) / 400) + boost("temple")), 0, 100);
+          reg.magnateReach = clamp(Math.round(100 * Math.exp(-(isFinite(magCdNow[i]) ? magCdNow[i] : 1e9) / 400) + boost("magnate")), 0, 100);
           reg.crownReach = clamp(Math.round(reg.centrality + boost("crown")), 0, 100); // the seat's pull = centrality + the Crown's fortune
           const fields = [["crown", reg.crownReach], ["temple", reg.templeReach], ["magnate", reg.magnateReach]];
           fields.sort((a, b) => b[1] - a[1]); // stable: crown wins exact ties deterministically
@@ -4844,7 +4848,7 @@
       regions.forEach((reg, i) => {
         reg.onConduit = onGrid[i];
         reg.conduitAccess = onGrid[i] ? 100
-          : Math.round(100 * Math.exp(-(isFinite(offCd[i]) ? offCd[i] : 1e9) / 250));
+          : Math.round(100 * Math.exp(-(isFinite(offCd[i]) ? offCd[i] : 1e9) / 334));
         reg.arcaneServices = clamp(Math.round(
           100 * Math.pow(reg.conduitAccess / 100, 1.2) * (0.35 + 0.65 * reg.wealth / 100)
         ), 0, 100);
@@ -4895,7 +4899,7 @@
       regions.forEach((reg, i) => {
         reg.healerDist = r1(isFinite(healerCd[i]) ? healerCd[i] : 9999);
         reg.facDist = r1(isFinite(anyFacCd[i]) ? anyFacCd[i] : 9999);
-        reg.healingReach = Math.round(100 * Math.exp(-(isFinite(healerCd[i]) ? healerCd[i] : 1e9) / 250));
+        reg.healingReach = Math.round(100 * Math.exp(-(isFinite(healerCd[i]) ? healerCd[i] : 1e9) / 334));
         if (!reg.settled) {
           // a dead zone has no people, so no health, water-safety, or service
           // burden: the human columns are zero, not a fit over an empty town.
@@ -5042,7 +5046,7 @@
       const garrisons = garrisonIdxs.filter(i => regions[i].settled).map(i => ({ regionId: regions[i].id, x: regions[i].c[0], y: regions[i].c[1] }));
       const garCd = costDistances(regions, garrisonIdxs).dist;
       regions.forEach((reg, i) => {
-        reg.forceProjection = Math.round(100 * Math.exp(-(isFinite(garCd[i]) ? garCd[i] : 1e9) / 280));
+        reg.forceProjection = Math.round(100 * Math.exp(-(isFinite(garCd[i]) ? garCd[i] : 1e9) / 374));
         // wardlines need BOTH strategic priority and lumen: off-grid darkness
         // is near-defenseless no matter how exposed it is
         const priority = clamp(0.4 * reg.centrality + 0.4 * reg.forceProjection + 0.2 * reg.refining, 0, 100);
@@ -5767,7 +5771,7 @@
           geometry: { type: "LineString", coordinates: RV.trace }
         });
       });
-      const SEA_LINES = { west: [[0, 0], [0, 1000]], east: [[1000, 0], [1000, 1000]], south: [[0, 0], [1000, 0]], north: [[0, 1000], [1000, 1000]] };
+      const SEA_LINES = { west: [[0, 0], [0, 1000]], east: [[1600, 0], [1600, 1000]], south: [[0, 0], [1600, 0]], north: [[0, 1000], [1600, 1000]] };
       model.seaSides.forEach(side => {
         features.push({
           type: "Feature",
@@ -5947,7 +5951,7 @@
           findings: getFindings(model),
           tensions: { crown_magnate: Math.round(model.tensions.crown_magnate), crown_temple: Math.round(model.tensions.crown_temple), magnate_temple: Math.round(model.tensions.magnate_temple) },
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
-          space: "planar 0..1000, y-up (flat-plane CRS)"
+          space: "planar 0..1600 x 0..1000, y-up (flat-plane CRS)"
         },
         features
       };
@@ -6046,7 +6050,7 @@
           geometry: { type: "LineString", coordinates: RV.trace }
         });
       });
-      const SEA_LINES2 = { west: [[0, 0], [0, 1000]], east: [[1000, 0], [1000, 1000]], south: [[0, 0], [1000, 0]], north: [[0, 1000], [1000, 1000]] };
+      const SEA_LINES2 = { west: [[0, 0], [0, 1000]], east: [[1600, 0], [1600, 1000]], south: [[0, 0], [1600, 0]], north: [[0, 1000], [1600, 1000]] };
       model.seaSides.forEach(side => {
         features.push({
           type: "Feature",
@@ -6145,7 +6149,7 @@
                     magnate: model.dynasties.magnate.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })) },
           tensions: { crown_magnate: Math.round(model.tensions.crown_magnate), crown_temple: Math.round(model.tensions.crown_temple), magnate_temple: Math.round(model.tensions.magnate_temple) },
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
-          space: "planar 0..1000, y-up (flat-plane CRS)"
+          space: "planar 0..1600 x 0..1000, y-up (flat-plane CRS)"
         },
         features
       };
@@ -6395,7 +6399,7 @@
         t: (r, C) => C.SE(r) / 100, value: (r, C) => C.SE(r) }
     };
     const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-    const fy = (y) => W - y; // flip y for display so preview matches QGIS (y-up)
+    const fy = (y) => WY - y; // flip y for display so preview matches QGIS (y-up)
     // V2: the organic pen — PREVIEW-ONLY geometry. Exports never touch these.
     // jitter is a pure function of the coordinates, so every render of the
     // same world draws the same ink (no RNG streams are consumed here)
@@ -7394,7 +7398,7 @@
         used.add(i); slotUsed.set(reg.id, used);
         const R = 22 + 13 * Math.sqrt(RP(reg) / maxPop); // past the dot (max r 16) + a gap
         // clamp to the frame so an edge region's glyph never draws off-canvas
-        return [clamp(reg.c[0] + RING8[i][0] * R, 10, W - 10), clamp(fy(reg.c[1]) + RING8[i][1] * R, 10, W - 10)];
+        return [clamp(reg.c[0] + RING8[i][0] * R, 10, WX - 10), clamp(fy(reg.c[1]) + RING8[i][1] * R, 10, WY - 10)];
       };
       // The lens registry does the switching; C hands each lens the scrub-aware
       // accessors above. Categoricals have no t (paint 0) and override fill.
@@ -7482,7 +7486,7 @@
       // Paper grain, atlas only: a dark fibrous texture laid OVER the land (not
       // under it, where the opaque region fills would hide it) so the parchment
       // reads as grained, not flat. Blends by multiply so it darkens the land.
-      if (atlas) parts.push(`<path d="M0,0H${W}V${W}H0Z" fill="#fff" filter="url(#paper)" opacity="0.18" style="mix-blend-mode:multiply" pointer-events="none"/>`);
+      if (atlas) parts.push(`<path d="M0,0H${WX}V${WY}H0Z" fill="#fff" filter="url(#paper)" opacity="0.18" style="mix-blend-mode:multiply" pointer-events="none"/>`);
 
       // G4: the terrain — contour lines over the fills, then the sea itself.
       // #60: only levels above the water draw — a ring under the sea is noise;
@@ -7625,7 +7629,7 @@
         parts.push(`<text class="bridge" x="${bx.toFixed(1)}" y="${(fy(by) + 6).toFixed(1)}" font-size="${cz(15)}" font-weight="700" text-anchor="middle" fill="#6b5844" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">═</text>`);
       });
       if (poi && model.maelstrom) {
-        const mx = clamp(model.maelstrom.x, 22, W - 22), my = clamp(model.maelstrom.y, 22, W - 22);
+        const mx = clamp(model.maelstrom.x, 22, WX - 22), my = clamp(model.maelstrom.y, 22, WY - 22);
         parts.push(`<text class="maelstrom" x="${mx.toFixed(1)}" y="${(fy(my) + 7).toFixed(1)}" font-size="${cz(20)}" text-anchor="middle" fill="#1d4e79" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">◉</text>`);
       }
 
@@ -7667,7 +7671,7 @@
       // at the water's edge (casing and all) instead of lying on the sea.
       // ONE path (rect subpath + each sea outline as a subpath) with evenodd so
       // the sea punches holes in the canvas rect: the clip region is the land.
-      const landD = `M0,0H${W}V${W}H0Z ` + seaClipPaths.join(" ");
+      const landD = `M0,0H${WX}V${WY}H0Z ` + seaClipPaths.join(" ");
       parts.push(`<clipPath id="landClip"><path d="${landD}" clip-rule="evenodd"/></clipPath>`);
       parts.push(`<g clip-path="url(#landClip)">`);
       // corner-cutting pass (render-only; the exported trace keeps its points):
@@ -7917,14 +7921,14 @@
       // y). Placed clear of the wind arrow (top-left) and epoch label (top-right)
       // so the compass and the wind arrow are never read as one thing.
       {
-        const nx = W - 52, ny = W - 66;
+        const nx = WX - 52, ny = WY - 66;
         parts.push(`<line x1="${nx}" y1="${ny}" x2="${nx}" y2="${ny + 40}" stroke="#000" stroke-width="3" opacity="0.6"/>`);
         parts.push(`<polygon points="${nx},${ny - 8} ${nx - 6},${ny + 6} ${nx + 6},${ny + 6}" fill="#000" opacity="0.6"/>`);
         parts.push(`<text x="${nx}" y="${ny - 12}" font-size="15" font-weight="700" text-anchor="middle" fill="#000" opacity="0.7" paint-order="stroke" stroke="#fff" stroke-width="3">N</text>`);
       }
       if (params.ep > 0) {
         const ageName = ageAt(getFindings(model).ages, Math.min(scrubEpoch, snaps.length - 1));
-        parts.push(`<text x="960" y="46" font-size="26" text-anchor="end" fill="#000" opacity="0.65" paint-order="stroke" stroke="#fff" stroke-width="4">epoch ${Math.min(scrubEpoch, snaps.length - 1)}/${params.ep}${ageName ? " — " + ageName : ""}</text>`);
+        parts.push(`<text x="${WX - 40}" y="46" font-size="26" text-anchor="end" fill="#000" opacity="0.65" paint-order="stroke" stroke="#fff" stroke-width="4">epoch ${Math.min(scrubEpoch, snaps.length - 1)}/${params.ep}${ageName ? " — " + ageName : ""}</text>`);
       }
       if (inspectId >= 0 && inspectId < model.regions.length) {
         const reg = model.regions[inspectId];
@@ -7946,13 +7950,13 @@
         else if (k === "ruin") { const r = model.ruins[id]; if (r) { const reg = model.regions[r.regionIdx]; halo(reg.wildPt[0], reg.wildPt[1], 15); } }
         else if (k === "deadhold") { const r = model.regions.filter(rr => !rr.settled && rr.abandonedEpoch >= 0)[id]; if (r) halo(r.c[0], r.c[1], 15); }
         else if (k === "sanct") { const s = model.sanctionedSites[id]; if (s) halo(s.x, s.y, 15); }
-        else if (k === "maelstrom" && model.maelstrom) halo(clamp(model.maelstrom.x, 22, W - 22), clamp(model.maelstrom.y, 22, W - 22), 17);
+        else if (k === "maelstrom" && model.maelstrom) halo(clamp(model.maelstrom.x, 22, WX - 22), clamp(model.maelstrom.y, 22, WY - 22), 17);
       }
       // Frame: a soft corner vignette to center the eye, and a thin double
       // neatline just inside the edge (the classic map border).
-      parts.push(`<path d="M0,0H${W}V${W}H0Z" fill="url(#vignette)" pointer-events="none"/>`);
-      parts.push(`<path d="M6,6H${W - 6}V${W - 6}H6Z" fill="none" stroke="#8a7a5c" stroke-width="1" opacity="0.6" pointer-events="none"/>`);
-      parts.push(`<path d="M10,10H${W - 10}V${W - 10}H10Z" fill="none" stroke="#8a7a5c" stroke-width="0.5" opacity="0.4" pointer-events="none"/>`);
+      parts.push(`<path d="M0,0H${WX}V${WY}H0Z" fill="url(#vignette)" pointer-events="none"/>`);
+      parts.push(`<path d="M6,6H${WX - 6}V${WY - 6}H6Z" fill="none" stroke="#8a7a5c" stroke-width="1" opacity="0.6" pointer-events="none"/>`);
+      parts.push(`<path d="M10,10H${WX - 10}V${WY - 10}H10Z" fill="none" stroke="#8a7a5c" stroke-width="0.5" opacity="0.4" pointer-events="none"/>`);
       parts.push(`</svg>`);
       const stage = document.getElementById("stage");
       stage.innerHTML = parts.join("");
@@ -8016,7 +8020,7 @@
         ["the dominion", model.dominion ? `arrived ${1000 + 25 * model.dominion.arrived} — ${model.regions.filter(r => r.occupied).length} regions occupied` : "beyond the horizon, this age"],
         ["rank-size", (() => { const F5 = getFindings(model); return F5.zipf ? `α ${F5.zipf.alpha.toFixed(2)} · tail fit ${F5.zipf.tail_r2.toFixed(2)} · primacy ${F5.zipf.primacy}×` : "too few towns to fit"; })()],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
-        ["CRS", "planar 0–1000 (y-up)"]
+        ["CRS", "planar 0–1600 × 0–1000 (y-up)"]
       ];
       document.getElementById("info").innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
       document.getElementById("powersPanel").innerHTML = powersHTML(model);
@@ -8268,7 +8272,7 @@
               note: `This world already runs on both mercies. There is nothing left to forgive it.` }
     };
     function cfPaneSVG(vals) {
-      const parts = [`<svg viewBox="0 0 ${W} ${W}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`];
+      const parts = [`<svg viewBox="0 0 ${WX} ${WY}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`];
       model.regions.forEach((reg, i) => {
         const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
         parts.push(`<path d="${d}" fill="${rampColor(RAMPS.injustice, vals[i])}" stroke="#40352a" stroke-width="1.2"/>`);
@@ -8375,19 +8379,21 @@
     function camAspect() { const b = mapBox(); return b ? b.height / b.width : 1; }
     // the smallest viewBox at the box's aspect that shows the whole world — min zoom.
     function camContain() {
-      const a = camAspect();
-      const w = a >= 1 ? W : W / a;
-      const h = a >= 1 ? W * a : W;
-      return { x: (W - w) / 2, y: (W - h) / 2, w, h };
+      const a = camAspect();               // viewport h/w
+      const worldA = WY / WX;              // the world's own h/w (0.625 at 16:10)
+      let w, h;
+      if (a >= worldA) { w = WX; h = WX * a; }  // viewport taller than the world → fit width, mat top/bottom
+      else { h = WY; w = WY / a; }              // viewport wider → fit height, mat left/right
+      return { x: (WX - w) / 2, y: (WY - h) / 2, w, h };
     }
     // the default: the world fills the viewport WIDTH (a wider box then pans N–S).
-    function camFitWidth() { return clampRect({ x: 0, y: 0, w: W, h: W * camAspect() }); }
+    function camFitWidth() { return clampRect({ x: 0, y: 0, w: WX, h: WX * camAspect() }); }
     function clampRect(c) {
       const contain = camContain();
       c.w = Math.min(c.w, contain.w);
       c.h = Math.min(c.h, contain.h);
-      c.x = c.w >= W ? (W - c.w) / 2 : clamp(c.x, 0, W - c.w);
-      c.y = c.h >= W ? (W - c.h) / 2 : clamp(c.y, 0, W - c.h);
+      c.x = c.w >= WX ? (WX - c.w) / 2 : clamp(c.x, 0, WX - c.w);
+      c.y = c.h >= WY ? (WY - c.h) / 2 : clamp(c.y, 0, WY - c.h);
       return c;
     }
     function clampCam() { if (cam) clampRect(cam); }
@@ -8395,7 +8401,7 @@
       if (cam) return;
       if (_pendingCam) {
         const a = camAspect(), contain = camContain();
-        const w = clamp(W / _pendingCam.z, contain.w / CAM_MAX_ZOOM, contain.w);
+        const w = clamp(WX / _pendingCam.z, contain.w / CAM_MAX_ZOOM, contain.w);
         cam = { x: _pendingCam.x, y: _pendingCam.y, w, h: w * a };
         clampCam();
         _pendingCam = null;
@@ -8412,7 +8418,7 @@
     }
     // zoom compensation for labels/glyphs: world-unit sizes × this hold screen size.
     // EXACTLY 1 at fit/contain, so the default render stays byte-for-byte unchanged.
-    function labelZoom() { ensureCam(); return clamp(cam.w / W, 1 / CAM_MAX_ZOOM, 1); }
+    function labelZoom() { ensureCam(); return clamp(cam.w / WX, 1 / CAM_MAX_ZOOM, 1); }
     function camIsDefault() {
       ensureCam();
       const f = camFitWidth();
@@ -8464,9 +8470,10 @@
     function updateScaleBar() {
       const cap = document.querySelector("#scaleBar .scale-cap");
       if (!cap || !cam) return;
-      // the bar is a fixed 20% of the viewport; W world units read as 100 leagues,
-      // so 20% of a cam.w-wide view is (20 * cam.w / W) leagues — honest at any zoom.
-      const leagues = 20 * cam.w / W;
+      // the bar is a fixed 20% of the viewport; the world's WIDTH (WX) reads as
+      // 100 leagues, so 20% of a cam.w-wide view is (20 * cam.w / WX) leagues —
+      // 20 at fit-width, honest at any zoom (the fixed 16:10 world is 100 leagues across).
+      const leagues = 20 * cam.w / WX;
       const nice = leagues >= 10 ? Math.round(leagues) : Math.round(leagues * 10) / 10;
       cap.textContent = `${nice} leagues`;
     }
@@ -8609,7 +8616,7 @@
       if (mapMode !== "data") p.set("mode", mapMode);
       // the camera rides too, off-default only (the lens= precedent): a share link
       // reproduces the exact view; a fit-width/contain view keeps the link clean.
-      if (cam && !camIsDefault()) p.set("cam", `${round2(cam.x)},${round2(cam.y)},${round2(W / cam.w)}`);
+      if (cam && !camIsDefault()) p.set("cam", `${round2(cam.x)},${round2(cam.y)},${round2(WX / cam.w)}`);
       history.replaceState(null, "", "#" + p.toString());
     }
     // lens/mode arrive OUTSIDE readHash's return shape on purpose: params stays
@@ -8665,7 +8672,7 @@
         capital: null
       };
       if (p.has("cx") && p.has("cy") && isFinite(+p.get("cx")) && isFinite(+p.get("cy")))
-        out.capital = [clamp(+p.get("cx"), 0, W), clamp(+p.get("cy"), 0, W)];
+        out.capital = [clamp(+p.get("cx"), 0, WX), clamp(+p.get("cy"), 0, WY)];
       return out;
     }
 
@@ -8878,7 +8885,7 @@
         pinArm = false;
         document.getElementById("pinCap").classList.remove("armed");
         if (!loc) return;
-        params.capital = [clamp(round2(loc.x), 0, W), clamp(round2(W - loc.y), 0, W)]; // un-flip y
+        params.capital = [clamp(round2(loc.x), 0, WX), clamp(round2(WY - loc.y), 0, WY)]; // un-flip y
         recomputeAttributes(); // society only — geology and polygons untouched
         return;
       }
@@ -8888,7 +8895,7 @@
       // and only then fall back to the nearest town.
       const haveXY = !!loc;
       const wx = haveXY ? loc.x : null;
-      const wy = haveXY ? W - loc.y : null;
+      const wy = haveXY ? WY - loc.y : null;
       const feat = haveXY ? hitTestFeature(wx, wy) : null;
       if (feat) {
         selFeat = feat; inspectId = -1; // a feature card supersedes the region
@@ -8921,7 +8928,7 @@
       const atlas = mapMode === "atlas", poi = atlas || showPoi; // only what is DRAWN is clickable
       // grab radii divide by the zoom factor so targets stay screen-constant: at
       // 4× the world-unit radius is 4× smaller, i.e. the same number of pixels.
-      const z = cam ? (W / cam.w) : 1;
+      const z = cam ? (WX / cam.w) : 1;
       const PT = 20 / z, LN = 14 / z; // points are forgiving, lines tighter
       const d2 = (x, y) => Math.hypot(x - wx, y - wy);
       let best = null, bestD = Infinity;

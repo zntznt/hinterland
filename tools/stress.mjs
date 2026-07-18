@@ -215,7 +215,7 @@ function validate(gj, tag) {
     let area = 0;
     for (let k = 0; k < ring.length - 1; k++) area += ring[k][0] * ring[k + 1][1] - ring[k + 1][0] * ring[k][1];
     if (area <= 0) return fail(`${tag}: ring not CCW`);
-    for (const [x, y] of ring) if (x < -0.01 || x > 1000.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: coord OOB`);
+    for (const [x, y] of ring) if (x < -0.01 || x > 1600.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: coord OOB`);
     for (const key of ["wealth", "aetherstone_endowment", "terrain_ruggedness", "fertility", "centrality_to_seat", "value_retention",
                        "water_access", "water_access_effective"]) {
       const v = p[key];
@@ -527,7 +527,7 @@ function validate(gj, tag) {
     for (const R of ridges) {
       if (R.geometry.type !== "LineString" || R.geometry.coordinates.length < 2) return fail(`${tag}: bad ridge geometry`);
       for (const [x, y] of R.geometry.coordinates)
-        if (x < -0.01 || x > 1000.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: ridge coord OOB`);
+        if (x < -0.01 || x > 1600.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: ridge coord OOB`);
       if (!/^[A-Z][a-z]{4,19}$/.test(R.properties.ridge_name || "")) return fail(`${tag}: malformed ridge_name`);
       // only MAIN ridges must carry a crossing; a spur is a dead-end offshoot
       // (a real spur ridge is not a barrier you build a road pass over)
@@ -647,7 +647,7 @@ function validate(gj, tag) {
         return fail(`${tag}: chain_regions != chain length`);
       if (RV.geometry.coordinates.length < chain.length) return fail(`${tag}: trace thinner than its chain`);
       for (const [tx, ty] of RV.geometry.coordinates)
-        if (tx < -0.01 || tx > 1000.01 || ty < -0.01 || ty > 1000.01) return fail(`${tag}: trace coord OOB`);
+        if (tx < -0.01 || tx > 1600.01 || ty < -0.01 || ty > 1000.01) return fail(`${tag}: trace coord OOB`);
       for (let k = 0; k < chain.length; k++) {
         if (chain[k].river_pos !== k) return fail(`${tag}: river_pos not contiguous`);
         if (p.chain_regions[k] !== chain[k].region_id) return fail(`${tag}: chain_regions[${k}] != downstream order`);
@@ -676,7 +676,7 @@ function validate(gj, tag) {
     if (sides.length === 2 && ((sides[0] === "west" && sides[1] === "east") || (sides[0] === "east" && sides[1] === "west") ||
         (sides[0] === "south" && sides[1] === "north") || (sides[0] === "north" && sides[1] === "south")))
       return fail(`${tag}: opposite sea sides`);
-    const SEA_LINES = { west: [[0, 0], [0, 1000]], east: [[1000, 0], [1000, 1000]], south: [[0, 0], [1000, 0]], north: [[0, 1000], [1000, 1000]] };
+    const SEA_LINES = { west: [[0, 0], [0, 1000]], east: [[1600, 0], [1600, 1000]], south: [[0, 0], [1600, 0]], north: [[0, 1000], [1600, 1000]] };
     const coasts = coastsOf(gj);
     if (coasts.length !== sides.length) return fail(`${tag}: coast features ${coasts.length} != sides ${sides.length}`);
     for (const c of coasts) {
@@ -693,14 +693,14 @@ function validate(gj, tag) {
       if (sf.geometry.type !== "Polygon" || ring.length < 4) return fail(`${tag}: bad sea geometry`);
       const a0 = ring[0], z0 = ring[ring.length - 1];
       if (a0[0] !== z0[0] || a0[1] !== z0[1]) return fail(`${tag}: sea ring not closed`);
-      for (const [x, y] of ring) if (x < -0.01 || x > 1000.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: sea coord OOB`);
+      for (const [x, y] of ring) if (x < -0.01 || x > 1600.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: sea coord OOB`);
     }
     const contourFeats = gj.features.filter(f => f.properties.kind === "contour");
     if (contourFeats.length < 1) return fail(`${tag}: no contours`);
     for (const cf of contourFeats) {
       if (cf.geometry.type !== "MultiLineString" || !Number.isInteger(cf.properties.level)) return fail(`${tag}: bad contour`);
       for (const seg of cf.geometry.coordinates)
-        for (const [x, y] of seg) if (x < -0.01 || x > 1000.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: contour coord OOB`);
+        for (const [x, y] of seg) if (x < -0.01 || x > 1600.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: contour coord OOB`);
     }
     const seaPolys = seaFeats.map(sf => ({ outer: sf.geometry.coordinates[0], holes: sf.geometry.coordinates.slice(1) }));
     const inSeaPoly = (x, y) => seaPolys.some(S =>
@@ -851,7 +851,7 @@ function validate(gj, tag) {
       const [mx, my] = m.geometry.coordinates;
       const side = m.properties.side;
       if (!gj.hinterland.sea_sides.includes(side)) return fail(`${tag}: maelstrom off the sea`);
-      const onEdge = side === "west" ? mx === 0 : side === "east" ? mx === 1000 : side === "south" ? my === 0 : my === 1000;
+      const onEdge = side === "west" ? mx === 0 : side === "east" ? mx === 1600 : side === "south" ? my === 0 : my === 1000;
       if (!onEdge) return fail(`${tag}: maelstrom not on its edge`);
       if (!/^[A-Z][a-z]{4,19}$/.test(m.properties.maelstrom_name || "")) return fail(`${tag}: malformed maelstrom_name`);
       // sailors shun it: ports keep clear whenever any clear coast exists

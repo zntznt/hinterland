@@ -2,13 +2,13 @@
 <qgis styleCategories="Symbology" version="3.28.0">
   <renderer-v2 type="graduatedSymbol" attr="cost" graduatedMethod="GraduatedSize" symbollevels="0" forceraster="0" enableorderby="0">
     <ranges>
-      <range lower="0" upper="200" symbol="0" label="0 - 200" render="true"/>
-      <range lower="200" upper="350" symbol="1" label="200 - 350" render="true"/>
-      <range lower="350" upper="500" symbol="2" label="350 - 500" render="true"/>
-      <range lower="500" upper="700" symbol="3" label="500 - 700" render="true"/>
-      <range lower="700" upper="1000" symbol="4" label="700 - 1000" render="true"/>
-      <range lower="1000" upper="2000" symbol="5" label="1000 - 2000" render="true"/>
-      <range lower="2000" upper="99999" symbol="6" label="2000 - 99999" render="true"/>
+      <range lower="0" upper="270" symbol="0" label="0 - 270" render="true"/>
+      <range lower="270" upper="470" symbol="1" label="270 - 470" render="true"/>
+      <range lower="470" upper="670" symbol="2" label="470 - 670" render="true"/>
+      <range lower="670" upper="930" symbol="3" label="670 - 930" render="true"/>
+      <range lower="930" upper="1330" symbol="4" label="930 - 1330" render="true"/>
+      <range lower="1330" upper="2670" symbol="5" label="1330 - 2670" render="true"/>
+      <range lower="2670" upper="99999" symbol="6" label="2670 - 99999" render="true"/>
     </ranges>
     <symbols>
       <symbol type="line" name="0" alpha="1" clip_to_extent="1" force_rhr="0">

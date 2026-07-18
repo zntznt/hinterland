@@ -30,7 +30,7 @@ The rivers are crossed at Surzek Bridge alone; everywhere else the banks are mar
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1075), when the gap held, **the Quiet Years** (1100–1200), when the gap held and **the Long Desolation** (1225–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1075), when the gap held, **the Quiet Years** (1100–1200), when the gap held and **the Long Desolation** (1225–1250), when the gap held. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1025.** Plague took Dunholt. The blight had sat heavy on that country for years, and when the sickness came it found a town already half-poisoned. A third of the people were carried off or fled. The roads named it the Long Cough of 1025.
 
@@ -95,7 +95,6 @@ The chronicle closes its count of the years with the names they left behind. The
 Of the realm's 9 settled regions, 6 held steady and 3 collapsed outright.
 3 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Grossvar, Grothmouth and Dhorn; the roads have stopped going.
 And 2 places have come back as something else — Sethielith and Morgremmok Strand stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
-Morgremmok Strand rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
 
 The Crown holds 8 regions, the Temple 1, the magnates 0; 2 are contested between them, and 1 answer to no one at all.
 
@@ -103,7 +102,7 @@ Of the realm's 5 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the Temple standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.7 in every hundred of the realm's people hold 38.9 of every hundred coins, and live 16.6 times better than those who work for them. Nowhere is the ledger sharper than at Dunholt, where 58 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 46 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.7 in every hundred of the realm's people hold 48.4 of every hundred coins, and live 24.5 times better than those who work for them. Nowhere is the ledger sharper than at Dunholt, where 75 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 47 parts in a hundred of the whole spread.
 
 And over all of it stands the Dominion, which holds 7 regions from its foothold at Morgremmok Strand and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns; the chronicle is required to note the difference between reigning and ruling.
 
@@ -111,6 +110,6 @@ And over all of it stands the Dominion, which holds 7 regions from its foothold 
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.34 at the founding and 0.41 at the close, and the turning point was the Toll Amnesty of 1075. The poorest fifth of the realm carries 3 times the blight of the richest fifth. Behind the Krakkethak wall, the median settlement earns 100 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay, and sickness runs 1.4 times heavier there than in the lit core. Grothmouth drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.7 in a hundred hold 38.9 of every hundred coins, and stand 16.6 times apart from the rest. The skyway would abolish 67 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 7 regions occupied, the yield assessed at the quay, the free country keeping 1.7 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The Krakkethak divides even the weather: the rain falls at 38 on one side and 2 in its lee, and no one on the dry side chose the wind.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.34 at the founding and 0.40 at the close, and the turning point was the Toll Amnesty of 1075. The poorest fifth of the realm carries 3 times the blight of the richest fifth. Behind the Krakkethak wall, the median settlement earns 100 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay, and sickness runs 1.4 times heavier there than in the lit core. Grothmouth drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.7 in a hundred hold 48.4 of every hundred coins, and stand 24.5 times apart from the rest. The skyway would abolish 67 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 7 regions occupied, the yield assessed at the quay, the free country keeping 1.7 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The Krakkethak divides even the weather: the rain falls at 38 on one side and 2 in its lee, and no one on the dry side chose the wind.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

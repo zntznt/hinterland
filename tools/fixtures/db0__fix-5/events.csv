@@ -16,20 +16,21 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 5,1125,seizure,9,,,temple,,,,,,,
 5,1125,ascendancy,9,the Rise of Vaskalgrelk,,,,,,,,,
 6,1150,settlement_founded,2,,,,,,,,,,
+6,1150,settlement_founded,4,,,,,,,,,,
 6,1150,refinery_founded,3,,,,,,,,,,
 6,1150,war,2,the Kharruk Tor War,,crown|temple,,,,,,,
 6,1150,succession,,Vannornweld,,crown,,,,,,false,1
 6,1150,succession,,Urzek,,magnate,,,,,,false,2
 7,1175,succession,,Galcyone,,temple,,,,,,false,1
 7,1175,treaty,2,the Peace of Kharruk Tor,,crown|temple,,crown,1,3,,,
-7,1175,drought,2,the Drought of 1175,,,,,,,,,
+7,1175,drought,4,the Drought of 1175,,,,,,,,,
 7,1175,quake,2,the Kharruk Tor Quake,,,,,,,,,
 7,1175,discovery,3,the Merow Strand Find,,,,,,,,,
 8,1200,settlement_abandoned,2,,,,,,,,,,
 8,1200,seizure,9,,,temple,,,,,,,
 8,1200,discovery,3,the Merow Strand Find,,,,,,,,,
 9,1225,seizure,2,,,crown,,,,,,,
-9,1225,drought,7,the Drought of 1225,,,,,,,,,
+9,1225,drought,4,the Drought of 1225,,,,,,,,,
 10,1250,succession,,Galithe,,temple,,,,,,false,2
 10,1250,storm,0,the Great Storm of 1250,,,,,,,,,
 10,1250,discovery,3,the Merow Strand Find,,,,,,,,,

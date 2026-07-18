@@ -92,4 +92,26 @@ const knobWorlds = [base, ...KNOBS.map(([k, v]) => gen(`#seed=${SEED}&${BASE}&${
 const kleads = new Set(knobWorlds.map(w => w.lead.slice(0, 110)));
 console.log(`  distinct opening claims under knob extremes : ${kleads.size}/${knobWorlds.length}`);
 
+// ---- 4. Verdict diversity (§7.3 precursor, B2 #124) ------------------------
+// The de-moralized verdict (§3.5) is a two-axis judgement, not a banner: did the
+// GAP widen / hold / close (gini vs founding), and did the FLOOR — p10 regional
+// wealth (§3.4) — rise or fall? A world engine that only ever lands in one corner
+// is exactly the mush this project exists to avoid, so we count how many of the
+// six gap×floor quadrants the seed sweep reaches. The B2 investment pool is the
+// first mechanism that can push a world into "gap widened while the floor rose"
+// (development finance) as readily as "gap widened, floor fell" (comprador
+// extraction). §7.3's tripwire: ≥3 distinct quadrants, or the space has collapsed.
+console.log(`\nVERDICT DIVERSITY (${N} seeds, ${BASE}) — the gap × floor space (§3.5)`);
+const quad = new Map();
+for (const w of worlds) {
+  const f = w.gj.hinterland.findings;
+  const dGap = f.gini - f.gini_t0, dFloor = f.floor.p10 - f.floor.p10_t0;
+  const g = dGap <= -0.02 ? "gap closed" : dGap >= 0.02 ? "gap widened" : "gap held";
+  const fl = dFloor > 0 ? "floor rose" : "floor fell";
+  const key = `${g} × ${fl}`;
+  quad.set(key, (quad.get(key) || 0) + 1);
+}
+for (const [k, v] of [...quad.entries()].sort((a, b) => b[1] - a[1])) console.log(`  ${k.padEnd(26)} ${String(v).padStart(2)}`);
+console.log(`  distinct gap×floor quadrants : ${quad.size}/6  (§7.3 floor: ≥3)`);
+
 console.log("\nsweep done — measurements only; the ceilings are pinned in D4 (#140).");

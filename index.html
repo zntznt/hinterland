@@ -1327,7 +1327,7 @@
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 43;
+    const SCHEMA_VERSION = 44;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
@@ -4183,6 +4183,7 @@
       // this epoch's aetherstone income; the rest of the series rides for its
       // future consumers. Founding above already ran at price 1 (world-invariant).
       const worldSeries = worldStreams(params.world || DEFAULTS.world, params.ep);
+      const rInv = fx("investment"); // B2: the counting house's luck — which placements build and which bust
       for (let e = 0; e < params.ep; e++) {
         const worldPrice = worldSeries.price_index[e]; // this epoch's aetherstone price
         regions.forEach(reg => { reg.E = Math.round(reg.E * 0.78); }); // mines draw down
@@ -4200,17 +4201,38 @@
             // is a low index, ~10 typical, so the bar is low); works teach the
             // neighbours; upkeep-less artifice erodes. Wealthy realms out-invest
             // the decay and GROW the pie; poor ones fall behind and shrink it.
-            // investment is the growth channel, and the WORLD drives it: in a
-            // boom (high aetherstone price) capital pours into the works and A
-            // climbs; in a bust it stalls and the upkeep-less craft decays. So a
-            // boom-world's total artifice — and its pie — GROWS, a bust-world's
-            // SHRINKS. Neutral at the median wealth in a price-1 world; diffusion
-            // spreads the craft to neighbours; crashes hit at war/collapse below.
-            const invest = 0.11 * reg.wealth * worldPrice;
+            // B2 (#124): the investment pool. The owners' coin (elite share of
+            // the town's wealth) is the investable capital; the counting house
+            // intermediates it into the works. How much BUILDS (A grows, the
+            // floor rises) vs merely DEEPENS the owners' row (comprador
+            // extraction) turns on RETENTION (does the coin stay to build?) and
+            // the world REGIME (does capital dare?). Booms attract capital and
+            // build; busts starve it and, with the counting house's luck, wipe
+            // part of the works — the owners eat that loss (elite share's first
+            // ordinary decrement). worldPrice still tilts the whole channel.
             const nbrs = reg.neighbors;
             const nbrA = nbrs.length ? nbrs.reduce((s, n) => s + Aprev[n], 0) / nbrs.length : Aprev[i];
             const diffuse = 0.08 * (nbrA - Aprev[i]);
-            reg.A = clamp(Math.round(reg.A + invest + diffuse - 1.3), 0, 100);
+            // the pool: the owners' coin, LEVERAGED by the counting house
+            // (credit reaches past cash on hand) and tilted by the world price.
+            const pool = 1.8 * reg.wealth * (reg.eliteShare / 100) * (0.5 + 0.5 * worldPrice);
+            // the development share — the coin that BUILDS vs merely hoards.
+            // Retention (does value stay local, or is it a foreign claim?) and
+            // the world price (does capital dare?) decide. A high-retention
+            // boom builds hardest; a low-retention bust barely builds at all —
+            // that is the development-finance / comprador split of §3.6.
+            const dev = clamp(0.16 + 0.006 * reg.retention + 0.55 * (worldPrice - 1), 0.05, 0.95);
+            const bustP = clamp(0.05 - 0.35 * (worldPrice - 1), 0.01, 0.40);
+            if (rInv() < bustP) {
+              reg.A = clamp(Math.round(Aprev[i] * 0.72 + diffuse), 0, 100); // the works go dark in the bust
+              reg.investBustLoss = 4;       // the owners eat the loss (applied in the elite drift below)
+              reg.compradorGain = 0;
+            } else {
+              const build = pool * dev * (100 - Aprev[i]) / 100;            // opportunity-gated development
+              reg.A = clamp(Math.round(Aprev[i] + build + diffuse - 1.3), 0, 100);
+              reg.compradorGain = 0.08 * pool * (1 - dev);                  // the coin that didn't build hoards up
+              reg.investBustLoss = 0;
+            }
           });
         }
         // V1: the Crown Granary, where decreed — a levy on the fat years,
@@ -4275,6 +4297,8 @@
             + (reg.refining > 0 ? 0.8 : 0)         // the works pay their masters
             + (reg.E >= 40 ? 0.5 : 0)              // live seams pay their charter-holders
             + (reg.isSkyport === 1 ? 0.6 : 0)      // the aerie: absentee owners cluster at the lanes
+            + (reg.compradorGain || 0)             // B2: the coin that didn't build deepens the owners' row
+            - (reg.investBustLoss || 0)            // B2: a busted placement — the owners take the loss
             - 0.6 * Math.max(0, bread), 8, 92);    // bread reaches the bottom
         });
         // migration: toward wealth, light, and clean land — capped at 15%/epoch out
@@ -5600,6 +5624,7 @@
             pop_density: reg.popDensity,
             aetherstone_endowment: reg.endowment,
             artifice_index: reg.A,
+            artifice_index_t0: reg.A0,     // B2 (#124): the works as founded — so "the counting house built here" (A rose) is recomputable from the file
             terrain_ruggedness: reg.ruggedness,
             fertility: reg.fertility,
             water_access: reg.waterAccess,
@@ -8238,7 +8263,13 @@
         row("the owners", `${reg.elitePopPct} in 100 people hold ${reg.eliteShare} of every 100 coins`) +
         row("the gap", `an owner lives ${reg.classGap}× better than a laborer here`) +
         ((reg.structures || []).includes("counting_house")
-          ? row("why", "finance sits here: the counting house adds +6 to the owners' share")
+          ? row("why", reg.A - reg.A0 > 3
+              // B2 (#124): the counting house has two edges. It intermediates
+              // world capital into the local works — and whether that reads as
+              // development finance or comprador extraction is a fact about THIS
+              // town's history, not a verdict: did the works actually grow?
+              ? `development finance: the counting house built the works here (artifice ${reg.A0}→${reg.A}) — and still banks +6 to the owners' row`
+              : `comprador extraction: the counting house banks the town's coin to the owners' row (+6), the works no richer for it (artifice ${reg.A0}→${reg.A})`)
           : "") +
         `</table>`);
       // #93: read the bloc dynamism as the oligarchy story, not just the current
@@ -8260,7 +8291,7 @@
       // #91: the institutions lead — they are what the town IS, with the
       // counting house carrying its mechanism so the cause is never silent
       const STRUCT_TELL = {
-        counting_house: "a counting house — banks the town's coin to the owners' row (+6 elite share)",
+        counting_house: "a counting house — intermediates world capital into the works, and banks its cut to the owners' row (+6 elite share)",
         temple: "a temple", keep: "a keep", guildhall: "a guildhall",
         library: "a library", market: "a market", tavern: "a tavern"
       };

@@ -28,7 +28,7 @@ The rivers are crossed at Linden Bridge alone; everywhere else the banks are mar
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1025), when the gap narrowed, **the Restoration** (1050–1125), when the gap widened and **the Age of the Gates** (1150–1250), when the gap narrowed. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1025), when the gap narrowed, **the Restoration** (1050–1125), when the gap held and **the Age of the Gates** (1150–1250), when the gap narrowed. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1025.** In this year the sickness came to Forby, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Long Cough of 1025.
 
@@ -82,7 +82,7 @@ The chronicle closes its count of the years with the names they left behind. The
 
 ## The State of the Realm — year 1250
 
-Of the realm's 9 settled regions, 2 held steady and 7 collapsed outright.
+Of the realm's 9 settled regions, 1 held steady, 1 declined and 7 collapsed outright.
 3 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Korgar, Umbere and Valgremmorn Tor; the roads have stopped going.
 And 6 places have come back as something else — Dunholdham, Hallford and Strakketh stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
 Dunholdham rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
@@ -93,12 +93,12 @@ Of the realm's 4 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the Temple standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 5.5 in every hundred of the realm's people hold 70 of every hundred coins, and live 40.5 times better than those who work for them. Nowhere is the ledger sharper than at Forby, where 86 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 63 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 5.5 in every hundred of the realm's people hold 68.5 of every hundred coins, and live 37.5 times better than those who work for them. Nowhere is the ledger sharper than at Forby, where 86 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 67 parts in a hundred of the whole spread.
 
 4 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world closed some of its gap: the spread of fortunes measured 0.49 at the founding and 0.31 at the close, and the turning point was the Crown Granary of 1075. The poorest fifth of the realm carries 0.4 times the blight of the richest fifth. Behind the Zharrok wall, the median settlement earns 55 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay, and sickness runs 1.4 times heavier there than in the lit core. Linden drinks 19 points of other towns' poison for the crime of standing at the mouth. 9 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 5.5 in a hundred hold 70 of every hundred coins, and stand 40.5 times apart from the rest. The skyway would abolish 29.1 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. The Zharrok divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Varvek and Zolthold stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world closed some of its gap: the spread of fortunes measured 0.49 at the founding and 0.26 at the close, and the turning point was the Crown Granary of 1075. The poorest fifth of the realm carries 0.4 times the blight of the richest fifth. Behind the Zharrok wall, the median settlement earns 43 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay, and sickness runs 1.4 times heavier there than in the lit core. Linden drinks 19 points of other towns' poison for the crime of standing at the mouth. 9 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 5.5 in a hundred hold 68.5 of every hundred coins, and stand 37.5 times apart from the rest. The skyway would abolish 29.1 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. The Zharrok divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Varvek and Zolthold stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

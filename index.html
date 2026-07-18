@@ -1327,7 +1327,7 @@
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 44;
+    const SCHEMA_VERSION = 45;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
@@ -3634,6 +3634,10 @@
         reg.wealth = clamp(Math.round(100 * income(reg) + noise), 0, 100);
         reg.wealthT0 = reg.wealth;
         reg.peakWealth = reg.wealth;
+        reg.emigrantsTotal = 0;         // B3 (#125): the diaspora, accumulated off-map
+        reg.remittanceTotal = 0;        // B3: the coin the diaspora has sent home
+        reg.emigEpoch = 0;              // B3: reset the per-epoch flows so frame 0 (the founding
+        reg.remitEpoch = 0;            //     snapshot) carries no ghost of a previous in-page run
         reg.isCapital = (reg === cap);
       });
 
@@ -3955,6 +3959,8 @@
         pop: regions.map(r => r.settlementPop),
         E: regions.map(r => r.E),
         A: regions.map(r => r.A), // B1: artifice per epoch — the drift/timeline read it
+        emig: regions.map(r => r.emigEpoch || 0),   // B3: this epoch's emigration off-map
+        remit: regions.map(r => r.remitEpoch || 0), // B3: this epoch's remittance inflow
         blight: regions.map(r => r.blight),
         eliteShare: regions.map(r => Math.round(r.eliteShare)),
         occupied: regions.map(r => r.occupied ? 1 : 0),
@@ -4301,9 +4307,61 @@
             - (reg.investBustLoss || 0)            // B2: a busted placement — the owners take the loss
             - 0.6 * Math.max(0, bread), 8, 92);    // bread reaches the bottom
         });
-        // migration: toward wealth, light, and clean land — capped at 15%/epoch out
-        const attract = regions.map((reg, i) =>
-          0.5 * reg.wealth + 25 * (onGrid[i] ? 1 : 0) + 0.25 * (100 - reg.blight));
+        // B3 (#125): migration's SECOND edge — three flows before the old drift.
+        // EMIGRATION off-map: the metropole pulls the young away, hardest where
+        // the grid exposes them to it and the local ladder is short (a proxy for
+        // the §3.4 attention column — where a region's mind lives). It is a real
+        // population dip, not a move to a neighbour. REMITTANCES: the accumulated
+        // diaspora sends coin home, a wealth inflow decoupled from local
+        // production that holds a floor under the emptying town.
+        const metroPull = worldSeries.metropole_pull[e];
+        regions.forEach((reg, i) => {
+          reg.emigEpoch = 0; reg.remitEpoch = 0;
+          if (!reg.settled) return;
+          const exposure = onGrid[i] ? 1 : 0.4;
+          const shortLadder = clamp((45 - reg.wealth) / 45, 0, 1);
+          // the pull concentrates where the local ladder is SHORT — a prosperous
+          // seat with opportunity at home barely empties; a poor grid town whose
+          // young can see the metropole down the line empties fastest.
+          const attn = clamp(metroPull * (0.12 + 0.88 * shortLadder) * exposure, 0, 1);
+          const emig = Math.round(0.03 * reg.settlementPop * attn);
+          reg.emigEpoch = emig;
+          reg.emigrantsTotal += emig;
+          reg.settlementPop = Math.max(20, reg.settlementPop - emig);
+          // remittances hold a FLOOR under the emptying town, not a fortune —
+          // sqrt-scaled off the diaspora and capped at ONE coin an epoch (a handful
+          // of points across a decade). A heavy-diaspora periphery can draw a real
+          // remittance-economy share (the coin abroad is a fifth of some worlds'
+          // wealth, as it is for the Nepals and Tajikistans of the world), but the
+          // inflow never PEGS a town's wealth or reverses a bust world's decline:
+          // under the hard Concordat default the pie still shrinks in 18/20 worlds.
+          const remit = clamp(Math.round(Math.sqrt(reg.emigrantsTotal) * metroPull * 0.30), 0, 1);
+          reg.remitEpoch = remit;
+          reg.remittanceTotal += remit;
+          reg.wealth = clamp(reg.wealth + remit, 0, 100); // decoupled from income
+          // the remittance floor is real wealth this epoch: the peak must see it,
+          // or a town lifted above its old high by the coin sent home would export
+          // peak_wealth < wealth (the invariant the stress sweep guards).
+          if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
+        });
+        // migration: toward wealth, light, and clean land — capped at 15%/epoch
+        // out. B3: the FRONTIER term. When the realm's cores squeeze rents hard
+        // (high mean owners' share), two things happen: the high-rent cores push
+        // their squeezed labor OUT (the rent drag), and a cheap peripheral cell
+        // the grid has reached pulls that labor IN (the frontier bonus). People
+        // flow OUTWARD against the wealth gradient and a periphery can boom.
+        const settledElite = regions.filter(r => r.settled).map(r => r.eliteShare);
+        const meanElite = settledElite.length ? settledElite.reduce((a, b) => a + b, 0) / settledElite.length : 55;
+        const rentPush = clamp((meanElite - 58) / 14, 0, 1); // only higher-rent realms push labor out; the ordinary world still drifts toward its winners
+        const attract = regions.map((reg, i) => {
+          const base = 0.5 * reg.wealth + 25 * (onGrid[i] ? 1 : 0) + 0.25 * (100 - reg.blight);
+          const rentDrag = 0.4 * Math.max(0, reg.eliteShare - 62);     // the squeezed leave the dear core
+          const frontier = 26 * rentPush
+            * clamp((52 - reg.wealth) / 52, 0, 1)             // the land is still cheap
+            * clamp((52 - reg.centrality) / 52, 0, 1)         // and it is the periphery
+            * (onGrid[i] ? 1 : 0.35);                         // the grid carries the boom outward
+          return base - rentDrag + frontier;
+        });
         const delta = new Array(regions.length).fill(0);
         roadEdges.forEach(edge => {
           const gA = attract[edge.b] - attract[edge.a];
@@ -5622,6 +5680,8 @@
             is_capital_region: reg.isCapital ? 1 : 0,
             population: reg.population,
             pop_density: reg.popDensity,
+            emigrants_total: reg.emigrantsTotal || 0,        // B3 (#125): souls gone off-map to the metropole
+            remittance_income: reg.remittanceTotal || 0,     // B3: coin the diaspora sent home (decoupled from local production)
             aetherstone_endowment: reg.endowment,
             artifice_index: reg.A,
             artifice_index_t0: reg.A0,     // B2 (#124): the works as founded — so "the counting house built here" (A rose) is recomputable from the file
@@ -6065,6 +6125,8 @@
               on_conduit: S.onGrid[i] ? 1 : 0,
               injustice_idx: Math.round(100 * (S.blight[i] / 100) * (1 - wealthE / 100)),
               elite_share: eliteE,
+              emigration: dead ? 0 : (S.emig ? S.emig[i] : 0),       // B3 (#125): this epoch's souls gone off-map
+              remittance: dead ? 0 : (S.remit ? S.remit[i] : 0),     // B3: this epoch's coin sent home
               occupied: S.occupied[i]
             },
             geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
@@ -8255,7 +8317,11 @@
             dRow("owners' share", "eliteShare") +
             dRow("souls", "pop") +
             dRow("blight", "blight") +
-            row("trajectory", `${reg.boomBust} · peaked ${1000 + 25 * peakE} at wealth ${wSer[peakE]} · owners' row ${dElite >= 0 ? "+" : ""}${dElite} since founding`) +
+            // B3 (#125): the diaspora, drawn only where it exists — the emigration
+            // era reads as a souls dip against a wealth floor the remittances hold.
+            ((reg.emigrantsTotal || 0) > 0 ? dRow("emigration", "emig") + dRow("remittances", "remit") : "") +
+            row("trajectory", `${reg.boomBust} · peaked ${1000 + 25 * peakE} at wealth ${wSer[peakE]} · owners' row ${dElite >= 0 ? "+" : ""}${dElite} since founding` +
+              ((reg.emigrantsTotal || 0) > 0 ? ` · ${reg.emigrantsTotal} gone to the metropole, ${reg.remittanceTotal} coin sent home` : "")) +
             `</table>`);
         }
       }

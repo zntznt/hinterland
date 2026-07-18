@@ -9,12 +9,12 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 1,1025,settlement_abandoned,10,,,,,,,,,,
 1,1025,settlement_abandoned,11,,,,,,,,,,
 2,1050,drought,5,the Drought of 1050,,,,,,,,,
-3,1075,war,5,the War of 1075,,crown|magnate,,,,,,,
+3,1075,settlement_founded,11,,,,,,,,,,
+3,1075,war,5,the Halemook War,,crown|magnate,,,,,,,
 3,1075,succession,,Ilmare,,temple,,,,,,false,1
 3,1075,succession,,Gharruk,,magnate,,,,,,true,1
 3,1075,drought,5,the Drought of 1075,,,,,,,,,
 3,1075,discovery,5,the Halemook Find,,,,,,,,,
-4,1100,settlement_founded,11,,,,,,,,,,
 4,1100,succession,,Crannock,,crown,,,,,,false,1
 4,1100,treaty,5,the Peace of Halemook,,crown|magnate,,crown,0,0,,,
 4,1100,discovery,5,the Halemook Find,,,,,,,,,
@@ -33,7 +33,6 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 7,1175,succession,,Cramhold,,crown,,,,,,true,2
 7,1175,drought,5,the Drought of 1175,,,,,,,,,
 8,1200,settlement_abandoned,0,,,,,,,,,,
-8,1200,settlement_abandoned,9,,,,,,,,,,
 8,1200,succession,,Marielaine,,temple,,,,,,true,2
 8,1200,flood,3,the Glare Flood,,,,,,,,,
 8,1200,storm,5,the Great Storm of 1200,,,,,,,,,

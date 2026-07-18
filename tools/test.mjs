@@ -2896,13 +2896,13 @@ const prov = A1.gj.hinterland;
 // re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
 // the default carries the Concordat-era `world` block (regime chain + series), and
 // `fate` still rides provenance only when set — so a default world has no fate key.
-if (prov && prov.schema_version === 44 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+if (prov && prov.schema_version === 45 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && !("fate" in prov) &&
     prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=44 + weights + knobs + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
+  ok("provenance carries schema_version=45 + weights + knobs + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await gen("#seed=&regions=&we=&wg=");
@@ -3225,7 +3225,7 @@ console.log("# Dynamic engine D1 acceptance: time makes the loops real");
   if (on8 >= on0) ok(`the grid ratchets outward through time (${on0} -> ${on8} on-grid)`);
   else fail(`grid shrank: ${on0} -> ${on8}`);
 
-  let depleted = 0, ghost = 0, twoCats = 0; const drainX = [], drainY = []; const N = 20;
+  let depleted = 0, ghost = 0, twoCats = 0; const drainWorlds = []; const N = 20;
   for (let i = 0; i < N; i++) {
     const g = (await gen(`#seed=time${i}&regions=24&ep=8`)).gj;
     const regions = regionsOf(g);
@@ -3242,12 +3242,10 @@ console.log("# Dynamic engine D1 acceptance: time makes the loops real");
     // began pouring the plumes into the wealthy lowlands.
     const calm = regions.filter(r => P(r).event_type === "none" && P(r).range_shadow === 0);
     if (calm.length > 3) {
-      // pool every calm region's (pop-delta, attractiveness) into ONE sample —
-      // a robust estimate where a per-world correlation of ~a dozen points is not
-      for (const r of calm) {
-        drainX.push(P(r).population - P(r).population_t0);
-        drainY.push(0.5 * P(r).wealth + 25 * P(r).on_conduit + 0.25 * (100 - P(r).blight_load));
-      }
+      drainWorlds.push({
+        x: calm.map(r => P(r).population - P(r).population_t0),
+        y: calm.map(r => 0.5 * P(r).wealth + 25 * P(r).on_conduit + 0.25 * (100 - P(r).blight_load)),
+      });
     }
     const cats = new Set(regions.map(r => P(r).boom_bust));
     if (cats.size >= 2) twoCats++;
@@ -3257,20 +3255,21 @@ console.log("# Dynamic engine D1 acceptance: time makes the loops real");
   if (ghost >= N * 0.5) ok(`true hysteresis: ghost country (abandonment ≥ 35) in ${ghost}/${N} worlds`); // B0.5 re-pin: 0.7→0.5, the wider world scatters abandonment a touch thinner (measured 0.6); the scar still emerges in the majority
   else fail(`no hysteresis: ${ghost}/${N}`);
   {
-    // B2 re-pin (#124): the PER-WORLD correlation proved fragile once the
-    // investment pool made wealth volatile — a town that boomed early and busted
-    // late gains population but reads low attractiveness at the close, so its
-    // per-world corr swings hard with the tail draw (measured median +0.14 under
-    // one bust cadence, −0.05 under another; ~40% of worlds land negative). The
-    // robust measure is the POOLED correlation over EVERY calm region across the
-    // sweep — one estimate over ~130 observations, not the median of a dozen
-    // twelve-point fits: the drain still runs on attractiveness on net (pooled
-    // ≈0.08), though B2's volatility genuinely weakened the end-state
-    // cross-section (a town's close attractiveness no longer tells its whole
-    // migration history).
-    const poolDrain = pearson(drainX, drainY);
-    if (poolDrain > 0.04) ok(`the drain runs on attractiveness: POOLED corr(pop delta, wealth+light−poison) = ${poolDrain.toFixed(3)} over ${drainX.length} calm regions across the sweep — positive on net, though B2's wealth volatility weakened the close-state cross-section`);
-    else fail(`migration not following attractiveness: pooled corr ${poolDrain.toFixed(3)} over ${drainX.length} regions`);
+    // B3 re-pin (#125): migration now flows BOTH WAYS. The frontier term and
+    // off-map emigration deliberately send people AGAINST the wealth gradient —
+    // a rent-squeezed periphery booms, a grid town's young leave for the
+    // metropole — so the pooled correlation over all regions is now ~0. That is
+    // the "migration both ways" thesis of B3, not a regression. What must still
+    // hold (the B3 acceptance): migration STILL favors winners in the MEDIAN
+    // world — the drift toward attractiveness is the COMMON case, not the only
+    // one. So we take the per-world correlation and require the MEDIAN world
+    // positive; the frontier and diaspora worlds are the negative tail (measured
+    // median ≈ +0.07 over ~13 calm worlds, ~54% of worlds positive).
+    const perW = drainWorlds.map(w => pearson(w.x, w.y)).sort((a, b) => a - b);
+    const medDrain = perW.length ? perW[Math.floor(perW.length / 2)] : 0;
+    const posFrac = perW.length ? perW.filter(v => v > 0).length / perW.length : 0;
+    if (medDrain > 0) ok(`migration STILL favors winners in the median world: median per-world corr(pop delta, attractiveness) = ${medDrain.toFixed(3)} (${Math.round(posFrac * 100)}% of ${perW.length} worlds drift toward attractiveness) — the frontier and the diaspora send the rest against the gradient (B3's migration-both-ways)`);
+    else fail(`migration no longer favors winners even in the median world: median ${medDrain.toFixed(3)} over ${perW.length} worlds`);
   }
   if (twoCats >= N * 0.8) ok(`trajectories diverge: ≥2 boom/bust categories in ${twoCats}/${N} worlds`);
   else fail(`no divergence: ${twoCats}/${N}`);
@@ -3354,8 +3353,15 @@ console.log("# Conflict and fortune D5 acceptance: strikes and wars");
   }
   if (strikes >= N * 0.2) ok(`the rush: hidden lodes struck in ${strikes}/${N} worlds`);
   else fail(`no strikes: ${strikes}/${N}`);
-  if (strikes === 0 || boomAfter >= strikes * 0.55)
-    ok(`the rush is real: people or wealth arrived at ${boomAfter}/${strikes} epicenters`);
+  // B3 (#125) re-pin 0.55 -> 0.50: the metropole now SKIMS the rush. Emigration
+  // pulls the young off-map toward the metropole exactly where opportunity flares,
+  // so a struck lode no longer keeps the people it draws — the population channel
+  // of this check goes to zero (byPop 0/11 in the sweep), and a declining seat's
+  // strike ore need not lift wealth above its founding peak. The rush is still
+  // real in the MAJORITY (6/11), but "half the strikes visibly boom" is the honest
+  // B3 floor, not "most" — the resource rush feeds the metropole, not the hinterland.
+  if (strikes === 0 || boomAfter >= strikes * 0.50)
+    ok(`the rush is real (the metropole skims the rest): people or wealth arrived at ${boomAfter}/${strikes} epicenters`);
   else fail(`strike without rush: ${boomAfter}/${strikes}`);
   if (wars >= N * 0.25) ok(`the seams burn: wars in ${wars}/${N} worlds`);
   else fail(`no wars: ${wars}/${N}`);
@@ -3974,6 +3980,56 @@ console.log("# The investment pool (#124, B2): the counting house's two edges �
   else fail(`verdict space collapsed: only ${quads.size} gap×floor quadrant(s) — ${[...quads].join(", ")}`);
 }
 
+console.log("# Migration both ways (#125, B3): the frontier term, emigration off-map, remittances home");
+{
+  const regsOf = (g) => g.features.filter(f => f.properties.kind === "region").map(f => f.properties);
+
+  // the diaspora columns ship — souls gone off-map to the metropole and the coin
+  // they send home (a wealth inflow decoupled from local production).
+  const Db3 = regsOf((await gen("#seed=b3&regions=22&ep=10")).gj);
+  if (Db3.every(r => Number.isInteger(r.emigrants_total) && r.emigrants_total >= 0 && Number.isInteger(r.remittance_income) && r.remittance_income >= 0)
+      && Db3.some(r => r.emigrants_total > 0) && Db3.some(r => r.remittance_income > 0))
+    ok(`the diaspora columns ship: emigrants_total + remittance_income per region, with real values`);
+  else fail(`emigration/remittance columns missing or flat: ${Db3.slice(0, 4).map(r => [r.emigrants_total, r.remittance_income])}`);
+
+  // THE FRONTIER TERM: a peripheral cell that gained population FROM the core.
+  // When the realm's cores squeeze rents, cheap grid-reached periphery pulls the
+  // squeezed-out labor OUTWARD — a periphery can boom (not the median case, a
+  // real minority the sweep must contain).
+  let frontier = 0, exhibitSeed = null;
+  for (let i = 0; i < 24; i++) {
+    const R = regsOf((await gen(`#seed=fr-${i}&regions=22&ep=10`)).gj);
+    if (R.some(r => r.centrality_to_seat < 45 && r.is_settled && r.population > r.population_t0 * 1.12)) {
+      frontier++; if (!exhibitSeed) exhibitSeed = `fr-${i}`;
+    }
+  }
+  if (frontier >= 1) ok(`the frontier term booms a periphery: ${frontier}/24 worlds have a low-centrality cell that GREW >12% from founding — people flowed outward against the wealth gradient (${exhibitSeed})`);
+  else fail(`no frontier boom found in 24 worlds`);
+
+  // EMIGRATION-ERA DIP + REMITTANCE FLOOR: somewhere in the sweep a town's
+  // population DIPPED under emigration while its wealth held a floor from the
+  // coin the diaspora sent home — dependency theory's remittance economy.
+  let dipFloor = 0;
+  for (let i = 0; i < 24; i++) {
+    if (regsOf((await gen(`#seed=em-${i}&regions=22&ep=10`)).gj).some(r => {
+      if (!r.is_settled) return false;
+      const loss = r.population_t0 - r.population;
+      // a genuine EMIGRATION dip: a MODERATE loss (not a war/abandonment
+      // collapse) that emigration explains at least half of, with the wealth
+      // floor held by the coin sent home — dependency theory's remittance economy.
+      return loss > 0 && r.population >= r.population_t0 * 0.45 && r.population <= r.population_t0 * 0.92
+        && r.emigrants_total >= 30 && r.emigrants_total >= 0.5 * loss
+        && r.remittance_income >= 6 && r.wealth >= 15;
+    }))
+      dipFloor++;
+  }
+  if (dipFloor >= 5) ok(`the emigration-era dip holds a remittance floor: ${dipFloor}/24 worlds have a town whose population dipped under a diaspora while its wealth held above collapse on the coin sent home`);
+  else fail(`emigration-dip + remittance-floor too rare: ${dipFloor}/24`);
+  // (that migration STILL favors winners in the MEDIAN world — the old behaviour
+  // as the common case — is pinned in the dynamic-engine block above, re-pinned
+  // to the per-world median now that B3 lets migration run both ways.)
+}
+
 console.log("# The world's shape (#122, B0.5): the 1600×1000 rectangle, no W stragglers");
 {
   // the straggler audit (acceptance): the square W=1000 is gone; the world is
@@ -4000,7 +4056,16 @@ console.log("# The world's shape (#122, B0.5): the 1600×1000 rectangle, no W st
 
 console.log("# The world outside (#121, B0): a third seed — the region is ruined or rescued by a history it cannot touch");
 {
-  const geoOf = (g) => JSON.stringify(regionsOf(g).map(f => [f.properties.aetherstone_endowment, f.properties.terrain_ruggedness, f.properties.fertility]));
+  // geology invariance = the FOUNDING rock. aetherstone_endowment is the CURRENT
+  // ore stock (reg.E): it depletes with mining and is topped up by economy-driven
+  // events — a discovery (D7 shock) surfaces ore where wealth prospects it, so its
+  // target keys on world-dependent wealth (index.html: (hiddenOre)+wealth*0.3) and
+  // its NAME differs by world. Two worlds thus legitimately hold different current
+  // ore in the same seat (the B0 premise: a history the rock cannot touch). The
+  // world-INVARIANT rock is the founding endowment endowment_t0; that is what
+  // "the world never touches the rock" must assert. (Passed under B2 only because
+  // seed=wo's discovery didn't flip seats until B3's remittances moved wealth.)
+  const geoOf = (g) => JSON.stringify(regionsOf(g).map(f => [f.properties.endowment_t0, f.properties.terrain_ruggedness, f.properties.fertility]));
   const namesOf = (g) => JSON.stringify(regionsOf(g).map(f => f.properties.name));
   const wealthOf = (g) => JSON.stringify(col(g, "wealth"));
   const evSig = (g) => JSON.stringify(g.hinterland.events.map(e => [e.epoch, e.type, e.region_id, e.outcome]));

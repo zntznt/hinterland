@@ -28,11 +28,11 @@ The rivers are crossed at Surzek Bridge alone; everywhere else the banks are mar
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1025), when the gap narrowed, **the Restoration** (1050–1100), when the gap held, **the Age of Accumulation** (1125–1200), when the gap widened and **the Long Desolation** (1225–1250), when the gap narrowed. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1125), when the gap narrowed, **the Quiet Years** (1150–1200), when the gap narrowed and **the Long Desolation** (1225–1250), when the gap narrowed. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1025.** The relic ground by Grossvar woke. What the old power did there is not well described in the accounts that survive, and the land it touched bears the scar still.
 
-**Year 1050.** Fortune turned at Dhozzurtash: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Dhozzurtash Find.
+**Year 1050.** Fortune turned at Dunholt: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Dunholt Find.
 
 **Year 1075.** Prospectors struck a hidden lode under Dhozzurtash, and by winter the roads were full of wagons and the town was full of strangers.
 
@@ -40,7 +40,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1075.** The old Sovereign died, and Ivere took the seat without incident — which the chronicle records precisely because it is rare.
 
-**Year 1075.** The seat, chastened by the years behind it, decreed a Toll Amnesty: the gates still stand, but the levies are capped by decree. The chronicle notes that it took a wound to buy a mercy.
+**Year 1075.** The seat, chastened by the years behind it, decreed the Crown Granary: a levy on the fat years and bread in the lean ones — the first decree in the realm's history to move coin downhill. The chronicle notes that it took a wound to buy a mercy.
 
 **Year 1100.** The old Hierarch died, and Vassandre took the censer without incident — which the chronicle records precisely because it is rare.
 
@@ -96,7 +96,7 @@ Of the realm's 5 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the Temple standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 4.4 in every hundred of the realm's people hold 55.2 of every hundred coins, and live 27.1 times better than those who work for them. Nowhere is the ledger sharper than at Dunholt, where 84 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 80 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 4.4 in every hundred of the realm's people hold 52.1 of every hundred coins, and live 23.8 times better than those who work for them. Nowhere is the ledger sharper than at Dunholt, where 79 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 86 parts in a hundred of the whole spread.
 
 And over all of it stands the Dominion, which holds 7 regions from its foothold at Calden Strand and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns; the chronicle is required to note the difference between reigning and ruling.
 
@@ -104,6 +104,6 @@ And over all of it stands the Dominion, which holds 7 regions from its foothold 
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.17, and the turning point was the Toll Amnesty of 1075. The poorest fifth of the realm carries 8.8 times the blight of the richest fifth. Behind the Krakkethak wall, the median settlement earns 100 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay. Grothmouth drinks 2 points of other towns' poison for the crime of standing at the mouth. 5 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 4.4 in a hundred hold 55.2 of every hundred coins, and stand 27.1 times apart from the rest. The skyway would abolish 67 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 7 regions occupied, the yield assessed at the quay, the free country keeping 1.7 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The Krakkethak divides even the weather: the rain falls at 38 on one side and 2 in its lee, and no one on the dry side chose the wind.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world closed some of its gap: the spread of fortunes measured 0.21 at the founding and 0.13 at the close, and the turning point was the Crown Granary of 1075. The poorest fifth of the realm carries 7.1 times the blight of the richest fifth. Behind the Krakkethak wall, the median settlement earns 100 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay. Grothmouth drinks 2 points of other towns' poison for the crime of standing at the mouth. 5 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 4.4 in a hundred hold 52.1 of every hundred coins, and stand 23.8 times apart from the rest. The skyway would abolish 67 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 7 regions occupied, the yield assessed at the quay, the free country keeping 1.7 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The Krakkethak divides even the weather: the rain falls at 38 on one side and 2 in its lee, and no one on the dry side chose the wind.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

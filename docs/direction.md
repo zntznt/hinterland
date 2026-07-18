@@ -717,8 +717,8 @@ phase authors content against physics a later phase replaces.
   slop, world-rect clamps, contain↔fit-width range, CTM click mapping, zoom-scaled
   hit radii. V2: the semantic settle — compensated label/glyph re-render, zoom-
   aware declutter, camera-aware scale bar, `cam=` hash, +/− HUD buttons,
-  Shift+arrow pans. (On the square world today; the camera is shape-agnostic and
-  needs no rework when B0.5 lands.)
+  Shift+arrow pans. (The camera is shape-agnostic; it needed no rework when B0.5
+  landed the 1600×1000 rectangle — only `camContain` learned the 16:10 aspect.)
 - **Phase A — instrumentation (model-neutral).**
   A1: golden fixture harness (G5 stage 0's first half) — the enforcement mechanism.
   A2: fate seed (G5 stage 0's second half). Schema bump.

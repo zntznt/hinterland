@@ -1,6 +1,22 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v42** (the world becomes a rectangle B0.5): the world stops being a square
+  (issue #122, §2.5 decision 11). `W = 1000` generalizes to **`WX = 1600, WY =
+  1000`** (a fixed 16:10 rectangle for every world) across ~90 coordinate sites —
+  Voronoi bounds, seed/lode scatter, the ridge walk, river tracing and clamps,
+  the flood/elevation grid (`CS` split into `CSX`/`CSY`), coastline/sea sides,
+  temperature latitude, hit-testing, the frame/neatline/vignette, and the
+  counterfactual panes. The six tuned decay constants grow ×1.334 (the diagonal
+  ratio) so reach and spoil stay self-consistent on the wider ground: spoil
+  `/800→/1068`, temple+magnate `/300→/400`, healer+conduit `/250→/334`, force
+  `/280→/374`. The **camera is shape-agnostic**: `camContain` reworks for 16:10,
+  fit-width frames the world's width and pans N–S on wide viewports, and the
+  scale bar keeps 20 leagues at fit (the world is 100 leagues across). Exports
+  declare the CRS as **planar 0–1600 × 0–1000, y-up**; the QGIS README and the
+  edge-cost buckets update in the same bump. `schema_version` 41→42; declared
+  fixture regeneration; both suites re-pinned against the rectangle (the camera
+  viewBoxes recomputed, distance-dependent thresholds re-measured).
 - **v41** (the world outside B0): the Hinterland stops being a closed system
   (issue #121). A THIRD seed — `world=`, default the shared **Concordat era**
   (decision 7) — keys `worldStreams()`, a Markov **regime chain** over six world

@@ -25,7 +25,7 @@ Any other `kind` (`ridge`, `river`, `conduit`, `bridge`, `pass`, `port`,
 
 ## 2. Assign the CRS (kills the WGS84 warning)
 
-The world is a flat plane, 0–1000, y-up — not Earth. `hinterland.prj`
+The world is a flat plane, 0–1600 × 0–1000 (16:10), y-up — not Earth. `hinterland.prj`
 carries a WKT2 **engineering CRS** ("Hinterland planar grid", metre units,
 east/north axes). In QGIS: *Layer Properties → Source → Assigned CRS →
 custom → import from* `hinterland.prj` (or *Settings → Custom Projections*

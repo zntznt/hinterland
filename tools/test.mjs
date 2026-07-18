@@ -213,7 +213,7 @@ function validate(gj, tag) {
     let area = 0;
     for (let k = 0; k < ring.length - 1; k++) area += ring[k][0] * ring[k + 1][1] - ring[k + 1][0] * ring[k][1];
     if (area <= 0) return fail(`${tag}: ring not CCW`);
-    for (const [x, y] of ring) if (x < -0.01 || x > 1000.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: coord OOB`);
+    for (const [x, y] of ring) if (x < -0.01 || x > 1600.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: coord OOB`);
     for (const key of ["wealth", "aetherstone_endowment", "terrain_ruggedness", "fertility", "centrality_to_seat", "value_retention"]) {
       const v = p[key];
       if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad ${key} ${v}`);
@@ -475,7 +475,7 @@ function validate(gj, tag) {
     for (const R of ridges) {
       if (R.geometry.type !== "LineString" || R.geometry.coordinates.length < 2) return fail(`${tag}: bad ridge geometry`);
       for (const [x, y] of R.geometry.coordinates)
-        if (x < -0.01 || x > 1000.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: ridge coord OOB`);
+        if (x < -0.01 || x > 1600.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: ridge coord OOB`);
       if (!/^[A-Z][a-z]{4,19}$/.test(R.properties.ridge_name || "")) return fail(`${tag}: malformed ridge_name`);
       // a spur is a dead-end offshoot, not a barrier with its own road pass
       if (!R.properties.is_spur) passByRidge[R.properties.ridge_id] = 0;
@@ -585,7 +585,7 @@ function validate(gj, tag) {
         return fail(`${tag}: chain_regions != chain length`);
       if (RV.geometry.coordinates.length < chain.length) return fail(`${tag}: trace thinner than its chain`);
       for (const [tx, ty] of RV.geometry.coordinates)
-        if (tx < -0.01 || tx > 1000.01 || ty < -0.01 || ty > 1000.01) return fail(`${tag}: trace coord OOB`);
+        if (tx < -0.01 || tx > 1600.01 || ty < -0.01 || ty > 1000.01) return fail(`${tag}: trace coord OOB`);
       for (let k = 0; k < chain.length; k++) {
         if (chain[k].river_pos !== k) return fail(`${tag}: river_pos not contiguous`);
         if (p.chain_regions[k] !== chain[k].region_id) return fail(`${tag}: chain_regions[${k}] != downstream order`);
@@ -614,7 +614,7 @@ function validate(gj, tag) {
     if (sides.length === 2 && ((sides[0] === "west" && sides[1] === "east") || (sides[0] === "east" && sides[1] === "west") ||
         (sides[0] === "south" && sides[1] === "north") || (sides[0] === "north" && sides[1] === "south")))
       return fail(`${tag}: opposite sea sides`);
-    const SEA_LINES = { west: [[0, 0], [0, 1000]], east: [[1000, 0], [1000, 1000]], south: [[0, 0], [1000, 0]], north: [[0, 1000], [1000, 1000]] };
+    const SEA_LINES = { west: [[0, 0], [0, 1000]], east: [[1600, 0], [1600, 1000]], south: [[0, 0], [1600, 0]], north: [[0, 1000], [1600, 1000]] };
     const coasts = coastsOf(gj);
     if (coasts.length !== sides.length) return fail(`${tag}: coast features ${coasts.length} != sides ${sides.length}`);
     for (const c of coasts) {
@@ -631,14 +631,14 @@ function validate(gj, tag) {
       if (sf.geometry.type !== "Polygon" || ring.length < 4) return fail(`${tag}: bad sea geometry`);
       const a0 = ring[0], z0 = ring[ring.length - 1];
       if (a0[0] !== z0[0] || a0[1] !== z0[1]) return fail(`${tag}: sea ring not closed`);
-      for (const [x, y] of ring) if (x < -0.01 || x > 1000.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: sea coord OOB`);
+      for (const [x, y] of ring) if (x < -0.01 || x > 1600.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: sea coord OOB`);
     }
     const contourFeats = gj.features.filter(f => f.properties.kind === "contour");
     if (contourFeats.length < 1) return fail(`${tag}: no contours`);
     for (const cf of contourFeats) {
       if (cf.geometry.type !== "MultiLineString" || !Number.isInteger(cf.properties.level)) return fail(`${tag}: bad contour`);
       for (const seg of cf.geometry.coordinates)
-        for (const [x, y] of seg) if (x < -0.01 || x > 1000.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: contour coord OOB`);
+        for (const [x, y] of seg) if (x < -0.01 || x > 1600.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: contour coord OOB`);
     }
     const seaPolys = seaFeats.map(sf => ({ outer: sf.geometry.coordinates[0], holes: sf.geometry.coordinates.slice(1) }));
     const inSeaPoly = (x, y) => seaPolys.some(S =>
@@ -771,7 +771,7 @@ function validate(gj, tag) {
       const [mx, my] = m.geometry.coordinates;
       const side = m.properties.side;
       if (!gj.hinterland.sea_sides.includes(side)) return fail(`${tag}: maelstrom off the sea`);
-      const onEdge = side === "west" ? mx === 0 : side === "east" ? mx === 1000 : side === "south" ? my === 0 : my === 1000;
+      const onEdge = side === "west" ? mx === 0 : side === "east" ? mx === 1600 : side === "south" ? my === 0 : my === 1000;
       if (!onEdge) return fail(`${tag}: maelstrom not on its edge`);
       if (!/^[A-Z][a-z]{4,19}$/.test(m.properties.maelstrom_name || "")) return fail(`${tag}: malformed maelstrom_name`);
       // sailors shun it: ports keep clear whenever any clear coast exists
@@ -1783,7 +1783,7 @@ console.log("# The map is a map M1: coastline, dry towns, places, mountain mass"
     const sides = R.gj.hinterland.sea_sides;
     let reach = 0;
     for (const f of seas) for (const p of f.geometry.coordinates[0]) {
-      const d = Math.min(...sides.map(sd => sd === "west" ? p[0] : sd === "east" ? 1000 - p[0] : sd === "south" ? p[1] : 1000 - p[1]));
+      const d = Math.min(...sides.map(sd => sd === "west" ? p[0] : sd === "east" ? 1600 - p[0] : sd === "south" ? p[1] : 1000 - p[1]));
       reach = Math.max(reach, d);
     }
     if (seas.length) reaches.push(Math.round(reach));
@@ -2888,13 +2888,13 @@ const prov = A1.gj.hinterland;
 // re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
 // the default carries the Concordat-era `world` block (regime chain + series), and
 // `fate` still rides provenance only when set — so a default world has no fate key.
-if (prov && prov.schema_version === 41 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+if (prov && prov.schema_version === 42 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && !("fate" in prov) &&
     prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=41 + weights + knobs + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
+  ok("provenance carries schema_version=42 + weights + knobs + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await gen("#seed=&regions=&we=&wg=");
@@ -3671,9 +3671,11 @@ console.log("# The camera V1/V2 (#116/#117): fit-width default, clamped pan/zoom
   const cap = () => doc.querySelector("#scaleBar .scale-cap").textContent;
   const placed = () => doc.querySelectorAll("#stage svg text.placename").length;
 
-  // fit-width is the boot default: the whole square world, and an honest 20 leagues
-  if (vb() === "0 0 1000 1000") ok("the camera boots to fit-width: the whole plate frames on load");
-  else fail(`default viewBox ${vb()} != 0 0 1000 1000`);
+  // fit-width is the boot default: the whole 16:10 world framed by its width. On
+  // the CSS-square jsdom plate (aspect 1) the 1000-tall world sits centred with
+  // N/S mat, so the viewBox is 1600 wide and 1600 tall, y offset −300. Still 20 leagues.
+  if (vb() === "0 -300 1600 1600") ok("the camera boots to fit-width: the whole plate frames on load");
+  else fail(`default viewBox ${vb()} != 0 -300 1600 1600`);
   if (cap() === "20 leagues") ok("the scale bar reads 20 leagues at fit"); else fail(`scale cap ${cap()}`);
 
   const exportAtFit = C.dl();
@@ -3686,8 +3688,8 @@ console.log("# The camera V1/V2 (#116/#117): fit-width default, clamped pan/zoom
   const vb4 = vb(), cap4 = cap();
   const n4 = placed();
 
-  if (vb2 === "250 250 500 500" && vb4 === "375 375 250 250")
-    ok(`zoom is geometric + centred + clamped to [0,W]² (2× ${vb2}, 4× ${vb4})`);
+  if (vb2 === "400 100 800 800" && vb4 === "600 300 400 400")
+    ok(`zoom is geometric + centred + clamped to [0,WX]×[0,WY] (2× ${vb2}, 4× ${vb4})`);
   else fail(`zoom viewBox wrong: 2× ${vb2}, 4× ${vb4}`);
 
   // the scale bar stays honest: 20 : 10 : 5 leagues across fit : 2× : 4× (assert ratio)
@@ -3721,7 +3723,7 @@ console.log("# The camera V1/V2 (#116/#117): fit-width default, clamped pan/zoom
 
   // fit again: the frame resets and the link goes clean
   doc.getElementById("camFit").click();
-  if (vb() === "0 0 1000 1000" && !win.location.hash.includes("cam="))
+  if (vb() === "0 -300 1600 1600" && !win.location.hash.includes("cam="))
     ok("the fit button restores the default frame and drops cam= from the link");
   else fail(`fit did not reset cleanly: ${vb()} / ${win.location.hash}`);
 

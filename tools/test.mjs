@@ -1537,12 +1537,17 @@ console.log("# The strata H1 acceptance: class exists within the walls");
     if (F.owners) coin.push(F.owners.coin_pct);
     satWorst = Math.max(satWorst, P.filter(r => r.elite_share >= 92).length / P.length);
     // the ledger answers history: read the shock's epoch in the series
-    const sr = (id, e) => R.series.features.find(f => f.properties.kind === "region" && f.properties.region_id === id && f.properties.epoch === e).properties.elite_share;
+    const srP = (id, e, k) => R.series.features.find(f => f.properties.kind === "region" && f.properties.region_id === id && f.properties.epoch === e).properties[k];
+    const sr = (id, e) => srP(id, e, "elite_share");
     for (const ev of (R.gj.hinterland.events || [])) {
       if (ev.type === "revolt") {
         const d = sr(ev.region_id, ev.epoch) - sr(ev.region_id, ev.epoch - 1);
         if (ev.outcome === "won") { wonSeen++; if (d <= -15) wonDrops++; if (d < 0) wonNeg++; }
-        else { crushSeen++; if (d >= 5) crushRises++; }
+        // B0 (#121): a region that economically DIED at the revolt epoch
+        // (wealth → 0, e.g. under a world price collapse) has no owners' row to
+        // expropriate — its elite_share reads 0 for the death, not for a failed
+        // crush. Score expropriation only where there is still an economy to seize.
+        else if (srP(ev.region_id, ev.epoch, "wealth") > 0) { crushSeen++; if (d >= 5) crushRises++; }
       }
       if (ev.type === "blight_plague") {
         plagueSeen++;
@@ -1567,7 +1572,7 @@ console.log("# The strata H1 acceptance: class exists within the walls");
     ok(`a won revolt burns the charters: owners' share fell at ${wonNeg}/${wonSeen} won risings, >=15 points at ${wonDrops} — the softer falls are gate towns whose rents ran on through the fires (measured -8..-24)`);
   else fail(`won revolts didn't move the ledger: neg ${wonNeg}/${wonSeen}, deep ${wonDrops}`);
   if (crushSeen >= 2 && crushRises === crushSeen)
-    ok(`a crushed revolt expropriates: owners' share rose >=5 points under the garrison in ${crushRises}/${crushSeen}`);
+    ok(`a crushed revolt expropriates: owners' share rose >=5 points under the garrison in every living region (${crushRises}/${crushSeen}; a region the world killed that same epoch has no owners' row to seize)`);
   else fail(`crushed revolts didn't move the ledger: ${crushRises}/${crushSeen}`);
   if (plagueSeen >= 20 && plagueDrops >= plagueSeen * 0.85)
     ok(`the plague levels: labor's share rose at ${plagueDrops}/${plagueSeen} plagues — the exceptions are gate-holding towns whose rents out-ran the shock (measured 67/69 in the design sweep)`);
@@ -2275,7 +2280,11 @@ console.log("# The faction turn F1 acceptance: the blocs become agents");
 
 {
   let seizeWorlds = 0, raiseWorlds = 0, burnWorlds = 0, tollCorr = 0, tollN = 0, chronOK = 0, chronTested = 0;
-  const N = 20;
+  // B0 (#121): widened 20 → 40. The world outside makes more revolts WIN (a
+  // price collapse feeds the injustice that fuels them), and a won revolt is a
+  // "mercy" the toll correlation must exclude — so the unreformed sub-sample
+  // needs a wider net to stay populated (measured: ~4 unreformed worlds, corr ≈ -0.3).
+  const N = 40;
   for (let i = 0; i < N; i++) {
     const R = await gen(`#seed=f1-${i}&regions=24&ep=10`);
     const evs = R.gj.hinterland.events || [];

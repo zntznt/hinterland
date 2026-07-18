@@ -1,6 +1,24 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v43** (the artifice index B1): the zero-sum breaker (issue #123, §3.1). Each
+  region gains **`A` (0–100)** — its command of magically-enabled productivity
+  (machinery, trained hands, licensed workings). Income is A-SCALED (the mix
+  terms multiply against `0.3 + A/100`, ≈1.0 at the founding artifice so founding
+  wealth barely moves, rising to 1.3 as the works learn and falling toward 0.3 as
+  they're forgotten). `A` is seeded from development, then each epoch **investment
+  keyed to the world price** lifts it (a boom pours capital into the works), it
+  **diffuses** weakly to neighbours (works teach), **decays** without upkeep, and
+  **crashes** on war (×0.6) and industrial collapse (×0.55). So **total realm
+  wealth is no longer conserved**: before B1 depletion only ever shrank the pie;
+  now a boom world GROWS it (measured 5/10 boom worlds vs 0 before) and a trade-war
+  world starves it. New `artifice_index` column (main + epoch series), an
+  `A`-per-epoch snapshot, the **artifice lens** ("where the works learn") in THE
+  SHAPE, and an artifice spark in THE DRIFT. `schema_version` 42→43; declared
+  fixture regeneration. Exhibit (pinned):
+  `#seed=piv-19&regions=18&ep=10` — a high-artifice periphery (region 7, A=67,
+  wealth 29) out-earns the low-artifice SEAT itself (region 15, A=51, wealth 15):
+  the works learned faster than the capital, and artifice beat centrality.
 - **v42** (the world becomes a rectangle B0.5): the world stops being a square
   (issue #122, §2.5 decision 11). `W = 1000` generalizes to **`WX = 1600, WY =
   1000`** (a fixed 16:10 rectangle for every world) across ~90 coordinate sites —

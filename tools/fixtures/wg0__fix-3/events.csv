@@ -5,10 +5,10 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 1,1025,settlement_abandoned,9,,,,,,,,,,
 1,1025,seizure,0,,,magnate,,,,,,,
 1,1025,drought,0,the Drought of 1025,,,,,,,,,
+2,1050,settlement_founded,9,,,,,,,,,,
 2,1050,drought,0,the Drought of 1050,,,,,,,,,
 3,1075,refinery_collapse,0,,,,,,,,,,
 3,1075,seizure,0,,,crown,,,,,,,
-4,1100,settlement_founded,9,,,,,,,,,,
 4,1100,ore_strike,8,,,,,,,,,,
 4,1100,succession,,Krazzurn,,magnate,,,,,,true,1
 4,1100,drought,9,the Drought of 1100,,,,,,,,,

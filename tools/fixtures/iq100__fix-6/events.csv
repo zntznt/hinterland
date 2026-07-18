@@ -14,17 +14,14 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 3,1075,succession,,Gharruk,,magnate,,,,,,true,1
 3,1075,drought,5,the Drought of 1075,,,,,,,,,
 3,1075,discovery,8,the Wexbraverby Find,,,,,,,,,
-3,1075,blight_plague,5,the Ash Fever of 1075,,,,,,,,,
+4,1100,settlement_founded,11,,,,,,,,,,
 4,1100,succession,,Crannock,,crown,,,,,,false,1
 4,1100,treaty,5,the Peace of Halemook,,crown|magnate,,crown,0,0,,,
 4,1100,discovery,8,the Wexbraverby Find,,,,,,,,,
 4,1100,revolt,7,the Zoltgard Rising,won,,,,,,,,
-5,1125,settlement_founded,11,,,,,,,,,,
 5,1125,refinery_collapse,5,,,,,,,,,,
 5,1125,flood,3,the Glare Flood,,,,,,,,,
 5,1125,storm,5,the Great Storm of 1125,,,,,,,,,
-5,1125,reform,,,,,crown_granary,,,,,,
-5,1125,consecration,5,,,,,,,,,,
 6,1150,settlement_founded,1,,,,,,,,,,
 6,1150,settlement_founded,9,,,,,,,,,,
 6,1150,annexation,8,the Landing at Wexbraverby,,,,,,,4,,

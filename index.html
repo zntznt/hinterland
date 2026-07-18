@@ -1327,7 +1327,7 @@
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 42;
+    const SCHEMA_VERSION = 43;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
@@ -3606,8 +3606,16 @@
         // water); it falls back to the physical figure before society exists.
         const wa = (reg.effWaterAccess !== undefined ? reg.effWaterAccess : reg.waterAccess);
         const waterMult = 0.7 + 0.3 * (wa / 100); // dry floor 0.70, full 1.00
-        return base * waterMult * (reg.warTorn ? 0.85 : 1); // war permanently wounds capacity
+        // B1: income is A-SCALED so a high-artifice periphery can out-earn a
+        // low-artifice core, and the realm's total wealth stops being conserved.
+        // Calibrated to (0.3 + A/100): ~1.0 at the founding artifice (mean ≈70,
+        // so founding wealth barely moves), rising to 1.3 as the works learn (the
+        // pie GROWS) and falling toward 0.3 as artifice decays or crashes (it
+        // SHRINKS) — symmetric about the founding, unlike the (0.5+A/200) floor.
+        const artMult = 0.3 + (reg.A !== undefined ? reg.A : 70) / 100;
+        return base * waterMult * artMult * (reg.warTorn ? 0.85 : 1); // war permanently wounds capacity
       };
+      const rArt = sx("artifice");
       regions.forEach(reg => {
         reg.E = reg.endowment;           // current ore stock (depletes per epoch)
         reg.endowment0 = reg.endowment;  // the geology as founded
@@ -3616,6 +3624,12 @@
         reg.occupiedEpoch = -1;          // (stage-3 purity: re-runs must not leak)
         reg.effWaterAccess = reg.waterAccess; // founding: no bloc has priced anyone out yet
         reg.waterDenial = 0;             // (stage-3 purity: the epoch loop's denial must not leak)
+        // B1 (#123): the artifice index A — command of magically-enabled
+        // productivity (machinery, trained hands, licensed workings). Founding A
+        // is the developed base: refining works and the trained core lift it,
+        // rough frontier country lags. It scales income and moves over epochs.
+        reg.A = clamp(Math.round(60 + 0.3 * reg.refining + 0.18 * reg.centrality - 0.12 * reg.ruggedness + (rArt() * 2 - 1) * 12), 0, 100);
+        reg.A0 = reg.A;                  // the artifice as founded (for the drift/growth surfaces)
         const noise = (rNoise() * 2 - 1) * 5;
         reg.wealth = clamp(Math.round(100 * income(reg) + noise), 0, 100);
         reg.wealthT0 = reg.wealth;
@@ -3940,6 +3954,7 @@
         wealth: regions.map(r => r.wealth),
         pop: regions.map(r => r.settlementPop),
         E: regions.map(r => r.E),
+        A: regions.map(r => r.A), // B1: artifice per epoch — the drift/timeline read it
         blight: regions.map(r => r.blight),
         eliteShare: regions.map(r => Math.round(r.eliteShare)),
         occupied: regions.map(r => r.occupied ? 1 : 0),
@@ -4171,6 +4186,33 @@
       for (let e = 0; e < params.ep; e++) {
         const worldPrice = worldSeries.price_index[e]; // this epoch's aetherstone price
         regions.forEach(reg => { reg.E = Math.round(reg.E * 0.78); }); // mines draw down
+        // B1 (#123): artifice moves once per epoch. Investment lifts it where the
+        // town can afford to reinvest (a STUB — B2 makes credit the real channel);
+        // it diffuses weakly from higher-artifice neighbours (works teach); it
+        // decays slowly without upkeep. Diffusion reads the epoch-start A, so the
+        // pass is order-independent. Crashes (war/collapse) are applied at those
+        // events below. This is the one un-conserved channel: total wealth now
+        // rises where A rises and falls where A decays or crashes.
+        {
+          const Aprev = regions.map(r => r.A);
+          regions.forEach((reg, i) => {
+            // investment lifts A where the town has surplus to reinvest (wealth
+            // is a low index, ~10 typical, so the bar is low); works teach the
+            // neighbours; upkeep-less artifice erodes. Wealthy realms out-invest
+            // the decay and GROW the pie; poor ones fall behind and shrink it.
+            // investment is the growth channel, and the WORLD drives it: in a
+            // boom (high aetherstone price) capital pours into the works and A
+            // climbs; in a bust it stalls and the upkeep-less craft decays. So a
+            // boom-world's total artifice — and its pie — GROWS, a bust-world's
+            // SHRINKS. Neutral at the median wealth in a price-1 world; diffusion
+            // spreads the craft to neighbours; crashes hit at war/collapse below.
+            const invest = 0.11 * reg.wealth * worldPrice;
+            const nbrs = reg.neighbors;
+            const nbrA = nbrs.length ? nbrs.reduce((s, n) => s + Aprev[n], 0) / nbrs.length : Aprev[i];
+            const diffuse = 0.08 * (nbrA - Aprev[i]);
+            reg.A = clamp(Math.round(reg.A + invest + diffuse - 1.3), 0, 100);
+          });
+        }
         // V1: the Crown Granary, where decreed — a levy on the fat years,
         // bread in the lean ones; wealth is pulled toward the median, ±3 a year
         const medW2 = granaryOn
@@ -4310,7 +4352,7 @@
                   (r.refining === victim.refining && r.id < victim.id))) victim = r;
             });
             if (victim) {
-              victim.refining = 0; collapsed = true; collapseEpoch = e + 1;
+              victim.refining = 0; victim.A = Math.round(victim.A * 0.55); collapsed = true; collapseEpoch = e + 1; // B1: the works go dark — artifice crashes with the industry
               victim.eliteShare = Math.max(8, victim.eliteShare - 10); // the owners' row leaves with the company
               victim.eventType = "refinery_collapse"; victim.eventEpoch = e + 1;
               victim.eventSeverity = 70 + Math.round(rEv() * 20);
@@ -4390,7 +4432,7 @@
             // so the scar persists whatever the region produced
             wreg.E = Math.round(wreg.E * 0.7);
             wreg.retention = Math.round(wreg.retention * 0.7);
-            wreg.warTorn = true;
+            wreg.warTorn = true; wreg.A = Math.round(wreg.A * 0.6); // B1: war wrecks the works — artifice crashes
             wreg.eliteShare = Math.min(92, wreg.eliteShare + 5); // property survives people
             wreg.eventType = "war"; wreg.eventEpoch = e + 1;
             wreg.eventSeverity = 70 + Math.round(rEv() * 25);
@@ -5557,6 +5599,7 @@
             population: reg.population,
             pop_density: reg.popDensity,
             aetherstone_endowment: reg.endowment,
+            artifice_index: reg.A,
             terrain_ruggedness: reg.ruggedness,
             fertility: reg.fertility,
             water_access: reg.waterAccess,
@@ -5992,6 +6035,7 @@
               wealth: wealthE,
               population: dead ? 0 : Math.round(S.pop[i] * (1 + reg.rural)),
               aetherstone_endowment: S.E[i],
+              artifice_index: S.A[i],
               blight_load: S.blight[i],
               on_conduit: S.onGrid[i] ? 1 : 0,
               injustice_idx: Math.round(100 * (S.blight[i] / 100) * (1 - wealthE / 100)),
@@ -6257,7 +6301,8 @@
       flips:      { lo: [246, 244, 240], hi: [122, 31, 31],   label: "bloc flips (ground that changed hands as fortunes shifted)" },
       elitedelta: { lo: [179, 88, 6],    hi: [84, 39, 136],   label: "owners' row since the founding (shrank → grew)" }, // diverging like delta: readable to every kind of eye
       growth:     { lo: [140, 81, 10],   hi: [1, 102, 94],    label: "wealth growth since founding (shrank → multiplied)" }, // diverging (BrBG): the ground that grew vs the ground that shrank
-      volatility: { lo: [255, 247, 236], hi: [179, 0, 0],     label: "volatility (boom/bust amplitude)" }
+      volatility: { lo: [255, 247, 236], hi: [179, 0, 0],     label: "volatility (boom/bust amplitude)" },
+      artifice:   { lo: [244, 240, 250], hi: [74, 20, 140],   label: "artifice (where the works learn)" }
     };
     // #62: many ramps bottom out near-white, so a view where one region spikes
     // (injustice/burden/tolls, maroon hi) reads as a single loud cell on blank
@@ -6328,6 +6373,7 @@
       volatility: { group: "THE SHAPE", q: "who boomed and busted",
         t: (r, C) => { const ws = C.snaps.map(s => s.wealth[r.id]); return clamp((Math.max(...ws) - Math.min(...ws)) / 60, 0, 1); },
         value: (r, C) => { const ws = C.snaps.map(s => s.wealth[r.id]); return Math.max(...ws) - Math.min(...ws); } },
+      artifice: pctLens("THE SHAPE", "where the works learn", (r, C) => C.RA(r)), // B1: the growth channel, scrub-aware
       biome: { group: "THE LAND", q: "what the land is", cats: BIOME_COLORS, catLabel: "biome",
         value: r => r.biome.slice(0, 5), fill: r => BIOME_COLORS[r.biome] },
       elev: pctLens("THE LAND", "how high it stands", r => r.elevation),
@@ -7372,6 +7418,7 @@
       const live = snaps[Math.max(0, Math.min(scrubEpoch, snaps.length - 1))];
       const RW = (reg) => live.wealth[reg.id];
       const RE = (reg) => live.E[reg.id];
+      const RA = (reg) => live.A ? live.A[reg.id] : reg.A; // B1: artifice, scrub-aware
       const RB = (reg) => live.blight[reg.id];
       const RP = (reg) => live.pop[reg.id];
       const RG = (reg) => live.onGrid[reg.id];
@@ -7402,7 +7449,7 @@
       };
       // The lens registry does the switching; C hands each lens the scrub-aware
       // accessors above. Categoricals have no t (paint 0) and override fill.
-      const C = { live, snaps, RW, RE, RB, RP, RG, SE, RO, TRIBV, dens, maxDensity, maxBurden };
+      const C = { live, snaps, RW, RE, RA, RB, RP, RG, SE, RO, TRIBV, dens, maxDensity, maxBurden };
       const cellT = (reg) => LENS.t ? LENS.t(reg, C) : 0;
       const cellValue = (reg) => LENS.value(reg, C);
       const cellFill = (reg) => LENS.fill ? LENS.fill(reg, C) : rampColor(ramp, cellT(reg));
@@ -8179,6 +8226,7 @@
           const dElite = eSer[eSer.length - 1] - eSer[0];
           L.push(`<div class="insp-sec">THE DRIFT</div><table>` +
             dRow("wealth", "wealth") +
+            dRow("artifice", "A") + // B1: the growth channel drawn — where the works learned or forgot
             dRow("owners' share", "eliteShare") +
             dRow("souls", "pop") +
             dRow("blight", "blight") +

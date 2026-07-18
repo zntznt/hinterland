@@ -2876,15 +2876,16 @@ console.log("# The chronicle E4 acceptance: the world narrating itself");
 console.log("# schema v4 + URL handling");
 
 const prov = A1.gj.hinterland;
-// re-pinned 39 -> 40: v40 adds the fate seed (#119). schema_version bumps; the
-// default export is otherwise byte-identical (empty fate === seed), and `fate`
-// rides provenance only when set — so a default world never carries the key.
-if (prov && prov.schema_version === 40 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+// re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
+// the default carries the Concordat-era `world` block (regime chain + series), and
+// `fate` still rides provenance only when set — so a default world has no fate key.
+if (prov && prov.schema_version === 41 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && !("fate" in prov) &&
+    prov.world && prov.world.seed === "concordat" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=40 + weights + knobs (incl. responsiveness + harbors) + epochs(default 0) + empty timeline; no fate key at default");
+  ok("provenance carries schema_version=41 + weights + knobs + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await gen("#seed=&regions=&we=&wg=");
@@ -3810,6 +3811,86 @@ console.log("# The fate seed (#119, A2): same rock, different luck");
   if (base.gj.hinterland.fate === undefined && fA.gj.hinterland.fate === "alpha")
     ok("fate rides provenance only when set (default export carries no fate key)");
   else fail(`fate provenance wrong: base=${base.gj.hinterland.fate} explicit=${fA.gj.hinterland.fate}`);
+}
+
+console.log("# The world outside (#121, B0): a third seed — the region is ruined or rescued by a history it cannot touch");
+{
+  const geoOf = (g) => JSON.stringify(regionsOf(g).map(f => [f.properties.aetherstone_endowment, f.properties.terrain_ruggedness, f.properties.fertility]));
+  const namesOf = (g) => JSON.stringify(regionsOf(g).map(f => f.properties.name));
+  const wealthOf = (g) => JSON.stringify(col(g, "wealth"));
+  const evSig = (g) => JSON.stringify(g.hinterland.events.map(e => [e.epoch, e.type, e.region_id, e.outcome]));
+
+  // the world block ships in provenance, well-formed
+  const D = await gen("#seed=wo&regions=18&ep=10");
+  const W = D.gj.hinterland.world;
+  const ALLOWED = ["long_boom", "trade_war", "imperial_rivalry", "doctrinal_panic", "distant_war", "retrenchment"];
+  const seriesOk = W && W.seed === "concordat" &&
+    W.regime_chain.length === 10 && W.price_index.length === 10 &&
+    W.regime_chain.every(r => ALLOWED.includes(r)) &&
+    W.price_index.every(p => p >= 0.6 && p <= 1.5) &&
+    [W.imperial_attention, W.foreign_demand, W.doctrine_pressure, W.metropole_pull].every(a => a.length === 10);
+  if (seriesOk) ok("the world block ships the Concordat regime chain + five per-epoch series in provenance");
+  else fail(`world block malformed: ${JSON.stringify(W).slice(0, 200)}`);
+
+  // determinism: seed+fate+world replays byte-identically
+  const r1 = await gen("#seed=wo&fate=zz&world=venture&regions=18&ep=10");
+  const r2 = await gen("#seed=wo&fate=zz&world=venture&regions=18&ep=10");
+  if (JSON.stringify(r1.gj) === JSON.stringify(r2.gj) && r1.chron === r2.chron)
+    ok("seed+fate+world replays byte-identically, twice");
+  else fail("seed+fate+world replay drifted");
+
+  // isolation: two worlds differ in wealth (always), never in geology or names
+  const A = await gen("#seed=wo&world=alpha&regions=18&ep=10");
+  const B = await gen("#seed=wo&world=bravo&regions=18&ep=10");
+  if (geoOf(A.gj) === geoOf(B.gj) && geoOf(A.gj) === geoOf(D.gj) && namesOf(A.gj) === namesOf(B.gj))
+    ok("two worlds leave geology and toponymy identical (the world is exogenous — it never touches the rock)");
+  else fail("world= disturbed geology or names");
+  if (wealthOf(A.gj) !== wealthOf(B.gj))
+    ok("two worlds diverge in wealth (the price index reaches every seam and works)");
+  else fail("world= did not move wealth");
+
+  // ep=0 is pre-world: the founding is world-invariant (the loop never ran)
+  const z1 = await gen("#seed=wo&world=alpha&regions=18");
+  const z2 = await gen("#seed=wo&world=bravo&regions=18");
+  if (JSON.stringify(z1.gj.features) === JSON.stringify(z2.gj.features))
+    ok("the founding (ep=0) is world-invariant: the world acts only through the epochs");
+  else fail("world= leaked into the founding");
+
+  // regime persistence: regimes last years, not epochs — median run >= 2
+  const runLens = [];
+  for (let i = 0; i < 40; i++) {
+    const chain = (await gen(`#seed=wo&world=w-${i}&regions=12&ep=10`)).gj.hinterland.world.regime_chain;
+    let run = 1;
+    for (let e = 1; e < chain.length; e++) { if (chain[e] === chain[e - 1]) run++; else { runLens.push(run); run = 1; } }
+    runLens.push(run);
+  }
+  runLens.sort((a, b) => a - b);
+  const medRun = runLens[Math.floor(runLens.length / 2)];
+  if (medRun >= 2) ok(`regime persistence holds: median run ${medRun} epochs across ${runLens.length} runs (regimes last years, not epochs)`);
+  else fail(`regimes too jumpy: median run ${medRun} < 2`);
+
+  // the falsifiability keystone: the world MOVES the region's fate — the same
+  // seed's close-realm wealth spans a real range across world histories.
+  const seed2 = "#seed=keystone&regions=18&ep=10";
+  const meanW = (g) => { const ws = col(g, "wealth"); return ws.reduce((a, b) => a + b, 0) / ws.length; };
+  const outcomes = [];
+  for (const wl of ["concordat", "alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india"])
+    outcomes.push(meanW((await gen(seed2.replace("keystone", "keystone&world=" + wl))).gj));
+  const spread = Math.max(...outcomes) - Math.min(...outcomes);
+  if (spread >= 3) ok(`the world moves the region's fate: mean realm wealth spans ${spread.toFixed(1)} points across 10 world histories (rescue and ruin)`);
+  else fail(`the world barely reaches the region: wealth spread only ${spread.toFixed(1)}`);
+
+  // and the world can reach EVENTS (through wealth → injustice → the revolt):
+  // across a scan, at least one seed's history changes with the world.
+  let seedsWithEventShift = 0;
+  for (let s = 0; s < 8; s++) {
+    const sigs = new Set();
+    for (const wl of ["concordat", "alpha", "bravo", "charlie", "delta", "echo"])
+      sigs.add(evSig((await gen(`#seed=evshift-${s}&world=${wl}&regions=20&ep=10`)).gj));
+    if (sigs.size > 1) seedsWithEventShift++;
+  }
+  if (seedsWithEventShift >= 1) ok(`the world reaches events too: ${seedsWithEventShift}/8 seeds change their history with the world (through injustice → revolt)`);
+  else fail("world= never changed any event timeline across the scan");
 }
 
 console.log("# The golden fixtures (#118, A1): every export byte-pinned; a moved world must be a declared act");

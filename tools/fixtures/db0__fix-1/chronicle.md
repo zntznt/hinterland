@@ -28,7 +28,7 @@ The rivers are crossed at Quillwor Bridge alone; everywhere else the banks are m
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1100), when the gap widened, **the Long Desolation** (1125–1150), when the gap widened and **the Quiet Years** (1175–1250), when the gap narrowed. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1100), when the gap widened, **the Long Desolation** (1125–1150), when the gap widened, **the Age of Accumulation** (1175–1200), when the gap narrowed and **the Quiet Years** (1225–1250), when the gap narrowed. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1025.** In this year the sickness came to Vanmermere, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Ash Fever of 1025.
 

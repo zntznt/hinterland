@@ -1,6 +1,39 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v46** (the disposal doctrine B4): the λ dial retired (issue #126, §3.2 spoil
+  row + §3.3). The saturated "dump bias" dial — a one-way knob whose extreme just
+  aimed the refinery spoil harder at the poor — becomes a three-way **disposal
+  doctrine** the `db` knob now selects (0–33 **disperse**, 34–66 **concentrate**,
+  67–100 **treat**; old `db=` links keep meaning — low db was the physics spread,
+  mid-high aimed the spoil at the poor; default 60 → concentrate). **Disperse**
+  spreads the tailings by distance alone — no hand aims them, so they settle near
+  the industrial (wealthy) core. **Concentrate** hauls the bulk onto ONE fixed
+  sacrifice zone — a currently-sparse, cheap, grid-wired seat the realm writes off
+  — with the rest on the poor margin; the zone's poison **ramps with the works**
+  (near-nothing at the founding, full by mid-run), so a cheap empty zone reads as
+  attractive frontier early and the harm arrives late (P4). **Treat** disperses,
+  then the realm cleans up where it can afford the coin AND fields the works (`A`):
+  a rich, developed core clears its own spoil while a wealthy-but-A-poor seat
+  cannot — so the poison can land on the RICH. The consequence is the whole point:
+  the old near-tautology (injustice = blight × poverty, after blight was *aimed* at
+  poverty) is broken — across the sweep **corr(blight, wealth) now spans both signs**
+  (measured −0.40 concentrate to +0.98 disperse), the model no longer counted on to
+  put the blight on the poor. New `disposal_doctrine` + `sacrifice_zone` columns
+  (both metadata blocks); the counterfactual reframed to the dispersed baseline;
+  the mid-run dumping reforms now override the doctrine (reform → disperse,
+  entrenchment → concentrate) rather than nudging a scalar. `schema_version` 45→46;
+  declared fixture regeneration; the old λ-sweep pin (which asserted blight LOCKED
+  negative) rewritten as the sign-unlock pin. Exhibits (pinned): **the contained
+  sacrifice** — `#seed=dbz-2&db=50&regions=20&ep=10`, "Skalgarruk Fell" (region 8):
+  blight 100 on ground its 636 people had left, the harm landing on no one — the
+  doctrine "worked"; **the ruined sacrifice** — `#seed=dbz-8&db=50&regions=20&ep=10`,
+  "Crannord" (region 4): the same doctrine, but the opened cheap land drew a settler
+  rush (1,319 → 2,264, +72%) before the poison ramped in — 2,109 souls still stood
+  on it at blight 72, the harm the containment was supposed to prevent (P4); **the
+  poison on the rich** — `#seed=dbz-11&db=15&regions=20&ep=10`, "Forrow" (region 8):
+  under disperse the wealthiest ground carries blight 100, corr(blight, wealth) 0.99
+  — the marquee inversion of the old thesis.
 - **v45** (migration both ways B3): migration's second edge (issue #125, §3.2
   migration row + §3.6 diaspora). Three new flows join the old drift-toward-
   winners, and populations can now move DOWN the wealth gradient when opportunity

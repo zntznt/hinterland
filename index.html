@@ -660,10 +660,11 @@
   PHASE 4 (retained): exported blight.
     - Geology gains a blind ELEVATION field and a seeded prevailing WIND.
     - blight_load: refinery plumes spread by PHYSICS (distance kernel, elongated
-      downwind, pulled downhill) PLUS spoil hauled onto poor land, weighted by
-      the dump-bias knob λ. Neutral zero: λ=0 => blight follows only wind and
-      terrain. The λ-sweep is the built-in experiment: the correlation gap
-      between λ=default and λ=0 measures the POLICY SHARE of the injustice.
+      downwind, pulled downhill) PLUS spoil placed by the DISPOSAL DOCTRINE (B4,
+      #126): the `db` knob selects disperse (by geography, near the works),
+      concentrate (a fixed sacrifice zone, poison ramping in as the works mature),
+      or treat (cleaned where coin and `A` allow). corr(blight, wealth) now spans
+      both signs across the sweep — the poison is no longer aimed only at the poor.
     - injustice_idx = normalize(blight) x normalize(poverty) — presentation
       column only; the argument rests on the raw fields. Export schema v5.
 

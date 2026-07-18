@@ -3,14 +3,12 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 1,1025,settlement_abandoned,5,,,,,,,,,,
 1,1025,settlement_abandoned,8,,,,,,,,,,
 1,1025,settlement_abandoned,9,,,,,,,,,,
-1,1025,settlement_abandoned,10,,,,,,,,,,
 1,1025,seizure,0,,,magnate,,,,,,,
 1,1025,drought,0,the Drought of 1025,,,,,,,,,
-2,1050,settlement_founded,9,,,,,,,,,,
-2,1050,settlement_founded,10,,,,,,,,,,
 2,1050,drought,0,the Drought of 1050,,,,,,,,,
 3,1075,refinery_collapse,0,,,,,,,,,,
 3,1075,seizure,0,,,crown,,,,,,,
+4,1100,settlement_founded,9,,,,,,,,,,
 4,1100,ore_strike,8,,,,,,,,,,
 4,1100,succession,,Krazzurn,,magnate,,,,,,true,1
 4,1100,drought,9,the Drought of 1100,,,,,,,,,
@@ -19,11 +17,11 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 5,1125,seizure,0,,,magnate,,,,,,,
 5,1125,quake,5,the Drelkruk Quake,,,,,,,,,
 5,1125,ascendancy,4,the Rise of Thraldek Delf,,,,,,,,,
+5,1125,revolt,8,the Urtazzek Rising,crushed,,,,,,,,
 6,1150,succession,,Sylvasse,,temple,,,,,,false,1
 6,1150,drought,0,the Drought of 1150,,,,,,,,,
 6,1150,quake,5,the Drelkruk Quake,,,,,,,,,
 6,1150,storm,0,the Great Storm of 1150,,,,,,,,,
-6,1150,revolt,4,the Thraldek Delf Rising,crushed,,,,,,,,
 7,1175,quake,5,the Drelkruk Quake,,,,,,,,,
 8,1200,succession,,Umbermerell,,crown,,,,,,false,2
 9,1225,succession,,Hulgrumketh,,magnate,,,,,,false,2

@@ -14,11 +14,11 @@ In the founding charters too is the Rushdald Lane: lift-barges between Forby and
 
 The Zharrok Teeth, Dovrak Teeth, Krazzurn Teeth and Ulgroth Teeth wall the country, and the roads over the rock go by Thorvek Gap and Tazzek Pass. 8 of the realm's regions lie in the mountains' shadow, on the wrong side of the wall from Forby — and the chronicle will show what that costs.
 
-The Lindenholt Beck comes down off the high ground by Hallford and runs through 3 regions to the border. The towns along it drink in order: Hallford drinks it clean, and Linden, at the mouth, drinks whatever every town and works upstream let fall into the water. The order was set by the land before anyone built anything, and no one who lives at the mouth chose it.
+The Lindenholt Beck comes down off the high ground by Gnarford and runs through 3 regions to the border. The towns along it drink in order: Gnarford drinks it clean, and Linden, at the mouth, drinks whatever every town and works upstream let fall into the water. The order was set by the land before anyone built anything, and no one who lives at the mouth chose it.
 
 The sea lies to the east and north; the charts name it Ulvere Sea. The realm's gate is Rushdalvere Harbor: whatever the mines raise and the works refine leaves the country there, and whoever holds the quay holds the toll. Distance to the water is the realm's second lottery, drawn at the founding like the first. Sailors give a wide berth to the Nivel, where the sea turns on itself; no quay was ever raised in its reach.
 
-The old world is not gone: the delve called Volvar gapes in the old workings by Merivelle Tor, the tomb of Marisanthe keeps its silence in the barrens by Glarhold and the delve called Murnhak gapes in the old workings by Rushdalvere. Delvers walk the Rushdalvere road every season, because risk is a wage where nothing else pays one; not all of them walk back, and what they carry out is sold in no sanctioned market.
+The old world is not gone: the delve called Volvar gapes in the old workings by Merivelle Tor, the tomb of Marisanthe keeps its silence in the barrens by Glarhold and the delve called Murnhak gapes in the old workings by Rushdalvere. Delvers walk the Glarhold road every season, because risk is a wage where nothing else pays one; not all of them walk back, and what they carry out is sold in no sanctioned market.
 
 High above the roads, by Dunholdham, stands Galine Refuge — holy ground the Temple never consecrated and cannot forgive. It heals whoever climbs to it and asks no writ; the census does not climb at all, so the people it shelters are people the realm cannot count. Pilgrims walk to it beside the sanctioned roads, which the Temple is reminded of every festival.
 
@@ -28,7 +28,7 @@ The rivers are crossed at Linden Bridge alone; everywhere else the banks are mar
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1025), when the gap narrowed, **the Long Desolation** (1050–1150), when the gap held and **the Quiet Years** (1175–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1000), when the gap held, **the Long Desolation** (1025–1050), when the gap narrowed, **the Restoration** (1075–1150), when the gap widened, **the Quiet Years** (1175–1200), when the gap narrowed and **the Restoration** (1225–1250), when the gap held. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1050.** A storm came off the water and stood over the coast for three days. Rushdalvere took the worst of it, as the exposed shore always does; the Great Storm of 1050 is the name the survivors gave the year.
 
@@ -56,17 +56,17 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1200.** The rains failed over Forby, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1200.
 
-**Year 1200.** Fortune turned at Forby: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Forby Find.
+**Year 1200.** Fortune turned at Strakketh: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Strakketh Find.
 
-**Year 1225.** War came to Forby, as it comes to ground that great powers claim and none can hold. The powers that met there were the Crown and the magnates; the ground was merely where they met. When the fighting burned out, the seat was the poorer by a third of its people and a quarter of its wealth, and the mines and works were ruined ground. The Crown's garrison arrived after the blood, and stayed. The scribes head the page: the War of 1225.
+**Year 1225.** War came to Forby, as it comes to ground that great powers claim and none can hold. The powers that met there were the Crown and the magnates; the ground was merely where they met. When the fighting burned out, the seat was the poorer by a third of its people and a quarter of its wealth, and the mines and works were ruined ground. The Crown's garrison arrived after the blood, and stayed. The scribes head the page: the Forby War.
 
 **Year 1225.** The old Hierarch died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Ophel took the censer, over objections not all of which were buried with their holders.
 
 **Year 1225.** The rains failed over Forby, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1225.
 
-**Year 1225.** A storm came off the water and stood over the coast for three days. Carise took the worst of it, as the exposed shore always does; the Great Storm of 1225 is the name the survivors gave the year.
+**Year 1225.** A storm came off the water and stood over the coast for three days. Astehold took the worst of it, as the exposed shore always does; the Great Storm of 1225 is the name the survivors gave the year.
 
-**Year 1225.** Fortune turned at Forby: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Forby Find.
+**Year 1225.** Fortune turned at Strakketh: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Strakketh Find.
 
 **Year 1225.** The god's fortune rose at Merivelle Tor, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Merivelle Tor.
 
@@ -74,14 +74,14 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1250.** In the winter after the fighting, terms were set at Forby. The Crown wrote them: the magnates ceded nothing but its claim and kept its ledger, having little in it. The chronicle observes that the terms were written by the party with the deeper ledger, as terms usually are. The clerks copied it fair as the Peace of Forby.
 
-The chronicle closes its count of the years with the names they left behind. The realm now speaks of Rushdalvere the Hollow, Dunholdham the Free, Glarhold the Ashen, Hallford the Hollow, Umbere the Ashen, Forby the Gilded, Strakketh the Ashen, Astehold the Ashen, Merivelle Tor the Hollow, Carise the Hollow and Varvek the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
+The chronicle closes its count of the years with the names they left behind. The realm now speaks of Rushdalvere the Hollow, Dunholdham the Free, Glarhold the Hollow, Umbere the Hollow, Forby the Gilded, Strakketh the Hollow, Astehold the Hollow, Merivelle Tor the Hollow, Carise the Hollow and Varvek the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
 
 ## The State of the Realm — year 1250
 
-Of the realm's 6 settled regions, 1 held steady, 1 declined and 4 collapsed outright.
-6 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Dunholdham, Glarhold, Hallford and Umbere among others; the roads have stopped going.
-And 4 places have come back as something else — Rushdalvere, Merivelle Tor and Carise stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
-Forby rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
+Of the realm's 10 settled regions, 2 held steady, 1 declined and 7 collapsed outright.
+2 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Dunholdham and Umbere; the roads have stopped going.
+And 7 places have come back as something else — Rushdalvere, Glarhold and Strakketh stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
+Strakketh rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
 
 The Crown holds 7 regions, the Temple 1, the magnates 0; 1 are contested between them, and 3 answer to no one at all.
 
@@ -89,12 +89,12 @@ Of the realm's 4 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the Temple standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 6.5 in every hundred of the realm's people hold 84.7 of every hundred coins, and live 79.4 times better than those who work for them. Nowhere is the ledger sharper than at Forby, where 92 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 77 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 5.6 in every hundred of the realm's people hold 70.6 of every hundred coins, and live 40.8 times better than those who work for them. Nowhere is the ledger sharper than at Forby, where 92 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 65 parts in a hundred of the whole spread.
 
 5 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.33, and the turning point was the rising at Dunholdham in 1125, which won. The poorest fifth of the realm carries 3.7 times the blight of the richest fifth. Behind the Zharrok wall, the median settlement earns 100 in the hundred less than the open country at the same remove. 5 regions sit off the conduit because the ledgers said serving them would not pay. Linden drinks 33 points of other towns' poison for the crime of standing at the mouth. 5 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 6.5 in a hundred hold 84.7 of every hundred coins, and stand 79.4 times apart from the rest. The skyway would abolish 29.1 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. The Zharrok divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Rushdalvere and Astehold stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world closed some of its gap: the spread of fortunes measured 0.40 at the founding and 0.36 at the close, and the turning point was the rising at Dunholdham in 1125, which won. The poorest fifth of the realm carries 10.1 times the blight of the richest fifth. Behind the Zharrok wall, the median settlement earns 47 in the hundred less than the open country at the same remove. 5 regions sit off the conduit because the ledgers said serving them would not pay, and sickness runs 1.4 times heavier there than in the lit core. Linden drinks 3 points of other towns' poison for the crime of standing at the mouth. 9 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 5.6 in a hundred hold 70.6 of every hundred coins, and stand 40.8 times apart from the rest. The skyway would abolish 29.1 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. The Zharrok divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Rushdalvere and Astehold stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

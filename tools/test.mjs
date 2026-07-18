@@ -2896,13 +2896,13 @@ const prov = A1.gj.hinterland;
 // re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
 // the default carries the Concordat-era `world` block (regime chain + series), and
 // `fate` still rides provenance only when set — so a default world has no fate key.
-if (prov && prov.schema_version === 42 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+if (prov && prov.schema_version === 43 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && !("fate" in prov) &&
     prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=42 + weights + knobs + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
+  ok("provenance carries schema_version=43 + weights + knobs + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await gen("#seed=&regions=&we=&wg=");
@@ -3830,6 +3830,65 @@ console.log("# The fate seed (#119, A2): same rock, different luck");
   if (base.gj.hinterland.fate === undefined && fA.gj.hinterland.fate === "alpha")
     ok("fate rides provenance only when set (default export carries no fate key)");
   else fail(`fate provenance wrong: base=${base.gj.hinterland.fate} explicit=${fA.gj.hinterland.fate}`);
+}
+
+console.log("# The artifice index (#123, B1): the pie can grow — total wealth is no longer conserved");
+{
+  const regsOf = (g) => g.features.filter(f => f.properties.kind === "region").map(f => f.properties);
+  const totW = (g) => regsOf(g).reduce((s, r) => s + r.wealth, 0);
+  const totW0 = (g) => regsOf(g).reduce((s, r) => s + r.wealth_t0, 0);
+
+  // the column ships, 0–100, with real spread
+  const Db1 = await gen("#seed=b1&regions=18&ep=10");
+  const As = regsOf(Db1.gj).map(r => r.artifice_index);
+  if (As.every(a => a >= 0 && a <= 100) && Math.max(...As) - Math.min(...As) > 10)
+    ok(`the artifice index ships per region, 0–100, with real spread (${Math.min(...As)}–${Math.max(...As)})`);
+  else fail(`artifice_index missing or flat: ${As.slice(0, 6)}`);
+
+  // TOTAL WEALTH IS NO LONGER CONSERVED: some worlds GROW the pie (impossible
+  // before B1 — depletion only ever shrank it), some shrink it.
+  let grew = 0, shrank = 0;
+  for (let i = 0; i < 30; i++) {
+    const g = await gen(`#seed=piv-${i}&regions=18&ep=10`);
+    const d = totW(g) - totW0(g);
+    if (d > 3) grew++; else if (d < -3) shrank++;
+  }
+  if (grew >= 1 && shrank >= 1)
+    ok(`the pie is un-conserved: ${grew}/30 worlds GREW total wealth (the artifice channel), ${shrank}/30 shrank it (depletion + decay)`);
+  else fail(`wealth still conserved one way: grew ${grew}, shrank ${shrank}`);
+
+  // the WORLD drives the works: a sustained boom grows the pie far more than a
+  // sustained trade war, which only starves it.
+  let boomGrew = 0, bustShrank = 0;
+  for (let i = 0; i < 8; i++) {
+    const b = await gen(`#seed=g-${i}&world=era-26&regions=18&ep=10`);
+    if (totW(b) > totW0(b)) boomGrew++;
+    const u = await gen(`#seed=g-${i}&world=era-49&regions=18&ep=10`);
+    if (totW(u) < totW0(u)) bustShrank++;
+  }
+  if (boomGrew >= 2 && bustShrank >= 6)
+    ok(`the world grows or starves the works: the pie grew in ${boomGrew}/8 boom worlds, shrank in ${bustShrank}/8 trade-war worlds`);
+  else fail(`boom/bust artifice coupling weak: boom grew ${boomGrew}/8, bust shrank ${bustShrank}/8`);
+
+  // the falsifiability exhibit: a high-artifice periphery out-earns a low-artifice core
+  let exhibitSeed = null;
+  for (let i = 0; i < 30 && !exhibitSeed; i++) {
+    const P = regsOf((await gen(`#seed=piv-${i}&regions=18&ep=10`)).gj);
+    const per = P.filter(r => r.centrality_to_seat < 40), core = P.filter(r => r.centrality_to_seat >= 60);
+    if (per.some(pr => core.some(cr => pr.artifice_index > cr.artifice_index + 15 && pr.wealth > cr.wealth + 3))) exhibitSeed = `piv-${i}`;
+  }
+  if (exhibitSeed) ok(`the exhibit exists: a high-artifice periphery out-earns a low-artifice core (${exhibitSeed})`);
+  else fail("no high-A-periphery-beats-low-A-core exhibit found");
+
+  // the artifice lens paints
+  const Qb1 = await gen("#seed=b1&regions=18&ep=10", true);
+  const rb1 = Qb1.doc.querySelector('input[name=view][value="artifice"]');
+  if (rb1) { rb1.checked = true; rb1.dispatchEvent(new Qb1.window.Event("change", { bubbles: true })); }
+  const legb1 = (Qb1.doc.getElementById("legendLabel") || {}).textContent || "";
+  if (rb1 && !Qb1.doc.getElementById("map").innerHTML.includes("NaN") && legb1.includes("artifice"))
+    ok("the artifice lens paints the map (where the works learn)");
+  else fail(`artifice lens bad: present=${!!rb1} legend "${legb1}"`);
+  Qb1.window.close();
 }
 
 console.log("# The world's shape (#122, B0.5): the 1600×1000 rectangle, no W stragglers");

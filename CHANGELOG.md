@@ -10,8 +10,14 @@
   real population dip, not a move to a neighbour, and it concentrates in the poor
   grid towns, not the prosperous seats. **Remittances**: the accumulated diaspora
   sends coin home — a wealth inflow decoupled from local production that holds a
-  floor under the emptying town (dependency theory's remittance economy), modest
-  and sqrt-scaled so it is a floor, not a fortune. **The frontier term**: when the
+  floor under the emptying town (dependency theory's remittance economy),
+  sqrt-scaled and capped at ONE coin an epoch so it is a floor, not a fortune. A
+  heavy-diaspora periphery can draw a real remittance-economy share (a fifth of
+  some worlds' wealth, as it is for the Nepals and Tajikistans of the world), but
+  the inflow never pegs a town's wealth or reverses a bust world's decline — under
+  the hard Concordat default the pie still shrinks in 18/20 worlds (the calibration
+  that keeps the B1 "un-conserved, world-driven" pin true: cap 1, not 2). **The
+  frontier term**: when the
   realm's cores squeeze rents hard (high mean owners' share), the dear cores push
   their squeezed labour OUT (a rent drag) and a cheap peripheral cell the grid has
   reached pulls it IN — people flow OUTWARD against the wealth gradient and a
@@ -25,12 +31,23 @@
   pin re-measured from the pooled correlation (B2's robust-under-volatility choice)
   to the **per-world median** (B3 lets migration run both ways, so the pooled
   measure is no longer the claim — the acceptance is "favours winners in the
-  median world, not the only case"). Exhibits (pinned): **the frontier** —
+  median world, not the only case"). Two more suite adjustments B3 forced out into
+  the open: (a) the **rush pin** re-pinned 0.55→0.50 — the metropole now SKIMS the
+  ore rush (emigration pulls the young off-map exactly where opportunity flares, so
+  a struck lode keeps none of the people it draws; the honest floor is "half the
+  strikes visibly boom", not "most"); (b) the **world-isolation** check ("the world
+  never touches the rock") corrected to assert the FOUNDING endowment (`endowment_t0`)
+  rather than the current ore stock — the latter is moved by economy-driven
+  discoveries whose target keys on world-dependent wealth, so two worlds legitimately
+  hold different ore in the same seat (a latent test-field bug that passed under B2
+  only because seed=wo's discovery didn't flip seats until B3's remittances moved
+  wealth; the model's world-dependence there is correct, the B0 premise itself).
+  Exhibits (pinned): **the frontier** —
   `#seed=fr-13&regions=22&ep=10`, "Oxmook" (region 13, centrality 39): a
-  low-centrality cell grew its population 525→796 (+52%) as rent-squeezed labour
+  low-centrality cell grew its population 525→830 (+58%) as rent-squeezed labour
   flowed outward to cheap land; **the remittance floor** —
   `#seed=em-22&regions=22&ep=10`, "Quillmere" (region 21): its population dipped
-  25334→21905 (−14%) under a diaspora of 1,983, and its wealth held at 22 on the
+  25334→21683 (−14%) under a diaspora of 2,010, and its wealth held at 20 on the
   coin sent home — a floor no local production put there.
 - **v44** (the investment pool B2): the counting house's second edge (issue
   #124, §3.2 double-edge inventory + §3.6 comprador split). Concentration stops

@@ -66,9 +66,9 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1175.** The ground moved under Drelkruk, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Drelkruk Quake.
 
-**Year 1175.** Thraldek Delf rose, and was put down. The garrison came after the hangings, and the injustice that caused the rising was carefully recorded and carefully unaddressed. The people keep the date as the Thraldek Delf Rising.
-
 **Year 1200.** The old Sovereign died, and Umbermerell took the seat without incident — which the chronicle records precisely because it is rare.
+
+**Year 1200.** Thraldek Delf rose, and was put down. The garrison came after the hangings, and the injustice that caused the rising was carefully recorded and carefully unaddressed. The people keep the date as the Thraldek Delf Rising.
 
 **Year 1225.** The old First Magnate died, and Hulgrumketh took the chair without incident — which the chronicle records precisely because it is rare.
 
@@ -83,7 +83,6 @@ The chronicle closes its count of the years with the names they left behind. The
 Of the realm's 9 settled regions, 8 held steady and 1 collapsed outright.
 3 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Thraldek Delf, Drelkruk and Urtazzek; the roads have stopped going.
 And 1 place has come back as something else — Ferkul stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
-Deholt-on-Evenbroor rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
 
 The Crown holds 9 regions, the Temple 1, the magnates 0; 1 are contested between them, and 1 answer to no one at all.
 
@@ -91,12 +90,12 @@ Of the realm's 5 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the magnates standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.8 in every hundred of the realm's people hold 54.4 of every hundred coins, and live 30 times better than those who work for them. Nowhere is the ledger sharper than at Gladen, where 92 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 51 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.8 in every hundred of the realm's people hold 56.8 of every hundred coins, and live 33.1 times better than those who work for them. Nowhere is the ledger sharper than at Gladen, where 92 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 46 parts in a hundred of the whole spread.
 
 3 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world closed some of its gap: the spread of fortunes measured 0.39 at the founding and 0.33 at the close, and the turning point was the rising at Thraldek Delf in 1175, which was put down. The poorest fifth of the realm carries 6 times the blight of the richest fifth. Behind the Durnharrek wall, the median settlement earns 79 in the hundred less than the open country at the same remove. 3 regions sit off the conduit because the ledgers said serving them would not pay. Iverby drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.8 in a hundred hold 54.4 of every hundred coins, and stand 30 times apart from the rest. The skyway would abolish 38.7 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.37, and the turning point was the rising at Thraldek Delf in 1200, which was put down. The poorest fifth of the realm carries 5.6 times the blight of the richest fifth. Behind the Durnharrek wall, the median settlement earns 78 in the hundred less than the open country at the same remove. 3 regions sit off the conduit because the ledgers said serving them would not pay. Iverby drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.8 in a hundred hold 56.8 of every hundred coins, and stand 33.1 times apart from the rest. The skyway would abolish 38.7 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

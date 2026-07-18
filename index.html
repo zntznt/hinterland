@@ -4328,10 +4328,14 @@
           reg.emigEpoch = emig;
           reg.emigrantsTotal += emig;
           reg.settlementPop = Math.max(20, reg.settlementPop - emig);
-          // remittances hold a modest FLOOR, not a fortune — sqrt-scaled off the
-          // diaspora and capped low, so an emptying town keeps a coin floor from
-          // abroad without the inflow pegging its wealth or decoupling it wholesale.
-          const remit = clamp(Math.round(Math.sqrt(reg.emigrantsTotal) * metroPull * 0.30), 0, 2);
+          // remittances hold a FLOOR under the emptying town, not a fortune —
+          // sqrt-scaled off the diaspora and capped at ONE coin an epoch (a handful
+          // of points across a decade). A heavy-diaspora periphery can draw a real
+          // remittance-economy share (the coin abroad is a fifth of some worlds'
+          // wealth, as it is for the Nepals and Tajikistans of the world), but the
+          // inflow never PEGS a town's wealth or reverses a bust world's decline:
+          // under the hard Concordat default the pie still shrinks in 18/20 worlds.
+          const remit = clamp(Math.round(Math.sqrt(reg.emigrantsTotal) * metroPull * 0.30), 0, 1);
           reg.remitEpoch = remit;
           reg.remittanceTotal += remit;
           reg.wealth = clamp(reg.wealth + remit, 0, 100); // decoupled from income

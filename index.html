@@ -4222,7 +4222,7 @@
             // boom builds hardest; a low-retention bust barely builds at all —
             // that is the development-finance / comprador split of §3.6.
             const dev = clamp(0.16 + 0.006 * reg.retention + 0.55 * (worldPrice - 1), 0.05, 0.95);
-            const bustP = clamp(0.10 - 0.16 * (worldPrice - 1), 0.02, 0.34);
+            const bustP = clamp(0.05 - 0.35 * (worldPrice - 1), 0.01, 0.40);
             if (rInv() < bustP) {
               reg.A = clamp(Math.round(Aprev[i] * 0.72 + diffuse), 0, 100); // the works go dark in the bust
               reg.investBustLoss = 4;       // the owners eat the loss (applied in the elite drift below)

@@ -14,9 +14,10 @@
   never a verdict the code writes — a high-retention boom finances development; a
   low-retention bust hoards (comprador extraction, the §3.6 fractal reframe: the
   seat is itself somebody's periphery). A **bust risk** rises as the price falls
-  (to 34%/epoch): a busted placement wipes part of the works (`A ×0.72`) and the
-  owners eat the loss (−4 elite share) — **elite share's first ORDINARY decrement
-  pathway** (before B2 the owners' row fell only on war or industrial collapse).
+  (rare in good times, to 40%/epoch in a deep downturn): a busted placement wipes
+  part of the works (`A ×0.72`) and the owners eat the loss (−4 elite share) —
+  **elite share's first ORDINARY decrement pathway** (before B2 the owners' row
+  fell only on war or industrial collapse).
   New `artifice_index_t0` column (the works as founded) so "the counting house
   built here" (`A` rose) is recomputable from the file, not a claim on faith. The
   counting-house inspector's "why" row now tells the two-edged truth per town
@@ -24,18 +25,29 @@
   not). A **verdict-diversity instrument** lands in the sweep and a suite pin: the
   §3.5 gap × floor verdict space must reach ≥3 of its six quadrants across the
   seeds (§7.3's mush tripwire — a world engine that only lands in one corner is
-  the failure this project exists to avoid); measured 4/6. `schema_version` 43→44;
-  declared fixture regeneration. The matched exhibits (pinned) are the SAME
-  low-retention, foreign-intermediated town under opposite regimes — the
+  the failure this project exists to avoid); measured 5/6. `schema_version` 43→44;
+  declared fixture regeneration. **Two prior suite pins re-measured** against
+  B2's tighter world-coupling: (1) the migration→attractiveness correlation moves
+  from a fragile per-world median to a **pooled** estimate over every calm region
+  in the sweep — B2's wealth volatility genuinely weakened the close-state
+  cross-section (a town that boomed early and busted late reads low attractiveness
+  at the close yet gained population), but the drain stays positive on net; (2)
+  the "un-conserved pie" demonstration moves from the default world to **world
+  histories** — the investment pool's bust channel tightened the coupling so hard
+  that the shared, bust-leaning Concordat default now shrinks the pie in every
+  geology, so un-conservation is shown across worlds (the hard default shrinks,
+  a sustained boom grows the very same ground). The matched exhibits (pinned) are
+  two low-retention, foreign-intermediated towns under opposite regimes — the
   falsifiability keystone made concrete:
-  **development finance** — `#seed=e-12&world=era-26&regions=22&ep=10`, "Surzek"
-  (region 13, retention 19): a decade-long boom drove the counting house to
-  BUILD — artifice 63→88, and the realm floor (p10 regional wealth) rose 2→4 with
-  it. **comprador extraction** — `#seed=e-18&world=era-49&regions=22&ep=10`,
-  "Brifolt" (region 1, retention 20, owners' row 75): the same structure in a
-  trade war HOARDED — artifice fell 81→63, the works no richer, the owners' row
-  deep and the class gap 47×. Near-identical retention and ownership; only the
-  world differs — the edge is discovered, not decreed.
+  **development finance** — `#seed=e-3&world=era-26&regions=22&ep=10`,
+  "Marnmerwick Strand" (region 4, retention 34): a decade-long boom drove the
+  counting house to BUILD — artifice 62→85, and the realm floor (p10 regional
+  wealth) rose 7→13 with it. **comprador extraction** —
+  `#seed=e-4&world=era-49&regions=22&ep=10`, "Linden" (region 9, retention 27,
+  owners' row 82): the same kind of structure in a trade war HOARDED — artifice
+  fell 86→43, the works gutted, the owners' row deep and the class gap 71×. Alike
+  in how little they keep; only the world differs — the edge is discovered, not
+  decreed.
 - **v43** (the artifice index B1): the zero-sum breaker (issue #123, §3.1). Each
   region gains **`A` (0–100)** — its command of magically-enabled productivity
   (machinery, trained hands, licensed workings). Income is A-SCALED (the mix

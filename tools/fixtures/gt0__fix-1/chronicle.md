@@ -24,11 +24,13 @@ High above the roads, by Quillwor, stands Galine Refuge — holy ground the Temp
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1175), when the gap widened and **the Quiet Years** (1200–1250), when the gap held. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1075), when the gap narrowed and **the Quiet Years** (1100–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+
+**Year 1025.** In this year the sickness came to Vanmermere, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Long Cough of 1025.
 
 **Year 1050.** A storm came off the water and stood over the coast for three days. Rushdalvere took the worst of it, as the exposed shore always does; the Great Storm of 1050 is the name the survivors gave the year.
 
-**Year 1075.** In this year the refinery at Vanmermere closed its yards for good. What the ore had built, the ore's end unbuilt; the town kept its wires and lost its wages.
+**Year 1075.** The works at Vanmermere fell silent. The fields that fed them had given all they had, and the magnates did not stay for the funeral. The trunk lines still stand there, carrying nothing.
 
 **Year 1075.** The old Hierarch died, and Faelione took the censer without incident — which the chronicle records precisely because it is rare.
 
@@ -38,6 +40,10 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1075.** A storm came off the water and stood over the coast for three days. Rushdalvere took the worst of it, as the exposed shore always does; the Great Storm of 1075 is the name the survivors gave the year.
 
+**Year 1075.** The seat, chastened by the years behind it, decreed a Toll Amnesty: the gates still stand, but the levies are capped by decree. The chronicle notes that it took a wound to buy a mercy.
+
+**Year 1075.** The Temple came to Vanmermere, to the ground of its suffering, and consecrated it as Iraphyrenne. Pilgrims walk that road now. Where the Crown's writ had failed and the magnates' ledgers saw nothing worth the ink, the faith planted its standard — after the harm, claiming the ground.
+
 **Year 1100.** The old Sovereign died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Merby took the seat, over objections not all of which were buried with their holders.
 
 **Year 1100.** A storm came off the water and stood over the coast for three days. Rushdalvere took the worst of it, as the exposed shore always does; the Great Storm of 1100 is the name the survivors gave the year.
@@ -46,15 +52,9 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1125.** The river rose over Narnness and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Narnness Flood, the accounts call it, and they do not agree on the toll.
 
-**Year 1125.** Plague took Vanmermere. The blight had sat heavy on that country for years, and when the sickness came it found a town already half-poisoned. A third of the people were carried off or fled. The roads named it the Grey Breath of 1125.
-
 **Year 1125.** Rushdalvere rose, and was put down. The garrison came after the hangings, and the injustice that caused the rising was carefully recorded and carefully unaddressed. The people keep the date as the Rushdalvere Rising.
 
 **Year 1175.** The god's fortune rose at Braghold, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Braghold.
-
-**Year 1175.** The seat, chastened by the years behind it, decreed a Toll Amnesty: the gates still stand, but the levies are capped by decree. The chronicle notes that it took a wound to buy a mercy.
-
-**Year 1175.** The Temple came to Vanmermere, to the ground of its suffering, and consecrated it as Iraphyrenne. Pilgrims walk that road now. Where the Crown's writ had failed and the magnates' ledgers saw nothing worth the ink, the faith planted its standard — after the harm, claiming the ground.
 
 **Year 1200.** The old Sovereign died, and Therton took the seat without incident — which the chronicle records precisely because it is rare.
 
@@ -86,6 +86,7 @@ The chronicle closes its count of the years with the names they left behind. The
 
 Of the realm's 1 settled regions, 1 collapsed outright.
 11 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Rushdalvere, Dunholdham, Quillwor and High Trossvaskar among others; the roads have stopped going.
+Vanmermere is the emptiest of the ghost country: its best years are a memory the roads no longer visit.
 Vanmermere rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
 
 The Crown holds 9 regions, the Temple 1, the magnates 0; 1 are contested between them, and 1 answer to no one at all.
@@ -100,6 +101,6 @@ At the record's close the conduit reaches every settlement of the realm. The chr
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.00, and the turning point was the rising at Rushdalvere in 1125, which was put down. The poorest fifth of the realm carries 1.4 times the blight of the richest fifth. 0 regions sit off the conduit because the ledgers said serving them would not pay. Narnness drinks 24 points of other towns' poison for the crime of standing at the mouth. 1 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 8 in a hundred hold 68 of every hundred coins, and stand 24.4 times apart from the rest. The skyway would abolish 35.2 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. The Zharrok divides even the weather: the rain falls at 35 on one side and 14 in its lee, and no one on the dry side chose the wind.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.00, and the turning point was the Toll Amnesty of 1075. The poorest fifth of the realm carries 1.4 times the blight of the richest fifth. 0 regions sit off the conduit because the ledgers said serving them would not pay. Narnness drinks 24 points of other towns' poison for the crime of standing at the mouth. 1 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 8 in a hundred hold 68 of every hundred coins, and stand 24.4 times apart from the rest. The skyway would abolish 35.2 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. The Zharrok divides even the weather: the rain falls at 35 on one side and 14 in its lee, and no one on the dry side chose the wind.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

@@ -1116,6 +1116,14 @@
           <div class="hint">Same rock, different luck. Blank = the seed's own fate. A reroll shakes only the politics — geology, names and founding hold.</div>
         </div>
         <div class="row">
+          <label for="world">World</label>
+          <div class="inline">
+            <input type="text" id="world" inputmode="text" placeholder="concordat-settlement" />
+            <button id="diceWorld" title="Roll a different world history">&#127922;</button>
+          </div>
+          <div class="hint">The world outside — prices, empires, distant wars. Default is the shared Concordat era. A different world can rescue a doomed region or ruin a thriving one; it never touches the rock.</div>
+        </div>
+        <div class="row">
           <label>Regions <span class="val" id="regionsVal"></span></label>
           <input type="range" id="regions" min="5" max="64" step="1" />
         </div>
@@ -1318,7 +1326,7 @@
 
     // ---- Constants ----------------------------------------------------------
     const W = 1000;        // world is [0,W] x [0,W], planar, y-up
-    const SCHEMA_VERSION = 40;
+    const SCHEMA_VERSION = 41;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
@@ -1338,7 +1346,7 @@
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
 
     const DEFAULTS = {
-      seed: "hinterland", fate: "", regions: 24, relax: 2, bias: 80,
+      seed: "hinterland", fate: "", world: "concordat-settlement", regions: 24, relax: 2, bias: 80,
       we: 35, wf: 25, wt: 30, wg: 10,   // income-mix weights
       gt: 35,                            // grid threshold (0 = conduit reaches everyone)
       db: 60,                            // dump bias λ (0 = blight follows only wind/terrain)
@@ -1367,6 +1375,54 @@
     function streams(seedText) {
       const base = hashStr(String(seedText));
       return (tag) => mulberry32((base ^ hashStr(tag)) >>> 0);
+    }
+
+    // B0 (#121): the world outside — a THIRD seed (beside the rock's world seed
+    // and G5's fate seed) keying the exogenous history the region consumes but
+    // cannot touch. A Markov regime chain with real persistence (regimes last
+    // years, not epochs) drives per-epoch series; the region reads them as
+    // NUMBERS ONLY — the observability law: no second map, no simulated empire.
+    // Deterministic in the world seed alone, so two worlds differ in prices and
+    // events, never in geology or names. The default is the shared Concordat era
+    // (decision 7): every region at defaults lives through one world history.
+    const WORLD_REGIMES = ["long_boom", "trade_war", "imperial_rivalry", "doctrinal_panic", "distant_war", "retrenchment"];
+    // Per-regime boundary conditions. `price` is the FIRST consumer (an income
+    // shock to every seam and works, coupled in the epoch loop); the rest ride
+    // the export now and couple to their mechanisms later (attention→§3.6 reach,
+    // demand→the trade pole, doctrine→creditor demands, metropole→emigration).
+    // price is mild and mean≈1.0 so the default world barely moves the aggregate,
+    // while a seed that lands a long boom or a long trade war compounds into a
+    // real rescue or ruin — the falsifiability keystone.
+    const WORLD_TABLE = {
+      long_boom:        { price: 1.28, attention: 0.55, demand: 1.20, doctrine: 0.30, metropole: 0.55 },
+      trade_war:        { price: 0.76, attention: 0.50, demand: 0.60, doctrine: 0.55, metropole: 0.40 },
+      imperial_rivalry: { price: 1.06, attention: 0.90, demand: 1.00, doctrine: 0.60, metropole: 0.70 },
+      doctrinal_panic:  { price: 0.94, attention: 0.70, demand: 0.90, doctrine: 0.95, metropole: 0.50 },
+      distant_war:      { price: 1.14, attention: 0.80, demand: 1.10, doctrine: 0.70, metropole: 0.80 },
+      retrenchment:     { price: 0.82, attention: 0.30, demand: 0.75, doctrine: 0.40, metropole: 0.30 },
+    };
+    function worldStreams(worldSeed, nEpochs) {
+      const w = streams(String(worldSeed));
+      const rReg = w("regime"), rJit = w("jitter");
+      const P_STAY = 0.72; // geometric run-length: median ~2-3, mean ~3.6 epochs — long enough for a price regime to compound into wealth
+      const chain = [], price = [], attention = [], demand = [], doctrine = [], metropole = [];
+      let cur = Math.floor(rReg() * WORLD_REGIMES.length);
+      for (let e = 0; e < Math.max(0, nEpochs); e++) {
+        if (e > 0 && rReg() >= P_STAY) {            // persistence: mostly stay put
+          let nxt = Math.floor(rReg() * (WORLD_REGIMES.length - 1));
+          if (nxt >= cur) nxt++;                     // uniform among the OTHER regimes
+          cur = nxt;
+        }
+        const reg = WORLD_REGIMES[cur], t = WORLD_TABLE[reg];
+        const jit = (rJit() * 2 - 1) * 0.04;         // small within-regime wobble
+        chain.push(reg);
+        price.push(Math.round(t.price * (1 + jit) * 1000) / 1000);
+        attention.push(t.attention); demand.push(t.demand);
+        doctrine.push(t.doctrine); metropole.push(t.metropole);
+      }
+      return { seed: String(worldSeed), regime_chain: chain, price_index: price,
+        imperial_attention: attention, foreign_demand: demand,
+        doctrine_pressure: doctrine, metropole_pull: metropole };
     }
 
     // ---- Tiny helpers -------------------------------------------------------
@@ -3525,14 +3581,21 @@
       const k = lerp(0.4, 3.0, params.bias / 100);
       const rNoise = sx("wealth");
       const total = params.we + params.wf + params.wt + params.wg;
-      const income = (reg) => {
+      // priceMult (B0 #121): the world aetherstone price index shocks the
+      // region's EXPORT INCOME. Aetherstone is the region's main export, so a
+      // world price swing moves the whole earning economy, not one term — the
+      // shock scales the composed income. Sustained (regimes persist), this
+      // compounds against the 0.6 wealth carryover toward wealth ∝ price, which
+      // is what lets a boom rescue and a bust ruin. Defaults to 1 (the founding
+      // is pre-history: no world price has acted, so ep=0 is world-invariant).
+      const income = (reg, priceMult = 1) => {
         const t = maxD > 0 ? 1 - reg.dist / maxD : 1;
         const legacy = lerp(5, 100, Math.pow(t, k)) / 100;         // == old formula
         const ext = (reg.E / 100) * (reg.retention / 100);         // what extraction leaves behind
         const ref = reg.refining / 100;
         const trade = (0.65 * reg.centrality + 0.35 * reg.seaAccess) / 100; // two poles: the seat and the sea
         const base = total > 0
-          ? (params.we * ext + params.wf * ref + params.wt * trade + params.wg * legacy) / total
+          ? priceMult * (params.we * ext + params.wf * ref + params.wt * trade + params.wg * legacy) / total
           : 0.5; // all weights zero: no income model — flat
         // WATER is a precondition, not a fourth income stream: no economy
         // sustains itself without it, so it MULTIPLIES the base rather than
@@ -4097,7 +4160,12 @@
       // static model exactly). Each further epoch: ore depletes, wealth
       // accumulates, people migrate along roads, the grid ratchets outward
       // chasing the winners, and the dumping re-targets the poor.
+      // B0 (#121): the world outside arrives as numbers — the price index shocks
+      // this epoch's aetherstone income; the rest of the series rides for its
+      // future consumers. Founding above already ran at price 1 (world-invariant).
+      const worldSeries = worldStreams(params.world || DEFAULTS.world, params.ep);
       for (let e = 0; e < params.ep; e++) {
+        const worldPrice = worldSeries.price_index[e]; // this epoch's aetherstone price
         regions.forEach(reg => { reg.E = Math.round(reg.E * 0.78); }); // mines draw down
         // V1: the Crown Granary, where decreed — a levy on the fat years,
         // bread in the lean ones; wealth is pulled toward the median, ±3 a year
@@ -4144,7 +4212,7 @@
           // assessment, and the Crown assesses its own bloc gently
           const trib = dominionAt === -1 ? 0 : (reg.occupied ? 3 : (reg.bloc === "crown" ? 1 : 2));
           const wealthBefore = reg.wealth; // #93: for the ownership drift below
-          reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg) - 0.035 * reg.tollBurden + gateIncome + bread - trib), 0, 100);
+          reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg, worldPrice) - 0.035 * reg.tollBurden + gateIncome + bread - trib), 0, 100);
           if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
           // H1: the rents concentrate before anything trickles — the gate's
           // take and the works' profit land on the owners' row first; only
@@ -5467,7 +5535,8 @@
       // span); keep only bridges whose host cell is still settled
       const liveBridges = geo.bridges.filter(b => regions[b.regionIdx] && regions[b.regionIdx].settled);
       return { seed: String(params.seed), regions, settlements, facilities, structures, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: liveBridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, lakeShapes: geo.lakeShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
-        dominion: dominionAt !== -1 ? { arrived: dominionAt, foothold: footholdIdx } : null };
+        dominion: dominionAt !== -1 ? { arrived: dominionAt, foothold: footholdIdx } : null,
+        world: worldSeries };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -5856,6 +5925,7 @@
         name: "hinterland",
         hinterland: {
           schema_version: SCHEMA_VERSION,
+          world: model.world,
           seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), regions: params.regions, relax: params.relax,
           bias: params.bias,
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
@@ -6056,6 +6126,7 @@
         name: "hinterland_epochs",
         hinterland: {
           schema_version: SCHEMA_VERSION, series: true, epochs: params.ep,
+          world: model.world,
           skyway: { name: model.skywayName, ports: model.regions.filter(r => r.isSkyport === 1).map(r => r.id) },
           dominion: model.dominion ? { arrived_epoch: model.dominion.arrived, foothold: model.regions[model.dominion.foothold].id, occupied_n: model.regions.filter(r => r.occupied).length } : null,
           years_per_epoch: 25,
@@ -8520,6 +8591,7 @@
       const p = new URLSearchParams();
       p.set("seed", params.seed);
       if (params.fate) p.set("fate", params.fate);   // off-default only (the lens= precedent)
+      if (params.world && params.world !== DEFAULTS.world) p.set("world", params.world); // the Concordat era stays clean
       p.set("regions", params.regions);
       p.set("relax", params.relax);
       p.set("bias", params.bias);
@@ -8579,6 +8651,7 @@
       const out = {
         seed: p.get("seed") || DEFAULTS.seed,
         fate: (p.get("fate") || DEFAULTS.fate).trim(),
+        world: (p.get("world") || DEFAULTS.world).trim() || DEFAULTS.world,
         regions: clamp(Math.round(num("regions", DEFAULTS.regions)), 5, 64),
         relax: clamp(Math.round(num("relax", DEFAULTS.relax)), 0, 8),
         bias: w("bias", DEFAULTS.bias),
@@ -8599,7 +8672,7 @@
     // ---- UI sync ------------------------------------------------------------
     function syncControls() {
       const set = (id, v) => { document.getElementById(id).value = v; };
-      set("seed", params.seed); set("fate", params.fate); set("regions", params.regions); set("relax", params.relax);
+      set("seed", params.seed); set("fate", params.fate); set("world", params.world); set("regions", params.regions); set("relax", params.relax);
       set("bias", params.bias); set("we", params.we); set("wf", params.wf);
       set("wt", params.wt); set("wg", params.wg); set("gt", params.gt); set("db", params.db); set("ep", params.ep);
       document.getElementById("regionsVal").textContent = params.regions;
@@ -8892,6 +8965,15 @@
         const ch = "abcdefghijkmnpqrstuvwxyz23456789";
         let tok = ""; for (let i = 0; i < 5; i++) tok += ch[Math.floor(rr() * ch.length)];
         params.fate = tok; syncControls(); regenerateTopology();
+      });
+      $("world").addEventListener("change", (e) => { params.world = e.target.value.trim() || DEFAULTS.world; regenerateTopology(); });
+      $("diceWorld").addEventListener("click", () => {
+        // a different world history — a new regime chain and price series; the
+        // rock and its names never move (the world is exogenous).
+        const rr = mulberry32((hashStr(params.world) ^ (params.regions << 6) ^ ((Date.now ? Date.now() : 0) >>> 0)) >>> 0);
+        const ch = "abcdefghijkmnpqrstuvwxyz23456789";
+        let tok = ""; for (let i = 0; i < 6; i++) tok += ch[Math.floor(rr() * ch.length)];
+        params.world = tok; syncControls(); regenerateTopology();
       });
 
       $("regions").addEventListener("input", (e) => { params.regions = +e.target.value; $("regionsVal").textContent = params.regions; params.capital = null; regenerateTopology(); });

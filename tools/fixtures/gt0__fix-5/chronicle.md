@@ -18,7 +18,7 @@ The Welven Beck comes down off the high ground by Kharruk-on-Welven and runs thr
 
 The sea lies to the east; the charts name it Gulf of Yell and Gulf of Marrook. The realm's gate is Haldmouth Harbor (which drinks the river last and ships it first): whatever the mines raise and the works refine leaves the country there, and whoever holds the quay holds the toll. Distance to the water is the realm's second lottery, drawn at the founding like the first.
 
-The old world is not gone: the delve called Dhozzurtask gapes in the old workings by Vaskalgrelk, the tomb of Evallenne keeps its silence in the barrens by Strag and the deadhold of Synthaine stands empty by Yeldham Strand, and its ground is poisoned yet. Delvers walk the Ivermere road every season, because risk is a wage where nothing else pays one; not all of them walk back, and what they carry out is sold in no sanctioned market.
+The old world is not gone: the delve called Dhozzurtask gapes in the old workings by Vaskalgrelk, the tomb of Evallenne keeps its silence in the barrens by Strag and the deadhold of Synthaine stands empty by Yeldham Strand, and its ground is poisoned yet. Delvers walk the Haldmouth road every season, because risk is a wage where nothing else pays one; not all of them walk back, and what they carry out is sold in no sanctioned market.
 
 An apostate keeps Kharruk-on-Welven Tower, out where the wardline fails and the conduit never came — selling in the darkness what the grid will not carry. The Temple calls it heresy; the magnates call it competition; the people it heals call it the only healer who ever came.
 
@@ -70,13 +70,14 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1250.** Fortune turned at Merow Strand: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Merow Strand Find.
 
-The chronicle closes its count of the years with the names they left behind. The realm now speaks of Yeldham Strand the Yoked, Varrek the Yoked, Bellorvar the Hollow, Strag the Hollow, Tarnmerwick the Hollow, Golvar the Hollow, Vaskalgrelk the Hollow and Haldmouth the Yoked — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
+The chronicle closes its count of the years with the names they left behind. The realm now speaks of Yeldham Strand the Yoked, Varrek the Yoked, Strag the Hollow, Tarnmerwick the Hollow, Golvar the Hollow, Vaskalgrelk the Hollow and Haldmouth the Yoked — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
 
 ## The State of the Realm — year 1250
 
-Of the realm's 6 settled regions, 5 held steady and 1 collapsed outright.
-6 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Yeldham Strand, Bellorvar, Strag and Tarnmerwick among others; the roads have stopped going.
+Of the realm's 7 settled regions, 6 held steady and 1 collapsed outright.
+5 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Yeldham Strand, Strag, Tarnmerwick and Golvar among others; the roads have stopped going.
 Varrek is the emptiest of the ghost country: its best years are a memory the roads no longer visit.
+Bellorvar rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
 
 The Crown holds 5 regions, the Temple 3, the magnates 0; 3 are contested between them, and 1 answer to no one at all.
 
@@ -84,7 +85,7 @@ Of the realm's 6 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Temple, and the ledger buys the next gate — money begets reach begets money. Between the powers the chronicle records no grievance worth the ink — this year.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.9 in every hundred of the realm's people hold 47.5 of every hundred coins, and live 22.6 times better than those who work for them. Nowhere is the ledger sharper than at Varrek, where 63 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 19 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.9 in every hundred of the realm's people hold 46 of every hundred coins, and live 21.2 times better than those who work for them. Nowhere is the ledger sharper than at Varrek, where 63 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 21 parts in a hundred of the whole spread.
 
 And over all of it stands the Dominion, which holds 3 regions from its foothold at Haldmouth and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns; the chronicle is required to note the difference between reigning and ruling.
 
@@ -92,6 +93,6 @@ At the record's close the conduit reaches every settlement of the realm. The chr
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.47 at the founding and 0.73 at the close, and the turning point was the rising at Varrek in 1125, which was put down. The poorest fifth of the realm carries 3.9 times the blight of the richest fifth. 0 regions sit off the conduit because the ledgers said serving them would not pay. Haldmouth drinks 25 points of other towns' poison for the crime of standing at the mouth. 5 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.9 in a hundred hold 47.5 of every hundred coins, and stand 22.6 times apart from the rest. The skyway would abolish 55.3 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 3 regions occupied, the yield assessed at the quay, the free country keeping 2.1 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The Strek divides even the weather: the rain falls at 38 on one side and 16 in its lee, and no one on the dry side chose the wind.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.43 at the founding and 0.67 at the close, and the turning point was the rising at Varrek in 1125, which was put down. The poorest fifth of the realm carries 13.1 times the blight of the richest fifth. 0 regions sit off the conduit because the ledgers said serving them would not pay. Haldmouth drinks 25 points of other towns' poison for the crime of standing at the mouth. 6 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.9 in a hundred hold 46 of every hundred coins, and stand 21.2 times apart from the rest. The skyway would abolish 55.3 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 3 regions occupied, the yield assessed at the quay, the free country keeping 2.1 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The Strek divides even the weather: the rain falls at 38 on one side and 16 in its lee, and no one on the dry side chose the wind.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

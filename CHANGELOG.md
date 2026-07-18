@@ -1,6 +1,32 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v41** (the world outside B0): the Hinterland stops being a closed system
+  (issue #121). A THIRD seed — `world=`, default the shared **Concordat era**
+  (decision 7) — keys `worldStreams()`, a Markov **regime chain** over six world
+  conditions (long boom / trade war / imperial rivalry / doctrinal panic /
+  distant war / retrenchment) with real persistence (median run ≥ 2 epochs), and
+  five derived per-epoch series: the **aetherstone price index** (the first
+  consumer — it shocks extraction + refining income in the epoch loop),
+  imperial attention, foreign demand, doctrine pressure, and metropole pull (the
+  latter four ride the export now and couple to their mechanisms later). The
+  **observability law** holds: the outside is never drawn, only exported as
+  numbers under `hinterland.world`. Deterministic in the world seed alone — two
+  worlds differ in prices, wealth, and (through wealth → injustice → the revolt)
+  sometimes events, but NEVER in geology or names; the founding (ep=0) is
+  world-invariant (the world acts only through the epochs). This is the
+  falsifiability keystone: a region can do everything right and be ruined by a
+  price collapse, or everything wrong and be rescued by a boom — no verdict reads
+  off the policies alone. `world=` rides the hash off-default only (the `lens=`
+  precedent); THE WORLD gains a `World` input + a reroll die. Declared fixture
+  regeneration; `schema_version` bumps 40→41; two suite pins re-measured against
+  the world-coupled model (a region the world killed has no owners' row to
+  expropriate; the toll sample widened as more revolts win). The falsifiability
+  exhibits, pinned: a **badly-knobbed realm rescued** by a decade-long boom
+  (`#seed=rescue-a&world=era-26&regions=18&ep=10&we=10&wf=10&wt=15&wg=5` — mean
+  wealth 13→17) and a **well-knobbed realm ruined** by a decade-long trade war
+  (`#seed=ruin5&world=era-49&regions=18&ep=10&we=45&wf=35&wt=40&wg=5` — 15→11):
+  no verdict reads off the policies alone.
 - **v40 addendum (A3, the neutral instruments — declared regen, no format bump)**:
   the shape metrics land (issue #120) so a reader can see *any* world, not only
   the one the old argument expected. Five new findings, additive under

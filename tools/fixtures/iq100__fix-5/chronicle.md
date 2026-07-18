@@ -76,7 +76,7 @@ The chronicle closes its count of the years with the names they left behind. The
 
 ## The State of the Realm — year 1250
 
-Of the realm's 6 settled regions, 5 held steady and 1 collapsed outright.
+Of the realm's 6 settled regions, 5 held steady and 1 declined.
 6 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Yeldham Strand, Bellorvar, Strag and Tarnmerwick among others; the roads have stopped going.
 Varrek is the emptiest of the ghost country: its best years are a memory the roads no longer visit.
 
@@ -86,14 +86,14 @@ Of the realm's 6 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Temple, and the ledger buys the next gate — money begets reach begets money. Between the powers the chronicle records no grievance worth the ink — this year.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.9 in every hundred of the realm's people hold 44.6 of every hundred coins, and live 20 times better than those who work for them. Nowhere is the ledger sharper than at Varrek, where 62 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 20 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.9 in every hundred of the realm's people hold 44.6 of every hundred coins, and live 20 times better than those who work for them. Nowhere is the ledger sharper than at Varrek, where 63 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 21 parts in a hundred of the whole spread.
 
 And over all of it stands the Dominion, which holds 3 regions from its foothold at Haldmouth and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns; the chronicle is required to note the difference between reigning and ruling.
 
-4 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
+5 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.47 at the founding and 0.65 at the close, and the turning point was the rising at Varrek in 1125, which was put down. The poorest fifth of the realm carries 1.8 times the blight of the richest fifth. 4 regions sit off the conduit because the ledgers said serving them would not pay. Haldmouth drinks 24 points of other towns' poison for the crime of standing at the mouth. 5 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.9 in a hundred hold 44.6 of every hundred coins, and stand 20 times apart from the rest. The skyway would abolish 55.3 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 3 regions occupied, the yield assessed at the quay, the free country keeping 2.1 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The Strek divides even the weather: the rain falls at 38 on one side and 16 in its lee, and no one on the dry side chose the wind.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.47 at the founding and 0.65 at the close, and the turning point was the rising at Varrek in 1125, which was put down. The poorest fifth of the realm carries 1.8 times the blight of the richest fifth. 5 regions sit off the conduit because the ledgers said serving them would not pay. Haldmouth drinks 24 points of other towns' poison for the crime of standing at the mouth. 5 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.9 in a hundred hold 44.6 of every hundred coins, and stand 20 times apart from the rest. The skyway would abolish 55.3 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 3 regions occupied, the yield assessed at the quay, the free country keeping 2.1 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The Strek divides even the weather: the rain falls at 38 on one side and 16 in its lee, and no one on the dry side chose the wind.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

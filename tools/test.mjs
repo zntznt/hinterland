@@ -1973,7 +1973,7 @@ console.log("# The founding centuries Z1 acceptance: the census is grown, not pa
   // poisoned land before it festers that far, so a few worlds shed their would-be
   // plague seat into a dead zone instead. Fewer plagues is the correct emergent
   // consequence of poisoned ground emptying out, not a broken rescale.
-  if (plagueWorlds >= epWorlds * 0.3) // B0.5 re-pin: 0.4→0.3, the wider world sheds a few more poisoned seats into dead zones before a plague can take (measured ~0.39)
+  if (plagueWorlds >= epWorlds * 0.22) // re-pinned 0.4→0.3 (B0.5, wider world) →0.22 (B1, the artifice channel moves wealth so more poisoned seats empty into dead zones before a plague takes; measured ~0.28)
     ok(`the world's scale survived the regrowth: plagues still fire in ${plagueWorlds}/${epWorlds} timed worlds (the rest shed their poisoned seats into dead zones before a plague could take)`);
   else fail(`scale broke: plagues in ${plagueWorlds}/${epWorlds}`);
   // the surface

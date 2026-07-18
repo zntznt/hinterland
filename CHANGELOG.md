@@ -1,6 +1,37 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v45** (migration both ways B3): migration's second edge (issue #125, §3.2
+  migration row + §3.6 diaspora). Three new flows join the old drift-toward-
+  winners, and populations can now move DOWN the wealth gradient when opportunity
+  or the metropole says so. **Emigration off-map**: the metropole pulls the young
+  away, hardest where the grid exposes them to it and the local ladder is short —
+  a proxy for the §3.4 attention column (where a region's mind lives). It is a
+  real population dip, not a move to a neighbour, and it concentrates in the poor
+  grid towns, not the prosperous seats. **Remittances**: the accumulated diaspora
+  sends coin home — a wealth inflow decoupled from local production that holds a
+  floor under the emptying town (dependency theory's remittance economy), modest
+  and sqrt-scaled so it is a floor, not a fortune. **The frontier term**: when the
+  realm's cores squeeze rents hard (high mean owners' share), the dear cores push
+  their squeezed labour OUT (a rent drag) and a cheap peripheral cell the grid has
+  reached pulls it IN — people flow OUTWARD against the wealth gradient and a
+  periphery can boom. New `emigrants_total` + `remittance_income` columns (main
+  export), per-epoch `emigration`/`remittance` in the series, and the diaspora
+  drawn in THE DRIFT (the souls dip against the wealth floor). So migration is no
+  longer a one-way drain: the pooled pop→attractiveness correlation falls to ~0,
+  but the MEDIAN world still favours its winners — the drift toward attractiveness
+  is the common case (~54% of worlds), the frontier and the diaspora the negative
+  tail. `schema_version` 44→45; declared fixture regeneration; the migration suite
+  pin re-measured from the pooled correlation (B2's robust-under-volatility choice)
+  to the **per-world median** (B3 lets migration run both ways, so the pooled
+  measure is no longer the claim — the acceptance is "favours winners in the
+  median world, not the only case"). Exhibits (pinned): **the frontier** —
+  `#seed=fr-13&regions=22&ep=10`, "Oxmook" (region 13, centrality 39): a
+  low-centrality cell grew its population 525→796 (+52%) as rent-squeezed labour
+  flowed outward to cheap land; **the remittance floor** —
+  `#seed=em-22&regions=22&ep=10`, "Quillmere" (region 21): its population dipped
+  25334→21905 (−14%) under a diaspora of 1,983, and its wealth held at 22 on the
+  coin sent home — a floor no local production put there.
 - **v44** (the investment pool B2): the counting house's second edge (issue
   #124, §3.2 double-edge inventory + §3.6 comprador split). Concentration stops
   being a one-way ratchet. Each epoch an **investment pool** forms from the

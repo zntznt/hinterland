@@ -1341,7 +1341,7 @@
     const RIVER_DECAY = 0.75; // per-step decay of the carried load
     const RIDGE_WALL = 4.5;  // edge-cost multiplier for crossing a ridge off-pass
     const PASS_MULT = 1.4;   // crossing at a pass: a climb, not a wall
-    const PASS_R = 120;      // how close a crossing must be to a pass to count as one (B0.5: 90 ×1.334)
+    const PASS_R = 90;       // how close a crossing must be to a pass to count as one (B0.5: a LOCAL crossing tolerance, not a reach — unscaled)
     const BLOC_TOL = 12;    // top-two reach gap below this => contested
     const BLOC_FLOOR = 25;  // all reaches below this => ungoverned
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost

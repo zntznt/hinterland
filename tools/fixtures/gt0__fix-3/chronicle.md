@@ -6,7 +6,7 @@
 
 In the beginning of this record the realm counted 12 settled regions, and Gladen held the seat. The wind stood out of the northeast, as it does in that country, and everything else followed from the ground: where the aetherstone lay, where the land would carry a road, and where it would not.
 
-No charter drew the towns to size. The centuries did: good land compounded, the fairs drew the valleys in, and by year 1000 the largest town held 13,369 souls to the median town's 2,746 — a hierarchy grown, not granted, and steeper every century the compounding ran.
+No charter drew the towns to size. The centuries did: good land compounded, the fairs drew the valleys in, and by year 1000 the largest town held 13,396 souls to the median town's 2,794 — a hierarchy grown, not granted, and steeper every century the compounding ran.
 
 The works at Gladen turned aetherstone to lumen, and the trunk lines ran from their yards to the seat. The Temple kept holy ground at Delliothe (by Thraldek Delf) — out where the sacred substance lies and the Crown's writ runs thin. Every settlement of the realm sat on the conduit at the founding — a generosity of the ledgers the chronicle does not expect to last.
 
@@ -91,12 +91,12 @@ Of the realm's 5 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the magnates standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.8 in every hundred of the realm's people hold 53.9 of every hundred coins, and live 29.6 times better than those who work for them. Nowhere is the ledger sharper than at Gladen, where 92 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 52 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.8 in every hundred of the realm's people hold 53.9 of every hundred coins, and live 29.4 times better than those who work for them. Nowhere is the ledger sharper than at Gladen, where 92 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 52 parts in a hundred of the whole spread.
 
 At the record's close the conduit reaches every settlement of the realm. The chronicle notes it without comment, so that later readers may check whether it lasted.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.31; no reform came, no rising came, and the loops ran unopposed. The poorest fifth of the realm carries 5.4 times the blight of the richest fifth. Behind the Durnharrek wall, the median settlement earns 63 in the hundred less than the open country at the same remove. 0 regions sit off the conduit because the ledgers said serving them would not pay. Iverby drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.8 in a hundred hold 53.9 of every hundred coins, and stand 29.6 times apart from the rest. The skyway would abolish 38.7 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.31; no reform came, no rising came, and the loops ran unopposed. The poorest fifth of the realm carries 5.4 times the blight of the richest fifth. Behind the Durnharrek wall, the median settlement earns 63 in the hundred less than the open country at the same remove. 0 regions sit off the conduit because the ledgers said serving them would not pay. Iverby drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.8 in a hundred hold 53.9 of every hundred coins, and stand 29.4 times apart from the rest. The skyway would abolish 38.7 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

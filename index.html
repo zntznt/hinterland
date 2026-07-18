@@ -1169,10 +1169,10 @@
           <div class="hint">The benefit a settlement must promise before the conduit reaches it. 0 = everyone connected.</div>
         </div>
         <div class="row">
-          <label>Dump bias &lambda; <span class="val" id="dbVal"></span></label>
+          <label>Disposal doctrine <span class="val" id="dbVal"></span></label>
           <input type="range" id="db" min="0" max="100" step="1" />
-          <div class="hint">How much refinery spoil is hauled onto poor land. 0 = blight follows only wind and terrain.</div>
-          <button id="cfBtn" type="button">&#8644; the counterfactual: this world at &lambda; = 0</button>
+          <div class="hint">What the realm does with refinery spoil. 0&ndash;33 <b>disperse</b> (spread thin by wind and terrain); 34&ndash;66 <b>concentrate</b> (all of it onto one sacrifice zone); 67&ndash;100 <b>treat</b> (clean it up where coin and works allow).</div>
+          <button id="cfBtn" type="button">&#8644; the counterfactual: this world DISPERSED (the spoil spread, no hand aiming it)</button>
           <button id="cfBtnGrid" type="button">&#8644; the counterfactual: the FULL GRID (threshold 0)</button>
           <button id="cfBtnBoth" type="button">&#8644; both mercies at once</button>
           <div class="hint">Same rock, same wind, same dice &mdash; only the policy differs. The gap is the policy.</div>
@@ -1254,7 +1254,7 @@
       <div id="cfNote"></div>
       <div class="cf-grid" id="cfGrid">
         <div class="cf-pane"><div class="cf-cap" id="cfCapL"></div><div id="cfLeft"></div></div>
-        <div class="cf-pane"><div class="cf-cap" id="cfCapR2">PHYSICS ONLY (&lambda; = 0) &mdash; injustice</div><div id="cfRight"></div></div>
+        <div class="cf-pane"><div class="cf-cap" id="cfCapR2">DISPERSED (spoil spread, none aimed) &mdash; injustice</div><div id="cfRight"></div></div>
       </div>
       <div id="cfStats"></div>
     </div>
@@ -1327,7 +1327,7 @@
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 45;
+    const SCHEMA_VERSION = 46;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
@@ -1350,7 +1350,7 @@
       seed: "hinterland", fate: "", world: "concordat-settlement", regions: 24, relax: 2, bias: 80,
       we: 35, wf: 25, wt: 30, wg: 10,   // income-mix weights
       gt: 35,                            // grid threshold (0 = conduit reaches everyone)
-      db: 60,                            // dump bias λ (0 = blight follows only wind/terrain)
+      db: 60,                            // disposal doctrine: 0–33 disperse, 34–66 concentrate, 67–100 treat
       iq: 45,                            // the seat's ear (P(reform); default = the old dice)
       hb: 1,                             // harbors open (0 = sealed: no ports, no Dominion)
       ep: 0,                             // epochs (0 = founding snapshot, no dynamics)
@@ -3800,7 +3800,7 @@
 
       // V1: the loop's own parameters are now history-mutable — reforms and
       // reactions shift them mid-run, and the free town escapes the tolls
-      let dbShift = 0, gtShift = 0, tollScale = 1, freeTownIdx = -1, granaryOn = false;
+      let disposalOverride = null, gtShift = 0, tollScale = 1, freeTownIdx = -1, granaryOn = false;
       // #93: a maturing realm wires more of itself. gtEase lowers the hook-up bar
       // a touch each epoch so the grid keeps ratcheting outward through the
       // history instead of freezing after the founding expansion. It is 0 at
@@ -3854,22 +3854,42 @@
       };
       expandConduit();
 
-      // Blight. Two parts per refinery:
-      //   PLUME (physics): leakage spread by a distance kernel, elongated
-      //     downwind, pulled downhill. Always present, λ-independent.
-      //   SPOIL (policy): a FIXED mass of tailings per refinery, allocated by
-      //     weights that λ reshapes — at λ=0 pure distance decay (dumped on
-      //     whoever is NEAREST: geography, the neutral zero), at λ=1 strongly
-      //     poverty-seeking (hauled onto whoever is POOREST). Same mass either
-      //     way: the λ-sweep compares identical contamination under different
-      //     victims — the "policy share" experiment.
+      // B4 (#126): BLIGHT under the DISPOSAL DOCTRINE — the saturated λ dial retired
+      // for a three-way regime the `db` knob now selects (0–33 DISPERSE, 34–66
+      // CONCENTRATE, 67–100 TREAT; old db= links keep meaning — low db was the
+      // physics spread, mid-high db aimed the spoil at the poor). Two parts per
+      // refinery:
+      //   PLUME (physics): leakage spread by a distance kernel, elongated downwind,
+      //     pulled downhill. Always present, doctrine-independent.
+      //   SPOIL (policy): a FIXED mass of tailings per refinery, placed by the
+      //     doctrine — DISPERSE spreads it by distance alone (everyone a little, no
+      //     hand aims it); CONCENTRATE hauls it ALL onto one sacrifice zone (harm
+      //     contained WHILE the zone stays empty — but B3 migration can fill a cheap
+      //     periphery, and the poison was waiting: the harm is delayed and lands on
+      //     whoever moved in, P4); TREAT spreads it, then the realm cleans up where
+      //     it can AFFORD the coin and fields the WORKS (A) — so a rich, developed
+      //     core clears its own spoil while a wealthy-but-A-poor seat cannot, and the
+      //     poison can land on the RICH with no hand having aimed it there.
       const scar = new Array(regions.length).fill(0); // permanent contamination (relic calamities)
       // P1: the deadhold's ground was poisoned before anyone alive was born
       geo.ruins.filter(r => r.type === "deadhold").forEach(r => { scar[r.regionIdx] = Math.max(scar[r.regionIdx], 1.8); });
-      const computeBlight = () => { // reads CURRENT wealth: dumping re-targets the poor
+      // CONCENTRATE's sacrifice zone is chosen ONCE, at the founding: the poorest,
+      // most peripheral settled seat the realm is willing to write off. It does NOT
+      // chase the poor each epoch (that was λ) — it is a fixed place on the map, and
+      // history alone decides whether anyone comes to live in it.
+      let sacrificeZone = -1, szBest = Infinity;
+      regions.forEach((reg, i) => {
+        if (!reg.settled) return;
+        // poor + peripheral, but reachable enough that B3 migration COULD later
+        // flow in and turn a contained sacrifice into a populated one (P4).
+        const v = reg.wealth + 0.4 * reg.centrality - (onGrid[i] ? 12 : 0);
+        if (v < szBest || (v === szBest && sacrificeZone >= 0 && i < sacrificeZone)) { szBest = v; sacrificeZone = i; }
+      });
+      const computeBlight = () => { // recomputed each epoch; the doctrine reads current state
         const windRad = geo.windDeg * Math.PI / 180;
         const wvx = Math.cos(windRad), wvy = Math.sin(windRad);
-        const lam = clamp(params.db + dbShift, 0, 100) / 100; // V1: reforms and reactions move the bias
+        const eff = clamp(params.db, 0, 100); // the doctrine selector; a reform can override it mid-run
+        const doctrine = disposalOverride || (eff < 34 ? "disperse" : eff < 67 ? "concentrate" : "treat");
         const blightRaw = regions.map((_, i) => scar[i]);
         regions.forEach(rf => {
           if (rf.refining <= 0) return;
@@ -3883,20 +3903,48 @@
             blightRaw[i] += 0.3 * C * base * windBoost * hillBoost;
           });
           const SPOIL = 5 * C;
-          let wsum = 0;
-          const wts = regions.map(reg => {
-            const d = Math.hypot(reg.c[0] - rf.c[0], reg.c[1] - rf.c[1]);
-            // Distance-decay constants (here and templeReach/magnateReach/conduit/
-            // healingReach/forceProjection) were rescaled ×1.334 for the 1600×1000
-            // world so reach reads the same in world-units (B0.5, #122).
-            const w = Math.exp(-d / 1068) * Math.pow(1 - reg.wealth / 100, 10 * lam);
-            wsum += w; return w;
-          });
-          if (wsum > 0) regions.forEach((_, i) => { blightRaw[i] += SPOIL * (wts[i] / wsum); });
+          if (doctrine === "concentrate" && sacrificeZone >= 0) {
+            // most of it onto the one written-off zone (the exhibit's sacrifice
+            // ground) — but the rest hauled onto the poor MARGIN, so at the realm
+            // scale the doctrine reads as poverty-seeking (blight on the poor,
+            // negative wealth-correlation) even as one zone bears the brunt.
+            blightRaw[sacrificeZone] += 0.65 * SPOIL;
+            let wsum = 0;
+            const wts = regions.map(reg => { const w = Math.pow(1 - reg.wealth / 100, 6); wsum += w; return w; });
+            if (wsum > 0) regions.forEach((_, i) => { blightRaw[i] += 0.35 * SPOIL * (wts[i] / wsum); });
+          } else {
+            // DISPERSE (and TREAT's pre-cleanup spread): distance decay ONLY, no
+            // poverty exponent — no hand aims the spoil at the poor; it lands by
+            // geography, and TREAT then decides who can afford to clean it up.
+            let wsum = 0;
+            const wts = regions.map(reg => {
+              const d = Math.hypot(reg.c[0] - rf.c[0], reg.c[1] - rf.c[1]);
+              // Distance-decay constants (here and templeReach/magnateReach/conduit/
+              // healingReach/forceProjection) were rescaled ×1.334 for the 1600×1000
+              // world so reach reads the same in world-units (B0.5, #122).
+              const w = Math.exp(-d / 1068);
+              wsum += w; return w;
+            });
+            if (wsum > 0) regions.forEach((_, i) => { blightRaw[i] += SPOIL * (wts[i] / wsum); });
+          }
         });
         let maxB = 0;
         const rawB = blightRaw.map(v => { if (v > maxB) maxB = v; return v; });
         const pre = regions.map((_, i) => maxB > 0 ? Math.round(100 * (rawB[i] / maxB)) : 0);
+        // TREAT: the realm cleans up its spoil, but only where it can afford the
+        // coin AND fields the works. Cleanup scales with wealth (the coin) × A (the
+        // works) — a rich, developed core clears nearly all of its load; a poor or
+        // undeveloped seat clears little. Applied to the PRE-RIVER source so the
+        // export invariant holds (blight_load − downstream_blight is the pre-river
+        // field) and so a treated town also ships less downstream. The A×wealth gate
+        // IS the dilemma: treatment is a privilege of the rich-and-developed, so the
+        // poison stays on everyone else — a wealthy-but-undeveloped seat included.
+        if (doctrine === "treat") {
+          regions.forEach((reg, i) => {
+            const cleared = clamp(0.9 * (reg.A / 100) * (reg.wealth / 100), 0, 0.9);
+            pre[i] = Math.round(pre[i] * (1 - cleared));
+          });
+        }
         // G2: the river carries it — every riverine region ships RIVER_CARRY
         // of its (pre-carriage) load down the chain, decaying per step. The
         // mouth drinks what everyone upstream let fall in. Computed from the
@@ -4811,7 +4859,7 @@
             if (giniNow >= 0.42) { measure = "crown_granary"; granaryOn = true; }
             else if (darkShare >= 0.55) { measure = "grid_charter"; gtShift = -18; expandConduit(); }
             else if (meanToll >= 12) { measure = "toll_amnesty"; tollScale = 0.4; }
-            else if (params.db > 0 && rIns() < 0.5) { measure = "dumping_reform"; dbShift = -35; }
+            else if (params.db >= 34 && rIns() < 0.5) { measure = "dumping_reform"; disposalOverride = "disperse"; }
             else {
               const medW = regions.map(r => r.wealth).sort((a, b) => a - b)[Math.floor(regions.length / 2)];
               const bottom = regions.filter(reg => reg.wealth < medW);
@@ -4834,7 +4882,7 @@
             events.push({ epoch: e + 1, type: "reform", measure });
           } else if (respCoin < params.iq / 100 + 0.3) {
             let measure;
-            if (rIns() < 0.5 && params.db > 0) { measure = "dumping_entrenched"; dbShift = 25; }
+            if (rIns() < 0.5 && params.db < 67) { measure = "dumping_entrenched"; disposalOverride = "concentrate"; }
             else { measure = "toll_crackdown"; tollScale = 1.6; }
             events.push({ epoch: e + 1, type: "reaction", measure });
           }
@@ -5664,7 +5712,11 @@
       const liveBridges = geo.bridges.filter(b => regions[b.regionIdx] && regions[b.regionIdx].settled);
       return { seed: String(params.seed), regions, settlements, facilities, structures, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: liveBridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, lakeShapes: geo.lakeShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
         dominion: dominionAt !== -1 ? { arrived: dominionAt, foothold: footholdIdx } : null,
-        world: worldSeries };
+        world: worldSeries,
+        // B4 (#126): the final disposal doctrine (after any mid-run reform override)
+        // and the fixed sacrifice zone concentrate dumps on (region id, or null).
+        disposalDoctrine: disposalOverride || (params.db < 34 ? "disperse" : params.db < 67 ? "concentrate" : "treat"),
+        sacrificeZoneId: sacrificeZone >= 0 ? regions[sacrificeZone].id : null };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -6063,6 +6115,8 @@
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt,
           dump_bias: params.db,
+          disposal_doctrine: model.disposalDoctrine,
+          sacrifice_zone: model.sacrificeZoneId,
           responsiveness: params.iq,
           harbors_closed: params.hb === 0,
           epochs: params.ep,
@@ -6269,6 +6323,7 @@
           bias: params.bias,
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt, dump_bias: params.db,
+          disposal_doctrine: model.disposalDoctrine, sacrifice_zone: model.sacrificeZoneId,
           responsiveness: params.iq, harbors_closed: params.hb === 0,
           events: model.events,
           wind_deg: model.windDeg,
@@ -8136,7 +8191,7 @@
         ["tiers", `${tierCounts.prime || 0} prime / ${tierCounts.hub || 0} hub / ${tierCounts.outpost || 0} outpost / ${tierCounts.holdfast || 0} holdfast`],
         ["refineries", refineries],
         ["on-conduit", `${model.settlements.filter(s => s.onConduit).length} of ${model.settlements.length} settlements (threshold ${params.gt})`],
-        ["wind / dump bias", `${model.windDeg}° / λ ${params.db}%`],
+        ["wind / disposal", `${model.windDeg}° / ${model.disposalDoctrine}`],
         ["facilities", (() => { const c = model.facilities.reduce((m, f) => { m[f.type] = (m[f.type] || 0) + 1; return m; }, {}); return `${c.healer || 0} healer / ${c.waterworks || 0} water / ${c.wardstation || 0} ward`; })()],
         ["worst burden", Math.max(...model.regions.map(r => r.burden)).toFixed(1) + " /1k"],
         ["blocs", (() => { const c = model.regions.reduce((m, r) => { const b = r.occupied ? "dominion" : r.bloc; m[b] = (m[b] || 0) + 1; return m; }, {}); return ["crown", "temple", "magnate", "contested", "ungoverned"].map(b => `${c[b] || 0} ${b.slice(0, 3)}`).join(" / ") + (c.dominion ? ` / ${c.dominion} dom` : ``); })()],
@@ -8406,14 +8461,14 @@
     // export is byte-identical before and after.
     let cfOn = false, cfMode = "db";
     const CF_MODES = {
-      db:   { over: (p) => ({ ...p, db: 0 }),        capR: "PHYSICS ONLY (&lambda; = 0) &mdash; injustice",
-              already: (p) => p.db === 0,
-              note: `This world already runs on physics alone (&lambda; = 0): the blight falls where the wind and the water put it. Raise the dump bias to see what a policy adds.` },
+      db:   { over: (p) => ({ ...p, db: 0 }),        capR: "DISPERSED (spoil spread, none aimed) &mdash; injustice",
+              already: (p) => p.db < 34,
+              note: `This world already disperses its spoil (doctrine below concentrate): the blight falls where the wind and the water carry it, with no hand aiming it. Concentrate or treat to see what a doctrine adds.` },
       gt:   { over: (p) => ({ ...p, gt: 0 }),        capR: "THE FULL GRID (threshold 0) &mdash; injustice",
               already: (p) => p.gt === 0,
               note: `This world already wires everyone (threshold 0): the grid is a right, not a return. Raise the grid threshold to see what the ledgers withhold.` },
-      both: { over: (p) => ({ ...p, db: 0, gt: 0 }), capR: "BOTH MERCIES (&lambda; = 0, threshold 0) &mdash; injustice",
-              already: (p) => p.db === 0 && p.gt === 0,
+      both: { over: (p) => ({ ...p, db: 0, gt: 0 }), capR: "BOTH MERCIES (dispersed, threshold 0) &mdash; injustice",
+              already: (p) => p.db < 34 && p.gt === 0,
               note: `This world already runs on both mercies. There is nothing left to forgive it.` }
     };
     function cfPaneSVG(vals) {
@@ -8460,7 +8515,7 @@
       const asF = getFindings(model);
       const asPlagues = model.events.filter(ev => ev.type === "blight_plague").length;
       const asDark = model.regions.filter(r => !r.onConduit).length;
-      document.getElementById("cfCapL").innerHTML = `AS ROLLED (&lambda; = ${params.db}, threshold ${params.gt}) &mdash; injustice`;
+      document.getElementById("cfCapL").innerHTML = `AS ROLLED (${model.disposalDoctrine}, threshold ${params.gt}) &mdash; injustice`;
       document.getElementById("cfCapR2").innerHTML = MODE.capR;
       document.getElementById("cfLeft").innerHTML = cfPaneSVG(asVals);
       document.getElementById("cfRight").innerHTML = cfPaneSVG(cfVals);
@@ -8473,8 +8528,8 @@
         : cfMode === "both"
         ? `Both mercies together: <b>${dRatio > 0 ? dRatio + "&times; less blight on the poorest fifth" : "the blight unchanged"}</b> and <b>${dDark > 0 ? dDark + " settlements lit" : "the grid unchanged"}</b>. <b>The gap between these maps is a policy.</b>`
         : dRatio > 0
-        ? `The dumping alone puts <b>${dRatio}&times; extra blight</b> on the poorest fifth, over what the wind and water would have done. <b>The gap between these maps is a policy.</b>`
-        : `In this world the physics already found the poor; the policy added little the terrain had not. The chronicle notes that innocence of this kind is luck, not virtue.`;
+        ? `The doctrine alone puts <b>${dRatio}&times; extra blight</b> on the poorest fifth, over the dispersed spread the wind and water would have made. <b>The gap between these maps is a policy.</b>`
+        : `In this world the dispersed spread already found the poor; the doctrine moved little the terrain had not. The chronicle notes that innocence of this kind is luck, not virtue &mdash; and that a doctrine can also land the poison on the RICH, where the ratio reads the other way.`;
       stats.innerHTML = verdict +
         `<table><tr><th></th><th>as rolled</th><th>the counterfactual</th></tr>` +
         `<tr><td>poorest fifth's blight vs richest's</td><td><b>${asF.blight_ratio}&times;</b></td><td><b>${cfF.blight_ratio}&times;</b></td></tr>` +
@@ -8830,8 +8885,11 @@
       document.getElementById("regionsVal").textContent = params.regions;
       document.getElementById("relaxVal").textContent = params.relax;
       document.getElementById("biasVal").textContent = params.bias + "%";
-      for (const kid of ["we", "wf", "wt", "wg", "gt", "db", "iq", "ep"])
+      for (const kid of ["we", "wf", "wt", "wg", "gt", "iq", "ep"])
         document.getElementById(kid + "Val").textContent = params[kid];
+      // B4 (#126): the disposal knob reads out its DOCTRINE, not a bare number
+      document.getElementById("dbVal").textContent =
+        params.db + " · " + (params.db < 34 ? "disperse" : params.db < 67 ? "concentrate" : "treat");
       // the hints say what the dial does; the default says where home is
       if (!document.body.dataset.hintsStamped) {
         document.body.dataset.hintsStamped = "1";

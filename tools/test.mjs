@@ -3849,7 +3849,7 @@ console.log("# The artifice index (#123, B1): the pie can grow — total wealth 
   // before B1 — depletion only ever shrank it), some shrink it.
   let grew = 0, shrank = 0;
   for (let i = 0; i < 30; i++) {
-    const g = await gen(`#seed=piv-${i}&regions=18&ep=10`);
+    const g = (await gen(`#seed=piv-${i}&regions=18&ep=10`)).gj;
     const d = totW(g) - totW0(g);
     if (d > 3) grew++; else if (d < -3) shrank++;
   }
@@ -3861,9 +3861,9 @@ console.log("# The artifice index (#123, B1): the pie can grow — total wealth 
   // sustained trade war, which only starves it.
   let boomGrew = 0, bustShrank = 0;
   for (let i = 0; i < 8; i++) {
-    const b = await gen(`#seed=g-${i}&world=era-26&regions=18&ep=10`);
+    const b = (await gen(`#seed=g-${i}&world=era-26&regions=18&ep=10`)).gj;
     if (totW(b) > totW0(b)) boomGrew++;
-    const u = await gen(`#seed=g-${i}&world=era-49&regions=18&ep=10`);
+    const u = (await gen(`#seed=g-${i}&world=era-49&regions=18&ep=10`)).gj;
     if (totW(u) < totW0(u)) bustShrank++;
   }
   if (boomGrew >= 2 && bustShrank >= 6)

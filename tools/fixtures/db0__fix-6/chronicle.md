@@ -44,7 +44,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1075.** The rains failed over Halemook, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1075.
 
-**Year 1075.** Fortune turned at Murzek: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Murzek Find.
+**Year 1075.** Fortune turned at Halemook: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Halemook Find.
 
 **Year 1075.** The Temple came to Halemook, to the ground of its suffering, and consecrated it as Ilmar. Pilgrims walk that road now. Where the Crown's writ had failed and the magnates' ledgers saw nothing worth the ink, the faith planted its standard — after the harm, claiming the ground.
 
@@ -52,7 +52,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1100.** In the winter after the fighting, terms were set at Halemook. The Crown wrote them: the magnates ceded nothing but its claim and kept its ledger, having little in it. The chronicle observes that the terms were written by the party with the deeper ledger, as terms usually are. The clerks copied it fair as the Peace of Halemook.
 
-**Year 1100.** Fortune turned at Murzek: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Murzek Find.
+**Year 1100.** Fortune turned at Halemook: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Halemook Find.
 
 **Year 1125.** The works at Halemook fell silent. The fields that fed them had given all they had, and the magnates did not stay for the funeral. The trunk lines still stand there, carrying nothing.
 
@@ -66,9 +66,9 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1150.** A storm came off the water and stood over the coast for three days. Halemook took the worst of it, as the exposed shore always does; the Great Storm of 1150 is the name the survivors gave the year.
 
-**Year 1150.** Fortune turned at Murzek: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Murzek Find.
+**Year 1150.** Fortune turned at Halemook: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Halemook Find.
 
-**Year 1175.** New refinery fires were lit at Murzek. The seat called it progress; the towns the new trunk line passed over called it something else.
+**Year 1175.** New refinery fires were lit at Halemook. The seat called it progress; the towns the new trunk line passed over called it something else.
 
 **Year 1175.** The old Sovereign died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Cramhold took the seat, over objections not all of which were buried with their holders.
 
@@ -80,7 +80,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1200.** A storm came off the water and stood over the coast for three days. Halemook took the worst of it, as the exposed shore always does; the Great Storm of 1200 is the name the survivors gave the year.
 
-**Year 1225.** Fortune turned at Murzek: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Murzek Find.
+**Year 1225.** Fortune turned at Halemook: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Halemook Find.
 
 **Year 1250.** The old First Magnate died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Dovrath took the chair, over objections not all of which were buried with their holders.
 
@@ -88,9 +88,9 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1250.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on the toll.
 
-**Year 1250.** Fortune turned at Murzek: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Murzek Find.
+**Year 1250.** Fortune turned at Halemook: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Halemook Find.
 
-The chronicle closes its count of the years with the names they left behind. The realm now speaks of Bellok the Hollow, Glare the Yoked, High Kellow the Hollow, Halemook the Hollow, Sebriar the Yoked, Zoltgard the Hollow, Murzek the Yoked, Dharrok the Hollow and Lorienne the Yoked — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
+The chronicle closes its count of the years with the names they left behind. The realm now speaks of High Brakmarzek the Gilded, Bellok the Hollow, Glare the Yoked, High Kellow the Hollow, Halemook the Ashen, Sebriar the Yoked, Zoltgard the Hollow, Murzek the Yoked, Dharrok the Hollow and Lorienne the Yoked — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
 
 ## The State of the Realm — year 1250
 
@@ -98,15 +98,14 @@ Of the realm's 7 settled regions, 4 held steady and 3 collapsed outright.
 5 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Bellok, High Kellow, Sebriar and Zoltgard among others; the roads have stopped going.
 And 2 places have come back as something else — Murzek and Lorienne stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
 Glare is the emptiest of the ghost country: its best years are a memory the roads no longer visit.
-Murzek rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
 
-The Crown holds 6 regions, the Temple 3, the magnates 1; 1 are contested between them, and 1 answer to no one at all.
+The Crown holds 7 regions, the Temple 3, the magnates 0; 1 are contested between them, and 1 answer to no one at all.
 
 Of the realm's 4 gates — the bridges, the passes, the quays — the Crown keeps 0, the Temple 2, and the magnates 0; 0 stand untolled. Every levy on the list is paid by people who did not choose the road.
 
 The toll ledgers run deepest with the Temple, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the Temple standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.7 in every hundred of the realm's people hold 52.6 of every hundred coins, and live 28.6 times better than those who work for them. Nowhere is the ledger sharper than at High Brakmarzek, where 77 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 48 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 4.2 in every hundred of the realm's people hold 62.9 of every hundred coins, and live 38.3 times better than those who work for them. Nowhere is the ledger sharper than at High Brakmarzek, where 80 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 30 parts in a hundred of the whole spread.
 
 And over all of it stands the Dominion, which holds 4 regions from its foothold at Murzek and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns; the chronicle is required to note the difference between reigning and ruling.
 
@@ -114,6 +113,6 @@ And over all of it stands the Dominion, which holds 4 regions from its foothold 
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.38 at the founding and 0.55 at the close; no reform came, no rising came, and the loops ran unopposed. The poorest fifth of the realm carries 0.4 times the blight of the richest fifth. Behind the Skallorvek wall, the median settlement earns 100 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay. Glare drinks 9 points of other towns' poison for the crime of standing at the mouth. 6 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.7 in a hundred hold 52.6 of every hundred coins, and stand 28.6 times apart from the rest. The skyway would abolish 54 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 4 regions occupied, the yield assessed at the quay, the free country keeping 1.3 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. And Glare and Bellok stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.38 at the founding and 0.51 at the close; no reform came, no rising came, and the loops ran unopposed. The poorest fifth of the realm carries 0.5 times the blight of the richest fifth. Behind the Skallorvek wall, the median settlement earns 100 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay. Glare drinks 8 points of other towns' poison for the crime of standing at the mouth. 6 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 4.2 in a hundred hold 62.9 of every hundred coins, and stand 38.3 times apart from the rest. The skyway would abolish 54 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 4 regions occupied, the yield assessed at the quay, the free country keeping 1.3 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. And Glare and Bellok stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

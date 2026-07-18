@@ -2896,13 +2896,13 @@ const prov = A1.gj.hinterland;
 // re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
 // the default carries the Concordat-era `world` block (regime chain + series), and
 // `fate` still rides provenance only when set — so a default world has no fate key.
-if (prov && prov.schema_version === 43 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+if (prov && prov.schema_version === 44 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && !("fate" in prov) &&
     prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=43 + weights + knobs + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
+  ok("provenance carries schema_version=44 + weights + knobs + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await gen("#seed=&regions=&we=&wg=");
@@ -3889,6 +3889,66 @@ console.log("# The artifice index (#123, B1): the pie can grow — total wealth 
     ok("the artifice lens paints the map (where the works learn)");
   else fail(`artifice lens bad: present=${!!rb1} legend "${legb1}"`);
   Qb1.window.close();
+}
+
+console.log("# The investment pool (#124, B2): the counting house's two edges — development finance vs comprador extraction");
+{
+  const regsOf = (g) => g.features.filter(f => f.properties.kind === "region").map(f => f.properties);
+
+  // the works as founded ship alongside the works as they stand, so "the counting
+  // house built here" (A rose) is recomputable from the file, not a claim on faith.
+  const Db2 = regsOf((await gen("#seed=b2&regions=20&ep=10")).gj);
+  if (Db2.every(r => Number.isInteger(r.artifice_index_t0) && r.artifice_index_t0 >= 0 && r.artifice_index_t0 <= 100))
+    ok(`artifice_index_t0 ships per region (the works as founded) — the A-rose claim is recomputable`);
+  else fail(`artifice_index_t0 missing/malformed: ${Db2.slice(0, 6).map(r => r.artifice_index_t0)}`);
+
+  // BOTH EDGES: across boom worlds, some counting-house towns are DEVELOPMENT
+  // FINANCE (the works grew — A rose from founding — and the realm floor rose
+  // with them) and some are COMPRADOR (the owners' row deepened, the works no
+  // richer). The split is a fact about the town's retention and the world's
+  // price (§3.6), never a verdict the code writes.
+  let devFin = 0, comprador = 0, devWithFloor = 0, chTotal = 0;
+  for (let i = 0; i < 16; i++) {
+    const g = (await gen(`#seed=e-${i}&world=era-26&regions=22&ep=10`)).gj;
+    const floorRose = g.hinterland.findings.floor.p10 > g.hinterland.findings.floor.p10_t0;
+    for (const c of regsOf(g).filter(r => (r.structures || []).includes("counting_house"))) {
+      chTotal++;
+      if (c.artifice_index - c.artifice_index_t0 > 3) { devFin++; if (floorRose) devWithFloor++; }
+      else comprador++;
+    }
+  }
+  if (devFin >= 3 && comprador >= 5 && devWithFloor >= 1)
+    ok(`the counting house has two edges (16 boom worlds, ${chTotal} CH towns): ${devFin} development-finance (A rose; ${devWithFloor} with the realm floor rising too), ${comprador} comprador (owners' row deepened, no A gain)`);
+  else fail(`counting-house edges not both present: devFin ${devFin}, comprador ${comprador}, devWithFloor ${devWithFloor} (of ${chTotal})`);
+
+  // STATE-CONTINGENT, never balanced in expectation (the mush guard): a trade-war
+  // world starves development — the counting house hoards, and dev-finance towns
+  // all but vanish. The same institution reads opposite ways in opposite regimes.
+  let bustDev = 0, bustCh = 0;
+  for (let i = 0; i < 12; i++) {
+    for (const c of regsOf((await gen(`#seed=e-${i}&world=era-49&regions=22&ep=10`)).gj)
+        .filter(r => (r.structures || []).includes("counting_house"))) {
+      bustCh++;
+      if (c.artifice_index - c.artifice_index_t0 > 3) bustDev++;
+    }
+  }
+  if (bustCh >= 8 && bustDev / bustCh < 0.15)
+    ok(`the split is state-contingent: in trade-war worlds only ${bustDev}/${bustCh} counting houses financed the works — the rest hoarded (comprador extraction)`);
+  else fail(`bust-regime comprador dominance weak: ${bustDev}/${bustCh} financed`);
+
+  // VERDICT DIVERSITY (§7.3 precursor): the de-moralized verdict is a two-axis
+  // judgement — did the GAP widen/hold/close and did the FLOOR (p10 regional
+  // wealth, §3.4) rise or fall? The seed sweep must reach ≥3 of the six gap×floor
+  // quadrants, or the possibility space has collapsed into one templated story.
+  const quads = new Set();
+  for (let i = 0; i < 24; i++) {
+    const f = (await gen(`#seed=vd-${i}&regions=22&ep=10`)).gj.hinterland.findings;
+    const dGap = f.gini - f.gini_t0, dFloor = f.floor.p10 - f.floor.p10_t0;
+    quads.add(`${dGap <= -0.02 ? "closed" : dGap >= 0.02 ? "widened" : "held"}×${dFloor > 0 ? "rose" : "fell"}`);
+  }
+  if (quads.size >= 3)
+    ok(`verdict diversity holds: ${quads.size}/6 distinct gap×floor quadrants across 24 seeds (${[...quads].join(", ")})`);
+  else fail(`verdict space collapsed: only ${quads.size} gap×floor quadrant(s) — ${[...quads].join(", ")}`);
 }
 
 console.log("# The world's shape (#122, B0.5): the 1600×1000 rectangle, no W stragglers");

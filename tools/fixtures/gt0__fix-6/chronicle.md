@@ -30,7 +30,7 @@ The rivers are crossed at Glare Bridge and High Lorvasonne Bridge; everywhere el
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1075), when the gap narrowed, **the Restoration** (1100–1200), when the gap widened and **the Age of Accumulation** (1225–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1075), when the gap narrowed, **the Restoration** (1100–1200), when the gap held and **the Age of Accumulation** (1225–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1050.** The rains failed over Halemook, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1050.
 
@@ -42,13 +42,13 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1075.** The rains failed over Halemook, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1075.
 
-**Year 1075.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
+**Year 1075.** Fortune turned at Halemook: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Halemook Find.
 
 **Year 1100.** The old Sovereign died, and Crannock took the seat without incident — which the chronicle records precisely because it is rare.
 
 **Year 1100.** In the winter after the fighting, terms were set at Halemook. The Crown wrote them: the magnates ceded nothing but its claim and kept its ledger, having little in it. The chronicle observes that the terms were written by the party with the deeper ledger, as terms usually are. The clerks copied it fair as the Peace of Halemook.
 
-**Year 1100.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
+**Year 1100.** Fortune turned at Halemook: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Halemook Find.
 
 **Year 1100.** Zoltgard rose. The wardline broke before the mob — and the mob held. Zoltgard keeps what it makes now, and its gates toll no one; the ledgers record it as a dangerous precedent, and the town records it as the first good year. The people keep the date as the Zoltgard Rising.
 
@@ -64,9 +64,9 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1150.** A storm came off the water and stood over the coast for three days. Halemook took the worst of it, as the exposed shore always does; the Great Storm of 1150 is the name the survivors gave the year.
 
-**Year 1150.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
+**Year 1150.** Fortune turned at Halemook: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Halemook Find.
 
-**Year 1175.** The magnates raised new works at Wexbraverby, where the money had gone. The charter was sealed at Halemook, and the trunk line followed within the season.
+**Year 1175.** The magnates raised new works at Halemook, where the money had gone. The charter was sealed at Halemook, and the trunk line followed within the season.
 
 **Year 1175.** The old Sovereign died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Cramhold took the seat, over objections not all of which were buried with their holders.
 
@@ -78,7 +78,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1200.** A storm came off the water and stood over the coast for three days. Halemook took the worst of it, as the exposed shore always does; the Great Storm of 1200 is the name the survivors gave the year.
 
-**Year 1225.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
+**Year 1225.** Fortune turned at Halemook: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Halemook Find.
 
 **Year 1250.** The old First Magnate died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Dovrath took the chair, over objections not all of which were buried with their holders.
 
@@ -86,25 +86,25 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1250.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on the toll.
 
-**Year 1250.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
+**Year 1250.** Fortune turned at Halemook: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Halemook Find.
 
-The chronicle closes its count of the years with the names they left behind. The realm now speaks of Vorvek the Hollow, High Lorvasonne the Hollow, Bellok the Hollow, Glare the Yoked, High Kellow the Hollow, Sebriar the Yoked, Zoltgard the Free, Wexbraverby the Yoked, High Kornhak the Hollow, Dharrok the Hollow and Ossvaldek the Yoked — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
+The chronicle closes its count of the years with the names they left behind. The realm now speaks of Vorvek the Hollow, High Lorvasonne the Gilded, Bellok the Ashen, Glare the Yoked, High Kellow the Hollow, Sebriar the Yoked, Zoltgard the Free, Wexbraverby the Yoked, High Kornhak the Ashen, Dharrok the Ashen and Ossvaldek the Yoked — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
 
 ## The State of the Realm — year 1250
 
-Of the realm's 7 settled regions, 2 held steady, 1 declined and 4 collapsed outright.
-5 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Bellok, High Kellow, Sebriar and Zoltgard among others; the roads have stopped going.
-And 4 places have come back as something else — Vorvek, High Lorvasonne and High Kornhak stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
+Of the realm's 5 settled regions, 2 held steady, 1 declined and 2 collapsed outright.
+7 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Vorvek, Bellok, High Kellow and Sebriar among others; the roads have stopped going.
+And 2 places have come back as something else — High Lorvasonne and Ossvaldek stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
 Glare is the emptiest of the ghost country: its best years are a memory the roads no longer visit.
-Wexbraverby rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
+Halemook rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
 
-The Crown holds 7 regions, the Temple 3, the magnates 1; 0 are contested between them, and 1 answer to no one at all.
+The Crown holds 7 regions, the Temple 3, the magnates 0; 1 are contested between them, and 1 answer to no one at all.
 
 Of the realm's 4 gates — the bridges, the passes, the quays — the Crown keeps 0, the Temple 2, and the magnates 0; 0 stand untolled. Every levy on the list is paid by people who did not choose the road.
 
 The toll ledgers run deepest with the Temple, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the Temple standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 5.3 in every hundred of the realm's people hold 50.3 of every hundred coins, and live 18.1 times better than those who work for them. Nowhere is the ledger sharper than at High Lorvasonne, where 78 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 57 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 6.6 in every hundred of the realm's people hold 71.9 of every hundred coins, and live 36.5 times better than those who work for them. Nowhere is the ledger sharper than at High Lorvasonne, where 80 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 66 parts in a hundred of the whole spread.
 
 And over all of it stands the Dominion, which holds 4 regions from its foothold at Wexbraverby and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns; the chronicle is required to note the difference between reigning and ruling.
 
@@ -112,6 +112,6 @@ At the record's close the conduit reaches every settlement of the realm. The chr
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.38 at the founding and 0.54 at the close, and the turning point was the rising at Zoltgard in 1100, which won. The poorest fifth of the realm carries 1.7 times the blight of the richest fifth. Behind the Skallorvek wall, the median settlement earns 100 in the hundred less than the open country at the same remove. 0 regions sit off the conduit because the ledgers said serving them would not pay. Glare drinks 9 points of other towns' poison for the crime of standing at the mouth. 6 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 5.3 in a hundred hold 50.3 of every hundred coins, and stand 18.1 times apart from the rest. The skyway would abolish 54 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 4 regions occupied, the yield assessed at the quay, the free country keeping 1.7 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. And Glare and Bellok stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.21 at the founding and 0.34 at the close, and the turning point was the rising at Zoltgard in 1100, which won. The poorest fifth of the realm carries 1.9 times the blight of the richest fifth. Behind the Skallorvek wall, the median settlement earns 100 in the hundred less than the open country at the same remove. 0 regions sit off the conduit because the ledgers said serving them would not pay. Glare drinks 13 points of other towns' poison for the crime of standing at the mouth. 4 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 6.6 in a hundred hold 71.9 of every hundred coins, and stand 36.5 times apart from the rest. The skyway would abolish 54 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 4 regions occupied, the yield assessed at the quay, the free country keeping 1.7 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. And Glare and Bellok stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

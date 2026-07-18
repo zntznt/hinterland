@@ -4339,6 +4339,10 @@
           reg.remitEpoch = remit;
           reg.remittanceTotal += remit;
           reg.wealth = clamp(reg.wealth + remit, 0, 100); // decoupled from income
+          // the remittance floor is real wealth this epoch: the peak must see it,
+          // or a town lifted above its old high by the coin sent home would export
+          // peak_wealth < wealth (the invariant the stress sweep guards).
+          if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
         });
         // migration: toward wealth, light, and clean land — capped at 15%/epoch
         // out. B3: the FRONTIER term. When the realm's cores squeeze rents hard

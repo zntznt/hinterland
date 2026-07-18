@@ -11,6 +11,7 @@ npm install                                   # jsdom + d3-delaunay
 node --max-old-space-size=14000 test.mjs      # the main suite (~241 checks + the fixture pin)
 node --max-old-space-size=10000 stress.mjs    # 120-config structural stress + render smoke
 node --max-old-space-size=8192  atlas.mjs     # regenerates ../docs/atlas.md (80-world sweep)
+node --max-old-space-size=8192  sweep.mjs     # prints the knob-reach + chronicle-sameness table (~1 min; measured, not pinned)
 node --max-old-space-size=8192  refixture.mjs # regenerates the golden fixtures (a declared act — see below)
 ```
 

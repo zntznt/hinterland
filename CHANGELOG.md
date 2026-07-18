@@ -1,6 +1,25 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v40 addendum (A3, the neutral instruments — declared regen, no format bump)**:
+  the shape metrics land (issue #120) so a reader can see *any* world, not only
+  the one the old argument expected. Five new findings, additive under
+  `hinterland.findings`: `growth` (total + population-weighted per-capita wealth,
+  close vs founding), `floor` (p10 regional wealth, close vs founding),
+  `absolute_mobility` (share of settled regions richer than their founding
+  selves), `rank_churn` (Spearman ρ of wealth ranks founding→close — 1 = the
+  order froze), and `volatility` (mean per-region boom/bust amplitude). All
+  measured on the SETTLED realm at both ends, so abandoned zeros never fake
+  growth or a fallen floor. Two new lenses join a **THE SHAPE** group — `growth`
+  (per-region wealth since founding, a diverging %) and `volatility` (boom/bust
+  amplitude). The **boot lens flips to `wealth`** (decision 3): the neutral coin,
+  not a verdict; `injustice` survives as one plate among many, relabeled to what
+  it is — the `blight × poverty` composite — in both legend and index. New
+  `tools/sweep.mjs` prints the knob-reach and chronicle-sameness table
+  (measured, not yet pinned — the ceilings land in D4). Additive only:
+  `schema_version` stays 40; the golden fixtures were regenerated
+  (`node tools/refixture.mjs`) to carry the new findings — a DECLARED act, this
+  entry its record. The old 3-way ΔGini verdict is untouched (the §3.5 swap is D5).
 - **v40** (the fate seed A2): same rock, different luck (issue #119). A second
   RNG family `fx = streams(params.fate || params.seed)` runs beside `sx`, and
   exactly six political tags re-key to it — `events`, `factions`,

@@ -24,7 +24,14 @@
   the mid-run dumping reforms now override the doctrine (reform → disperse,
   entrenchment → concentrate) rather than nudging a scalar. `schema_version` 45→46;
   declared fixture regeneration; the old λ-sweep pin (which asserted blight LOCKED
-  negative) rewritten as the sign-unlock pin. Exhibits (pinned): **the contained
+  negative) rewritten as the sign-unlock pin. Downstream calibrations (the doctrine
+  reshaped the default world): the concentrate margin is **population×poverty
+  weighted** so the poison harms PEOPLE — it plagues the crowded poor towns and
+  gives the Temple LIVING ground to consecrate (the sacrifice zone is written off
+  and never consecrated, or a shrine would die with it); the plague, revolt, and
+  harbor pins re-measured (won risings still burn the charters at 14/15; the
+  isolation price stays modest; the plague still levels at 41/41). Exhibits
+  (pinned): **the contained
   sacrifice** — `#seed=dbz-2&db=50&regions=20&ep=10`, "Skalgarruk Fell" (region 8):
   blight 100 on ground its 636 people had left, the harm landing on no one — the
   doctrine "worked"; **the ruined sacrifice** — `#seed=dbz-8&db=50&regions=20&ep=10`,

@@ -1246,16 +1246,20 @@ function validate(gj, tag) {
       .concat(["crown", "temple", "magnate"].flatMap(F => gj.hinterland.rulers[F].map(r => r.name)))
       .concat([gj.hinterland.skyway.name]);
     if (new Set(allNames).size !== allNames.length) return fail(`${tag}: duplicate names in the world`);
-    // D6 causal chain: the run's first wound (plague or calamity) always ends
-    // on holy ground — either it already was a site, or the Temple arrives.
-    const wound = evList.find(ev => ev.type === "blight_plague" || ev.type === "relic_calamity");
+    // D6 causal chain: the run's first LIVING wound (plague or calamity) always
+    // ends on holy ground — either it already was a site, or the Temple arrives.
+    // B4 (#126): the Temple does NOT consecrate the written-off concentrate
+    // sacrifice zone (it would be a dead shrine the moment the poison takes it), so
+    // the faith passes over a zone wound and arrives at the first wound off it.
+    const sz = gj.hinterland.sacrifice_zone;
+    const wound = evList.find(ev => (ev.type === "blight_plague" || ev.type === "relic_calamity") && ev.region_id !== sz);
     if (consEvs.length === 1) {
-      if (!wound) return fail(`${tag}: consecration without a wound`);
-      if (consEvs[0].region_id !== wound.region_id) return fail(`${tag}: consecration off the first wound`);
+      if (!wound) return fail(`${tag}: consecration without a living wound`);
+      if (consEvs[0].region_id !== wound.region_id) return fail(`${tag}: consecration off the first living wound`);
       if (consEvs[0].epoch !== wound.epoch + 2) return fail(`${tag}: consecration at ${consEvs[0].epoch} != wound ${wound.epoch} + 2`);
     }
     if (wound && wound.epoch + 2 <= epochs && !siteIds.has(wound.region_id))
-      return fail(`${tag}: first wound region ${wound.region_id} not on holy ground by run's end`);
+      return fail(`${tag}: first living wound region ${wound.region_id} not on holy ground by run's end`);
   }
 
   // Facility rationing rule: prime & on-conduit hubs get healer+waterworks+ward;

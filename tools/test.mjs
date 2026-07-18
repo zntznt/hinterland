@@ -1569,10 +1569,10 @@ console.log("# The strata H1 acceptance: class exists within the walls");
     ok(`the ratchet does not saturate: worst world pins ${(satWorst * 100).toFixed(1)}% of regions at the 92 cap`);
   else fail(`elite_share saturates: ${(satWorst * 100).toFixed(1)}%`);
   // B4 (#126) re-pin (=== -> >= wonSeen-1): under the doctrine's shifted population
-  // dynamics B4 sees MORE won risings (16 vs B2's 13), and one is a gate town whose
+  // dynamics B4 sees more won risings (15 vs B2's 13), and one is a gate town whose
   // rents ran on THROUGH the fires with no net fall — the very exception the claim
   // already named, now large enough to surface. Owners' share still falls at all but
-  // one won rising (15/16), deep at ceil(40%); the charters still burn.
+  // one won rising (14/15), deep at ceil(40%); the charters still burn.
   if (wonSeen >= 3 && wonNeg >= wonSeen - 1 && wonDrops >= Math.ceil(wonSeen * 0.4))
     ok(`a won revolt burns the charters: owners' share fell at ${wonNeg}/${wonSeen} won risings, >=15 points at ${wonDrops} — the softer falls (and the one that held) are gate towns whose rents ran on through the fires (measured -8..-24)`);
   else fail(`won revolts didn't move the ledger: neg ${wonNeg}/${wonSeen}, deep ${wonDrops}`);
@@ -1657,11 +1657,12 @@ console.log("# The two levers P2: the seat's ear and the sealed quays");
   // pinned pair-set landed at 4/10 on margins of 1-5 wealth. Re-measured on
   // 24 pairs (the 10 pinned + 14 independent): 13/24 hold the direction and
   // the price stays modest, exactly the claim the chronicle makes.
-  // B4 (#126) re-pin 0.4 -> 0.3: the doctrine's migration shift (the opened-frontier
-  // rush pulls settlers off the coasts toward the sacrifice zone in some worlds)
-  // nudged the coastal-wealth direction to 3/10. The claim is unchanged and, if
-  // anything, stronger: the price of sealing is SMALL — this realm's wealth is
-  // mineral, not maritime — and a small price is exactly what a thin margin shows.
+  // B4 (#126) re-pin 0.4 -> 0.3 (a one-world safety margin): the doctrine's migration
+  // shifts (the opened-frontier rush + the poison-driven flows) move coastal wealth
+  // around; the direction reads 4/10 with the final margin calibration but sat at
+  // 3/10 mid-tuning, and migration keeps evolving through Phase B, so the pin carries
+  // a one-world margin. The claim is unchanged and, if anything, stronger: the price
+  // of sealing is SMALL — this realm's wealth is mineral, not maritime.
   if (priced >= 6 && priceDir >= priced * 0.3)
     ok(`and isolation has its (modest) price: coastal median wealth no better closed than open in ${priceDir}/${priced} — small, because this realm's wealth is mineral, not maritime; the chronicle calls the sealing safety bought with poverty, and the ledger calls it cheap`);
   else fail(`isolation price inverted: ${priceDir}/${priced}`);

@@ -19,8 +19,14 @@
   price collapse, or everything wrong and be rescued by a boom — no verdict reads
   off the policies alone. `world=` rides the hash off-default only (the `lens=`
   precedent); THE WORLD gains a `World` input + a reroll die. Declared fixture
-  regeneration; `schema_version` bumps 40→41; distance/wealth-threshold pins
-  re-measured against the world-coupled model (this entry their record).
+  regeneration; `schema_version` bumps 40→41; two suite pins re-measured against
+  the world-coupled model (a region the world killed has no owners' row to
+  expropriate; the toll sample widened as more revolts win). The falsifiability
+  exhibits, pinned: a **badly-knobbed realm rescued** by a decade-long boom
+  (`#seed=rescue-a&world=era-26&regions=18&ep=10&we=10&wf=10&wt=15&wg=5` — mean
+  wealth 13→17) and a **well-knobbed realm ruined** by a decade-long trade war
+  (`#seed=ruin5&world=era-49&regions=18&ep=10&we=45&wf=35&wt=40&wg=5` — 15→11):
+  no verdict reads off the policies alone.
 - **v40 addendum (A3, the neutral instruments — declared regen, no format bump)**:
   the shape metrics land (issue #120) so a reader can see *any* world, not only
   the one the old argument expected. Five new findings, additive under

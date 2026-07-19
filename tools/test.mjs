@@ -1675,13 +1675,13 @@ console.log("# The two levers P2: the seat's ear and the sealed quays");
   if (JSON.stringify(A2.gj) === JSON.stringify(B2.gj))
     ok("the defaults ARE the old dice: iq=45 & harbors open reproduce the unparameterized world byte-for-byte");
   else fail("defaults drifted from the old world");
-  // the controls exist and ride the hash
-  if (A2.doc.getElementById("iq") && A2.doc.getElementById("hb"))
-    ok("the levers are on the panel: THE SEAT section carries responsiveness and the harbor seal");
+  // the controls exist and ride the hash (B10 #132: hb retired into openness)
+  if (A2.doc.getElementById("iq") && A2.doc.getElementById("openness"))
+    ok("the levers are on the panel: THE SEAT section carries responsiveness and openness");
   else fail("levers missing from the controls");
-  const C2 = await gen("#seed=alpha&ep=0&iq=80&hb=0", true);
+  const C2 = await gen("#seed=alpha&ep=0&iq=80&openness=0", true);
   if (C2.gj.hinterland.responsiveness === 80 && C2.gj.hinterland.harbors_closed === true &&
-      C2.window.location.hash.includes("iq=80") && C2.window.location.hash.includes("hb=0"))
+      C2.window.location.hash.includes("iq=80") && C2.window.location.hash.includes("openness=0"))
     ok("both levers ride the hash and the provenance (share links carry the policy)");
   else fail("levers not persisted");
   if (C2.chron.includes("The quays are sealed by decree"))

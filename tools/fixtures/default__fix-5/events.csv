@@ -5,6 +5,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 1,1025,seizure,3,,,magnate,,,,,,,
 2,1050,settlement_founded,2,,,,,,,,,,
 2,1050,drought,4,the Drought of 1050,,,,,,,,,
+3,1075,settlement_abandoned,4,,,,,,,,,,
 3,1075,succession,,Quarzek,,magnate,,,,,,false,1
 4,1100,refinery_collapse,3,,,,,,,,,,
 4,1100,seizure,3,,,crown,,,,,,,
@@ -15,6 +16,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 5,1125,annexation,3,the Landing at Merow Strand,,,,,,,2,,
 5,1125,seizure,9,,,temple,,,,,,,
 5,1125,ascendancy,9,the Rise of Vaskalgrelk,,,,,,,,,
+6,1150,settlement_founded,4,,,,,,,,,,
 6,1150,refinery_founded,3,,,,,,,,,,
 6,1150,war,2,the Kharruk Tor War,,crown|temple,,,,,,,
 6,1150,succession,,Vannornweld,,crown,,,,,,false,1

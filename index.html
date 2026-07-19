@@ -1155,11 +1155,6 @@
           <input type="range" id="wg" min="0" max="100" step="1" />
           <div class="hint">Gradient 0 = fully emergent wealth. Gradient 100 with the rest at 0 = the old explicit diagram.</div>
         </div>
-        <div class="row">
-          <label>Gradient steepness <span class="val" id="biasVal"></span></label>
-          <input type="range" id="bias" min="0" max="100" step="1" />
-          <div class="hint">Shapes only the legacy gradient term above.</div>
-        </div>
       </div>
 
       <div class="sec">
@@ -1193,7 +1188,9 @@
           <div class="hint">The order axis, open ground to police state. High order stills predation, smuggling and revolt &mdash; and stills the ladder too: mobility, entry, the appetite to risk capital. Safety and stagnation share a root. 50 = the old world.</div>
         </div>
         <div class="row">
-          <label class="radio" style="font-weight:600"><input type="checkbox" id="hb" /> close the harbors</label>
+          <label>Openness <span class="val" id="opennessVal"></span></label>
+          <input type="range" id="openness" min="0" max="100" step="1" />
+          <div class="hint">Foreign trade and diplomacy exposure, sealed quays to open coast. It scales the sea leg of trade (a trade world grows a second pole at the coast) and, at 0, seals the harbors entirely — no ports, no Dominion. 100 = open (the old world).</div>
           <div class="hint">Seal the quays: no sea trade, no port tolls &mdash; and no door for the Dominion. Isolation is a policy with a price.</div>
         </div>
       </div>
@@ -1333,7 +1330,7 @@
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 51;
+    const SCHEMA_VERSION = 52;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     // B6 (#128): tariffs fund the bridges. A held crossing that still collects a real
@@ -1372,7 +1369,8 @@
       db: 60,                            // disposal doctrine: 0–33 disperse, 34–66 concentrate, 67–100 treat
       iq: 45,                            // the seat's ear (P(reform); default = the old dice)
       order: 50,                         // B9 (#131): the order axis (0 open ↔ 100 police state); 50 = neutral (the old world)
-      hb: 1,                             // harbors open (0 = sealed: no ports, no Dominion)
+      openness: 100,                     // B10 (#132): foreign trade/diplomacy exposure (0 sealed ↔ 100 open); default open. hb=0 maps to openness=0
+      hb: 1,                             // B10 (#132): RETIRED into openness (parse-only, for forward-compat of old links)
       ep: 0,                             // epochs (0 = founding snapshot, no dynamics)
       capital: null                      // null => seat derived from geology
     };
@@ -3609,16 +3607,22 @@
       // compounds against the 0.6 wealth carryover toward wealth ∝ price, which
       // is what lets a boom rescue and a bust ruin. Defaults to 1 (the founding
       // is pre-history: no world price has acted, so ep=0 is world-invariant).
-      const income = (reg, priceMult = 1) => {
+      const income = (reg, priceMult = 1, demandMult = 1) => {
+        // B10 (#132): the mix pulls apart — the four terms anchor to DIFFERENT geography
+        // so the four weights move relations in distinguishable directions.
         const t = maxD > 0 ? 1 - reg.dist / maxD : 1;
-        const legacy = lerp(5, 100, Math.pow(t, k)) / 100;         // == old formula
-        const ext = (reg.E / 100) * (reg.retention / 100);         // what extraction leaves behind
-        const ref = reg.refining / 100;
-        // two poles: the seat and the sea — but the coin only flows if the crossings
-        // between hold. B6 (#128): a decayed span on the region's road to market chokes
-        // the trade that must thread it (0 friction = full trade, capped at −60%).
+        const legacy = lerp(5, 100, Math.pow(t, k)) / 100;         // the AUTHORED gradient (bias folded into k) — near the seat
+        const ext = (reg.E / 100) * (reg.retention / 100);         // EXTRACTION anchors to the seams (current ore stock)
+        const ref = (reg.refining > 0 ? 1 : 0.35) * (reg.A !== undefined ? reg.A : 70) / 100; // ARTIFICE anchors to A (trained capacity), strongest at the works
+        // B10 (#132): TRADE re-anchors to the COAST and FOREIGN demand, priced against
+        // the seat. The sea leg (seaAccess) is gated by OPENNESS (sealed harbors = no
+        // foreign trade, the old hb=0) and scaled by the world's foreign demand; only a
+        // small residual rides seat-centrality. So a trade-heavy, open, demand-favoured
+        // coast grows a SECOND POLE that RIVALS the capital instead of feeding it.
+        // B6 (#128): a decayed span on the road to market still chokes the trade (−60% cap).
         const crossChoke = 1 - clamp((reg.crossFriction || 0) / 100, 0, 0.6);
-        const trade = crossChoke * (0.65 * reg.centrality + 0.35 * reg.seaAccess) / 100;
+        const openF = params.openness / 100;
+        const trade = crossChoke * (0.78 * reg.seaAccess * openF * demandMult + 0.22 * reg.centrality) / 100;
         const base = total > 0
           ? priceMult * (params.we * ext + params.wf * ref + params.wt * trade + params.wg * legacy) / total
           : 0.5; // all weights zero: no income model — flat
@@ -4436,7 +4440,7 @@
           // assessment, and the Crown assesses its own bloc gently
           const trib = dominionAt === -1 ? 0 : (reg.occupied ? 3 : (reg.bloc === "crown" ? 1 : 2));
           const wealthBefore = reg.wealth; // #93: for the ownership drift below
-          reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg, worldPrice) - 0.035 * reg.tollBurden + gateIncome + bread - trib), 0, 100);
+          reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg, worldPrice, worldSeries.foreign_demand[e]) - 0.035 * reg.tollBurden + gateIncome + bread - trib), 0, 100); // B10 (#132): foreign demand scales the coast's trade
           if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
           // H1: the rents concentrate before anything trickles — the gate's
           // take and the works' profit land on the owners' row first; only
@@ -6427,6 +6431,7 @@
           reform_edges: model.reformEdges,
           responsiveness: params.iq,
           order: params.order,
+          openness: params.openness,
           harbors_closed: params.hb === 0,
           epochs: params.ep,
           events: model.events,
@@ -6634,7 +6639,7 @@
           grid_threshold: params.gt, dump_bias: params.db,
           disposal_doctrine: model.disposalDoctrine, sacrifice_zone: model.sacrificeZoneId,
           reform_edges: model.reformEdges,
-          responsiveness: params.iq, order: params.order, harbors_closed: params.hb === 0,
+          responsiveness: params.iq, order: params.order, openness: params.openness, harbors_closed: params.hb === 0,
           events: model.events,
           wind_deg: model.windDeg,
           sea_sides: model.seaSides,
@@ -9156,14 +9161,14 @@
       if (params.world && params.world !== DEFAULTS.world) p.set("world", params.world); // the Concordat era stays clean
       p.set("regions", params.regions);
       p.set("relax", params.relax);
-      p.set("bias", params.bias);
+      if (params.bias !== DEFAULTS.bias) p.set("bias", params.bias); // B10: bias retired into legacy; emit off-default only (forward-compat)
       p.set("we", params.we); p.set("wf", params.wf);
       p.set("wt", params.wt); p.set("wg", params.wg);
       p.set("gt", params.gt);
       p.set("db", params.db);
       p.set("iq", params.iq);
       if (params.order !== DEFAULTS.order) p.set("order", params.order); // B9: keep the default link clean
-      p.set("hb", params.hb);
+      if (params.openness !== DEFAULTS.openness) p.set("openness", params.openness); // B10: hb retired into openness; emit off-default only
       p.set("ep", params.ep);
       if (params.capital) { p.set("cx", round2(params.capital[0])); p.set("cy", round2(params.capital[1])); }
       // the lens and mode change what a shared map argues, so they ride along —
@@ -9211,6 +9216,9 @@
       // Empty/whitespace values fall back to the default (not the clamp minimum).
       const num = (key, def) => { const v = p.get(key); return (v != null && v.trim() !== "" && isFinite(+v)) ? +v : def; };
       const w = (key, def) => clamp(Math.round(num(key, def)), 0, 100);
+      // B10 (#132): `hb` retired into `openness`. An explicit openness wins; else an
+      // old hb=0 link maps forward to openness=0 (sealed); else the default (open).
+      const openness = p.has("openness") ? w("openness", DEFAULTS.openness) : (p.get("hb") === "0" ? 0 : DEFAULTS.openness);
       const out = {
         seed: p.get("seed") || DEFAULTS.seed,
         fate: (p.get("fate") || DEFAULTS.fate).trim(),
@@ -9224,7 +9232,8 @@
         db: w("db", DEFAULTS.db),
         iq: w("iq", DEFAULTS.iq),
         order: w("order", DEFAULTS.order),
-        hb: p.get("hb") === "0" ? 0 : 1,
+        openness,
+        hb: openness === 0 ? 0 : 1, // derived: the sealed end of openness IS the old closed harbor
         ep: clamp(Math.round(num("ep", DEFAULTS.ep)), 0, 24),
         capital: null
       };
@@ -9237,12 +9246,11 @@
     function syncControls() {
       const set = (id, v) => { document.getElementById(id).value = v; };
       set("seed", params.seed); set("fate", params.fate); set("world", params.world); set("regions", params.regions); set("relax", params.relax);
-      set("bias", params.bias); set("we", params.we); set("wf", params.wf);
-      set("wt", params.wt); set("wg", params.wg); set("gt", params.gt); set("db", params.db); set("order", params.order); set("ep", params.ep);
+      set("we", params.we); set("wf", params.wf);
+      set("wt", params.wt); set("wg", params.wg); set("gt", params.gt); set("db", params.db); set("order", params.order); set("openness", params.openness); set("ep", params.ep);
       document.getElementById("regionsVal").textContent = params.regions;
       document.getElementById("relaxVal").textContent = params.relax;
-      document.getElementById("biasVal").textContent = params.bias + "%";
-      for (const kid of ["we", "wf", "wt", "wg", "gt", "iq", "order", "ep"])
+      for (const kid of ["we", "wf", "wt", "wg", "gt", "iq", "order", "openness", "ep"])
         document.getElementById(kid + "Val").textContent = params[kid];
       // B4 (#126): the disposal knob reads out its DOCTRINE, not a bare number
       document.getElementById("dbVal").textContent =
@@ -9257,7 +9265,6 @@
           if (hint && typeof dv === "number") hint.textContent += ` Default ${dv}.`;
         }
       }
-      document.getElementById("hb").checked = params.hb === 0;
     }
 
     // ---- The institutions card (#91): the record's built landscape ----------
@@ -9545,7 +9552,6 @@
 
       $("regions").addEventListener("input", (e) => { params.regions = +e.target.value; $("regionsVal").textContent = params.regions; params.capital = null; regenerateTopology(); });
       $("relax").addEventListener("input", (e) => { params.relax = +e.target.value; $("relaxVal").textContent = params.relax; regenerateTopology(); });
-      $("bias").addEventListener("input", (e) => { params.bias = +e.target.value; $("biasVal").textContent = params.bias + "%"; recomputeAttributes(); });
       for (const kid of ["we", "wf", "wt", "wg", "gt", "db", "ep"]) {
         $(kid).addEventListener("input", (e) => {
           params[kid] = +e.target.value;
@@ -9618,8 +9624,10 @@
         $("orderVal").textContent = params.order;
         recomputeAttributes();
       });
-      $("hb").addEventListener("change", (e) => {
-        params.hb = e.target.checked ? 0 : 1;
+      $("openness").addEventListener("input", (e) => { // B10 (#132): openness (hb folded in)
+        params.openness = +e.target.value;
+        params.hb = params.openness === 0 ? 0 : 1; // the sealed end IS the closed harbor
+        $("opennessVal").textContent = params.openness;
         recomputeAttributes();
       });
       $("scrub").addEventListener("input", (e) => {

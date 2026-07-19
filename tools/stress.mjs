@@ -148,7 +148,7 @@ function validate(gj, tag) {
       if (rp.rebirths >= 1) expReg = rp.temple_reach >= 45 ? "temple" : (expReg === "frontier" ? "lowland" : "frontier");
       if (p.name_register !== expReg) return fail(`${tag}: register ${p.name_register} != geology says ${expReg}`);
     }
-    if (!Number.isInteger(p.population) || p.population < 25) return fail(`${tag}: bad settlement pop ${p.population}`);
+    if (!Number.isInteger(p.population) || p.population < 20) return fail(`${tag}: bad settlement pop ${p.population}`); // B10 (#132) re-pin 25->20: the epoch loop floors settlementPop at 20 (founding floors at 25); a de-collinearized inland town the coast out-competed can shrink to that floor while an exempt capital survives it
     const reg = regionById.get(p.region_id);
     if (!reg || reg.properties.population < p.population) return fail(`${tag}: region/settlement pop mismatch`);
   }

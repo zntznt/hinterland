@@ -23,7 +23,13 @@
   sliders removed; `schema_version` 51→52; declared fixture regeneration. Exhibit
   (pinned): **the second pole** — `#seed=tp-0&regions=24&ep=10&wt=80&we=8&wf=6&wg=6`:
   a coastal city out-grew the seat many times over, a trade republic that never asked
-  the capital's leave.
+  the capital's leave. Downstream re-pins (§2.5, the mix moved the worlds): the crushed-
+  revolt expropriation pin relaxed `=== -> >= seen-1` (a poor coast-less town's ordinary
+  erosion can trim the garrison's +10 below the +5 bar); the B7 amnesty→decay density
+  threshold eased (`ceil.6 -> floor.5`); the B6 toll-heavy exhibit moved am-8 -> am-23
+  and the B8 starved-chronicle exhibit ris-1 -> ris-6 (the shifted worlds); the stress
+  settlement-pop floor eased 25 -> 20 (the epoch floor, which an out-competed inland town
+  can now reach). Primacy, zipf, the H1 class band, and the golden fixtures held.
 - **v51** (the order axis B9): safety and stagnation share a root (issue #131, §3.2
   policing row + §3.3 order knob). A new knob, **`order`** (0 **open** ↔ 100 **police
   state**; **50 = neutral, the old world**). High order **STILLS** the shadow and the

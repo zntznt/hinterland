@@ -76,7 +76,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1225.** A storm came off the water and stood over the coast for three days. Gladen took the worst of it, as the exposed shore always does; the Great Storm of 1225 is the name the survivors gave the year.
 
-The chronicle closes its count of the years with the names they left behind. The realm now speaks of Gladen the Gilded, Thraldek Delf the Ashen, Drelkruk the Hollow, Urtazzek the Free and Ferkul the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
+The chronicle closes its count of the years with the names they left behind. The realm now speaks of Thraldek Delf the Ashen, Drelkruk the Hollow, Urtazzek the Free and Ferkul the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
 
 ## The State of the Realm — year 1250
 
@@ -91,12 +91,12 @@ Of the realm's 5 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the magnates standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.8 in every hundred of the realm's people hold 56.3 of every hundred coins, and live 32.4 times better than those who work for them. Nowhere is the ledger sharper than at Gladen, where 92 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 49 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.9 in every hundred of the realm's people hold 40 of every hundred coins, and live 16.3 times better than those who work for them. Nowhere is the ledger sharper than at Gladen, where 60 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 35 parts in a hundred of the whole spread.
 
 3 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world closed some of its gap: the spread of fortunes measured 0.39 at the founding and 0.34 at the close, and the turning point was the rising at Urtazzek in 1150, which won. The poorest fifth of the realm carries 4.8 times the blight of the richest fifth. Behind the Durnharrek wall, the median settlement earns 68 in the hundred less than the open country at the same remove. 3 regions sit off the conduit because the ledgers said serving them would not pay. Iverby drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.8 in a hundred hold 56.3 of every hundred coins, and stand 32.4 times apart from the rest. The skyway would abolish 38.7 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world closed some of its gap: the spread of fortunes measured 0.39 at the founding and 0.33 at the close, and the turning point was the rising at Urtazzek in 1150, which won. The poorest fifth of the realm carries 4.8 times the blight of the richest fifth. Behind the Durnharrek wall, the median settlement earns 68 in the hundred less than the open country at the same remove. 3 regions sit off the conduit because the ledgers said serving them would not pay. Iverby drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.9 in a hundred hold 40 of every hundred coins, and stand 16.3 times apart from the rest. The skyway would abolish 38.7 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

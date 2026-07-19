@@ -1328,7 +1328,7 @@
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 48;
+    const SCHEMA_VERSION = 49;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     // B6 (#128): tariffs fund the bridges. A held crossing that still collects a real
@@ -1339,6 +1339,11 @@
     const DECAY_STEP = 0.22;      // condition lost per epoch by an unfunded span (rots in ~5)
     const REPAIR_STEP = 0.15;     // condition regained per epoch by a funded one
     const DECAY_FRICTION = 40;    // a fully-rotted crossing's friction surcharge on a path that needs it
+    // B7 (#129): reform long edges — the delayed cost of each measure.
+    const CHARTER_LOAN = 34;      // the imperial loan a grid charter draws to string the wires
+    const DEBT_RATE = 0.14;       // fraction of the outstanding debt the seat services each epoch
+    const DEPENDENCY_STEP = 9;    // dependency the granary breeds each epoch it runs on through peace
+    const FLIGHT_STEP = 7;        // elite capital that flees a floored region each epoch after the act
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
     const FLY_BOARD = 35;     // boarding the lift-barge: the fixed price of the sky
     const OCC_R = 600;        // the Dominion's garrison line: cost-radius of the occupied zone (B0.5: ×1.334 for the 1600×1000 world)
@@ -3820,6 +3825,17 @@
       // V1: the loop's own parameters are now history-mutable — reforms and
       // reactions shift them mid-run, and the free town escapes the tolls
       let disposalOverride = null, gtShift = 0, tollScale = 1, freeTownIdx = -1, granaryOn = false;
+      // B7 (#129): every measure grows a LONG EDGE — delayed, state-contingent. The
+      // grid charter is financed by imperial loans (a debt the seat services out of
+      // its treasury for the rest of the run); the granary breeds dependency and a
+      // fiscal drain if it runs on through a LONG PEACE; the retention act frightens
+      // elite capital into flight. And when the debt goes unserviced under a doctrine-
+      // pressing world, the creditors DEMAND a measure — structural adjustment, a
+      // reform imposed from OUTSIDE, distinct from the seat's own iq-chosen mercies.
+      let charterDebt = 0, charterDebtEpoch = -1, debtServicePaid = 0;
+      let granaryEpoch = -1, granaryDependency = 0, granaryDrain = 0;
+      let retentionEpoch = -1, capitalFlight = 0;
+      let impositions = 0;
       let blightEpoch = 0; // B4 (#126): concentrate's poison RAMPS with the works — 0 at the founding, full late (P4 delay)
       // #93: a maturing realm wires more of itself. gtEase lowers the hook-up bar
       // a touch each epoch so the grid keeps ratcheting outward through the
@@ -4976,36 +4992,90 @@
             let gsum = 0;
             for (let gi = 0; gi < ws.length; gi++) gsum += (2 * (gi + 1) - ws.length - 1) * ws[gi];
             const giniNow = mw > 0 ? gsum / (ws.length * ws.length * mw) : 0;
+            const medW = regions.map(r => r.wealth).sort((a, b) => a - b)[Math.floor(regions.length / 2)];
+            const bottom = regions.filter(reg => reg.wealth < medW);
+            const bottomOre = bottom.reduce((a, r) => a + r.E, 0) / Math.max(1, bottom.length);
+            // the ore is CONCENTRATED — a realm's mean is near-nothing but its richest
+            // seam runs deep. A price floor protects THAT seam's diggers, so the act
+            // reads the realm's best ore, not its poor half (which is poor for lack of it).
+            const richSeam = regions.reduce((m, r) => Math.max(m, r.E), 0);
+            // the Retention Act: an ore price floor — the diggers keep more of what
+            // their ground produces (only where the ground still holds a rich seam).
+            const retentionAct = () => {
+              retentionEpoch = e + 1; // B7 (#129): the floor frightens elite capital — flight begins
+              bottom.forEach(reg => {
+                reg.retention = Math.min(100, reg.retention + 15);
+                reg.eliteShare = Math.max(8, reg.eliteShare - 4); // the price floor pays the digger
+              });
+            };
             let measure;
-            if (giniNow >= 0.42) { measure = "crown_granary"; granaryOn = true; }
-            else if (darkShare >= 0.55) { measure = "grid_charter"; gtShift = -18; expandConduit(); }
+            // a RESOURCE-RICH but unequal realm floors its commodity price (a levy the
+            // diggers keep) rather than importing bread — the retention act competes
+            // with the granary where a rich seam runs (B7: gives the act a home).
+            if (giniNow >= 0.42 && richSeam >= 60) { measure = "retention_act"; retentionAct(); }
+            else if (giniNow >= 0.42) { measure = "crown_granary"; granaryOn = true; granaryEpoch = e + 1; }
+            else if (darkShare >= 0.55) { measure = "grid_charter"; gtShift = -18; expandConduit(); charterDebt = CHARTER_LOAN; charterDebtEpoch = e + 1; } // B7: the wires are strung on imperial credit
             else if (meanToll >= 12) { measure = "toll_amnesty"; tollScale = 0.4; }
             else if (params.db >= 34 && rIns() < 0.5) { measure = "dumping_reform"; disposalOverride = "disperse"; }
-            else {
-              const medW = regions.map(r => r.wealth).sort((a, b) => a - b)[Math.floor(regions.length / 2)];
-              const bottom = regions.filter(reg => reg.wealth < medW);
-              const bottomOre = bottom.reduce((a, r) => a + r.E, 0) / Math.max(1, bottom.length);
-              if (bottomOre >= 18) {
-                // the Retention Act: an ore price floor — the bottom half
-                // keeps more of what its own ground produces
-                measure = "retention_act";
-                bottom.forEach(reg => {
-                  reg.retention = Math.min(100, reg.retention + 15);
-                  reg.eliteShare = Math.max(8, reg.eliteShare - 4); // the price floor pays the digger
-                });
-              } else {
-                // the Crown Granary: the bottom half has no ore to retain,
-                // so the seat taxes the fat years and breads the lean ones
-                measure = "crown_granary";
-                granaryOn = true;
-              }
-            }
+            else if (bottomOre >= 18) { measure = "retention_act"; retentionAct(); }
+            else { measure = "crown_granary"; granaryOn = true; granaryEpoch = e + 1; }
             events.push({ epoch: e + 1, type: "reform", measure });
           } else if (respCoin < params.iq / 100 + 0.3) {
             let measure;
             if (rIns() < 0.5 && params.db < 67) { measure = "dumping_entrenched"; disposalOverride = "concentrate"; }
             else { measure = "toll_crackdown"; tollScale = 1.6; }
             events.push({ epoch: e + 1, type: "reaction", measure });
+          } else if (worldSeries.doctrine_pressure[e] >= 0.55) {
+            // B7 (#129): the seat is SILENT — but the creditors are not. Under a
+            // pressing doctrine the imperial financiers DEMAND a measure the realm
+            // did not choose: structural adjustment, austerity imposed from OUTSIDE.
+            // This is the flip a deaf seat (low iq) invites and a listening one
+            // (high iq, which reforms above and never reaches here) never sees —
+            // the relation iq's extremes change: WHO governs, the seat or the loan.
+            impositions++;
+            granaryOn = false;                        // the bread stops
+            tollScale = Math.min(2, tollScale + 0.4); // the gates are told to collect
+            charterDebt = Math.max(charterDebt, CHARTER_LOAN); // and the adjustment is financed on more credit
+            if (charterDebtEpoch === -1) charterDebtEpoch = e + 1;
+            events.push({ epoch: e + 1, type: "imposition", measure: "structural_adjustment", imposed_by: "creditors" });
+          }
+        }
+        // B7 (#129): THE LONG EDGES accrue EVERY epoch after their measure lands —
+        // the delayed, state-contingent cost the §3.2 table promises (P4 delays).
+        {
+          // peace is read from THIS run's own log: any wound this epoch ends it
+          const woundedThisEpoch = events.some(ev => ev.epoch === e + 1 &&
+            ["blight_plague", "relic_calamity", "revolt", "refinery_collapse", "tower_burned"].includes(ev.type));
+          // (a) THE GRID CHARTER'S DEBT: the imperial loan is serviced out of the
+          // crown's treasury for the rest of the run — the wires reached the dark,
+          // and the seat pays interest on them long after the ribbon-cutting.
+          if (charterDebt > 0) {
+            const service = Math.max(1, Math.round(charterDebt * DEBT_RATE));
+            const paid = Math.min(service, treasuries.crown);
+            treasuries.crown -= paid;
+            debtServicePaid += paid;
+            charterDebt = Math.max(0, charterDebt - paid * 0.5); // half retires principal, half is interest
+          }
+          // (b) THE GRANARY'S DEPENDENCY: run on through a LONG PEACE and the bread
+          // becomes a habit the realm cannot put down — dependency climbs and the
+          // levy drains the treasury with no famine to justify it (the mercy curdles
+          // ONLY in peace: a wounded world's granary is doing its job, not rotting).
+          if (granaryOn && granaryEpoch !== -1 && e + 1 >= granaryEpoch + 2 && !woundedThisEpoch) {
+            granaryDependency = Math.min(100, granaryDependency + DEPENDENCY_STEP);
+            granaryDrain += 1;
+            treasuries.crown = Math.max(0, treasuries.crown - 1);
+          }
+          // (c) THE RETENTION ACT'S CAPITAL FLIGHT: a price floor caps the owners'
+          // return, so elite capital leaves the floored ground for freer air — the
+          // owners' row and the artifice it funded thin where the act bit hardest.
+          if (retentionEpoch !== -1 && e + 1 >= retentionEpoch + 1) {
+            capitalFlight = Math.min(100, capitalFlight + FLIGHT_STEP);
+            regions.forEach(reg => {
+              if (reg.settled && reg.retention >= 90 && reg.eliteShare > 20) {
+                reg.eliteShare = Math.max(8, reg.eliteShare - 1); // the row thins as capital flees
+                reg.A = Math.max(0, reg.A - 1);                    // and the works it funded lose their edge
+              }
+            });
           }
         }
         // V1: THE REVOLT — once per run, the region where injustice, tolls,
@@ -5037,7 +5107,7 @@
               if (!granaryOn && rV() < 0.5) {
                 // THE CONCESSION: the seat reads the fires on the horizon
                 // and opens the granary before the next town rises
-                granaryOn = true;
+                granaryOn = true; granaryEpoch = e + 1;
                 events.push({ epoch: e + 1, type: "reform", measure: "crown_granary", concession: true });
               }
             } else {
@@ -5872,7 +5942,16 @@
         // B4 (#126): the final disposal doctrine (after any mid-run reform override)
         // and the fixed sacrifice zone concentrate dumps on (region id, or null).
         disposalDoctrine: disposalOverride || (params.db < 34 ? "disperse" : params.db < 67 ? "concentrate" : "treat"),
-        sacrificeZoneId: sacrificeZone >= 0 ? regions[sacrificeZone].id : null };
+        sacrificeZoneId: sacrificeZone >= 0 ? regions[sacrificeZone].id : null,
+        // B7 (#129): the reforms' long edges, measurable in provenance
+        reformEdges: {
+          charter_debt: Math.round(charterDebt),          // principal still outstanding at close
+          debt_service: Math.round(debtServicePaid),       // total coin the seat paid to service it
+          granary_dependency: granaryDependency,           // habit bred by a granary running through peace
+          granary_drain: granaryDrain,                     // epochs of fiscal drain with no famine to justify it
+          capital_flight: capitalFlight,                   // elite capital frightened off by the retention floor
+          impositions: impositions                         // measures the creditors DEMANDED (structural adjustment)
+        } };
     }
 
     // ---- Export: one valid GeoJSON FeatureCollection (the bridge) -----------
@@ -6295,6 +6374,7 @@
           dump_bias: params.db,
           disposal_doctrine: model.disposalDoctrine,
           sacrifice_zone: model.sacrificeZoneId,
+          reform_edges: model.reformEdges,
           responsiveness: params.iq,
           harbors_closed: params.hb === 0,
           epochs: params.ep,
@@ -6502,6 +6582,7 @@
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt, dump_bias: params.db,
           disposal_doctrine: model.disposalDoctrine, sacrifice_zone: model.sacrificeZoneId,
+          reform_edges: model.reformEdges,
           responsiveness: params.iq, harbors_closed: params.hb === 0,
           events: model.events,
           wind_deg: model.windDeg,
@@ -7429,6 +7510,10 @@
               toll_crackdown: "the tolls rose by decree — the gates' holders had paid for their privileges, and the seat had debts"
             };
             line = `The seat answered fear with fists: ${PROSE[ev.measure]}. The chronicle records no debate.`;
+          }
+          else if (ev.type === "imposition") {
+            // B7 (#129): a measure the realm did not choose — narrated AS imposed
+            line = `This measure came not from the seat but from its creditors. With the imperial loans unserviced and the doctrine pressing abroad, the financiers DEMANDED their adjustment: the granary shuttered, the gates told to collect, the books balanced on the backs that could least bear it. The chronicle names it structural adjustment; the towns named it what it was — a decree written in another capital.`;
           }
           else if (ev.type === "revolt") {
             const rr = model.regions.find(r => r.id === ev.region_id);

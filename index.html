@@ -1328,9 +1328,17 @@
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 47;
+    const SCHEMA_VERSION = 48;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
+    // B6 (#128): tariffs fund the bridges. A held crossing that still collects a real
+    // toll maintains itself; below UPKEEP_TOLL_MIN of the full rate (a toll amnesty
+    // caps tollScale to 0.4) the fund dries up and the span DECAYS. Decay/recovery are
+    // per-epoch steps on the [0,1] condition; friction rises with (1 − condition).
+    const UPKEEP_TOLL_MIN = 0.7;  // the tollScale below which upkeep is no longer funded
+    const DECAY_STEP = 0.22;      // condition lost per epoch by an unfunded span (rots in ~5)
+    const REPAIR_STEP = 0.15;     // condition regained per epoch by a funded one
+    const DECAY_FRICTION = 40;    // a fully-rotted crossing's friction surcharge on a path that needs it
     const FLY_COST = 0.3;     // skyway friction per unit distance — nothing below matters
     const FLY_BOARD = 35;     // boarding the lift-barge: the fixed price of the sky
     const OCC_R = 600;        // the Dominion's garrison line: cost-radius of the occupied zone (B0.5: ×1.334 for the 1600×1000 world)
@@ -3595,7 +3603,11 @@
         const legacy = lerp(5, 100, Math.pow(t, k)) / 100;         // == old formula
         const ext = (reg.E / 100) * (reg.retention / 100);         // what extraction leaves behind
         const ref = reg.refining / 100;
-        const trade = (0.65 * reg.centrality + 0.35 * reg.seaAccess) / 100; // two poles: the seat and the sea
+        // two poles: the seat and the sea — but the coin only flows if the crossings
+        // between hold. B6 (#128): a decayed span on the region's road to market chokes
+        // the trade that must thread it (0 friction = full trade, capped at −60%).
+        const crossChoke = 1 - clamp((reg.crossFriction || 0) / 100, 0, 0.6);
+        const trade = crossChoke * (0.65 * reg.centrality + 0.35 * reg.seaAccess) / 100;
         const base = total > 0
           ? priceMult * (params.we * ext + params.wf * ref + params.wt * trade + params.wg * legacy) / total
           : 0.5; // all weights zero: no income model — flat
@@ -3625,6 +3637,9 @@
         reg.occupiedEpoch = -1;          // (stage-3 purity: re-runs must not leak)
         reg.effWaterAccess = reg.waterAccess; // founding: no bloc has priced anyone out yet
         reg.waterDenial = 0;             // (stage-3 purity: the epoch loop's denial must not leak)
+        reg.crossFriction = 0;           // B6 (#128): the founding roads are whole — reset BEFORE
+                                         // income() reads it below, or an in-page re-run would choke
+                                         // the founding wealth with the LAST run's rotted spans (purity)
         // B1 (#123): the artifice index A — command of magically-enabled
         // productivity (machinery, trained hands, licensed workings). Founding A
         // is the developed base: refining works and the trained core lift it,
@@ -4127,6 +4142,12 @@
         const b = regions[h.regionIdx].bloc;
         h.heldBy = (b === "crown" || b === "temple" || b === "magnate") ? b : "none";
         h.ref.heldBy = h.heldBy;
+        // B6 (#128): the crossing's CONDITION — sound at the founding (1), it decays
+        // when its tolls go unfunded (a toll amnesty, or an unheld span no one pays
+        // to keep). A rotted span brings its friction back: the ford and the wall
+        // the bridge and the pass were built to spare. Sound until time runs.
+        h.condition = 1;
+        h.ref.condition = 1;
       });
       // tolls: walk each region's least-cost paths to the seat and to its
       // port; every HELD chokepoint along the way (self excluded) levies
@@ -4149,7 +4170,37 @@
           reg.tollBurden = i === freeTownIdx ? 0 : clamp(Math.round(t), 0, 100); // the free town tolls no one
         });
       };
+      // B6 (#128): the OTHER face of the same paths — a DECAYED crossing brings its
+      // friction back for everyone whose least-cost road to the seat or the sea must
+      // thread it, tolled or free (a rotted bridge is a ford again; a rotted pass, a
+      // wall). Mirrors computeTolls, but counts CONDITION, not who holds the gate.
+      const computeCrossingFriction = () => {
+        const decayMap = new Map();
+        holdings.forEach(h => {
+          if (h.condition < 1) {
+            const pen = DECAY_FRICTION * (1 - h.condition);
+            decayMap.set(h.regionIdx, Math.max(decayMap.get(h.regionIdx) || 0, pen));
+          }
+        });
+        regions.forEach((reg, i) => {
+          if (decayMap.size === 0) { reg.crossFriction = 0; return; }
+          let f = 0, cur = i;
+          while (cur !== seatIdx && seatRun.parent[cur] !== -1) {
+            cur = seatRun.parent[cur];
+            if (decayMap.has(cur)) f += decayMap.get(cur);
+          }
+          if (seaRun) {
+            cur = i;
+            while (seaRun.parent[cur] !== -1) {
+              cur = seaRun.parent[cur];
+              if (decayMap.has(cur)) f += decayMap.get(cur);
+            }
+          }
+          reg.crossFriction = clamp(Math.round(f), 0, 100);
+        });
+      };
       computeTolls(); // the founding exposure: who WOULD pay, before time runs
+      computeCrossingFriction(); // all sound at the founding → 0 for everyone
       // #55: the founding snapshot predates politics — refresh its two
       // political columns now that blocs and tolls exist (epoch-0 truth)
       epochSnaps[0].bloc = regions.map(r => r.occupied ? "dominion" : r.bloc);
@@ -4869,6 +4920,17 @@
           events.push({ epoch: e + 1, type: shock.kind, region_id: reg.id });
         }
         computeTolls(); // next epoch pays whoever holds the gates NOW
+        // B6 (#128): tariffs fund the bridges. A crossing whose holder still collects a
+        // real toll maintains itself; an unheld span, or one under a toll amnesty
+        // (tollScale capped low), goes unfunded and ROTS a step this epoch. A garrison
+        // re-tolls for the Dominion, so occupied crossings stay funded. Then the
+        // friction the decay let back in is re-reckoned for the next epoch's trade.
+        holdings.forEach(h => {
+          const funded = h.heldBy !== "none" && (h.heldBy === "dominion" || tollScale >= UPKEEP_TOLL_MIN);
+          h.condition = clamp(h.condition + (funded ? REPAIR_STEP : -DECAY_STEP), 0, 1);
+          h.ref.condition = h.condition;
+        });
+        computeCrossingFriction();
         blightEpoch = e + 1; // B4: the concentrate ramp reads the current year
         computeBlight();   // the poison follows the poor wherever they end up
         computeLivability(); // and the land's worth-living-in is re-reckoned
@@ -5224,6 +5286,24 @@
         return A;
       });
       regions.forEach((reg, i) => { reg.marketAccess = maxMA > 0 ? Math.round(100 * maRaw[i] / maxMA) : 0; });
+
+      // B6 (#128): stamp each region that HOSTS a crossing with its worst condition,
+      // for the export column, the inspector card, and the atlas ink. crossFriction
+      // (what a region PAYS to thread others' rotted spans) is already stamped by
+      // computeCrossingFriction; this is what the region itself KEEPS in repair.
+      regions.forEach(r => { r.crossingCondition = null; r.crossingType = null; r.crossingHeldBy = null; r.bridgeCond = null; r.passCond = null; });
+      holdings.forEach(h => {
+        const r = regions[h.regionIdx];
+        if (r.crossingCondition === null || h.condition < r.crossingCondition) {
+          r.crossingCondition = Math.round(h.condition * 100) / 100;
+          r.crossingType = h.type;
+          r.crossingHeldBy = h.heldBy;
+        }
+        // per-type worst condition, so a decayed BRIDGE only re-fords a river edge and
+        // a decayed PASS only re-walls a ridge edge (the export matches wall to span)
+        if (h.type === "bridge") r.bridgeCond = r.bridgeCond === null ? h.condition : Math.min(r.bridgeCond, h.condition);
+        if (h.type === "pass") r.passCond = r.passCond === null ? h.condition : Math.min(r.passCond, h.condition);
+      });
 
       // Pilgrim flux: every settlement's pilgrims travel the roads to the
       // NEAREST sanctioned site; through-traffic accumulates on every region
@@ -5902,6 +5982,9 @@
             has_tower: reg.hasTower,
             has_bridge: reg.hasBridge,
             toll_burden: reg.tollBurden,
+            crossing_friction: reg.crossFriction || 0,          // B6 (#128): trade cost the region pays for decayed spans on its road to market
+            crossing_condition: reg.crossingCondition,          // the condition of a crossing this region HOSTS (null if none): 1 sound → 0 rotted
+            crossing_type: reg.crossingType,                    // "bridge" | "pass" | "port" | null
             elite_share: reg.eliteShare,
             elite_delta: reg.eliteShare - reg.eliteShareT0, // B5 (#127): the owners' row since the founding (can now fall in ordinary times)
             elite_ordinary_delta: (reg.eliteShare - reg.eliteShareT0) - (reg.eliteCatDelta || 0), // B5 (#127): the row's move with the catastrophe shocks (revolt/collapse/plague) charged OUT — pure ordinary erosion/churn
@@ -5961,8 +6044,22 @@
             const ax = round2(A.c[0]), ay = round2(A.c[1]);
             const bx = round2(B.c[0]), by = round2(B.c[1]);
             const base = round2(Math.hypot(ax - bx, ay - by));
-            const cost = round2(edgeCost(A, B));
+            let cost = round2(edgeCost(A, B));
             const wall = A.ridgeMult ? (A.ridgeMult.get(B.id) || 1) : 1;
+            // B6 (#128): a DECAYED span lets the wall it was built to spare creep back
+            // into this edge's cost — a rotted bridge re-fords its river (0.6 → 2.2), a
+            // rotted pass re-walls its ridge (1.4 → 4.5). Sound at the founding, so this
+            // is a no-op there; only the wall's OWN kind of span can spare/lose it.
+            let condition = 1, is_decayed = 0;
+            if (wall === RIVER_EDGE) {
+              const bc = Math.min(A.bridgeCond === null || A.bridgeCond === undefined ? 1 : A.bridgeCond,
+                                  B.bridgeCond === null || B.bridgeCond === undefined ? 1 : B.bridgeCond);
+              if (bc < 1) { cost = round2(cost * lerp(RIVER_EDGE, FORD_MULT, 1 - bc) / RIVER_EDGE); condition = round2(bc); is_decayed = 1; }
+            } else if (wall === PASS_MULT) {
+              const pc = Math.min(A.passCond === null || A.passCond === undefined ? 1 : A.passCond,
+                                  B.passCond === null || B.passCond === undefined ? 1 : B.passCond);
+              if (pc < 1) { cost = round2(cost * lerp(PASS_MULT, RIDGE_WALL, 1 - pc) / PASS_MULT); condition = round2(pc); is_decayed = 1; }
+            }
             features.push({
               type: "Feature",
               properties: {
@@ -5973,6 +6070,8 @@
                 is_pass: wall === PASS_MULT ? 1 : 0,
                 is_river: wall === RIVER_EDGE ? 1 : 0,
                 is_ford: wall === FORD_MULT ? 1 : 0,
+                condition: condition,        // B6: the spanning crossing's health (1 sound → 0 rotted); 1 where no span applies
+                is_decayed: is_decayed,      // B6: this edge's spared wall is creeping back
                 held_by: gate.get(i) || gate.get(j) || "none"
               },
               geometry: { type: "LineString", coordinates: [[ax, ay], [bx, by]] }
@@ -7030,6 +7129,12 @@
       const eliteOrdinaryMean = sN
         ? Math.round(100 * mean(settled.map(r => (r.eliteShare - r.eliteShareT0) - (r.eliteCatDelta || 0)))) / 100
         : 0;
+      // B6 (#128): the crossings ledger — how many spans rotted (below half condition),
+      // and the mean trade friction the settled realm pays for decayed spans on its
+      // roads to market. trade_drag > 0 means the bridges cost trade this run.
+      const crossingRegs = R.filter(r => r.crossingCondition !== null && r.crossingCondition !== undefined);
+      const crossingsDecayed = crossingRegs.filter(r => r.crossingCondition < 0.5).length;
+      const tradeDrag = sN ? Math.round(mean(settled.map(r => r.crossFriction || 0)) * 10) / 10 : 0;
 
       return {
         ages,
@@ -7040,6 +7145,9 @@
         absolute_mobility: absMobility,
         rank_churn: rankChurn,
         elite_ordinary_mean: eliteOrdinaryMean,
+        crossings_total: crossingRegs.length,
+        crossings_decayed: crossingsDecayed,
+        trade_drag: tradeDrag,
         volatility,
         sovereignty,
         rain_split: rainSplit,
@@ -7906,7 +8014,10 @@
         for (const p of tr2) { const d = Math.hypot(p[0] - b.x, p[1] - b.y); if (d < bd2) { bd2 = d; bx = p[0]; by = p[1]; } }
         // #93: a held gate wears its holder's ring — who owns the crossing
         if (b.heldBy && b.heldBy !== "none") parts.push(`<circle class="gatering" cx="${bx.toFixed(1)}" cy="${fy(by).toFixed(1)}" r="11" fill="none" stroke="${BLOC_COLORS[b.heldBy]}" stroke-width="2.5" opacity="0.85"/>`);
-        parts.push(`<text class="bridge" x="${bx.toFixed(1)}" y="${(fy(by) + 6).toFixed(1)}" font-size="${cz(15)}" font-weight="700" text-anchor="middle" fill="#6b5844" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">═</text>`);
+        // B6 (#128): a DECAYED span reads rust-red with a broken ring — the ford is coming back
+        const bdec = b.condition !== undefined && b.condition < 0.7;
+        if (bdec) parts.push(`<circle cx="${bx.toFixed(1)}" cy="${fy(by).toFixed(1)}" r="9" fill="none" stroke="#b0432e" stroke-width="1.8" stroke-dasharray="3 3" opacity="0.9"/>`);
+        parts.push(`<text class="bridge${bdec ? " decayed" : ""}" x="${bx.toFixed(1)}" y="${(fy(by) + 6).toFixed(1)}" font-size="${cz(15)}" font-weight="700" text-anchor="middle" fill="${bdec ? "#b0432e" : "#6b5844"}" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">═</text>`);
       });
       if (poi && model.maelstrom) {
         const mx = clamp(model.maelstrom.x, 22, WX - 22), my = clamp(model.maelstrom.y, 22, WY - 22);
@@ -8068,7 +8179,10 @@
         const R = model.ridges.find(r => r.id === p.ridgeId);
         if (R && R.maxElev < 60) return; // orphaned pass on a barely-there ridge
         if (p.heldBy && p.heldBy !== "none") parts.push(`<circle class="gatering" cx="${p.x.toFixed(1)}" cy="${fy(p.y).toFixed(1)}" r="11" fill="none" stroke="${BLOC_COLORS[p.heldBy]}" stroke-width="2.5" opacity="0.85"/>`);
-        parts.push(`<text class="pass" x="${p.x.toFixed(1)}" y="${(fy(p.y) + 6).toFixed(1)}" font-size="${cz(17)}" font-weight="700" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">∩</text>`);
+        // B6 (#128): a DECAYED pass reads rust-red with a broken ring — the wall is coming back
+        const pdec = p.condition !== undefined && p.condition < 0.7;
+        if (pdec) parts.push(`<circle cx="${p.x.toFixed(1)}" cy="${fy(p.y).toFixed(1)}" r="9" fill="none" stroke="#b0432e" stroke-width="1.8" stroke-dasharray="3 3" opacity="0.9"/>`);
+        parts.push(`<text class="pass${pdec ? " decayed" : ""}" x="${p.x.toFixed(1)}" y="${(fy(p.y) + 6).toFixed(1)}" font-size="${cz(17)}" font-weight="700" text-anchor="middle" fill="${pdec ? "#b0432e" : "#4a3421"}" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">∩</text>`);
         if (poi) parts.push(`<text x="${p.x.toFixed(1)}" y="${(fy(p.y) + 20).toFixed(1)}" font-size="${cz(10)}" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="${cz(2.5)}" opacity="0.85">${esc(p.name)}</text>`);
       });
 
@@ -8444,6 +8558,12 @@
         row("wealth", `${reg.wealth} (founded ${reg.wealthT0}, peak ${reg.peakWealth})`) +
         row("keeps", `${reg.retention} of every 100 it makes`) +
         row("tolls", reg.tollBurden > 0 ? `${reg.tollBurden} at gates it never chose` : "pays no gate") +
+        // B6 (#128): the crossing this town keeps (if any) — sound, decaying, or rotted —
+        // and the friction it PAYS for others' rotted spans on its road to market
+        (reg.crossingCondition !== null && reg.crossingCondition !== undefined
+          ? row("crossing", `its ${reg.crossingType} is ${reg.crossingCondition >= 0.85 ? "sound" : reg.crossingCondition >= 0.4 ? "decaying" : "rotted"} (${Math.round(reg.crossingCondition * 100)}% kept — ${reg.crossingHeldBy && reg.crossingHeldBy !== "none" ? "tolls fund upkeep" : "no toll funds it"})`)
+          : "") +
+        (reg.crossFriction > 0 ? row("rotted road", `+${reg.crossFriction} trade friction from decayed spans between it and the market`) : "") +
         (model.dominion ? row("tribute", `${reg.occupied ? 3 : (reg.bloc === "crown" ? 1 : 2)} per year to the Dominion`) : "") +
         row("reach", `market ${reg.marketAccess} · sea ${reg.seaAccess} · seat ${reg.centrality} · sky +${reg.skyAdvantage}%`) +
         `</table>`);

@@ -1,6 +1,37 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v48** (tariffs fund the bridges B6): extraction and upkeep are one ledger
+  (issue #128, §3.2 tariffs row). The gates that TAX the roads are the same gates
+  that MAINTAIN them. A held crossing (bridge/pass/port) that still collects a real
+  toll keeps itself in repair; an **unheld span**, or one under a **toll amnesty**
+  (the reform caps `tollScale` to 0.4, below the `UPKEEP_TOLL_MIN` 0.7 that funds
+  upkeep), goes unfunded and **ROTS** a step each epoch — its spared wall creeps
+  back (a rotted bridge re-fords its river, 0.6→2.2; a rotted pass re-walls its
+  ridge, 1.4→4.5). A garrison re-tolls for the Dominion, so occupied crossings stay
+  funded. The decay **chokes trade**: `computeCrossingFriction` walks each region's
+  least-cost roads to the seat and the sea (the same paths the tolls walk) and sums
+  the friction of every decayed span on them into `crossing_friction`, which throttles
+  the region's trade income (capped −60%). So the **toll amnesty grows a long edge**
+  (§3.2 reforms row): the relief that lifts the tolls also starves the bridges, and a
+  decade on the realm that kept its tolls out-trades the one that freed them. Decay is
+  **visible**: the atlas draws a rotted span in rust with a broken ring; the feature
+  card states its condition (sound / decaying / rotted) and the friction a town pays
+  for others' rotted spans; the exported edges carry `condition` + `is_decayed` and
+  their `cost` shows the wall creeping back. New columns: `crossing_condition` /
+  `crossing_type` / `crossing_friction` (regions), `condition` / `is_decayed` (edges);
+  findings `crossings_total` / `crossings_decayed` / `trade_drag`. The founding is
+  sound (all spans condition 1, so an `ep=0` world is unmoved but for the new zeroed
+  columns). `schema_version` 47→48; declared fixture regeneration; the edge-cost
+  consistency suite extended for decay states (a re-forded river edge is exempt from
+  the sound 1.5× barge ceiling but floors at its sound multiplier; `is_decayed` agrees
+  with `condition < 1` on river/pass edges only). Exhibits (pinned): **the reform
+  backfires** — `#seed=am-8&regions=24&ep=10&iq=100`: the toll amnesty (epoch 3) lifts
+  the tolls, then all 8 spans rot and trade collapses — 22 towns pay the friction, 82%
+  end poorer than they founded, mean wealth 21→13; **the toll-heavy realm outlasts the
+  toll-free** — the SAME world at `iq=0` hears no reform, keeps its tolls, funds every
+  span (0 decayed, trade_drag 0) and its towns end richer (mean 17.5 vs 12.7) than the
+  `iq=100` world that granted the amnesty and rotted them.
 - **v47** (ordinary erosion B5): the owners' row can fall without a catastrophe
   (issue #127, §3.2 elite-share row). Under H1 the owners' row RATCHETED UP
   structurally and fell **only on catastrophe** (a won revolt burning the charters,

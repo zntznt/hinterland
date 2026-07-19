@@ -1,4 +1,5 @@
 epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occupied,contested,ruler
+1,1025,embargo,0,,,,,,,,,,
 1,1025,settlement_abandoned,4,,,,,,,,,,
 1,1025,settlement_abandoned,5,,,,,,,,,,
 1,1025,settlement_abandoned,8,,,,,,,,,,
@@ -20,6 +21,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 5,1125,quake,5,the Drelkruk Quake,,,,,,,,,
 5,1125,ascendancy,4,the Rise of Thraldek Delf,,,,,,,,,
 5,1125,revolt,4,the Thraldek Delf Rising,crushed,,,,,,,,
+6,1150,courting,0,,,,,,,,,,
 6,1150,succession,,Sylvasse,,temple,,,,,,false,1
 6,1150,drought,0,the Drought of 1150,,,,,,,,,
 6,1150,quake,5,the Drelkruk Quake,,,,,,,,,

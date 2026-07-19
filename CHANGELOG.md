@@ -1,6 +1,42 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v53** (imperial reach B11): the empire mostly never comes, it buys (issue #133,
+  §3.6 — the Phase B capstone). The Dominion was a Viking: it lands, it takes tribute.
+  Real contemporary empire works by **REACH**, and the fleet is the rare exception.
+  B11 mechanizes one empire pressing on the coast through three channels struck each
+  epoch BEFORE income: **CONCESSIONS** — the Metropole's **attention**, keyed to a
+  region's **remaining ore** (`attention × sea-reach × E`), courts a rich coast; when
+  it crosses the bar a concession opens: foreign capital **owns the works** (`retention`
+  becomes a **foreign claim** — half the ore-yield repatriates, the dependency-theory
+  column applied one level up), the coast is force-wired, and **development capital**
+  flows in while the ore is wanted. As the lode draws down (or attention turns) the
+  concession is **wound up** — the markets leave (**ruin**) and the levies stop
+  (**freedom**): the *courted → developed → squeezed → abandoned* arc, generated from
+  the depleting ore alone. **EMBARGO** — a hostile world regime (`trade_war`) shuts the
+  sea lanes, so an exposed coast loses its trade pole for the epoch and the second pole
+  **busts**. **THE LIMIT CASE** — the Dominion's landing is demoted (the coin cut from a
+  half to a third): the empire mostly judges reach enough and sends factors, not a
+  garrison; annexation is now the exception, not the rule. A named **RIVAL** rides the
+  regime chain, the gazette ("the powers" row), and a **courting** diplomacy event —
+  the second power, with no reach machinery of its own. And the de-moralized **VERDICT
+  CLASS** ships: §3.5's **gap × floor**, qualified by realm **growth** (boom/stagnant/
+  collapse) — a class per world in `findings.verdict`. New columns: `concession`,
+  `concession_epoch`, `foreign_claim`, `concession_ended`, `concession_ended_epoch`
+  per region; `powers` (metropole/rival/counts) in provenance; `findings.verdict` and
+  `findings.concessions`. `schema_version` 52→53; **declared fixture regeneration**.
+  Exhibits (pinned): **the concession** — `#seed=ir-0&regions=24&ep=10`: a coast the
+  Metropole developed to wealth **70** against the realm's median **14**, and keeps
+  **half** of what its own ground yields — richer, and owned. **The abandonment arc** —
+  `#seed=ir-7&regions=24&ep=10`: a concession opened in 1025 and wound up in 1250, the
+  attention leaving with the ore, narrated end to end. **ATLAS REGENERATION** (§3.5
+  verdict diversity, the §7.3 pin): across the 80-world sweep the possibility space
+  stays open — **≥6 §3.5 classes present, none over 40%** (measured 12–13 classes,
+  ~23–25% max), so no templated verdict owns the world. Downstream re-pin (§2.5, the
+  landing demoted): the Dominion X1 arrival band relaxed `25–75% → 10–55%` (measured
+  25% on the design sweep, down from ~48%); the reach events (concession/abandonment/
+  embargo/courting) are world-scale — located at a coast but not a region's headline
+  `event_type`, so the event-column invariant excludes them.
 - **v52** (the mix pulls apart B10): a second pole, two knobs retired (issue #132,
   §3.3 decisions 4). The income mix promised four levers and delivered a
   re-parameterization: trade and legacy both peaked at the seat, so the four weights

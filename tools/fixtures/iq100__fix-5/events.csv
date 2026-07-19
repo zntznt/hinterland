@@ -1,4 +1,5 @@
 epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occupied,contested,ruler
+1,1025,embargo,3,,,,,,,,,,
 1,1025,settlement_abandoned,2,,,,,,,,,,
 1,1025,settlement_abandoned,9,,,,,,,,,,
 1,1025,settlement_abandoned,10,,,,,,,,,,
@@ -18,7 +19,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 5,1125,ascendancy,9,the Rise of Vaskalgrelk,,,,,,,,,
 6,1150,settlement_founded,4,,,,,,,,,,
 6,1150,refinery_founded,3,,,,,,,,,,
-6,1150,war,2,the Kharruk Tor War,,crown|temple,,,,,,,
+6,1150,war,2,the War of 1150,,crown|temple,,,,,,,
 6,1150,succession,,Vannornweld,,crown,,,,,,false,1
 6,1150,succession,,Urzek,,magnate,,,,,,false,2
 6,1150,reform,,,,,crown_granary,,,,,,

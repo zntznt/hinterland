@@ -1523,7 +1523,10 @@ console.log("# The strata H1 acceptance: class exists within the walls");
   // the sweep: measured before calibrating (40-world knob sweep: elite_share
   // p10 22 / med 25 / p90 43, saturation max 5.3% of one world's regions;
   // corr(refining, elite) med 0.72; within_pct p10 45 / med 58 / p90 75;
-  // owners med 4.4% of people hold 53.1% of coin; realm class_gap med 24x)
+  // owners med 4.4% of people hold 53.1% of coin; realm class_gap med 24x).
+  // B5 (#127) re-measured under the ordinary erosion (the row now sheds where the
+  // market reaches): corr med 0.57, owners med 44.6% of coin, within med 51%,
+  // saturation 3.8% — every H1 pin still clears its threshold with margin.
   const N = 20;
   const within = [], corr = [], coin = [];
   let satWorst = 0;

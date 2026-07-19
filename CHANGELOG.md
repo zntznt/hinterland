@@ -1,6 +1,29 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v52** (the mix pulls apart B10): a second pole, two knobs retired (issue #132,
+  §3.3 decisions 4). The income mix promised four levers and delivered a
+  re-parameterization: trade and legacy both peaked at the seat, so the four weights
+  moved the same relation. B10 **de-collinearizes** the mix — the four terms now anchor
+  to DIFFERENT geography: **extraction** to the seams (ore stock), **artifice** to `A`
+  (trained capacity, strongest at the works), **legacy** to the authored gradient (the
+  seat), and **trade** re-anchors to the **COAST** — `sea_access`, gated by a new
+  **`openness`** knob and scaled by the world's **foreign demand**, priced against
+  seat-centrality. So a trade-heavy, open, demand-favoured coast grows a **SECOND POLE**
+  that RIVALS the capital instead of feeding it: across a 24-world `tp-*` trade sweep,
+  the largest city is a coast, not the seat, in **16/24** worlds. Measured, each weight
+  now makes its OWN anchor the strongest predictor of wealth (trade→sea corr 0.91 vs
+  legacy's 0.57; legacy→seat centrality 0.81 vs trade's 0.65; artifice→A 0.84 vs
+  extraction's 0.51) — the four ratios move relations in **distinguishable directions**
+  (the §7.2 mix-reach acceptance). **Two knobs retire for two added** (the panel stays
+  flat: `order` landed in B9, `openness` here): **`hb`** (harbors) folds into `openness`
+  — its sealed end (openness 0) IS the old closed harbor, and old `hb=0` links map
+  forward; **`bias`** folds into the legacy gradient's definition (parse-only, so old
+  `bias=` links keep meaning). New `openness` provenance field + slider; `bias`/`hb`
+  sliders removed; `schema_version` 51→52; declared fixture regeneration. Exhibit
+  (pinned): **the second pole** — `#seed=tp-0&regions=24&ep=10&wt=80&we=8&wf=6&wg=6`:
+  a coastal city out-grew the seat many times over, a trade republic that never asked
+  the capital's leave.
 - **v51** (the order axis B9): safety and stagnation share a root (issue #131, §3.2
   policing row + §3.3 order knob). A new knob, **`order`** (0 **open** ↔ 100 **police
   state**; **50 = neutral, the old world**). High order **STILLS** the shadow and the

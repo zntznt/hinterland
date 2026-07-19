@@ -3173,6 +3173,83 @@ console.log("# The ordinary erosion B5 (#127): the owners' row can fall without 
   else fail(`eo-2 exhibit failed: ordMean ${F.elite_ordinary_mean}, tot ${totMean.toFixed(1)}, hadCat ${hadCat}`);
 }
 
+console.log("# Tariffs fund the bridges B6 (#128): extraction and upkeep are one ledger");
+
+// The gates that TAX the roads are the same gates that MAINTAIN them. A held
+// crossing collecting a real toll keeps itself in repair; an unheld span, or one
+// under a toll amnesty (tollScale capped to 0.4, below UPKEEP_TOLL_MIN), goes
+// unfunded and ROTS — its spared wall creeps back (a bridge re-fords its river, a
+// pass re-walls its ridge), and the trade that must thread it is choked. New
+// columns: crossing_condition/crossing_type (a region's own span), crossing_friction
+// (what it PAYS for others' rotted spans on its road to market); edges carry
+// condition/is_decayed; findings carry crossings_total/decayed + trade_drag.
+{
+  // (i) the founding is SOUND: no span has rotted before time runs
+  const g0 = (await gen("#seed=am-8&regions=24&ep=0")).gj;
+  const c0 = regionsOf(g0).map(f => f.properties).filter(r => r.crossing_condition !== null);
+  const e0dec = g0.features.filter(f => f.properties.kind === "edge" && f.properties.is_decayed === 1).length;
+  if (g0.hinterland.findings.trade_drag === 0 && c0.every(r => r.crossing_condition === 1) && e0dec === 0)
+    ok(`the founding crossings are sound: every span at condition 1, no decayed edge, trade_drag 0 (upkeep is a story time tells)`);
+  else fail(`founding not sound: drag ${g0.hinterland.findings.trade_drag}, decayedEdges ${e0dec}`);
+}
+
+// (ii) THE MECHANIC across a sweep: an amnesty starves upkeep and the spans rot.
+{
+  const N = 24;
+  let amnesty = 0, amnestyDecayed = 0;
+  for (let i = 0; i < N; i++) {
+    const g = (await gen(`#seed=am-${i}&regions=24&ep=10&iq=100`)).gj;
+    const F = g.hinterland.findings;
+    const amn = (g.hinterland.events || []).some(e => e.type === "reform" && e.measure === "toll_amnesty");
+    if (amn) { amnesty++; if (F.crossings_decayed >= 1 && F.trade_drag > 0) amnestyDecayed++; }
+  }
+  if (amnesty >= 3 && amnestyDecayed >= Math.ceil(amnesty * 0.6))
+    ok(`the amnesty rots the bridges: of ${amnesty}/${N} worlds that granted a toll amnesty, ${amnestyDecayed} let their crossings decay and pay a trade friction for it — the reform's long edge (measured 5 amnesties, 4 decayed)`);
+  else fail(`amnesty→decay coupling too weak: ${amnestyDecayed}/${amnesty}`);
+}
+
+// (iii) EXHIBIT (a) — the reform-backfire marquee (pinned #seed=am-8&regions=24&ep=10&iq=100):
+// the toll amnesty freed the roads of tolls, then the unfunded spans ALL rotted and
+// trade collapsed. The friction-paying towns end poorer than they founded.
+{
+  const g = (await gen("#seed=am-8&regions=24&ep=10&iq=100")).gj;
+  const F = g.hinterland.findings;
+  const amn = (g.hinterland.events || []).some(e => e.type === "reform" && e.measure === "toll_amnesty");
+  const drag = regionsOf(g).map(f => f.properties).filter(r => r.is_settled && r.crossing_friction > 0);
+  const fellShare = drag.length ? drag.filter(r => r.wealth < r.wealth_t0).length / drag.length : 0;
+  if (amn && F.crossings_decayed >= 4 && F.trade_drag > 30 && drag.length >= 8 && fellShare >= 0.6)
+    ok(`THE REFORM BACKFIRES (am-8): the toll amnesty lifted the tolls, then the unfunded spans ROTTED (${F.crossings_decayed}/${F.crossings_total}, trade_drag ${F.trade_drag}) — ${drag.length} towns pay the friction and ${Math.round(fellShare * 100)}% ended poorer than they founded`);
+  else fail(`am-8 backfire exhibit failed: amn ${amn}, decayed ${F.crossings_decayed}, drag ${F.trade_drag}, fell ${(fellShare * 100).toFixed(0)}% of ${drag.length}`);
+}
+
+// (iv) EXHIBIT (b) — toll-heavy crossings OUTPERFORM a toll-free neighbor decade-on.
+// The SAME world (am-8), only the seat's ear differs: iq=0 hears no reform, keeps its
+// tolls, funds its spans (all sound); iq=100 grants the amnesty and rots them. The
+// toll-heavy realm's crossings stand and its towns end RICHER.
+{
+  const kept = (await gen("#seed=am-8&regions=24&ep=10&iq=0")).gj;   // tolls kept, spans funded
+  const free = (await gen("#seed=am-8&regions=24&ep=10&iq=100")).gj; // amnesty, spans rot
+  const meanW = (g) => { const R = regionsOf(g).map(f => f.properties).filter(r => r.is_settled); return R.reduce((a, r) => a + r.wealth, 0) / R.length; };
+  const Fk = kept.hinterland.findings, Ff = free.hinterland.findings;
+  const wk = meanW(kept), wf = meanW(free);
+  if (Fk.crossings_decayed === 0 && Fk.trade_drag === 0 && Ff.crossings_decayed > Fk.crossings_decayed && wk > wf)
+    ok(`the toll-heavy realm outlasts the toll-free one: keeping the tolls (iq=0) leaves every span sound (0 decayed, drag 0) and its towns richer (mean ${wk.toFixed(1)}) than the same world that granted the amnesty and rotted them (${Ff.crossings_decayed} decayed, mean ${wf.toFixed(1)})`);
+  else fail(`toll-heavy exhibit failed: kept ${Fk.crossings_decayed}dec/${wk.toFixed(1)}, free ${Ff.crossings_decayed}dec/${wf.toFixed(1)}`);
+}
+
+// (v) the DECAY IS VISIBLE on the edges: in the amnesty world a re-forded river edge
+// exceeds the sound barge ceiling, and every decayed edge carries condition < 1.
+{
+  const g = (await gen("#seed=am-8&regions=24&ep=10&iq=100")).gj;
+  const E = g.features.filter(f => f.properties.kind === "edge").map(f => f.properties);
+  const decayed = E.filter(e => e.is_decayed === 1);
+  const reforded = decayed.filter(e => e.is_river === 1 && e.friction_mult > 1.5);
+  const condOk = decayed.every(e => e.condition < 1 && e.condition >= 0);
+  if (decayed.length >= 1 && condOk && reforded.length >= 1)
+    ok(`the decay shows on the graph: ${decayed.length} edges carry a rotted span (condition < 1), ${reforded.length} river edges re-forded past the 1.5x barge ceiling — the cost spike the map draws in rust`);
+  else fail(`edge decay not visible: ${decayed.length} decayed, reforded ${reforded.length}, condOk ${condOk}`);
+}
+
 console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");
 
 // (viii) Emergence directions: burden rises with blight, falls with reach & wealth.
@@ -3741,20 +3818,34 @@ console.log("# QGIS substrates Q1 acceptance (#55/#56): edges, moran, CSV tables
   {
     const HOLDERS = new Set(["crown", "temple", "magnate", "dominion", "none"]);
     let bad = null;
+    // B6 (#128): a DECAYED span lets its spared wall creep back — a rotted bridge
+    // re-fords its river (0.6 → up to 2.2), a rotted pass re-walls its ridge (1.4 →
+    // up to 4.5). So a decayed edge is EXEMPT from the sound-state wall ceiling, but
+    // must still floor at its sound multiplier (decay only ever RAISES cost) and its
+    // is_decayed flag must agree with a condition < 1 on a river- or pass-kind edge.
     for (const e of edges) {
       const p = e.properties;
       const f = p.cost / p.base_len;
       if (p.is_ridge_crossing + p.is_pass + p.is_river + p.is_ford > 1) { bad = `multiple wall flags on ${p.from_region}-${p.to_region}`; break; }
       if (!(p.cost >= p.base_len * 0.5 - 0.02)) { bad = `cost ${p.cost} < base ${p.base_len} x 0.5`; break; }
       if (Math.abs(p.friction_mult - f) > 0.02) { bad = "friction_mult != cost/base_len"; break; }
-      if (p.is_river === 1 && !(f <= 1.5 + 0.02)) { bad = "river edge above the barge ceiling"; break; }
+      // decay-state validity: flag in {0,1}, condition in [0,1], decay only on the
+      // crossings that can HAVE a span (river/pass), and the flag agrees with condition
+      if (p.is_decayed !== 0 && p.is_decayed !== 1) { bad = "is_decayed not 0/1"; break; }
+      if (!(p.condition >= 0 && p.condition <= 1)) { bad = `condition out of [0,1]: ${p.condition}`; break; }
+      if (p.is_decayed === 1 && !(p.is_river === 1 || p.is_pass === 1)) { bad = "decay on a non-span edge"; break; }
+      if (p.is_decayed === 1 && !(p.condition < 1)) { bad = "decayed flag but condition 1"; break; }
+      if (p.is_decayed === 0 && p.condition !== 1) { bad = "sound flag but condition != 1"; break; }
+      if (p.is_river === 1 && p.is_decayed === 0 && !(f <= 1.5 + 0.02)) { bad = "sound river edge above the barge ceiling"; break; }
+      if (p.is_river === 1 && p.is_decayed === 1 && !(f <= 2.2 * 2.5 + 0.02)) { bad = "re-forded river edge past the ford ceiling"; break; }
       if (p.is_river === 0 && !(f >= 1 - 0.02)) { bad = "dry-land edge under 1x"; break; }
       if (p.is_ridge_crossing === 1 && !(f >= 4.5 - 0.02)) { bad = "wall edge under 4.5x"; break; }
       if (p.is_ford === 1 && !(f >= 2.2 - 0.02)) { bad = "ford edge under 2.2x"; break; }
-      if (p.is_pass === 1 && !(f >= 1.4 - 0.02)) { bad = "pass edge under 1.4x"; break; }
+      if (p.is_pass === 1 && !(f >= 1.4 - 0.02)) { bad = "pass edge under 1.4x"; break; }         // decay only raises it
+      if (p.is_pass === 1 && p.is_decayed === 1 && !(f <= 4.5 * 2.5 + 0.02)) { bad = "re-walled pass edge past the ridge ceiling"; break; }
       if (!HOLDERS.has(p.held_by)) { bad = "bad held_by " + p.held_by; break; }
     }
-    if (!bad) ok("edge costs and wall flags are internally consistent (cost >= base/2; river <= 1.5x; ridge >= 4.5x; ford >= 2.2x; pass >= 1.4x; at most one flag)");
+    if (!bad) ok("edge costs and wall flags are internally consistent, decay states included (sound river <= 1.5x; a rotted span re-fords/re-walls above it; ridge >= 4.5x; ford >= 2.2x; pass >= 1.4x; is_decayed agrees with condition<1 on river/pass edges only)");
     else fail("edge layer inconsistent: " + bad);
   }
 

@@ -1188,6 +1188,11 @@
           <div class="hint">How likely the seat answers the realm's first wound with a mercy instead of a fist. The dice still roll; this weights them. 45 = the old world.</div>
         </div>
         <div class="row">
+          <label>Order <span class="val" id="orderVal"></span></label>
+          <input type="range" id="order" min="0" max="100" step="1" />
+          <div class="hint">The order axis, open ground to police state. High order stills predation, smuggling and revolt &mdash; and stills the ladder too: mobility, entry, the appetite to risk capital. Safety and stagnation share a root. 50 = the old world.</div>
+        </div>
+        <div class="row">
           <label class="radio" style="font-weight:600"><input type="checkbox" id="hb" /> close the harbors</label>
           <div class="hint">Seal the quays: no sea trade, no port tolls &mdash; and no door for the Dominion. Isolation is a policy with a price.</div>
         </div>
@@ -1328,7 +1333,7 @@
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 50;
+    const SCHEMA_VERSION = 51;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     // B6 (#128): tariffs fund the bridges. A held crossing that still collects a real
@@ -1366,6 +1371,7 @@
       gt: 35,                            // grid threshold (0 = conduit reaches everyone)
       db: 60,                            // disposal doctrine: 0–33 disperse, 34–66 concentrate, 67–100 treat
       iq: 45,                            // the seat's ear (P(reform); default = the old dice)
+      order: 50,                         // B9 (#131): the order axis (0 open ↔ 100 police state); 50 = neutral (the old world)
       hb: 1,                             // harbors open (0 = sealed: no ports, no Dominion)
       ep: 0,                             // epochs (0 = founding snapshot, no dynamics)
       capital: null                      // null => seat derived from geology
@@ -4270,7 +4276,7 @@
       const rIns = fx("institutions");
       const respCoin = rIns();                 // <0.45 reform, <0.75 reaction, else nothing
       const rV = fx("revolt");
-      const revoltBar = 95 + rV() * 25;
+      const revoltBar = 95 + rV() * 25 + (params.order - 50) * 0.5; // B9 (#131): order raises the bar to rise — a police state suppresses revolt; an open realm invites it (neutral at 50)
       let responded = false, revoltIdx = -1, revoltWon = false;
       // X1: THE DOMINION — the power beyond the sea. The same door the
       // trade leaves through is the door an empire can walk in.
@@ -4362,7 +4368,10 @@
             const diffuse = 0.08 * (nbrA - Aprev[i]);
             // the pool: the owners' coin, LEVERAGED by the counting house
             // (credit reaches past cash on hand) and tilted by the world price.
-            const pool = 1.8 * reg.wealth * (reg.eliteShare / 100) * (0.5 + 0.5 * worldPrice);
+            // B9 (#131): order dampens the appetite to RISK capital — a police state's
+            // owners hoard behind the wall, an open realm's dare (the pool is where the
+            // safety/stagnation trade bites the works). Neutral at 50 (the old world).
+            const pool = 1.8 * reg.wealth * (reg.eliteShare / 100) * (0.5 + 0.5 * worldPrice) * (1 - (params.order - 50) / 100 * 0.8);
             // the development share — the coin that BUILDS vs merely hoards.
             // Retention (does value stay local, or is it a foreign claim?) and
             // the world price (does capital dare?) decide. A high-retention
@@ -4453,8 +4462,15 @@
           // town's ownership tracks its trajectory instead of freezing between shocks.
           const wealthSwing = reg.wealth - wealthBefore;
           const wealthDrift = 0.2 * wealthSwing * (wealthSwing > 0 ? rentKeep : 1); // the upside is competed away; the downside is not
-          const competition = reg.occupied ? 0 : 5.5 * marketAccess * clamp((reg.eliteShare - 33) / 59, 0, 1); // active decay of concentration
-          const boomChurn = reg.occupied ? 0 : 2.4 * clamp(wealthSwing / 10, 0, 1);            // a boom mints new owners
+          // B9 (#131): the ORDER AXIS retires B5's raw `occupied` churn proxy. Churn
+          // freezes with ORDER: occupied ground is a local police state (orderLevel +50),
+          // so at the default order (50) it STILL fully freezes (byte-identical to B5);
+          // a global police state (order 100) freezes everyone, an open realm (order 0)
+          // churns harder. churnFactor: 50→1 neutral, 100→0 frozen, 0→2 wide-open.
+          const orderLevel = clamp(params.order + (reg.occupied ? 50 : 0), 0, 100);
+          const churnFactor = clamp(1 - (orderLevel - 50) / 50, 0, 2);
+          const competition = churnFactor * 5.5 * marketAccess * clamp((reg.eliteShare - 33) / 59, 0, 1); // active decay of concentration
+          const boomChurn = churnFactor * 2.4 * clamp(wealthSwing / 10, 0, 1);            // a boom mints new owners
           reg.eliteShare = clamp(reg.eliteShare
             + wealthDrift                          // the owners capture the swing — the upside only where the market lets them
             + rentKeep * (0.75 * gateIncome        // the toll house pays the holder's men (competition bids it down)
@@ -5469,7 +5485,11 @@
       const garrisons = garrisonIdxs.filter(i => regions[i].settled).map(i => ({ regionId: regions[i].id, x: regions[i].c[0], y: regions[i].c[1] }));
       const garCd = costDistances(regions, garrisonIdxs).dist;
       regions.forEach((reg, i) => {
-        reg.forceProjection = Math.round(100 * Math.exp(-(isFinite(garCd[i]) ? garCd[i] : 1e9) / 374));
+        // B9 (#131): ORDER projects force. A police state (order 100) stiffens the
+        // constabulary's reach everywhere (+30), suppressing predation and the black
+        // market; an open realm (order 0) thins it (−30). Neutral at 50 (the old world).
+        reg.forceProjection = clamp(Math.round(100 * Math.exp(-(isFinite(garCd[i]) ? garCd[i] : 1e9) / 374) + (params.order - 50) * 0.6), 0, 100);
+        reg.orderLevel = clamp(params.order + (reg.occupied ? 50 : 0), 0, 100); // B9 (#131): the realm's order + the local police state of occupation
         // wardlines need BOTH strategic priority and lumen: off-grid darkness
         // is near-defenseless no matter how exposed it is
         const priority = clamp(0.4 * reg.centrality + 0.4 * reg.forceProjection + 0.2 * reg.refining, 0, 100);
@@ -5508,7 +5528,7 @@
       });
       const maxSmug = Math.max(...smugFlux, 1e-9);
       regions.forEach((reg, i) => {
-        reg.smuggling = Math.round(100 * smugFlux[i] / maxSmug);
+        reg.smuggling = clamp(Math.round(100 * smugFlux[i] / maxSmug * (1 - (params.order - 50) / 100 * 0.5)), 0, 100); // B9 (#131): order polices the shadow roads (neutral at 50)
         // banditry: where traffic, pilgrims, and delvers are worth robbing,
         // where the ruins breed peril, and nobody guards any of it
         const preyN = 0.55 * (thr[i] / maxThr) + 0.25 * reg.pilgrimFlux / 100 + 0.2 * reg.ruinPerilNear / 100;
@@ -5598,7 +5618,7 @@
         const chainVal = reg.refining > 0 ? 85 : reg.tier === "prime" ? 80 : reg.tier === "hub" ? 55
           : (reg.endowment >= 50 ? 15 : 30);
         reg.mobility = clamp(Math.round(0.4 * chainVal + 0.35 * reg.arcaneServices + 0.25 * reg.marketAccess) +
-          (reg.hasCamp === 1 ? 4 : 0), 0, 100); // L1: the bounty is a rung
+          (reg.hasCamp === 1 ? 4 : 0) - Math.round((params.order - 50) * 0.3), 0, 100); // L1: the bounty is a rung; B9 (#131): a police state freezes the ladder (order stagnates mobility; neutral at 50)
         reg.culturalDistance = clamp(Math.round(
           0.55 * (100 - reg.centrality) + (reg.onConduit ? 0 : 20) + (rs() - 0.5) * 16
         ), 0, 100);
@@ -6039,6 +6059,8 @@
             market_access: reg.marketAccess,
             pilgrim_flux: reg.pilgrimFlux,
             force_projection: reg.forceProjection,
+            order_level: reg.orderLevel,   // B9 (#131): the region's order (realm order + occupation's local police state)
+
             wardline_strength: reg.wardline,
             security_status: reg.security,
             smuggling_intensity: reg.smuggling,
@@ -6404,6 +6426,7 @@
           sacrifice_zone: model.sacrificeZoneId,
           reform_edges: model.reformEdges,
           responsiveness: params.iq,
+          order: params.order,
           harbors_closed: params.hb === 0,
           epochs: params.ep,
           events: model.events,
@@ -6611,7 +6634,7 @@
           grid_threshold: params.gt, dump_bias: params.db,
           disposal_doctrine: model.disposalDoctrine, sacrifice_zone: model.sacrificeZoneId,
           reform_edges: model.reformEdges,
-          responsiveness: params.iq, harbors_closed: params.hb === 0,
+          responsiveness: params.iq, order: params.order, harbors_closed: params.hb === 0,
           events: model.events,
           wind_deg: model.windDeg,
           sea_sides: model.seaSides,
@@ -6713,6 +6736,7 @@
       healing:    { lo: [237, 248, 233], hi: [0, 109, 44],    label: "healing reach (who can reach a healer)" },
       wardline:   { lo: [235, 237, 248], hi: [54, 50, 127],   label: "wardline strength (where the wards hold)" },
       force:      { lo: [242, 242, 242], hi: [60, 60, 66],    label: "force projection (who the state can compel)" },
+      order:      { lo: [237, 245, 237], hi: [40, 44, 66],    label: "order level (open ground → the police state)" }, // B9 (#131)
       blackmkt:   { lo: [246, 240, 246], hi: [74, 20, 71],    label: "black market index (the fenced goods)" },
       predation:  { lo: [253, 240, 237], hi: [152, 0, 30],    label: "predation risk (where the road is robbed)" },
       delver:     { lo: [248, 240, 227], hi: [124, 80, 30],   label: "delver flux (who digs the ruins)" },
@@ -6853,6 +6877,7 @@
       healing: pctLens("THE REACH", "who can reach a healer", r => r.healingReach),
       wardline: pctLens("THE REACH", "where the wards hold", r => r.wardline),
       force: pctLens("THE REACH", "who the state can compel", r => r.forceProjection),
+      order: pctLens("THE REACH", "order and liberty (open → police state)", r => r.orderLevel), // B9 (#131): the order/liberty lens (A3)
       blackmkt: pctLens("THE SHADOW", "where the fenced goods flow", r => r.blackMarket),
       predation: pctLens("THE SHADOW", "where the road is robbed", r => r.predation),
       delver: pctLens("THE SHADOW", "who digs the ruins for a wage", r => r.delverFlux),
@@ -9137,6 +9162,7 @@
       p.set("gt", params.gt);
       p.set("db", params.db);
       p.set("iq", params.iq);
+      if (params.order !== DEFAULTS.order) p.set("order", params.order); // B9: keep the default link clean
       p.set("hb", params.hb);
       p.set("ep", params.ep);
       if (params.capital) { p.set("cx", round2(params.capital[0])); p.set("cy", round2(params.capital[1])); }
@@ -9197,6 +9223,7 @@
         gt: w("gt", DEFAULTS.gt),
         db: w("db", DEFAULTS.db),
         iq: w("iq", DEFAULTS.iq),
+        order: w("order", DEFAULTS.order),
         hb: p.get("hb") === "0" ? 0 : 1,
         ep: clamp(Math.round(num("ep", DEFAULTS.ep)), 0, 24),
         capital: null
@@ -9211,11 +9238,11 @@
       const set = (id, v) => { document.getElementById(id).value = v; };
       set("seed", params.seed); set("fate", params.fate); set("world", params.world); set("regions", params.regions); set("relax", params.relax);
       set("bias", params.bias); set("we", params.we); set("wf", params.wf);
-      set("wt", params.wt); set("wg", params.wg); set("gt", params.gt); set("db", params.db); set("ep", params.ep);
+      set("wt", params.wt); set("wg", params.wg); set("gt", params.gt); set("db", params.db); set("order", params.order); set("ep", params.ep);
       document.getElementById("regionsVal").textContent = params.regions;
       document.getElementById("relaxVal").textContent = params.relax;
       document.getElementById("biasVal").textContent = params.bias + "%";
-      for (const kid of ["we", "wf", "wt", "wg", "gt", "iq", "ep"])
+      for (const kid of ["we", "wf", "wt", "wg", "gt", "iq", "order", "ep"])
         document.getElementById(kid + "Val").textContent = params[kid];
       // B4 (#126): the disposal knob reads out its DOCTRINE, not a bare number
       document.getElementById("dbVal").textContent =
@@ -9584,6 +9611,11 @@
       $("iq").addEventListener("input", (e) => {
         params.iq = +e.target.value;
         $("iqVal").textContent = params.iq;
+        recomputeAttributes();
+      });
+      $("order").addEventListener("input", (e) => { // B9 (#131): the order axis
+        params.order = +e.target.value;
+        $("orderVal").textContent = params.order;
         recomputeAttributes();
       });
       $("hb").addEventListener("change", (e) => {

@@ -2911,13 +2911,13 @@ const prov = A1.gj.hinterland;
 // re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
 // the default carries the Concordat-era `world` block (regime chain + series), and
 // `fate` still rides provenance only when set — so a default world has no fate key.
-if (prov && prov.schema_version === 50 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+if (prov && prov.schema_version === 51 && prov.epochs === 0 && prov.responsiveness === 45 && prov.order === 50 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && prov.disposal_doctrine === "concentrate" && !("fate" in prov) &&
     prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=50 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
+  ok("provenance carries schema_version=51 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await gen("#seed=&regions=&we=&wg=");
@@ -3378,6 +3378,69 @@ console.log("# After the rising B8 (#130): liberation is a distribution, not a v
   if (flourChron.includes("flourished") && starvChron.includes("starved"))
     ok(`the chronicle learns both won-arcs: ris-0 narrates a Free town that flourished, ris-1 one that starved — the record forks with the rising`);
   else fail(`chronicle arc prose missing: flour ${flourChron.includes("flourished")}, starv ${starvChron.includes("starved")}`);
+}
+
+console.log("# The order axis B9 (#131): safety and stagnation share a root");
+
+// A new knob, `order` (0 open ↔ 100 police state, 50 neutral = the old world). High
+// order STILLS predation, smuggling and revolt — AND stills the ladder: mobility, the
+// appetite to risk capital, entry. Safety and stagnation share a root. It retires B5's
+// raw `occupied` churn proxy (churn now freezes with the order LEVEL, of which
+// occupation is a local +50). Neutral at 50, so the default world is untouched.
+{
+  // (i) order=50 is the OLD WORLD, byte for byte — the default carries no new dynamics
+  const a = await gen("#seed=alpha&regions=24&ep=10");
+  const b = await gen("#seed=alpha&regions=24&ep=10&order=50");
+  if (a.gj && JSON.stringify(a.gj) === JSON.stringify(b.gj) && a.gj.hinterland.order === 50)
+    ok(`order 50 is the old world, byte for byte: the axis is neutral at its midpoint, so the default realm is untouched (provenance carries order=50)`);
+  else fail(`order=50 not neutral: identical ${JSON.stringify(a.gj) === JSON.stringify(b.gj)}, order ${a.gj.hinterland.order}`);
+}
+
+// (ii) KNOB REACH — the extremes change RELATIONS. An open realm (order 0) is more
+// dangerous AND more dynamic; a police state (order 100) is safer AND more stagnant.
+// Predation falls and mobility falls together as order rises — the shared root.
+{
+  const N = 16;
+  let predLower = 0, mobLower = 0, boomStag = 0, eaten = 0;
+  let boomSeed = null, eatenSeed = null;
+  const mean = (xs) => xs.reduce((x, y) => x + y, 0) / xs.length;
+  for (let i = 0; i < N; i++) {
+    const open = regionsOf((await gen(`#seed=ord-${i}&regions=24&ep=10&order=0`)).gj).map(f => f.properties).filter(r => r.is_settled);
+    const pol = regionsOf((await gen(`#seed=ord-${i}&regions=24&ep=10&order=100`)).gj).map(f => f.properties).filter(r => r.is_settled);
+    const predO = mean(open.map(r => r.predation_risk)), predP = mean(pol.map(r => r.predation_risk));
+    const mobO = mean(open.map(r => r.mobility_ceiling)), mobP = mean(pol.map(r => r.mobility_ceiling));
+    const growO = mean(open.map(r => r.wealth - r.wealth_t0)), growP = mean(pol.map(r => r.wealth - r.wealth_t0));
+    const maxPredO = Math.max(...open.map(r => r.predation_risk)), maxPredP = Math.max(...pol.map(r => r.predation_risk));
+    if (predP < predO) predLower++;
+    if (mobP < mobO) mobLower++;
+    if (growO > growP + 1 && mobO > mobP + 5) { boomStag++; if (!boomSeed) boomSeed = `ord-${i}`; }
+    if (maxPredO >= 30 && maxPredP <= maxPredO - 15) { eaten++; if (!eatenSeed) eatenSeed = `ord-${i}`; }
+  }
+  // THE KNOB-REACH TEST (§7.2): a RELATION flips, not just a magnitude — order suppresses
+  // BOTH predation (safety) and mobility (stagnation), the two edges of the one root.
+  if (predLower >= N * 0.85 && mobLower >= N * 0.85)
+    ok(`ORDER REACHES A RELATION: the police state (order 100) is SAFER — predation lower in ${predLower}/${N} worlds — and more STAGNANT — mobility lower in ${mobLower}/${N}; safety and stagnation move together, the double edge of the one knob`);
+  else fail(`order knob-reach failed: predLower ${predLower}/${N}, mobLower ${mobLower}/${N}`);
+  // (iii) EXHIBIT — a police state that stagnated while an open rival boomed
+  if (boomStag >= 4)
+    ok(`THE POLICE STATE STAGNATES (${boomSeed}): in ${boomStag}/${N} seeds the OPEN realm (order 0) out-grew and out-mobilized the same world under a police state (order 100) — order 100 bought its safety with the ladder`);
+  else fail(`stagnation exhibit too rare: ${boomStag}/${N}`);
+  // (iv) EXHIBIT — an open region eaten by predation its constabulary would have stopped
+  if (eaten >= 2)
+    ok(`THE OPEN GROUND IS EATEN (${eatenSeed}): in ${eaten}/${N} seeds an OPEN realm carries a region whose predation the police state would have cut by 15+ — liberty's price is the unguarded road`);
+  else fail(`predation exhibit too rare: ${eaten}/${N}`);
+}
+
+// (v) the order/liberty lens (A3 family) exists and recomputes from the exported column
+{
+  const Q = await gen("#seed=alpha&regions=24&ep=10&order=80", true);
+  const hasLens = !!Q.doc.querySelector('input[name=view][value="order"]');
+  const P = regionsOf(Q.gj).map(f => f.properties).filter(r => r.is_settled);
+  const allInBand = P.every(r => r.order_level >= 80 && r.order_level <= 100); // 80 + occupation's local +50, clamped
+  Q.window.close();
+  if (hasLens && allInBand && P.length > 0)
+    ok(`the order/liberty lens ships (A3): the map offers the order view, and order_level reads the realm's order plus occupation's local police state`);
+  else fail(`order lens/column wrong: lens ${hasLens}, band ${allInBand}`);
 }
 
 console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");

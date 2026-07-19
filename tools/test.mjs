@@ -2910,13 +2910,13 @@ const prov = A1.gj.hinterland;
 // re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
 // the default carries the Concordat-era `world` block (regime chain + series), and
 // `fate` still rides provenance only when set — so a default world has no fate key.
-if (prov && prov.schema_version === 48 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+if (prov && prov.schema_version === 49 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && prov.disposal_doctrine === "concentrate" && !("fate" in prov) &&
     prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=48 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
+  ok("provenance carries schema_version=49 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await gen("#seed=&regions=&we=&wg=");
@@ -3248,6 +3248,81 @@ console.log("# Tariffs fund the bridges B6 (#128): extraction and upkeep are one
   if (decayed.length >= 1 && condOk && reforded.length >= 1)
     ok(`the decay shows on the graph: ${decayed.length} edges carry a rotted span (condition < 1), ${reforded.length} river edges re-forded past the 1.5x barge ceiling — the cost spike the map draws in rust`);
   else fail(`edge decay not visible: ${decayed.length} decayed, reforded ${reforded.length}, condOk ${condOk}`);
+}
+
+console.log("# Reform long edges B7 (#129): every mercy can curdle, every levy can build");
+
+// Every measure now grows a LONG EDGE, delayed and state-contingent: the grid
+// charter is strung on imperial credit the seat services for the rest of the run;
+// the granary breeds dependency and a fiscal drain if it runs on through a long
+// peace; the retention act frightens elite capital into flight; the toll amnesty
+// rots the bridges (B6). And `iq` is now a POSTURE: a deaf seat that stays silent
+// under a pressing doctrine gets a measure IMPOSED by its creditors (structural
+// adjustment), where a listening one reforms itself. reform_edges carries the ledger.
+{
+  // (i) the founding carries no long edge — the debts and dependencies are time's
+  const g0 = (await gen("#seed=le-2&regions=24&ep=0")).gj;
+  const re0 = g0.hinterland.reform_edges;
+  if (g0.hinterland.schema_version === 49 && re0 && re0.charter_debt === 0 && re0.debt_service === 0 &&
+      re0.granary_dependency === 0 && re0.capital_flight === 0 && re0.impositions === 0)
+    ok(`the founding carries no long edge: reform_edges all zero at ep=0 (the debts and dependencies are what TIME does to a mercy)`);
+  else fail(`founding long edges nonzero: ${JSON.stringify(re0)}`);
+}
+
+// (ii) KNOB REACH — iq's extremes change a RELATION, not just magnitudes: at iq=0 the
+// realm is governed from OUTSIDE (creditors impose, the seat never reforms); at iq=100
+// it governs itself (reforms, never an imposition). The class of governance FLIPS.
+{
+  const N = 24;
+  let imp0 = 0, ref0 = 0, imp100 = 0, ref100 = 0;
+  let debtSeen = 0, depSeen = 0, flightSeen = 0;
+  for (let i = 0; i < N; i++) {
+    const lo = (await gen(`#seed=le-${i}&regions=24&ep=10&iq=0`)).gj;
+    const hi = (await gen(`#seed=le-${i}&regions=24&ep=10&iq=100`)).gj;
+    const cnt = (evs, t, extra) => (evs || []).filter(e => e.type === t && (!extra || extra(e))).length;
+    if (cnt(lo.hinterland.events, "imposition") > 0) imp0++;
+    if (cnt(lo.hinterland.events, "reform", e => !e.concession) > 0) ref0++;
+    if (cnt(hi.hinterland.events, "imposition") > 0) imp100++;
+    if (cnt(hi.hinterland.events, "reform", e => !e.concession) > 0) ref100++;
+    const reH = hi.hinterland.reform_edges, reL = lo.hinterland.reform_edges;
+    if (reH.debt_service > 0 || reL.debt_service > 0) debtSeen++;
+    if (reH.granary_dependency > 0) depSeen++;
+    if (reH.capital_flight > 0) flightSeen++;
+  }
+  // THE KNOB-REACH TEST (§7.2): the relation flips — who governs, the seat or the loan
+  if (imp0 >= 3 && ref0 === 0 && ref100 >= 18 && imp100 === 0)
+    ok(`IQ REACHES A RELATION: the deaf seat (iq=0) is governed from OUTSIDE — ${imp0}/${N} worlds take an IMPOSED measure and ${ref0}/${N} reform; the listening seat (iq=100) governs itself — ${ref100}/${N} reform and ${imp100}/${N} are imposed. The CLASS of governance flips, not just the magnitude`);
+  else fail(`iq knob-reach failed: iq0 imp ${imp0}/ref ${ref0}, iq100 ref ${ref100}/imp ${imp100}`);
+  // (iii) every measure's long edge is measurable in provenance somewhere in the sweep
+  if (debtSeen >= 2 && depSeen >= 8 && flightSeen >= 1)
+    ok(`every long edge shows in the ledger: debt service in ${debtSeen} worlds, granary dependency in ${depSeen}, capital flight in ${flightSeen} — the delayed cost of each measure, measurable in provenance`);
+  else fail(`long edges not all measurable: debt ${debtSeen}, dep ${depSeen}, flight ${flightSeen}`);
+}
+
+// (iv) EXHIBIT — the granary's DOUBLE EDGE, the same decree in two states. In a world
+// of repeated famine (le-2) the granary stays BUSY, little idle drain: it earned its
+// keep. In a quieter-run realm (le-5) the same granary ran up a dependency and drained
+// the treasury with no famine to justify it — the mercy curdled (P4: time + the state).
+{
+  const saved = (await gen("#seed=le-2&regions=24&ep=10&iq=100")).gj;
+  const crisis = (await gen("#seed=le-5&regions=24&ep=10&iq=100")).gj;
+  const gran = (g) => (g.hinterland.events || []).some(e => e.type === "reform" && e.measure === "crown_granary");
+  const rs = saved.hinterland.reform_edges, rc = crisis.hinterland.reform_edges;
+  if (gran(saved) && gran(crisis) && rs.granary_drain <= 2 && rc.granary_drain >= 4 && rc.granary_dependency >= 30 && rc.granary_dependency > rs.granary_dependency)
+    ok(`THE GRANARY'S DOUBLE EDGE: the same decree fed a famine world with little waste (le-2: drain ${rs.granary_drain}, dependency ${rs.granary_dependency}) and bred a fiscal crisis in a quieter one (le-5: drain ${rc.granary_drain}, dependency ${rc.granary_dependency}) — a mercy that curdles by STATE, not by nature`);
+  else fail(`granary double-edge exhibit failed: saved drain ${rs.granary_drain}/dep ${rs.granary_dependency}, crisis drain ${rc.granary_drain}/dep ${rc.granary_dependency}`);
+}
+
+// (v) EXHIBIT — a creditor-imposed measure, narrated AS imposed (pinned
+// #seed=le-7&regions=24&ep=10&iq=0): the deaf seat took no action, so the imperial
+// financiers demanded their structural adjustment. The chronicle names it foreign.
+{
+  const g = await gen("#seed=le-7&regions=24&ep=10&iq=0");
+  const imps = (g.gj.hinterland.events || []).filter(e => e.type === "imposition");
+  const narrated = g.chron.includes("creditors") && g.chron.includes("structural adjustment") && g.chron.includes("another capital");
+  if (imps.length >= 1 && imps[0].imposed_by === "creditors" && narrated)
+    ok(`THE MEASURE IMPOSED (le-7): the deaf seat reformed nothing, so its creditors DEMANDED a structural adjustment (epoch ${imps[0].epoch}) — the chronicle names it a decree written in another capital, not the realm's own`);
+  else fail(`imposition exhibit failed: ${imps.length} impositions, narrated ${narrated}`);
 }
 
 console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");

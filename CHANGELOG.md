@@ -1,6 +1,36 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v49** (reform long edges B7): every mercy can curdle, every levy can build
+  (issue #129, §3.2 reforms row + §3.6 debt conditionality). Under V1 a reform just
+  damped a term and only the granary moved coin down. B7 gives **every measure a
+  LONG EDGE** — delayed and state-contingent (P4: time + the state it lands in):
+  the **grid charter** is strung on an imperial loan the seat services out of its
+  treasury for the rest of the run (`charter_debt` / `debt_service`); the **granary**,
+  run on through a **sustained peace** (3+ quiet epochs), breeds `granary_dependency`
+  and a `granary_drain` on the treasury with no famine to justify it; the **retention
+  act** (an ore price floor) frightens elite capital into `capital_flight`, thinning
+  the owners' row and the artifice it funded; the **toll amnesty** rots the bridges
+  (the B6 decay arc). And `iq` becomes a **posture**: when a **deaf seat** (low iq)
+  stays silent while the world's **doctrine presses** (`doctrine_pressure` from the
+  world series), its **creditors DEMAND a measure** the realm did not choose —
+  structural adjustment, a reform **imposed from outside**, a new event class
+  (`imposition`, `imposed_by: creditors`) distinct from the seat's iq-chosen mercies;
+  the chronicle names it a decree written in another capital. The **retention act is
+  now reachable** — it reads the realm's richest ore *seam* (a concentrated resource
+  a price floor can protect) rather than its ore-poor bottom half, so a resource-rich
+  unequal realm can floor the price instead of importing bread. New `reform_edges`
+  block in provenance (charter_debt, debt_service, granary_dependency, granary_drain,
+  capital_flight, impositions); `schema_version` 48→49; declared fixture regeneration.
+  This is the **knob-reach fix** the falsifiability suite (§7.2) named: `iq`'s extremes
+  now change a **relation**, not just magnitudes — a deaf seat (iq=0) is governed from
+  OUTSIDE (5/24 worlds take an imposed measure, 0 reform) while a listening one (iq=100)
+  governs itself (23/24 reform, 0 imposed): the CLASS of governance flips. Exhibits
+  (pinned): **the granary's double edge** — the same decree fed a famine world with
+  little idle waste (`#seed=le-2&regions=24&ep=10&iq=100`: drain 1, dependency 9) and
+  bred a fiscal crisis in a quieter-run realm (`#seed=le-5&...`: drain 5, dependency 45);
+  **the measure imposed** — `#seed=le-7&regions=24&ep=10&iq=0`: the deaf seat reformed
+  nothing, so its creditors demanded a structural adjustment, narrated as foreign.
 - **v48** (tariffs fund the bridges B6): extraction and upkeep are one ledger
   (issue #128, §3.2 tariffs row). The gates that TAX the roads are the same gates
   that MAINTAIN them. A held crossing (bridge/pass/port) that still collects a real

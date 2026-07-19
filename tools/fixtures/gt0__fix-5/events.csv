@@ -19,6 +19,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 6,1150,war,2,the Kharruk Tor War,,crown|temple,,,,,,,
 6,1150,succession,,Vannornweld,,crown,,,,,,false,1
 6,1150,succession,,Urzek,,magnate,,,,,,false,2
+6,1150,imposition,,,,,structural_adjustment,,,,,,
 7,1175,succession,,Galcyone,,temple,,,,,,false,1
 7,1175,treaty,2,the Peace of Kharruk Tor,,crown|temple,,crown,1,3,,,
 7,1175,drought,4,the Drought of 1175,,,,,,,,,

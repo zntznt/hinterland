@@ -30,7 +30,11 @@ The rivers are crossed at Linden Bridge alone; everywhere else the banks are mar
 
 The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1025), when the gap narrowed, **the Restoration** (1050–1125), when the gap narrowed and **the Age of the Gates** (1150–1250), when the gap narrowed. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
-**Year 1025.** In this year the sickness came to Forby, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Long Cough of 1025.
+**Year 1025.** the Meridian Concord did not send a fleet to Korgar Harbor; it sent factors and a charter. The works were bought, the coast was wired to the sea within the season, and the coin came in to build — the town grew richer than it had ever been. The registers at the seat still bear the town's name; the registers that matter now are kept in another capital, and half of what the ground yields is entered there.
+
+**Year 1025.** Politics in a capital Korgar had never seen closed the sea lanes to it. the Kestrel Powers's quarrel with the Metropole became Korgar's ruin: the quays that had grown a second fortune on foreign trade stood idle, the cargoes did not come, and the coast that had rivalled the seat busted in a single year. The gap the trade had opened closed the hard way.
+
+**Year 1025.** In this year the sickness came to Forby, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Grey Breath of 1025.
 
 **Year 1050.** A storm came off the water and stood over the coast for three days. Korgar took the worst of it, as the exposed shore always does; the Great Storm of 1050 is the name the survivors gave the year.
 
@@ -52,7 +56,9 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1100.** A storm came off the water and stood over the coast for three days. Korgar took the worst of it, as the exposed shore always does; the Great Storm of 1100 is the name the survivors gave the year.
 
-**Year 1125.** The magnates raised new works at Forby, where the money had gone. The charter was sealed at Forby, and the trunk line followed within the season.
+**Year 1125.** The magnates raised new works at Korgar, where the money had gone. The charter was sealed at Forby, and the trunk line followed within the season.
+
+**Year 1125.** In this year the magnates took the gate at Korgar — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the toll was posted by winter.
 
 **Year 1175.** The god's fortune rose at Forby, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Forby.
 
@@ -62,7 +68,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1200.** Fortune turned at Dunholdham: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Dunholdham Find.
 
-**Year 1225.** War came to Forby, as it comes to ground that great powers claim and none can hold. The powers that met there were the Crown and the Temple; the ground was merely where they met. When the fighting burned out, the seat was the poorer by a third of its people and a quarter of its wealth, and the mines and works were ruined ground. The Crown's garrison arrived after the blood, and stayed. The scribes head the page: the Forby War.
+**Year 1225.** War came to Forby, as it comes to ground that great powers claim and none can hold. The powers that met there were the Crown and the Temple; the ground was merely where they met. When the fighting burned out, the seat was the poorer by a third of its people and a quarter of its wealth, and the mines and works were ruined ground. The Crown's garrison arrived after the blood, and stayed. The scribes head the page: the War of 1225.
 
 **Year 1225.** The old Hierarch died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Ophel took the censer, over objections not all of which were buried with their holders.
 
@@ -78,7 +84,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1250.** In the winter after the fighting, terms were set at Forby. The Crown wrote them: the Temple ceded nothing but its claim and kept its ledger, having little in it. The chronicle observes that the terms were written by the party with the deeper ledger, as terms usually are. The clerks copied it fair as the Peace of Forby.
 
-The chronicle closes its count of the years with the names they left behind. The realm now speaks of Korgar the Hollow, Dunholdham the Hollow, Hallford the Hollow, Umbere the Hollow, Forby the Ashen, Strakketh the Hollow, Astehold the Hollow, Valgremmorn Tor the Hollow, Carise the Hollow and Varvek the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
+The chronicle closes its count of the years with the names they left behind. The realm now speaks of Korgar the Ashen, Dunholdham the Hollow, Hallford the Hollow, Umbere the Hollow, Forby the Hollow, Strakketh the Hollow, Astehold the Hollow, Valgremmorn Tor the Hollow, Carise the Hollow and Varvek the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
 
 ## The State of the Realm — year 1250
 
@@ -87,18 +93,18 @@ Of the realm's 9 settled regions, 1 held steady, 1 declined and 7 collapsed outr
 And 6 places have come back as something else — Dunholdham, Hallford and Strakketh stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
 Dunholdham rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
 
-The Crown holds 7 regions, the Temple 1, the magnates 0; 1 are contested between them, and 3 answer to no one at all.
+The Crown holds 6 regions, the Temple 1, the magnates 1; 1 are contested between them, and 3 answer to no one at all.
 
-Of the realm's 4 gates — the bridges, the passes, the quays — the Crown keeps 2, the Temple 0, and the magnates 0; 2 stand untolled. Every levy on the list is paid by people who did not choose the road.
+Of the realm's 4 gates — the bridges, the passes, the quays — the Crown keeps 1, the Temple 0, and the magnates 1; 2 stand untolled. Every levy on the list is paid by people who did not choose the road.
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the Temple standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 5.4 in every hundred of the realm's people hold 44.6 of every hundred coins, and live 14.1 times better than those who work for them. Nowhere is the ledger sharper than at Forby, where 53 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 69 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 4.7 in every hundred of the realm's people hold 38.8 of every hundred coins, and live 12.8 times better than those who work for them. Nowhere is the ledger sharper than at Linden, where 43 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 59 parts in a hundred of the whole spread.
 
 4 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world closed some of its gap: the spread of fortunes measured 0.42 at the founding and 0.22 at the close, and the turning point was the Crown Granary of 1075. The poorest fifth of the realm carries 0.4 times the blight of the richest fifth. Behind the Zharrok wall, the median settlement earns 33 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay, and sickness runs 1.4 times heavier there than in the lit core. Linden drinks 19 points of other towns' poison for the crime of standing at the mouth. 9 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 5.4 in a hundred hold 44.6 of every hundred coins, and stand 14.1 times apart from the rest. The skyway would abolish 29.1 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. The Zharrok divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Varvek and Zolthold stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world closed some of its gap: the spread of fortunes measured 0.42 at the founding and 0.20 at the close, and the turning point was the Crown Granary of 1075. The poorest fifth of the realm carries 1.3 times the blight of the richest fifth. Behind the Zharrok wall, the median settlement earns 33 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay, and sickness runs 1.5 times heavier there than in the lit core. Linden drinks 14 points of other towns' poison for the crime of standing at the mouth. 9 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 4.7 in a hundred hold 38.8 of every hundred coins, and stand 12.8 times apart from the rest. The skyway would abolish 29.1 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. The empire mostly never came; it bought. 1 coast is a foreign concession — richer than the realm's median at 0 against 14, and owning barely half of it, 50 in the hundred of the yield entered in the Meridian Concord's books, not the realm's. The Zharrok divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Varvek and Zolthold stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

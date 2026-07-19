@@ -1330,7 +1330,7 @@
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 52;
+    const SCHEMA_VERSION = 53;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     // B6 (#128): tariffs fund the bridges. A held crossing that still collects a real
@@ -3612,7 +3612,7 @@
         // so the four weights move relations in distinguishable directions.
         const t = maxD > 0 ? 1 - reg.dist / maxD : 1;
         const legacy = lerp(5, 100, Math.pow(t, k)) / 100;         // the AUTHORED gradient (bias folded into k) — near the seat
-        const ext = (reg.E / 100) * (reg.retention / 100);         // EXTRACTION anchors to the seams (current ore stock)
+        const ext = (reg.E / 100) * (reg.retention / 100) * (1 - (reg.foreignClaim || 0)); // EXTRACTION anchors to the seams (current ore stock); a concession repatriates its share off-map (B11 #133)
         const ref = (reg.refining > 0 ? 1 : 0.35) * (reg.A !== undefined ? reg.A : 70) / 100; // ARTIFICE anchors to A (trained capacity), strongest at the works
         // B10 (#132): TRADE re-anchors to the COAST and FOREIGN demand, priced against
         // the seat. The sea leg (seaAccess) is gated by OPENNESS (sealed harbors = no
@@ -3622,7 +3622,8 @@
         // B6 (#128): a decayed span on the road to market still chokes the trade (−60% cap).
         const crossChoke = 1 - clamp((reg.crossFriction || 0) / 100, 0, 0.6);
         const openF = params.openness / 100;
-        const trade = crossChoke * (0.78 * reg.seaAccess * openF * demandMult + 0.22 * reg.centrality) / 100;
+        const seaLeg = reg.embargoed ? 0 : reg.seaAccess; // B11 (#133): a regime-gated embargo shuts the sea lanes — the coast's second pole busts
+        const trade = crossChoke * (0.78 * seaLeg * openF * demandMult + 0.22 * reg.centrality) / 100;
         const base = total > 0
           ? priceMult * (params.we * ext + params.wf * ref + params.wt * trade + params.wg * legacy) / total
           : 0.5; // all weights zero: no income model — flat
@@ -3650,6 +3651,17 @@
         reg.warTorn = false;
         reg.occupied = false;            // reset BEFORE the founding snapshot
         reg.occupiedEpoch = -1;          // (stage-3 purity: re-runs must not leak)
+        // B11 (#133): imperial REACH — the empire mostly never comes, it buys.
+        // A concession is foreign capital owning the works: the yield is
+        // partly a FOREIGN claim (foreignClaim), the coast is force-wired and
+        // fed capital while the ore is wanted, and it is WOUND UP when the ore
+        // depletes or attention leaves — the courted→developed→squeezed→
+        // abandoned arc. All reset before the founding snapshot (stage-3
+        // purity: the founding is pre-history, no world attention has acted).
+        reg.concession = false; reg.concessionEpoch = -1;
+        reg.foreignClaim = 0;   // share of the ore-retention repatriated off-map
+        reg.concessionEnded = false; reg.concessionEndEpoch = -1; // wound up (NOT reg.abandonedEpoch — that is the depopulation deadhold)
+        reg.embargoed = false;  // per-epoch: a hostile regime cut this coast off
         reg.effWaterAccess = reg.waterAccess; // founding: no bloc has priced anyone out yet
         reg.waterDenial = 0;             // (stage-3 purity: the epoch loop's denial must not leak)
         reg.crossFriction = 0;           // B6 (#128): the founding roads are whole — reset BEFORE
@@ -4079,6 +4091,8 @@
         blight: regions.map(r => r.blight),
         eliteShare: regions.map(r => Math.round(r.eliteShare)),
         occupied: regions.map(r => r.occupied ? 1 : 0),
+        concession: regions.map(r => r.concession ? 1 : 0),        // B11 (#133): the foreign-owned coast, per epoch
+        concessionEnded: regions.map(r => r.concessionEnded ? 1 : 0), // B11 (#133): wound up — the attention left
         onGrid: regions.map((_, i) => onGrid[i]),
         // #55: the CSV long table wants politics per epoch too
         bloc: regions.map(r => r.occupied ? "dominion" : r.bloc),
@@ -4282,10 +4296,26 @@
       const rV = fx("revolt");
       const revoltBar = 95 + rV() * 25 + (params.order - 50) * 0.5; // B9 (#131): order raises the bar to rise — a police state suppresses revolt; an open realm invites it (neutral at 50)
       let responded = false, revoltIdx = -1, revoltWon = false;
-      // X1: THE DOMINION — the power beyond the sea. The same door the
-      // trade leaves through is the door an empire can walk in.
+      // B11 (#133): THE POWERS BEYOND THE SEA. Empire works by REACH, not by
+      // the fleet — it courts, it wires, it owns the works, and it leaves when
+      // the ore runs out. Two are named: the METROPOLE that courts this realm,
+      // and the RIVAL it is courted against (imperial_rivalry). Deterministic
+      // in the world seed's sibling stream, so the powers are stable per world.
+      const rImp = fx("imperial");
+      const POWERS = ["the Meridian Concord", "the Tashkar Compact", "the Aurean League",
+        "the Cindral Directorate", "the Vantic Crown", "the Kestrel Powers", "the Solvent States"];
+      const mpi = Math.floor(rImp() * POWERS.length);
+      let rvi = Math.floor(rImp() * (POWERS.length - 1)); if (rvi >= mpi) rvi++;
+      const metropoleName = POWERS[mpi], rivalName = POWERS[rvi];
+      let concessionFired = false, embargoFired = false, courtingFired = false; // one narrated marker apiece
+      // X1 → THE LIMIT CASE: THE DOMINION — the power that stops courting and
+      // lands. Real empire mostly never invades: it reaches (concessions,
+      // embargo, attention). So the fleet is now RARE — the coin is cut from a
+      // half to a third: most of the time the empire judges reach enough and
+      // sends factors, not a garrison. Annexation is the exception now, not the
+      // rule (B11 #133). It still lands at the wealthiest quay it can reach.
       const rX = fx("dominion");
-      const dominionCoin = rX() < 0.5;
+      const dominionCoin = rX() < 0.33;
       // the Dominion favors an early arrival (a fleet does not wait a realm out),
       // so its window stays the smallest — it still scales, but lands sooner.
       const dominionEpoch = 2 + Math.floor(rX() * evWindow(5));
@@ -4428,6 +4458,72 @@
           reg.waterDenial = Math.round(100 * denial * (shortfall / 100)); // 0..~
           reg.effWaterAccess = clamp(Math.round(own + shortfall * (1 - denial)), 0, 100);
         });
+        // B11 (#133): IMPERIAL REACH — the empire presses on the coast this epoch,
+        // struck BEFORE income so both channels land in this year's wealth.
+        //   EMBARGO: a hostile world regime (trade_war) closes the sea lanes; an
+        //     exposed coast loses its trade pole for the epoch (income reads
+        //     reg.embargoed). The deepest-exposed live port marks the bust.
+        //   CONCESSIONS: the Metropole's ATTENTION is keyed to REMAINING ORE —
+        //     attention × (E/100) × sea-reach = the imperial interest. Cross the
+        //     high bar and a concession OPENS (foreign capital owns the works: a
+        //     FOREIGN CLAIM on the ore-yield, the coast force-wired, capital fed
+        //     in while the ore is wanted). Fall below the low bar — the ore drawn
+        //     down or the attention gone — and it is WOUND UP: the markets leave
+        //     (ruin) and the levies stop (freedom). The courted→developed→
+        //     squeezed→abandoned arc, generated from the depleting ore alone.
+        const regime = worldSeries.regime_chain[e];
+        const attention = worldSeries.imperial_attention[e];
+        const embargoOn = (regime === "trade_war");
+        let embBest = -1;
+        regions.forEach((reg, i) => {
+          reg.embargoed = false;
+          if (!reg.settled) return;
+          const coastal = reg.isPort === 1 || reg.seaAccess >= 40;
+          if (embargoOn && coastal) {
+            reg.embargoed = true; // the lanes are shut; income zeros the sea leg
+            if (embBest === -1 || reg.seaAccess > regions[embBest].seaAccess) embBest = i;
+          }
+          const reach = reg.isPort === 1 ? 1 : clamp(reg.seaAccess / 100, 0, 1);
+          // interest keys to the remaining lode with a floor: a rich coast is
+          // courted even part-depleted while attention runs high, and is let go
+          // when the ore thins AND the attention turns elsewhere — aetherstone
+          // is why the attention exists, so it leaves with the ore.
+          const interest = attention * reach * (0.30 + 0.70 * clamp(reg.E / 40, 0, 1));
+          if (!reg.concession) {
+            if (!reg.occupied && !reg.concessionEnded && coastal && interest >= 0.40) {
+              reg.concession = true; reg.concessionEpoch = e + 1;
+              reg.foreignClaim = 0.5;                               // half the ore-yield repatriates
+              // NB: the concession is wired to the METROPOLE by sea, not force-hooked
+              // into the realm's aetherstone conduit — so it is NOT marked on_conduit
+              // (that grid is the seat's, and an enclave hookup with no trunk edge
+              // would leave a region on-grid but disconnected). Development rides the
+              // capital inflow below, not the conduit.
+              reg.eliteShare = Math.min(92, reg.eliteShare + 3);    // the works' owners are its factors (comprador)
+              if (!concessionFired) {
+                concessionFired = true;
+                events.push({ epoch: e + 1, type: "concession", region_id: reg.id, power: metropoleName });
+              }
+            }
+          } else if (interest < 0.20) {
+            // the ore or the attention has gone — the concession is wound up
+            reg.concession = false; reg.foreignClaim = 0;           // the levies stop: FREEDOM
+            reg.concessionEnded = true; reg.concessionEndEpoch = e + 1;
+            reg.A = Math.round(reg.A * 0.85);                       // the foreign works go quiet: RUIN
+            events.push({ epoch: e + 1, type: "abandonment", region_id: reg.id,
+              power: metropoleName, since: reg.concessionEpoch });
+          }
+        });
+        if (embargoOn && embBest >= 0 && !embargoFired) {
+          embargoFired = true;
+          events.push({ epoch: e + 1, type: "embargo", region_id: regions[embBest].id, power: rivalName });
+        }
+        // a courting note during the rivalry — the RIVAL bids for a rich coast the
+        // Metropole has not taken (diplomacy surface; no reach machinery of its own)
+        if (regime === "imperial_rivalry" && !courtingFired) {
+          let cb = -1;
+          regions.forEach((reg, i) => { if (reg.settled && reg.isPort === 1 && !reg.concession && !reg.occupied && (cb === -1 || reg.wealth > regions[cb].wealth)) cb = i; });
+          if (cb >= 0) { courtingFired = true; events.push({ epoch: e + 1, type: "courting", region_id: regions[cb].id, power: rivalName }); }
+        }
         regions.forEach((reg, ri) => {
           // F1: connection itself is taxed — every held gate on the way out
           // takes its cut before anything compounds — and the cut is not
@@ -4439,8 +4535,14 @@
           // The occupied pay at the quay; the free pay the Crown's
           // assessment, and the Crown assesses its own bloc gently
           const trib = dominionAt === -1 ? 0 : (reg.occupied ? 3 : (reg.bloc === "crown" ? 1 : 2));
+          // B11 (#133): the concession's capital — foreign investment fed to the
+          // works while the ore is wanted, decoupled from local production (the
+          // DEVELOPMENT-FINANCE reading of the same coin the foreignClaim skims).
+          // It scales with attention × remaining ore, so it FADES as the lode
+          // draws down — development that leaves before the town does.
+          const concIn = reg.concession ? Math.round(2 + 6 * attention * clamp(reg.E / 40, 0, 1)) : 0;
           const wealthBefore = reg.wealth; // #93: for the ownership drift below
-          reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg, worldPrice, worldSeries.foreign_demand[e]) - 0.035 * reg.tollBurden + gateIncome + bread - trib), 0, 100); // B10 (#132): foreign demand scales the coast's trade
+          reg.wealth = clamp(Math.round(0.6 * reg.wealth + 0.4 * 100 * income(reg, worldPrice, worldSeries.foreign_demand[e]) - 0.035 * reg.tollBurden + gateIncome + bread - trib + concIn), 0, 100); // B10 (#132): foreign demand scales the coast's trade; B11 (#133): + concession capital
           if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
           // H1: the rents concentrate before anything trickles — the gate's
           // take and the works' profit land on the owners' row first; only
@@ -5988,6 +6090,11 @@
       const liveBridges = geo.bridges.filter(b => regions[b.regionIdx] && regions[b.regionIdx].settled);
       return { seed: String(params.seed), regions, settlements, facilities, structures, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: liveBridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, lakeShapes: geo.lakeShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
         dominion: dominionAt !== -1 ? { arrived: dominionAt, foothold: footholdIdx } : null,
+        // B11 (#133): the off-map powers — the Metropole that courts this realm
+        // (concessions/attention) and the Rival it is courted against (rivalry/
+        // embargo). Named for the gazette and the chronicle; no reach machinery
+        // of the Rival's own — it exists in the regime chain and the diplomacy.
+        metropole: metropoleName, rival: rivalName,
         world: worldSeries,
         // B4 (#126): the final disposal doctrine (after any mid-run reform override)
         // and the fixed sacrifice zone concentrate dumps on (region id, or null).
@@ -6136,7 +6243,12 @@
             sky_advantage: reg.skyAdvantage,
             occupied: reg.occupied ? 1 : 0,
             occupied_epoch: reg.occupiedEpoch,
-            tribute_burden: model.dominion ? (reg.occupied ? 3 : (reg.bloc === "crown" ? 1 : 2)) : 0
+            tribute_burden: model.dominion ? (reg.occupied ? 3 : (reg.bloc === "crown" ? 1 : 2)) : 0,
+            concession: reg.concession ? 1 : 0,          // B11 (#133): foreign capital owns the works here
+            concession_epoch: reg.concessionEpoch,
+            foreign_claim: reg.foreignClaim || 0,        // share of the ore-yield repatriated off-map
+            concession_ended: reg.concessionEnded ? 1 : 0,   // B11 (#133): the concession was wound up (ore/attention gone) — NOT the depopulation abandoned_epoch above
+            concession_ended_epoch: (reg.concessionEndEpoch !== undefined ? reg.concessionEndEpoch : -1)
           },
           geometry: { type: "Polygon", coordinates: [reg.ring.map(p => [round2(p[0]), round2(p[1])])] }
         });
@@ -6444,6 +6556,8 @@
                     magnate: model.dynasties.magnate.map(r => ({ name: r.name, from_epoch: r.from, contested: r.contested })) },
           skyway: { name: model.skywayName, ports: model.regions.filter(r => r.isSkyport === 1).map(r => r.id) },
           dominion: model.dominion ? { arrived_epoch: model.dominion.arrived, foothold: model.regions[model.dominion.foothold].id, occupied_n: model.regions.filter(r => r.occupied).length } : null,
+          // B11 (#133): the off-map powers — the Metropole that courts by reach, the Rival it is courted against
+          powers: { metropole: model.metropole, rival: model.rival, concessions: model.regions.filter(r => r.concession).length, abandoned: model.regions.filter(r => r.concessionEnded).length },
           findings: getFindings(model),
           tensions: { crown_magnate: Math.round(model.tensions.crown_magnate), crown_temple: Math.round(model.tensions.crown_temple), magnate_temple: Math.round(model.tensions.magnate_temple) },
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
@@ -6632,6 +6746,7 @@
           world: model.world,
           skyway: { name: model.skywayName, ports: model.regions.filter(r => r.isSkyport === 1).map(r => r.id) },
           dominion: model.dominion ? { arrived_epoch: model.dominion.arrived, foothold: model.regions[model.dominion.foothold].id, occupied_n: model.regions.filter(r => r.occupied).length } : null,
+          powers: { metropole: model.metropole, rival: model.rival, concessions: model.regions.filter(r => r.concession).length, abandoned: model.regions.filter(r => r.concessionEnded).length },
           years_per_epoch: 25,
           seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), regions: params.regions, relax: params.relax,
           bias: params.bias,
@@ -7275,6 +7390,40 @@
       const crossingsDecayed = crossingRegs.filter(r => r.crossingCondition < 0.5).length;
       const tradeDrag = sN ? Math.round(mean(settled.map(r => r.crossFriction || 0)) * 10) / 10 : 0;
 
+      // B11 (#133): the VERDICT CLASS — §3.5's gap × floor matrix, qualified by
+      // realm growth. All recomputable from the exported wealth columns: the gap
+      // is the gini move, the floor is the p10 move, the growth is per-capita.
+      // The sweep pins verdict DIVERSITY (§7.3): no class > 40%, ≥ 6 classes.
+      const verdict = (() => {
+        const dG = giniOf(R.filter(r => r.settled).map(r => r.wealth)) - giniOf(R.filter(r => r.settled).map(r => r.wealthT0));
+        const dFloor = floor.p10 - floor.p10_t0;
+        const gap = dG <= -0.04 ? "closed" : dG >= 0.04 ? "widened" : "held";
+        const flo = dFloor > 0 ? "rose" : "fell";
+        const CELL = {
+          "closed|rose": "shared rise",     "closed|fell": "leveling down",
+          "held|rose":   "quiet growth",    "held|fell":   "quiet decay",
+          "widened|rose":"unequal growth",  "widened|fell":"extraction"
+        };
+        const cell = CELL[gap + "|" + flo];
+        const gr = growth.per_capita_t0 > 0 ? growth.per_capita / growth.per_capita_t0 : 1;
+        const growthQ = gr >= 1.08 ? "boom" : gr <= 0.92 ? "collapse" : "stagnant";
+        return { gap, floor: flo, growth: growthQ, cell, class: cell + " · " + growthQ };
+      })();
+      // B11 (#133): the concessions ledger — foreign-owned coasts and wound-up ones.
+      // "richer but owned" is the mean concession wealth beside the realm median
+      // (development) and the mean foreign claim (ownership); the abandonment is
+      // the double edge, the yield returned to a hollowed town.
+      const conc = R.filter(r => r.concession), aband = R.filter(r => r.concessionEnded);
+      const medWealthAll = med(R.filter(r => r.settled).map(r => r.wealth));
+      const concessions = (conc.length || aband.length) ? {
+        concession_n: conc.length,
+        abandoned_n: aband.length,
+        conc_wealth: conc.length ? Math.round(mean(conc.map(r => r.wealth))) : null,
+        median_wealth: Math.round(medWealthAll),
+        foreign_claim: conc.length ? r1(mean(conc.map(r => r.foreignClaim))) : null,
+        aband_wealth: aband.length ? Math.round(mean(aband.map(r => r.wealth))) : null
+      } : null;
+
       return {
         ages,
         zipf,
@@ -7289,6 +7438,8 @@
         trade_drag: tradeDrag,
         volatility,
         sovereignty,
+        verdict,
+        concessions,
         rain_split: rainSplit,
         gini_people: giniPeople,
         gini_between_people: giniBetween,
@@ -7606,6 +7757,26 @@
               `and the wires came with the garrison — the first country in the realm to be wired entire, because its cargo is wanted elsewhere.` +
               (ev.name ? ` The Dominion's own registers file it as ${ev.name}.` : ``);
           }
+          else if (ev.type === "concession") {
+            // B11 (#133): the empire that buys instead of landing
+            line = `${ev.power || "the Metropole"} did not send a fleet to ${harborName(t.name)}; it sent factors and a charter. ` +
+              `The works were bought, the coast was wired to the sea within the season, and the coin came in to build — the town grew richer than it had ever been. ` +
+              `The registers at the seat still bear the town's name; the registers that matter now are kept in another capital, and half of what the ground yields is entered there.`;
+          }
+          else if (ev.type === "abandonment") {
+            const startY = ev.since !== undefined ? 1000 + 25 * ev.since : null;
+            line = `${ev.power || "the Metropole"} wound up its concession at ${t.name}${startY ? `, ${25 * (ev.epoch - ev.since)} years after it opened it in ${startY}` : ``}. ` +
+              `The lode had drawn down, and attention leaves with the ore: the factors sailed, the credit stopped, and the works they had built went quiet. ` +
+              `It cut both ways. The markets that had made the town rich were gone — but so were the levies, and the ground kept what it made for the first time in a generation. Ruin and freedom, in the same ledger, in the same year.`;
+          }
+          else if (ev.type === "embargo") {
+            line = `Politics in a capital ${t.name} had never seen closed the sea lanes to it. ${ev.power ? ev.power + "'s" : "A rival power's"} quarrel with the Metropole became ${t.name}'s ruin: ` +
+              `the quays that had grown a second fortune on foreign trade stood idle, the cargoes did not come, and the coast that had rivalled the seat busted in a single year. The gap the trade had opened closed the hard way.`;
+          }
+          else if (ev.type === "courting") {
+            line = `${ev.power || "the Rival"} sent envoys to ${harborName(t.name)}, and the seat pretended not to notice. ` +
+              `Nothing was signed — a rich coast the Metropole had not yet claimed is a coast worth courting, and the powers beyond the sea prefer to be asked. The chronicle notes it because such notes are how the next annexation begins.`;
+          }
           else if (ev.type === "consecration") {
             const shrine = model.sanctionedSites.find(s => s.regionId === ev.region_id);
             line = `The Temple came to ${t.name}, to the ground of its suffering, and consecrated it as ${shrine ? shrine.name : "holy ground"}. ` +
@@ -7759,6 +7930,10 @@
           V.push(`The skyway would abolish ${F.sky.shadow_adv} parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.`);
         if (F.sovereignty)
           V.push(`And the realm's own ledger is a column in someone else's: ${F.sovereignty.occupied_n} regions occupied, the yield assessed at the quay, the free country keeping ${F.sovereignty.retent_ratio} times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others.`);
+        if (F.concessions && F.concessions.concession_n > 0)
+          V.push(`The empire mostly never came; it bought. ${F.concessions.concession_n} ${F.concessions.concession_n === 1 ? "coast is" : "coasts are"} a foreign concession — richer than the realm's median at ${F.concessions.conc_wealth} against ${F.concessions.median_wealth}, and owning barely half of it, ${Math.round(100 * F.concessions.foreign_claim)} in the hundred of the yield entered in ${esc(model.metropole)}'s books, not the realm's.`);
+        if (F.concessions && F.concessions.abandoned_n > 0)
+          V.push(`And ${F.concessions.abandoned_n} ${F.concessions.abandoned_n === 1 ? "coast was" : "coasts were"} courted, developed, and then let go when the lode ran thin — the attention left with the ore, and the ground got its ruin and its freedom in the same year.`);
         if (F.rain_split && F.rain_split.wet - F.rain_split.dry >= 8 && model.ridges.length)
           V.push(`The ${model.ridges[0].name} divides even the weather: the rain falls at ${F.rain_split.wet} on one side and ${F.rain_split.dry} in its lee, and no one on the dry side chose the wind.`);
         if (F.twins)
@@ -7840,6 +8015,11 @@
         L.push(`<span style="color:#8a7a68">THE DOMINION:</span> <b>${F.sovereignty.occupied_n}</b> regions are occupied ground, and every levy in them is paid to a power no one here can petition. ` +
           `The free country keeps <b>${F.sovereignty.retent_ratio}×</b> the share of its own value that the occupied country keeps — yet the occupied zone is the realm's best-wired country (${F.sovereignty.corridor_wired}/${F.sovereignty.occupied_n} on the conduit): <b>the grid reaches you when someone else wants what you have</b>.` +
           (F.sovereignty.comprador_ratio > 1 ? ` And the occupied owners' row holds ${F.sovereignty.comprador_ratio}× the free realm's share: the occupation did not replace the owners, it hired them.` : ``));
+      }
+      if (F.concessions && (F.concessions.concession_n > 0 || F.concessions.abandoned_n > 0)) {
+        L.push(`<span style="color:#8a7a68">THE REACH:</span> the empire mostly never came — it bought. ` +
+          (F.concessions.concession_n > 0 ? `<b>${F.concessions.concession_n}</b> ${F.concessions.concession_n === 1 ? "coast is" : "coasts are"} a foreign concession: richer than the median (<b>${F.concessions.conc_wealth}</b> vs ${F.concessions.median_wealth}) and <b>${Math.round(100 * F.concessions.foreign_claim)}%</b> of the yield repatriated to ${esc(model.metropole)} — <b>developed and owned in the same ledger</b>. ` : ``) +
+          (F.concessions.abandoned_n > 0 ? `<b>${F.concessions.abandoned_n}</b> ${F.concessions.abandoned_n === 1 ? "coast was" : "coasts were"} wound up when the lode ran thin: <b>attention leaves with the ore</b>, and the ground got its ruin and its freedom in the same year.` : ``));
       }
       if (F.sky && F.sky.shadow_adv !== null && F.sky.open_adv !== null && F.sky.shadow_adv >= F.sky.open_adv + 5)
         L.push(`<span style="color:#8fa8d9">THE SKYWAY:</span> behind the wall the lanes would cut the road to the seat by <b>${F.sky.shadow_adv}%</b> (the open country gains ${F.sky.open_adv}%) — and boarding is an owners' privilege. ` +
@@ -8561,6 +8741,7 @@
         ["the owners", (() => { const FR = getFindings(model); return FR.owners ? `${FR.owners.pop_pct}% of people hold ${FR.owners.coin_pct}% of the coin` : "\u2014"; })()],
         ["the skyway", (() => { const sp = model.regions.filter(r => r.isSkyport === 1); return sp.length >= 2 ? `${esc(model.skywayName)} Lane — ${sp.length} aeries (${sp.map(r => esc((model.settlements.find(s => s.regionId === r.id) || {name:(model.regions.find(rg=>rg.id===r.id)||{}).placeName||"the aerie"}).name)).join(", ")})` : "no lane worth the lift"; })()],
         ["the dominion", model.dominion ? `arrived ${1000 + 25 * model.dominion.arrived} — ${model.regions.filter(r => r.occupied).length} regions occupied` : "beyond the horizon, this age"],
+        ["the powers", (() => { const c = model.regions.filter(r => r.concession).length, a = model.regions.filter(r => r.concessionEnded).length; return `${esc(model.metropole || "?")} courts · ${esc(model.rival || "?")} rivals` + (c ? ` — ${c} concession${c > 1 ? "s" : ""}` : "") + (a ? `${c ? "," : " —"} ${a} wound up` : "") + (!c && !a ? " — reach, not a landing, this age" : ""); })()],
         ["rank-size", (() => { const F5 = getFindings(model); return F5.zipf ? `α ${F5.zipf.alpha.toFixed(2)} · tail fit ${F5.zipf.tail_r2.toFixed(2)} · primacy ${F5.zipf.primacy}×` : "too few towns to fit"; })()],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1600 × 0–1000 (y-up)"]

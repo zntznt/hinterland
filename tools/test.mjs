@@ -439,8 +439,14 @@ function validate(gj, tag) {
     // founding is NOT (a reborn cell resets to "none" until a real shock stamps
     // it), so a founding clears the column back to none.
     const byRegion = new Map();
+    // B11 (#133): the imperial REACH events (concession, abandonment, embargo,
+    // courting) are world-scale — located at a coast but not the region's HEADLINE
+    // event_type, exactly as the court events (reform, succession) are placeless.
+    // They ride the events timeline and the chronicle without stamping the column.
+    const REACH_EV = new Set(["concession", "abandonment", "embargo", "courting"]);
     for (const ev of evList) {
       if (ev.type === "settlement_founded") { byRegion.delete(ev.region_id); continue; }
+      if (REACH_EV.has(ev.type)) continue; // not a region headline event
       byRegion.set(ev.region_id, ev);
     }
     for (const r of regions) {
@@ -2035,8 +2041,13 @@ console.log("# The Dominion X1 acceptance: sovereignty is the last inequality");
     }
     if (R !== domWorld) R.window.close();
   }
-  if (arrived >= N * 0.25 && arrived <= N * 0.75)
-    ok(`THE DOOR IS THE WOUND: the Dominion lands in ${arrived}/${N} worlds — through the same harbors that made them rich; the rest are shielded by land, storm, or luck`);
+  // B11 (#133) re-pin: the landing is DEMOTED to the limit case — the coin is cut
+  // from a half to a third (the empire mostly reaches now, it does not land). Arrival
+  // fell from ~48% to a measured 25% on this sweep; the band re-pins to 10–55% to
+  // hold the demotion without going brittle. The occupation machinery is unchanged
+  // and still fully exercised on the worlds where the fleet does come.
+  if (arrived >= N * 0.10 && arrived <= N * 0.55)
+    ok(`THE DOOR IS THE WOUND (now the LIMIT case, B11): the Dominion lands in only ${arrived}/${N} worlds — the empire mostly reaches (concession, embargo) and lands rarely; the rest are reached, shielded, or left`);
   else fail(`arrival rate off: ${arrived}/${N}`);
   if (corridorFull >= Math.ceil(retent.length * 0.9))
     ok(`THE EXTRACTIVE CORRIDOR: the occupied zone is fully wired in ${corridorFull}/${retent.length} occupied worlds — the conduit reaches you when someone else wants what you have`);
@@ -2911,13 +2922,13 @@ const prov = A1.gj.hinterland;
 // re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
 // the default carries the Concordat-era `world` block (regime chain + series), and
 // `fate` still rides provenance only when set — so a default world has no fate key.
-if (prov && prov.schema_version === 52 && prov.epochs === 0 && prov.responsiveness === 45 && prov.order === 50 && prov.openness === 100 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+if (prov && prov.schema_version === 53 && prov.epochs === 0 && prov.responsiveness === 45 && prov.order === 50 && prov.openness === 100 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && prov.disposal_doctrine === "concentrate" && !("fate" in prov) &&
     prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=52 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
+  ok("provenance carries schema_version=53 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await gen("#seed=&regions=&we=&wg=");
@@ -3454,9 +3465,9 @@ console.log("# The mix pulls apart B10 (#132): a second pole, two knobs retired"
   // (i) old links MAP FORWARD: an hb=0 link seals the quays via openness=0
   const sealed = (await gen("#seed=alpha&regions=24&hb=0")).gj.hinterland;
   const openLink = (await gen("#seed=alpha&regions=24&openness=0")).gj.hinterland;
-  if (sealed.schema_version === 52 && sealed.openness === 0 && sealed.harbors_closed === true &&
+  if (sealed.schema_version === 53 && sealed.openness === 0 && sealed.harbors_closed === true &&
       openLink.openness === 0 && openLink.harbors_closed === true)
-    ok(`old links map forward: hb=0 seals the quays through openness=0 (harbors_closed), same as openness=0 (schema 52)`);
+    ok(`old links map forward: hb=0 seals the quays through openness=0 (harbors_closed), same as openness=0 (schema 53)`);
   else fail(`forward mapping broken: hb=0 openness ${sealed.openness}/closed ${sealed.harbors_closed}`);
 
   // (ii) EXHIBIT — a trade world whose largest CITY is NOT the seat (the second pole).
@@ -3516,6 +3527,92 @@ console.log("# The mix pulls apart B10 (#132): a second pole, two knobs retired"
   if (hasOpen && noBias && noHb)
     ok(`the panel did not grow: openness ships as a slider, bias and hb retired (two added — order, openness — for two retired — bias, hb)`);
   else fail(`panel wrong: openness ${hasOpen}, bias-gone ${noBias}, hb-gone ${noHb}`);
+}
+
+console.log("# Imperial reach B11 (#133): the empire mostly never comes, it buys");
+
+// The off-map empire presses on the coast by REACH, not the fleet: CONCESSIONS
+// (foreign capital owns the works — retention becomes a foreign claim, the coast
+// is developed AND owned), EMBARGO (a hostile regime shuts the sea lanes and the
+// second pole busts), and ATTENTION keyed to the REMAINING ORE (courted →
+// developed → squeezed → abandoned). The Dominion's landing is the ore's-worth-a-
+// fleet LIMIT case; a named RIVAL rides the regime chain, the gazette, diplomacy.
+{
+  // (i) FOUNDING PURITY: ep=0 is pre-history — no world attention has acted, so no
+  //     concession, no embargo, no abandonment; and the two named powers wait.
+  const g0 = (await gen("#seed=alpha&regions=24&ep=0")).gj;
+  const R0 = regionsOf(g0).map(f => f.properties);
+  const ev0 = g0.hinterland.events || [];
+  const pw0 = g0.hinterland.powers;
+  if (R0.every(r => r.concession === 0 && r.concession_ended === 0 && r.foreign_claim === 0 && r.concession_epoch === -1 && r.concession_ended_epoch === -1) &&
+      !ev0.some(e => ["concession", "abandonment", "embargo", "courting"].includes(e.type)) &&
+      pw0 && typeof pw0.metropole === "string" && typeof pw0.rival === "string" && pw0.metropole !== pw0.rival && pw0.concessions === 0 && pw0.abandoned === 0)
+    ok(`the founding is pre-imperial: ep=0 carries no concession, embargo, or abandonment — the two named powers (${pw0.metropole} / ${pw0.rival}) wait beyond the horizon`);
+  else fail(`founding imperial leak: powers ${JSON.stringify(pw0)}, events ${ev0.map(e => e.type).join(",")}`);
+
+  // (ii)–(v) ONE sweep collects the reach: richer-but-owned concessions, the
+  //     abandonment arc narrated end-to-end, embargo busts, and verdict diversity.
+  const N = 40;
+  let richerOwned = 0, roEx = null;
+  let arcNarrated = 0, arcEx = null;
+  let embargoNarrated = 0, embEx = null;
+  const CLS = {};
+  for (let i = 0; i < N; i++) {
+    const R = await gen(`#seed=ir-${i}&regions=24&ep=10`);
+    const F = R.gj.hinterland.findings;
+    const ev = R.gj.hinterland.events || [];
+    const chron = R.chron;
+    // richer but OWNED — a concession still open at the close, wealth above the
+    // realm median yet half the yield repatriated (development finance AND comprador)
+    if (F.concessions && F.concessions.concession_n > 0 && F.concessions.conc_wealth > F.concessions.median_wealth && F.concessions.foreign_claim > 0) {
+      richerOwned++;
+      if (!roEx) roEx = `ir-${i}: concession wealth ${F.concessions.conc_wealth} > median ${F.concessions.median_wealth}, ${Math.round(100 * F.concessions.foreign_claim)}% repatriated to ${R.gj.hinterland.powers.metropole}`;
+    }
+    // the ABANDONMENT ARC, narrated END-TO-END: the same world's chronicle carries
+    // both the concession's opening and its winding-up (attention leaving with the ore)
+    const concEv = ev.find(e => e.type === "concession"), abEv = ev.find(e => e.type === "abandonment");
+    if (concEv && abEv && /sent factors and a charter/.test(chron) && /wound up its concession/.test(chron) && /attention leaves with the ore/.test(chron)) {
+      arcNarrated++;
+      if (!arcEx) arcEx = `ir-${i}: concession opened e${concEv.epoch}, wound up e${abEv.epoch}`;
+    }
+    // the EMBARGO bust: a hostile regime shut the lanes and the chronicle records it
+    if (ev.some(e => e.type === "embargo") && /closed the sea lanes to it/.test(chron)) {
+      embargoNarrated++;
+      if (!embEx) embEx = `ir-${i}`;
+    }
+    if (F.verdict) CLS[F.verdict.class] = (CLS[F.verdict.class] || 0) + 1;
+  }
+  // (ii) richer but owned
+  if (richerOwned >= 3)
+    ok(`RICHER BUT OWNED: in ${richerOwned}/${N} worlds a concession closes richer than the realm median yet foreign-owned — ${roEx}`);
+  else fail(`concession exhibit too rare: ${richerOwned}/${N}`);
+  // (iii) the abandonment arc, narrated end to end
+  if (arcNarrated >= 1)
+    ok(`THE ABANDONMENT ARC narrated end-to-end: ${arcNarrated}/${N} worlds tell the whole story — courted, developed, then let go when the lode ran thin (${arcEx})`);
+  else fail(`no abandonment arc narrated across ${N} worlds`);
+  // (iv) the embargo bust
+  if (embargoNarrated >= 10)
+    ok(`THE EMBARGO BUST: ${embargoNarrated}/${N} worlds hit a trade-war regime that shut the sea lanes and busted a coast (first ${embEx})`);
+  else fail(`embargo too rare: ${embargoNarrated}/${N}`);
+  // (v) VERDICT DIVERSITY (§7.3, the capstone pin): the de-moralized verdict class
+  //     (§3.5 gap × floor, qualified by growth) must not collapse into one story —
+  //     ≥6 classes present across the sweep and no single class over 40%.
+  const clsTot = Object.values(CLS).reduce((a, b) => a + b, 0);
+  const clsN = Object.keys(CLS).length;
+  const clsMax = Math.max(...Object.values(CLS).map(v => 100 * v / clsTot));
+  if (clsN >= 6 && clsMax <= 40)
+    ok(`VERDICT DIVERSITY (§7.3): ${clsN} distinct §3.5 classes across ${N} worlds, the most common only ${clsMax.toFixed(0)}% — the possibility space stays open (no templated verdict)`);
+  else fail(`verdict space collapsed: ${clsN} classes, max share ${clsMax.toFixed(0)}%`);
+
+  // (vi) the named RIVAL rides the GAZETTE: the readout carries "the powers" row
+  //      with both off-map names — the second power exists without reach machinery.
+  const GW = await gen("#seed=ir-3&regions=24&ep=10", true);
+  const info = GW.doc.getElementById("info").textContent;
+  const pwG = GW.gj.hinterland.powers;
+  GW.window.close();
+  if (/the powers/.test(info) && info.includes(pwG.metropole) && info.includes(pwG.rival))
+    ok(`the gazette names the powers: the readout's "the powers" row carries the Metropole (${pwG.metropole}) and the Rival (${pwG.rival}) — a named rival with no reach machinery of its own`);
+  else fail(`gazette silent on the powers: has-row ${/the powers/.test(info)}, metropole ${info.includes(pwG.metropole)}, rival ${info.includes(pwG.rival)}`);
 }
 
 console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");

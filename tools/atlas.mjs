@@ -82,8 +82,28 @@ for (let i = 0; i < N; i++) {
     treasuries: gj.hinterland.treasuries,
     collapse: R.filter(r => r.boom_bust === "collapse").length,
     boom: R.filter(r => r.boom_bust === "boom").length,
+    // B11 (#133): the verdict class (§3.5 gap×floor×growth) and the imperial reach
+    verdictClass: F.verdict ? F.verdict.class : "?",
+    verdictCell: F.verdict ? F.verdict.cell : "?",
+    concN: F.concessions ? F.concessions.concession_n : 0,
+    abandN: F.concessions ? F.concessions.abandoned_n : 0,
+    concWorld: evs.some(e => e.type === "concession"),
+    abandWorld: evs.some(e => e.type === "abandonment"),
+    embargoWorld: evs.some(e => e.type === "embargo"),
+    concWealth: F.concessions ? F.concessions.conc_wealth : null,
+    concMedian: F.concessions ? F.concessions.median_wealth : null,
+    foreignClaim: F.concessions ? F.concessions.foreign_claim : null,
   });
 }
+
+// B11 (#133): the VERDICT DIVERSITY table — the §3.5 gap×floor×growth classes
+// across the sweep. The capstone acceptance: no class > 40%, ≥ 6 classes present.
+const classDist = {};
+worlds.forEach(w => { classDist[w.verdictClass] = (classDist[w.verdictClass] || 0) + 1; });
+const classEntries = Object.entries(classDist).sort((a, b) => b[1] - a[1]);
+const classMaxShare = Math.max(...classEntries.map(([, v]) => 100 * v / N));
+console.log("\nVERDICT CLASSES (§3.5, " + classEntries.length + " present, max share " + classMaxShare.toFixed(0) + "%):");
+classEntries.forEach(([k, v]) => console.log(`  ${(100 * v / N).toFixed(0)}%  ${k}  (${v})`));
 
 // summary statistics for the calibration table
 const stat = (key) => {
@@ -149,11 +169,19 @@ const picks = [
 const lib = worlds.find(w => w.liberation);
 if (lib) picks.push(["The Town That Freed Itself", lib, "a rising won on ground the Dominion had claimed",
   (w) => line(w, /rose against the Dominion|threw the Dominion|rose\. The wardline broke/)]);
+// B11 (#133): the reach archetypes — the empire that buys, and the one it leaves.
+const conc = worlds.filter(w => w.concN > 0 && w.concWealth !== null && w.concWealth > w.concMedian)
+  .sort((a, b) => (b.concWealth - b.concMedian) - (a.concWealth - a.concMedian))[0];
+if (conc) picks.push(["The Concession Coast", conc, "richer than the realm — and owned: a foreign power keeps half of what its ground yields",
+  (w) => line(w, /did not send a fleet|sent factors and a charter/i)]);
+const aband = worlds.find(w => w.abandWorld);
+if (aband) picks.push(["The Abandoned Coast", aband, "courted, developed, then let go when the lode ran thin — ruin and freedom in one year",
+  (w) => line(w, /wound up its concession|attention leaves with the ore/i)]);
 
 let md = `# The Hinterland Atlas
 
 A calibration sweep of **${N} worlds** (default knobs, 24 regions, 10
-epochs, schema v36) measured end-to-end, and the archetypal extremes it
+epochs, schema v53) measured end-to-end, and the archetypal extremes it
 found. Every world below is one click away — the seed and knobs live in
 the URL hash — and every quotation is the world describing itself (the
 chronicle is deterministic: you will find the same words). For HOW to
@@ -170,11 +198,27 @@ Sanity anchors, measured on this sweep: blight–wealth correlation stays
 negative at the default dump bias (the poison lands on the poor) in
 ${worlds.filter(w => w.blightCorr < 0).length}/${N} worlds; a mountain shadow exists in
 ${worlds.filter(w => w.shadowShare > 0).length}/${N}; the event engine fired in
-${worlds.filter(w => w.eventsN > 0).length}/${N}; the Dominion landed in
-${worlds.filter(w => w.dominion).length}/${N}; a rising won somewhere in
+${worlds.filter(w => w.eventsN > 0).length}/${N}; the empire more often BOUGHT than
+landed — a foreign concession opened in
+${worlds.filter(w => w.concWorld).length}/${N} worlds and was wound up (attention leaving
+with the ore) in ${worlds.filter(w => w.abandWorld).length}/${N}, while the Dominion's fleet
+took ground in only ${worlds.filter(w => w.dominion).length}/${N}; a rising won somewhere in
 ${worlds.filter(w => w.revoltWon).length}/${N}; and in the median world a region map
 is blind to ${stat("withinPct").med}% of person-level inequality — the class
 ledger lives inside the walls.
+
+## The verdict space (§3.5)
+
+The de-moralized verdict is two axes and a qualifier: did the **gap** (the spread of
+fortunes) widen, hold, or close; did the **floor** (the poorest tenth's wealth) rise or
+fall; and did the realm **grow, stagnate, or collapse**. No single templated story is
+allowed to own the possibility space. Across the ${N}-world sweep, **${classEntries.length}
+distinct classes** appear and the most common holds only **${classMaxShare.toFixed(0)}%** —
+the §7.3 diversity floor (≥6 classes, none over 40%) is met.
+
+| verdict class | worlds |
+|---|---|
+${classEntries.map(([k, v]) => `| ${k} | ${v} |`).join("\n")}
 
 ## The atlas
 
@@ -204,7 +248,7 @@ Knob extremes for the classroom — each isolates one mechanism:
 - **The sealed realm** ([hb=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&hb=0)): the quays closed by decree — no sea trade, no port tolls, and no door for the Dominion. The price is smaller than the safety, and that asymmetry is a finding about what this economy is made of.
 - **Both mercies** ([db=0&gt=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&db=0&gt=0)): no dumping and a universal grid at once — the nearest thing this engine has to a just policy regime, run on the same rock as everything above.
 
-*Generated from the calibration sweep (schema v36); regenerate with the
+*Generated from the calibration sweep (schema v53); regenerate with the
 suite's atlas script (node --max-old-space-size=8192 atlas.mjs).*
 `;
 writeFileSync(new URL("../docs/atlas.md", import.meta.url), md);

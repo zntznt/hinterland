@@ -1,4 +1,6 @@
 epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occupied,contested,ruler
+1,1025,concession,0,,,,,,,,,,
+1,1025,embargo,0,,,,,,,,,,
 1,1025,settlement_abandoned,1,,,,,,,,,,
 1,1025,settlement_abandoned,3,,,,,,,,,,
 1,1025,settlement_abandoned,4,,,,,,,,,,
@@ -7,7 +9,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 1,1025,settlement_abandoned,9,,,,,,,,,,
 1,1025,settlement_abandoned,10,,,,,,,,,,
 1,1025,settlement_abandoned,11,,,,,,,,,,
-1,1025,blight_plague,5,the Long Cough of 1025,,,,,,,,,
+1,1025,blight_plague,5,the Grey Breath of 1025,,,,,,,,,
 2,1050,settlement_founded,11,,,,,,,,,,
 2,1050,storm,0,the Great Storm of 1050,,,,,,,,,
 3,1075,refinery_collapse,5,,,,,,,,,,
@@ -25,12 +27,13 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 4,1100,succession,,Merby,,crown,,,,,,true,1
 4,1100,storm,0,the Great Storm of 1100,,,,,,,,,
 5,1125,settlement_abandoned,0,,,,,,,,,,
-5,1125,refinery_founded,5,,,,,,,,,,
+5,1125,refinery_founded,0,,,,,,,,,,
+5,1125,seizure,0,,,magnate,,,,,,,
 7,1175,ascendancy,5,the Rise of Forby,,,,,,,,,
 8,1200,succession,,Therton,,crown,,,,,,false,2
 8,1200,drought,5,the Drought of 1200,,,,,,,,,
 8,1200,discovery,1,the Dunholdham Find,,,,,,,,,
-9,1225,war,5,the Forby War,,crown|temple,,,,,,,
+9,1225,war,5,the War of 1225,,crown|temple,,,,,,,
 9,1225,succession,,Ophel,,temple,,,,,,true,2
 9,1225,drought,5,the Drought of 1225,,,,,,,,,
 9,1225,storm,1,the Great Storm of 1225,,,,,,,,,

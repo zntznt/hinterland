@@ -30,6 +30,8 @@ The rivers are crossed at Iverby Bridge alone; everywhere else the banks are mar
 
 The chronicle divides these years into ages, named for what the realm was living through: **the Quiet Years** (1000–1050), when the gap narrowed and **the Age of the Gates** (1075–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
+**Year 1025.** Politics in a capital Gladen had never seen closed the sea lanes to it. the Solvent States's quarrel with the Metropole became Gladen's ruin: the quays that had grown a second fortune on foreign trade stood idle, the cargoes did not come, and the coast that had rivalled the seat busted in a single year. The gap the trade had opened closed the hard way.
+
 **Year 1025.** In this year the magnates took the gate at Gladen — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the toll was posted by winter.
 
 **Year 1025.** The rains failed over Gladen, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1025.
@@ -57,6 +59,8 @@ The chronicle divides these years into ages, named for what the realm was living
 **Year 1125.** The god's fortune rose at Thraldek Delf, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Thraldek Delf.
 
 **Year 1125.** Thraldek Delf rose, and was put down. The garrison came after the hangings, and the injustice that caused the rising was carefully recorded and carefully unaddressed. The people keep the date as the Thraldek Delf Rising.
+
+**Year 1150.** the Solvent States sent envoys to Gladen Harbor, and the seat pretended not to notice. Nothing was signed — a rich coast the Metropole had not yet claimed is a coast worth courting, and the powers beyond the sea prefer to be asked. The chronicle notes it because such notes are how the next annexation begins.
 
 **Year 1150.** The old Hierarch died, and Sylvasse took the censer without incident — which the chronicle records precisely because it is rare.
 
@@ -90,12 +94,12 @@ Of the realm's 5 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the magnates standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 4 in every hundred of the realm's people hold 41 of every hundred coins, and live 16.8 times better than those who work for them. Nowhere is the ledger sharper than at Gladen, where 58 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 27 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.9 in every hundred of the realm's people hold 39.1 of every hundred coins, and live 15.6 times better than those who work for them. Nowhere is the ledger sharper than at Gladen, where 56 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 26 parts in a hundred of the whole spread.
 
 At the record's close the conduit reaches every settlement of the realm. The chronicle notes it without comment, so that later readers may check whether it lasted.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.43, and the turning point was the rising at Thraldek Delf in 1125, which was put down. The poorest fifth of the realm carries 5 times the blight of the richest fifth. Behind the Durnharrek wall, the median settlement earns 83 in the hundred less than the open country at the same remove. 0 regions sit off the conduit because the ledgers said serving them would not pay. Iverby drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 4 in a hundred hold 41 of every hundred coins, and stand 16.8 times apart from the rest. The skyway would abolish 38.7 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.42, and the turning point was the rising at Thraldek Delf in 1125, which was put down. The poorest fifth of the realm carries 5 times the blight of the richest fifth. Behind the Durnharrek wall, the median settlement earns 83 in the hundred less than the open country at the same remove. 0 regions sit off the conduit because the ledgers said serving them would not pay. Iverby drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.9 in a hundred hold 39.1 of every hundred coins, and stand 15.6 times apart from the rest. The skyway would abolish 38.7 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

@@ -28,11 +28,17 @@ The rivers are crossed at Linden Bridge alone; everywhere else the banks are mar
 
 The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1025), when the gap narrowed, **the Restoration** (1050–1100), when the gap narrowed, **the Long Desolation** (1125–1150), when the gap narrowed and **the Quiet Years** (1175–1250), when the gap narrowed. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
-**Year 1025.** In this year the sickness came to Irenneford, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Ash Fever of 1025.
+**Year 1025.** the Meridian Concord did not send a fleet to Korgar Harbor; it sent factors and a charter. The works were bought, the coast was wired to the sea within the season, and the coin came in to build — the town grew richer than it had ever been. The registers at the seat still bear the town's name; the registers that matter now are kept in another capital, and half of what the ground yields is entered there.
+
+**Year 1025.** Politics in a capital Korgar had never seen closed the sea lanes to it. the Kestrel Powers's quarrel with the Metropole became Korgar's ruin: the quays that had grown a second fortune on foreign trade stood idle, the cargoes did not come, and the coast that had rivalled the seat busted in a single year. The gap the trade had opened closed the hard way.
+
+**Year 1025.** In this year the sickness came to Irenneford, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Grey Breath of 1025.
 
 **Year 1050.** A storm came off the water and stood over the coast for three days. Korgar took the worst of it, as the exposed shore always does; the Great Storm of 1050 is the name the survivors gave the year.
 
-**Year 1050.** Plague took Linden. The blight had sat heavy on that country for years, and when the sickness came it found a town already half-poisoned. A third of the people were carried off or fled. The roads named it the River Fever of 1050.
+**Year 1050.** Plague took Dunholdham. The blight had sat heavy on that country for years, and when the sickness came it found a town already half-poisoned. A third of the people were carried off or fled. The roads named it the Grey Breath of 1050.
+
+**Year 1050.** Plague took Linden. The blight had sat heavy on that country for years, and when the sickness came it found a town already half-poisoned. A third of the people were carried off or fled. The roads named it the Water-Rot of 1050.
 
 **Year 1075.** The works at Forby fell silent. The fields that fed them had given all they had, and the magnates did not stay for the funeral. The trunk lines still stand there, carrying nothing.
 
@@ -52,7 +58,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1100.** A storm came off the water and stood over the coast for three days. Korgar took the worst of it, as the exposed shore always does; the Great Storm of 1100 is the name the survivors gave the year.
 
-**Year 1125.** The magnates raised new works at Korgar, where the money had gone. The charter was sealed at Forby, and the trunk line followed within the season.
+**Year 1125.** New refinery fires were lit at Korgar. The seat called it progress; the towns the new trunk line passed over called it something else.
 
 **Year 1125.** The magnates pressed their claim on the crossing at Korgar. No blood is recorded; the ledger did the taking, and the toll did the keeping.
 
@@ -99,6 +105,6 @@ And in every town the record counts two peoples under one name: the owners' row 
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world closed some of its gap: the spread of fortunes measured 0.34 at the founding and 0.21 at the close, and the turning point was the Crown Granary of 1075. The poorest fifth of the realm carries 2.3 times the blight of the richest fifth. Behind the Zharrok wall, the median settlement earns 36 in the hundred less than the open country at the same remove. 5 regions sit off the conduit because the ledgers said serving them would not pay, and sickness runs 1.7 times heavier there than in the lit core. Linden drinks 3 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 5.5 in a hundred hold 42.5 of every hundred coins, and stand 12.8 times apart from the rest. The skyway would abolish 29.1 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. The Zharrok divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Varvek and Glarhold stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world closed some of its gap: the spread of fortunes measured 0.34 at the founding and 0.21 at the close, and the turning point was the Crown Granary of 1075. The poorest fifth of the realm carries 2.3 times the blight of the richest fifth. Behind the Zharrok wall, the median settlement earns 36 in the hundred less than the open country at the same remove. 5 regions sit off the conduit because the ledgers said serving them would not pay, and sickness runs 1.7 times heavier there than in the lit core. Linden drinks 3 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 5.5 in a hundred hold 42.5 of every hundred coins, and stand 12.8 times apart from the rest. The skyway would abolish 29.1 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. The empire mostly never came; it bought. 1 coast is a foreign concession — richer than the realm's median at 0 against 17, and owning barely half of it, 50 in the hundred of the yield entered in the Meridian Concord's books, not the realm's. The Zharrok divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Varvek and Glarhold stand the same distance from the seat, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

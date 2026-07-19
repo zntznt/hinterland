@@ -3835,7 +3835,7 @@
       let charterDebt = 0, charterDebtEpoch = -1, debtServicePaid = 0;
       let granaryEpoch = -1, granaryDependency = 0, granaryDrain = 0;
       let retentionEpoch = -1, capitalFlight = 0;
-      let impositions = 0;
+      let impositions = 0, lastWoundEpoch = -99;
       let blightEpoch = 0; // B4 (#126): concentrate's poison RAMPS with the works — 0 at the founding, full late (P4 delay)
       // #93: a maturing realm wires more of itself. gtEase lowers the hook-up bar
       // a touch each epoch so the grid keeps ratcheting outward through the
@@ -5056,11 +5056,14 @@
             debtServicePaid += paid;
             charterDebt = Math.max(0, charterDebt - paid * 0.5); // half retires principal, half is interest
           }
-          // (b) THE GRANARY'S DEPENDENCY: run on through a LONG PEACE and the bread
-          // becomes a habit the realm cannot put down — dependency climbs and the
-          // levy drains the treasury with no famine to justify it (the mercy curdles
-          // ONLY in peace: a wounded world's granary is doing its job, not rotting).
-          if (granaryOn && granaryEpoch !== -1 && e + 1 >= granaryEpoch + 2 && !woundedThisEpoch) {
+          if (woundedThisEpoch) lastWoundEpoch = e + 1;
+          const peaceLen = (e + 1) - lastWoundEpoch; // epochs since the realm last bled
+          // (b) THE GRANARY'S DEPENDENCY: run on through a LONG PEACE (3+ quiet epochs)
+          // and the bread becomes a habit the realm cannot put down — dependency climbs
+          // and the levy drains the treasury with no famine to justify it. The mercy
+          // curdles ONLY in a SUSTAINED peace: a world still taking wounds every few
+          // years has a granary doing its job, not rotting into a fiscal drain.
+          if (granaryOn && granaryEpoch !== -1 && e + 1 >= granaryEpoch + 2 && peaceLen >= 3) {
             granaryDependency = Math.min(100, granaryDependency + DEPENDENCY_STEP);
             granaryDrain += 1;
             treasuries.crown = Math.max(0, treasuries.crown - 1);

@@ -4376,18 +4376,24 @@
           // rents are held by force, so the row neither erodes nor churns (an
           // `occupied` proxy until B9's order axis). No catastrophe required.
           const marketAccess = clamp(0.5 * reg.centrality / 100 + (onGrid[ri] ? 0.5 : 0), 0, 1); // central AND wired = reached by the market
-          const rentToErode = clamp((reg.eliteShare - 30) / 62, 0, 1); // there must be a rent to bid down
-          const competition = reg.occupied ? 0 : 5.5 * marketAccess * rentToErode;
-          const boomChurn = reg.occupied ? 0 : 1.4 * clamp((reg.wealth - wealthBefore) / 10, 0, 1);
+          // B5 (#127): competition erodes rents WHERE MARKET ACCESS IS HIGH. A well-
+          // connected town's owners capture LESS of each rent (rivals bid it down) —
+          // rentKeep scales the whole rent-capture ratchet — AND their standing
+          // concentration actively decays; an isolated valley keeps its monopoly and
+          // its full ratchet. A POLICE STATE (occupied proxy until B9) freezes both:
+          // rents held by force neither erode nor churn.
+          const rentKeep = reg.occupied ? 1 : (1 - 0.5 * marketAccess);        // how much of the rent the owners still capture
+          const competition = reg.occupied ? 0 : 2.5 * marketAccess * clamp((reg.eliteShare - 40) / 52, 0, 1); // active decay of concentration
+          const boomChurn = reg.occupied ? 0 : 1.4 * clamp((reg.wealth - wealthBefore) / 10, 0, 1);            // a boom mints new owners
           reg.eliteShare = clamp(reg.eliteShare
             + wealthDrift                          // the owners capture the swing, up or down
-            + 0.75 * gateIncome                    // the toll house pays the holder's men
-            + (reg.refining > 0 ? 0.8 : 0)         // the works pay their masters
-            + (reg.E >= 40 ? 0.5 : 0)              // live seams pay their charter-holders
-            + (reg.isSkyport === 1 ? 0.6 : 0)      // the aerie: absentee owners cluster at the lanes
+            + rentKeep * (0.75 * gateIncome        // the toll house pays the holder's men (competition bids it down)
+              + (reg.refining > 0 ? 0.8 : 0)       // the works pay their masters
+              + (reg.E >= 40 ? 0.5 : 0)            // live seams pay their charter-holders
+              + (reg.isSkyport === 1 ? 0.6 : 0))   // the aerie: absentee owners cluster at the lanes
             + (reg.compradorGain || 0)             // B2: the coin that didn't build deepens the owners' row
             - (reg.investBustLoss || 0)            // B2: a busted placement — the owners take the loss
-            - competition                          // B5: high market access erodes concentrated rents
+            - competition                          // B5: high market access bids concentrated rents down
             - boomChurn                            // B5: a boom mints new owners, diluting the row
             - 0.6 * Math.max(0, bread), 8, 92);    // bread reaches the bottom
         });

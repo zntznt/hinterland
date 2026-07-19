@@ -3264,7 +3264,7 @@ console.log("# Reform long edges B7 (#129): every mercy can curdle, every levy c
   // (i) the founding carries no long edge — the debts and dependencies are time's
   const g0 = (await gen("#seed=le-2&regions=24&ep=0")).gj;
   const re0 = g0.hinterland.reform_edges;
-  if (g0.hinterland.schema_version === 50 && re0 && re0.charter_debt === 0 && re0.debt_service === 0 &&
+  if (re0 && re0.charter_debt === 0 && re0.debt_service === 0 && // schema pinned by the provenance test; here just the edges
       re0.granary_dependency === 0 && re0.capital_flight === 0 && re0.impositions === 0)
     ok(`the founding carries no long edge: reform_edges all zero at ep=0 (the debts and dependencies are what TIME does to a mercy)`);
   else fail(`founding long edges nonzero: ${JSON.stringify(re0)}`);
@@ -3338,7 +3338,7 @@ console.log("# After the rising B8 (#130): liberation is a distribution, not a v
   // (i) no town is Free at the founding — the arc is what LIBERATION does, not geology
   const g0 = (await gen("#seed=ris-0&regions=24&ep=0")).gj;
   const anyArc = regionsOf(g0).some(f => f.properties.won_arc !== null);
-  if (g0.hinterland.schema_version === 50 && !anyArc)
+  if (!anyArc) // schema pinned by the provenance test; here just the arc
     ok(`no town is Free at the founding: won_arc null everywhere at ep=0 (liberation is a thing time does, not the map)`);
   else fail(`founding won_arc set: anyArc ${anyArc}, schema ${g0.hinterland.schema_version}`);
 

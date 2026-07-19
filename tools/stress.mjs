@@ -1143,8 +1143,8 @@ function validate(gj, tag) {
       if (epochs === 0 && line.length !== 1) return fail(`${tag}: successions without time`);
     }
     for (const ev of (gj.hinterland.events || [])) {
-      if (ev.region_id === undefined && !["succession", "reform", "reaction"].includes(ev.type))
-        return fail(`${tag}: groundless ${ev.type} event`);
+      if (ev.region_id === undefined && !["succession", "reform", "reaction", "imposition"].includes(ev.type))
+        return fail(`${tag}: groundless ${ev.type} event`); // B7 (#129): a creditor imposition is realm-level, like a reform
       if (ev.type === "revolt" && !["won", "crushed"].includes(ev.outcome))
         return fail(`${tag}: revolt without outcome`);
       if (ev.type !== "succession") continue;

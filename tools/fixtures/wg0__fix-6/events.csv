@@ -22,6 +22,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 4,1100,succession,,Crannock,,crown,,,,,,false,1
 4,1100,treaty,5,the Peace of Halemook,,crown|magnate,,crown,0,0,,,
 4,1100,discovery,8,the Wexbraverby Find,,,,,,,,,
+4,1100,reform,,,,,crown_granary,,,,,,
 4,1100,revolt,4,the High Kellow Rising,won,,,,,,,,
 5,1125,settlement_founded,6,,,,,,,,,,
 5,1125,refinery_collapse,5,,,,,,,,,,

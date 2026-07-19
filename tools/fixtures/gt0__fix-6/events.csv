@@ -23,6 +23,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 4,1100,succession,,Crannock,,crown,,,,,,false,1
 4,1100,treaty,5,the Peace of Halemook,,crown|magnate,,crown,0,0,,,
 4,1100,discovery,5,the Halemook Find,,,,,,,,,
+4,1100,reform,,,,,crown_granary,,,,,,
 4,1100,revolt,4,the High Kellow Rising,won,,,,,,,,
 5,1125,settlement_founded,6,,,,,,,,,,
 5,1125,refinery_collapse,5,,,,,,,,,,
@@ -31,7 +32,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 6,1150,annexation,8,the Landing at Wexbraverby,,,,,,,4,,
 6,1150,succession,,Voldrok,,magnate,,,,,,false,2
 6,1150,storm,5,the Great Storm of 1150,,,,,,,,,
-6,1150,discovery,5,the Halemook Find,,,,,,,,,
+6,1150,discovery,8,the Wexbraverby Find,,,,,,,,,
 7,1175,refinery_founded,5,,,,,,,,,,
 7,1175,succession,,Cramhold,,crown,,,,,,true,2
 7,1175,drought,5,the Drought of 1175,,,,,,,,,

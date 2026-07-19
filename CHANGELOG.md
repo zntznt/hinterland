@@ -1,6 +1,27 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v50** (after the rising B8): liberation is a distribution, not a verdict
+  (issue #130, §3.2 revolts row). A won rising used to resolve to a single verdict —
+  the town goes Free, keeps what it makes, its charters burn. B8 makes the **won
+  outcome a DISTRIBUTION** that forks against the freed town's **own fundamentals**:
+  a town of **suppressed potential** — real artifice, an economic base the tolls and
+  the charter throttled, a reach held down — **BOOMS** when the manor burns (its `A`
+  and population surge, people flock to the Free town from the tolled country around
+  it); a town **propped up** by the magnates' capital and the garrison's order
+  **STARVES** when both flee (the works go dark, the skilled leave, `A` and population
+  fall). World noise so two towns of the same fundamentals can still fork (the §3.5
+  verdict). Crushed and averted arms are unchanged. New `arc` on the won revolt event
+  (`flourished` | `starved`) and a `won_arc` region column; the **consumers learn both
+  arcs** — the chronicle narrates the Free that flourished vs the Free that starved,
+  the epithet forks (`the Free` / `the Famished`), and the turning-point prose closes
+  on which fate the rising bought. The **retention act's** old sibling — the freed
+  town — now has its own two-sided story. Measured across a 40-world `ris-*` sweep:
+  13 risings flourished, 21 starved — both present at frequency (pinned floor). The
+  arc is no label: the freed town's artifice ends a median 57 where it flourished and
+  24 where it starved. `schema_version` 49→50; `won_arc` reset at the founding for
+  stage-3 purity; declared fixture regeneration. The G5 adversarial revolt-consumer
+  audit (crushedIdx, epithets, turning prose) re-audited for the two new won-arms.
 - **v49** (reform long edges B7): every mercy can curdle, every levy can build
   (issue #129, §3.2 reforms row + §3.6 debt conditionality). Under V1 a reform just
   damped a term and only the granary moved coin down. B7 gives **every measure a

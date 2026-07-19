@@ -26,7 +26,7 @@ The rivers are crossed at Nettle Bridge and Melwor Bridge; everywhere else the b
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Quiet Years** (1000–1050), when the gap narrowed, **the Age of the Gates** (1075–1100), when the gap held, **the Quiet Years** (1125–1150), when the gap held and **the Age of the Gates** (1175–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Quiet Years** (1000–1025), when the gap narrowed, **the Restoration** (1050–1100), when the gap widened, **the Quiet Years** (1125–1150), when the gap narrowed and **the Age of the Gates** (1175–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1025.** In this year the magnates took the gate at Merow Strand — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the toll was posted by winter.
 
@@ -44,7 +44,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1100.** The seat, chastened by the years behind it, decreed the Crown Granary: a levy on the fat years and bread in the lean ones — the first decree in the realm's history to move coin downhill. The chronicle notes that it took a wound to buy a mercy.
 
-**Year 1100.** Vaskalgrelk rose. The wardline broke before the mob — and the mob held. Vaskalgrelk keeps what it makes now, and its gates toll no one; the ledgers record it as a dangerous precedent, and the town records it as the first good year. The people keep the date as the Vaskalgrelk Rising.
+**Year 1100.** Vaskalgrelk rose. The wardline broke before the mob — and the mob held. Vaskalgrelk keeps what it makes now, and its gates toll no one. But liberty is not bread: the magnates' capital fled with the magnates, the works it had funded went dark, and the skilled followed the money out. The Free town starved — the chronicle records that the injustice was real and the freedom was too, and that neither fed anyone. The people keep the date as the Vaskalgrelk Rising.
 
 **Year 1125.** The Dominion's sails stood off Merow Strand at first light, and by winter its writ ran over 2 regions. There was no war to record: the fleet was the argument. The quays now toll for a power beyond the sea, the yield of the occupied country is assessed at the water, and the wires came with the garrison — the first country in the realm to be wired entire, because its cargo is wanted elsewhere. The Dominion's own registers file it as the Landing at Merow Strand.
 
@@ -84,7 +84,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1250.** Fortune turned at Merow Strand: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Merow Strand Find.
 
-The chronicle closes its count of the years with the names they left behind. The realm now speaks of Kharruk Tor the Hollow, Merow Strand the Yoked, Folden the Yoked, Vaskalgrelk the Free and Mermerby the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
+The chronicle closes its count of the years with the names they left behind. The realm now speaks of Kharruk Tor the Hollow, Merow Strand the Yoked, Folden the Yoked, Vaskalgrelk the Famished and Mermerby the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
 
 ## The State of the Realm — year 1250
 

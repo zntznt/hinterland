@@ -72,7 +72,7 @@
       marshes, Water-Rot downstream, Grey Breath elsewhere). The
       chronicle files each event under its given name.
     - EPITHETS: towns earn DERIVED bynames — the Yoked / the Unyoked /
-      the Free / the Gilded / the Ashen / the Hollow / the Mourning /
+      the Free / the Famished / the Gilded / the Ashen / the Hollow / the Mourning /
       the Rising — first match wins, most towns never earn one (26%
       do). Exactly recomputable from the exported columns and events;
       the chronicle closes The Years with the byname roll. Society
@@ -1328,7 +1328,7 @@
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 49;
+    const SCHEMA_VERSION = 50;
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     // B6 (#128): tariffs fund the bridges. A held crossing that still collects a real
@@ -3645,6 +3645,7 @@
         reg.crossFriction = 0;           // B6 (#128): the founding roads are whole — reset BEFORE
                                          // income() reads it below, or an in-page re-run would choke
                                          // the founding wealth with the LAST run's rotted spans (purity)
+        reg.wonArc = null;               // B8 (#130): no town is Free at the founding (stage-3 purity)
         // B1 (#123): the artifice index A — command of magically-enabled
         // productivity (machinery, trained hands, licensed workings). Founding A
         // is the developed base: refining works and the trained core lift it,
@@ -5101,11 +5102,31 @@
               freeTownIdx = ri;                       // tolls no one, ever again
               reg.retention = 100;                    // keeps what it makes
               { const _es0 = reg.eliteShare; reg.eliteShare = Math.max(8, reg.eliteShare - 25); reg.eliteCatDelta += reg.eliteShare - _es0; } // the charters burn with the manor (B5: catastrophe ledger)
-              reg.wealth = clamp(reg.wealth + 10, 0, 100);
-              if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
               holdings.forEach(h => { if (h.regionIdx === ri) { h.heldBy = "none"; h.ref.heldBy = "none"; } });
               reg.occupied = false; // liberation: the factors are thrown into the harbor
               tollScale *= 0.7;                       // fear spreads: every holder softens
+              // B8 (#130): LIBERATION IS A DISTRIBUTION, NOT A VERDICT. The won rising
+              // resolves against the freed town's OWN fundamentals. A town of suppressed
+              // POTENTIAL — real artifice, an economic base, a reach the tolls and the
+              // charter throttled — BOOMS when the manor burns: the capacity releases,
+              // and people flock to the free town. A town PROPPED UP by the magnates'
+              // capital and the garrison's order STARVES when both flee: the works go
+              // dark, the skilled leave, and freedom is a hungry thing. World noise so
+              // two towns of the same fundamentals can still fork (the §3.5 verdict).
+              const potential = reg.A + 0.5 * reg.E + 0.4 * reg.centrality + (reg.refining > 0 ? 25 : 0) + (rV() * 2 - 1) * 30;
+              const flourished = potential >= 66;
+              if (flourished) {
+                reg.A = Math.min(100, reg.A + 18);                          // the works run free
+                reg.settlementPop = Math.round(reg.settlementPop * 1.15);   // people flock to the Free
+                reg.wealth = clamp(reg.wealth + 12, 0, 100);
+              } else {
+                reg.A = Math.max(0, reg.A - 25);                            // capital flees; the works go dark
+                reg.settlementPop = Math.max(20, Math.round(reg.settlementPop * 0.78)); // the skilled leave with it
+                reg.wealth = clamp(reg.wealth - 8, 0, 100);
+              }
+              reg.population = Math.round(reg.settlementPop * (1 + reg.rural));
+              reg.wonArc = flourished ? "flourished" : "starved";
+              if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
               reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
               if (!granaryOn && rV() < 0.5) {
                 // THE CONCESSION: the seat reads the fires on the horizon
@@ -5122,7 +5143,8 @@
             }
             reg.eventType = "revolt"; reg.eventEpoch = e + 1;
             reg.eventSeverity = 70 + Math.round(rV() * 25);
-            events.push({ epoch: e + 1, type: "revolt", region_id: reg.id, outcome: revoltWon ? "won" : "crushed" });
+            events.push({ epoch: e + 1, type: "revolt", region_id: reg.id, outcome: revoltWon ? "won" : "crushed",
+              ...(revoltWon ? { arc: reg.wonArc } : {}) }); // B8 (#130): the won rising's arc — flourished or starved
           }
         }
         // D6: the faith arrives where the suffering is — two epochs after the
@@ -5893,7 +5915,8 @@
         reg.epithet =
           (reg.occupiedEpoch !== -1 && !reg.occupied) ? "the Unyoked" :
           reg.occupied ? "the Yoked" :
-          won ? "the Free" :
+          won ? (reg.wonArc === "starved" ? "the Famished" : "the Free") : // B8 (#130): the Free that starved wears its own byname
+
           reg.eliteShare >= 80 ? "the Gilded" :
           reg.blight >= 80 ? "the Ashen" :
           reg.boomBust === "collapse" ? "the Hollow" :
@@ -6047,6 +6070,8 @@
             event_type: reg.eventType,
             event_epoch: reg.eventEpoch,
             event_severity: reg.eventSeverity,
+            won_arc: reg.wonArc || null,   // B8 (#130): a freed town's arc — "flourished" | "starved" | null
+
             bloc_changes: reg.blocChanges,
             range_shadow: reg.rangeShadow,
             is_pass: reg.isPass,
@@ -7521,12 +7546,18 @@
           else if (ev.type === "revolt") {
             const rr = model.regions.find(r => r.id === ev.region_id);
             const underDominion = rr.occupiedEpoch !== -1 && rr.occupiedEpoch < ev.epoch;
+            // B8 (#130): the won rising is a distribution — the chronicle learns its
+            // two arcs. A Free town that FLOURISHED (suppressed potential released) or
+            // one that STARVED (the fled capital and order left it hollow).
+            const wonArc = ev.arc === "starved"
+              ? ` But liberty is not bread: the magnates' capital fled with the magnates, the works it had funded went dark, and the skilled followed the money out. The Free town starved — the chronicle records that the injustice was real and the freedom was too, and that neither fed anyone.`
+              : ` And it flourished: the works the charter had throttled ran free, the artifice the tolls had taxed to the bone found its feet, and people came to the free town from the tolled country around it. Liberation released what oppression had suppressed.`;
             line = underDominion
               ? (ev.outcome === "won"
-                ? `${t.name} rose against the Dominion itself — and won. The factors were thrown into the harbor, the assessment tables burned, and the town keeps what it makes now. One region freed itself; the chronicle notes that the rest watched, and that the Dominion noted the same.`
+                ? `${t.name} rose against the Dominion itself — and won. The factors were thrown into the harbor, the assessment tables burned, and the town keeps what it makes now.${wonArc}`
                 : `${t.name} rose against the Dominion, and the imperial garrison did what imperial garrisons are kept for. The chronicle records the rising because the assessment tables do not.`)
               : (ev.outcome === "won"
-                ? `${t.name} rose. The wardline broke before the mob — and the mob held. ${t.name} keeps what it makes now, and its gates toll no one; the ledgers record it as a dangerous precedent, and the town records it as the first good year.`
+                ? `${t.name} rose. The wardline broke before the mob — and the mob held. ${t.name} keeps what it makes now, and its gates toll no one.${wonArc}`
                 : `${t.name} rose, and was put down. The garrison came after the hangings, and the injustice that caused the rising was carefully recorded and carefully unaddressed.`);
             if (ev.name) line += ` The people keep the date as ${ev.name}.`;
           }
@@ -7676,7 +7707,7 @@
           if (F.turning) {
             const y = 1000 + 25 * F.turning.epoch;
             tsent += F.turning.type === "revolt" && rev
-              ? `, and the turning point was the rising at ${town(rev.region_id).name} in ${y}${F.turning.outcome === "won" ? ", which won" : ", which was put down"}.`
+              ? `, and the turning point was the rising at ${town(rev.region_id).name} in ${y}${F.turning.outcome === "won" ? (rev.arc === "starved" ? ", which won its freedom and starved on it" : ", which won and flourished") : ", which was put down"}.` // B8 (#130): the two won-arcs
               : `, and the turning point was ${MEAS[F.turning.measure]} of ${y}.`;
           } else {
             tsent += `; no reform came, no rising came, and the loops ran unopposed.`;
@@ -7732,7 +7763,7 @@
         if (F.turning) {
           const y = 1000 + 25 * F.turning.epoch;
           lead += F.turning.type === "revolt"
-            ? ` The turning point: the revolt of ${y} — ${F.turning.outcome === "won" ? "<b>and it won</b>." : "crushed."}`
+            ? ` The turning point: the revolt of ${y} — ${F.turning.outcome === "won" ? (F.turning.arc === "starved" ? "<b>and it won, and starved</b>." : "<b>and it won, and flourished</b>.") : "crushed."}` // B8 (#130): the two won-arcs
             : F.turning.type === "reform"
             ? ` The turning point: ${MEASURES[F.turning.measure]}, ${y}.`
             : ` The turning point: reaction — ${MEASURES[F.turning.measure]}, ${y}.`;

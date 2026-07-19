@@ -2687,7 +2687,8 @@ console.log("# The naming of things E6 acceptance: the words are grown from the 
     const want =
       (p.occupied_epoch !== -1 && p.occupied === 0) ? "the Unyoked" :
       p.occupied === 1 ? "the Yoked" :
-      won ? "the Free" :
+      won ? (p.won_arc === "starved" ? "the Famished" : "the Free") : // B8 (#130): the Free that starved
+
       p.elite_share >= 80 ? "the Gilded" :
       p.blight_load >= 80 ? "the Ashen" :
       p.boom_bust === "collapse" ? "the Hollow" :
@@ -2910,13 +2911,13 @@ const prov = A1.gj.hinterland;
 // re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
 // the default carries the Concordat-era `world` block (regime chain + series), and
 // `fate` still rides provenance only when set — so a default world has no fate key.
-if (prov && prov.schema_version === 49 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+if (prov && prov.schema_version === 50 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && prov.disposal_doctrine === "concentrate" && !("fate" in prov) &&
     prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=49 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
+  ok("provenance carries schema_version=50 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await gen("#seed=&regions=&we=&wg=");
@@ -3323,6 +3324,60 @@ console.log("# Reform long edges B7 (#129): every mercy can curdle, every levy c
   if (imps.length >= 1 && imps[0].imposed_by === "creditors" && narrated)
     ok(`THE MEASURE IMPOSED (le-7): the deaf seat reformed nothing, so its creditors DEMANDED a structural adjustment (epoch ${imps[0].epoch}) — the chronicle names it a decree written in another capital, not the realm's own`);
   else fail(`imposition exhibit failed: ${imps.length} impositions, narrated ${narrated}`);
+}
+
+console.log("# After the rising B8 (#130): liberation is a distribution, not a verdict");
+
+// A won rising no longer resolves to a single verdict. It forks against the freed
+// town's OWN fundamentals: a town of suppressed potential (artifice, an economic
+// base the tolls and the charter throttled) BOOMS — the works run free, people
+// flock in; a town propped up by the magnates' capital and the garrison's order
+// STARVES — the capital flees, the works go dark. The event carries `arc`, the region
+// a `won_arc` column, and the chronicle/epithet/turning consumers learn both.
+{
+  // (i) no town is Free at the founding — the arc is what LIBERATION does, not geology
+  const g0 = (await gen("#seed=ris-0&regions=24&ep=0")).gj;
+  const anyArc = regionsOf(g0).some(f => f.properties.won_arc !== null);
+  if (g0.hinterland.schema_version === 50 && !anyArc)
+    ok(`no town is Free at the founding: won_arc null everywhere at ep=0 (liberation is a thing time does, not the map)`);
+  else fail(`founding won_arc set: anyArc ${anyArc}, schema ${g0.hinterland.schema_version}`);
+
+  // (ii) BOTH won-outcomes present across the sweep, at frequency (pinned floor).
+  // (iii) the arc is no mere label: the freed town's artifice ends HIGH where it
+  //       flourished and LOW where it starved — the works ran free, or went dark.
+  // (iv) the won_arc column matches the event arc for every freed town.
+  const N = 40;
+  let flour = 0, starv = 0, colOk = 0, colN = 0;
+  const flourA = [], starvA = [];
+  for (let i = 0; i < N; i++) {
+    const g = (await gen(`#seed=ris-${i}&regions=24&ep=10`)).gj;
+    const wons = (g.hinterland.events || []).filter(e => e.type === "revolt" && e.outcome === "won");
+    const R = regionsOf(g).map(f => f.properties);
+    for (const w of wons) {
+      const fr = R.find(r => r.region_id === w.region_id);
+      if (w.arc === "flourished") { flour++; if (fr) flourA.push(fr.artifice_index); }
+      else if (w.arc === "starved") { starv++; if (fr) starvA.push(fr.artifice_index); }
+      if (fr) { colN++; if (fr.won_arc === w.arc) colOk++; }
+    }
+  }
+  if (flour >= 5 && starv >= 8)
+    ok(`LIBERATION IS A DISTRIBUTION: of the won risings across ${N} worlds, ${flour} FLOURISHED and ${starv} STARVED — the Free that boomed and the Free that starved, both present at frequency (measured 13 / 21)`);
+  else fail(`won arcs not both present: flourished ${flour}, starved ${starv}`);
+  if (flourA.length >= 3 && starvA.length >= 3 && median(flourA) > median(starvA))
+    ok(`the arc is no label: the works ran free where it flourished (median artifice ${median(flourA)}) and went dark where it starved (${median(starvA)}) — liberation released potential or exposed its absence`);
+  else fail(`arc effect not real: flourished artifice ${flourA.length ? median(flourA) : "n/a"}, starved ${starvA.length ? median(starvA) : "n/a"}`);
+  if (colN > 0 && colOk === colN)
+    ok(`the won_arc column matches the event for every freed town (${colOk}/${colN})`);
+  else fail(`won_arc column inconsistent: ${colOk}/${colN}`);
+}
+
+// (v) the CHRONICLE learns both arcs — the Free that flourished, the Free that starved.
+{
+  const flourChron = (await gen("#seed=ris-0&regions=24&ep=10")).chron;
+  const starvChron = (await gen("#seed=ris-1&regions=24&ep=10")).chron;
+  if (flourChron.includes("flourished") && starvChron.includes("starved"))
+    ok(`the chronicle learns both won-arcs: ris-0 narrates a Free town that flourished, ris-1 one that starved — the record forks with the rising`);
+  else fail(`chronicle arc prose missing: flour ${flourChron.includes("flourished")}, starv ${starvChron.includes("starved")}`);
 }
 
 console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");

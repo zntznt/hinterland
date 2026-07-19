@@ -1,6 +1,34 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v51** (the order axis B9): safety and stagnation share a root (issue #131, §3.2
+  policing row + §3.3 order knob). A new knob, **`order`** (0 **open** ↔ 100 **police
+  state**; **50 = neutral, the old world**). High order **STILLS** the shadow and the
+  street — predation (the constabulary's `force_projection` stiffens realm-wide, ±30
+  off the midpoint), smuggling, and revolt (the bar to rise climbs) — **AND STILLS the
+  ladder**: mobility freezes, the appetite to **risk capital** dampens (the B2 invest
+  pool shrinks, so the works grow slower), and elite churn locks. Safety and stagnation
+  are the two edges of the one root: a police state is stable and can **stagnate**; an
+  open realm is dynamic and **dangerous**. The axis **retires B5's raw `occupied` churn
+  proxy** — churn now freezes with the **order LEVEL**, of which occupation is a local
+  **+50** (so an occupied region at the default order still reads order_level 100 and
+  fully freezes, byte-identical to B5; a global police state freezes everyone; an open
+  realm churns harder). Because every wiring is **scaled off the midpoint**, `order=50`
+  is a **no-op** — the default realm is untouched to the byte (only the new `order`
+  provenance field and `order_level` column move; events and chronicle are identical),
+  and every existing pin holds. The knob's **reach shows at the extremes** — the §7.2
+  knob-reach acceptance: `order`'s extremes change a **relation**, not just a magnitude.
+  New `order_level` region column (realm order + occupation's local police state) and
+  the **order/liberty lens** (A3 family); a UI slider; `schema_version` 50→51; declared
+  fixture regeneration (30/90 — only the geojson, since the dynamics are unmoved at the
+  default). Measured (16-world `ord-*` sweep, order 0 vs 100): the police state runs
+  **safer** (predation lower in ~16/16 worlds) and **more stagnant** (mobility lower in
+  ~16/16) — the two edges move together. Exhibits (pinned): **the police state stagnates**
+  — in 12/16 seeds the OPEN realm (order 0) out-grew and out-mobilized the same world
+  under a police state (order 100), e.g. `#seed=ord-1&regions=24&ep=10&order=0` vs
+  `&order=100`; **the open ground is eaten** — `#seed=ord-2&...&order=0` carries a region
+  whose predation the police state would have cut by 15+, liberty's price the unguarded
+  road.
 - **v50** (after the rising B8): liberation is a distribution, not a verdict
   (issue #130, §3.2 revolts row). A won rising used to resolve to a single verdict —
   the town goes Free, keeps what it makes, its charters burn. B8 makes the **won

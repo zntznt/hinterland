@@ -1,6 +1,40 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v47** (ordinary erosion B5): the owners' row can fall without a catastrophe
+  (issue #127, §3.2 elite-share row). Under H1 the owners' row RATCHETED UP
+  structurally and fell **only on catastrophe** (a won revolt burning the charters,
+  a refinery collapse, a plague). B5 gives it an ordinary downward edge: where the
+  **market reaches**, competition bids concentrated rents down and the owners capture
+  less of every gain — a wired, central hub does not hold a monopoly the way an
+  isolated valley does. One `rentKeep = 1 − 0.85·marketAccess` term (market access =
+  central AND on the grid) now scales BOTH the rent-capture ratchet (the toll house,
+  the works, the seam, the aerie) AND the owners' share of the town's **wealth
+  upswing** — the boom is bid toward labor where rivals compete for it, though the
+  owners still bear the whole of a bust. On top of that a standing **competition**
+  decay eats at high concentration where access is high, and **boom-churn** mints new
+  owners (rank churn without collapse) — the §3.2 "boom entry mints new owners." A
+  **police state freezes it all**: under occupation the rents are held by force, so
+  the row neither erodes nor churns (an `occupied` proxy until B9's order axis).
+  Because a **refinery collapse is a universal endgame** (extraction always depletes,
+  the works always eventually go dark), no full-length world is literally event-free —
+  so "falls without a catastrophe" is measured on the **ordinary component**, not on
+  event-absence: new `elite_ordinary_delta` (per region) / `elite_ordinary_mean`
+  (findings) read the row's move since founding with the catastrophe shocks charged
+  OUT (won-revolt −25, refinery collapse −10, plague −8, crushed-revolt +10 all
+  removed). Where the ordinary mean reads NEGATIVE, competition and churn — not a
+  shock — thinned the row. Measured across a 24-world `eo-*` sweep (regions=12 ep=10):
+  the ordinary mean falls in **6/24** worlds while its MEDIAN stays POSITIVE (+1.2) —
+  the ratchet still rules the average, the fall is the meaningful-minority INVERSION,
+  not the new rule; per-region rank_churn spans −71..+67 (climbers and fallers both).
+  The H1 class pins re-measured and held (corr(refining, elite) median 0.65, owners
+  still hold ~48% of the coin, no saturation, within-region inequality intact). New
+  `elite_ordinary_delta` column (main export) + `elite_ordinary_mean` finding;
+  `schema_version` 46→47; declared fixture regeneration. Exhibit (pinned): **the row
+  falls without a fire** — `#seed=eo-2&regions=12&ep=10`: the owners' row fell 7.9
+  points; charge out the revolt, the refinery collapse, AND the plague this world DID
+  suffer and it STILL fell (ordinary mean −2.6) — ordinary erosion, not the fires,
+  thinned the row.
 - **v46** (the disposal doctrine B4): the λ dial retired (issue #126, §3.2 spoil
   row + §3.3). The saturated "dump bias" dial — a one-way knob whose extreme just
   aimed the refinery spoil harder at the poor — becomes a three-way **disposal

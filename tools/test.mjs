@@ -2910,13 +2910,13 @@ const prov = A1.gj.hinterland;
 // re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
 // the default carries the Concordat-era `world` block (regime chain + series), and
 // `fate` still rides provenance only when set — so a default world has no fate key.
-if (prov && prov.schema_version === 47 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+if (prov && prov.schema_version === 48 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && prov.disposal_doctrine === "concentrate" && !("fate" in prov) &&
     prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=47 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
+  ok("provenance carries schema_version=48 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await gen("#seed=&regions=&we=&wg=");

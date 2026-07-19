@@ -3637,6 +3637,9 @@
         reg.occupiedEpoch = -1;          // (stage-3 purity: re-runs must not leak)
         reg.effWaterAccess = reg.waterAccess; // founding: no bloc has priced anyone out yet
         reg.waterDenial = 0;             // (stage-3 purity: the epoch loop's denial must not leak)
+        reg.crossFriction = 0;           // B6 (#128): the founding roads are whole — reset BEFORE
+                                         // income() reads it below, or an in-page re-run would choke
+                                         // the founding wealth with the LAST run's rotted spans (purity)
         // B1 (#123): the artifice index A — command of magically-enabled
         // productivity (machinery, trained hands, licensed workings). Founding A
         // is the developed base: refining works and the trained core lift it,

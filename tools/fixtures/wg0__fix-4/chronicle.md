@@ -8,7 +8,7 @@ In the beginning of this record the realm counted 12 settled regions, and Ulvere
 
 No charter drew the towns to size. The centuries did: good land compounded, the fairs drew the valleys in, and by year 1000 the largest town held 11,733 souls to the median town's 3,278 — a hierarchy grown, not granted, and steeper every century the compounding ran.
 
-The works at Ulvere turned aetherstone to lumen, and the trunk lines ran from their yards to the seat. The Temple kept holy ground at Vetheranth (by Drukdelve) — out where the sacred substance lies and the Crown's writ runs thin. 6 of the realm's settlements sat off the conduit at the founding, in darkness: connected by road — everything is connected by road — but unserved, because the ledgers said serving them would not pay.
+The works at Ulvere turned aetherstone to lumen, and the trunk lines ran from their yards to the seat. The Temple kept holy ground at Vetheranth (by Drukdelve) — out where the sacred substance lies and the Crown's writ runs thin. 5 of the realm's settlements sat off the conduit at the founding, in darkness: connected by road — everything is connected by road — but unserved, because the ledgers said serving them would not pay.
 
 No skyway was chartered in this realm: the ledgers found no lane worth the lift. The chronicle notes that even the sky is rationed by return.
 
@@ -28,21 +28,23 @@ The rivers are crossed at Gnarmere Bridge and Birchstead Bridge; everywhere else
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Quiet Years** (1000–1050), when the gap widened, **the Restoration** (1075–1125), when the gap widened and **the Quiet Years** (1150–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Quiet Years** (1000–1025), when the gap narrowed, **the Restoration** (1050–1150), when the gap widened and **the Quiet Years** (1175–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1025.** In this year the magnates took the gate at Ulvere — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the toll was posted by winter.
 
-**Year 1025.** The rains failed over Tazzundrok Strand, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1025.
+**Year 1025.** The rains failed over Irisariel Strand, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1025.
 
-**Year 1025.** In this year the sickness came to Faelaine Strand, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Grey Breath of 1025.
+**Year 1025.** In this year the sickness came to Irisariel Strand, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Ash Fever of 1025.
+
+**Year 1025.** In this year the sickness came to Lowenne, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Grey Breath of 1025.
+
+**Year 1025.** In this year the sickness came to Evenbriar Weald, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Long Cough of 1025.
 
 **Year 1050.** The Dominion's sails stood off Ulvere Harbor at first light, and by winter its writ ran over 3 regions. There was no war to record: the fleet was the argument. The quays now toll for a power beyond the sea, the yield of the occupied country is assessed at the water, and the wires came with the garrison — the first country in the realm to be wired entire, because its cargo is wanted elsewhere. The Dominion's own registers file it as the Landing at Ulvere.
 
 **Year 1050.** Fortune turned at Ulvere: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Ulvere Find.
 
 **Year 1050.** In this year the sickness came to Birchstead, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the River Fever of 1050.
-
-**Year 1050.** In this year the sickness came to Evenbriar Weald, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Ash Fever of 1050.
 
 **Year 1075.** The old Sovereign died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Evere took the seat, over objections not all of which were buried with their holders.
 
@@ -54,7 +56,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1075.** The seat answered fear with fists: the tolls rose by decree — the gates' holders had paid for their privileges, and the seat had debts. The chronicle records no debate.
 
-**Year 1075.** The Temple came to Faelaine Strand, to the ground of its suffering, and consecrated it as Ilmar. Pilgrims walk that road now. Where the Crown's writ had failed and the magnates' ledgers saw nothing worth the ink, the faith planted its standard — after the harm, claiming the ground.
+**Year 1075.** The Temple came to Irisariel Strand, to the ground of its suffering, and consecrated it as Delle. Pilgrims walk that road now. Where the Crown's writ had failed and the magnates' ledgers saw nothing worth the ink, the faith planted its standard — after the harm, claiming the ground.
 
 **Year 1100.** In this year the refinery at Ulvere closed its yards for good. What the ore had built, the ore's end unbuilt; the town kept its wires and lost its wages.
 
@@ -74,7 +76,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1150.** The old First Magnate died, and Gnarrothrak took the chair without incident — which the chronicle records precisely because it is rare.
 
-**Year 1150.** The rains failed over Lowenne, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1150.
+**Year 1150.** The rains failed over Irisariel Strand, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1150.
 
 **Year 1150.** The ground moved under Durtash Delf, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Durtash Delf Quake.
 
@@ -88,13 +90,13 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1250.** The god's fortune rose at Drukdelve, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Drukdelve.
 
-The chronicle closes its count of the years with the names they left behind. The realm now speaks of Drukdelve the Famished, Ulvere the Yoked, Alvengard the Hollow, Tazzundrok Strand the Yoked, Birchstead the Hollow, Quill the Hollow, Lowenne the Hollow, Gnarmere the Hollow, Evenbriar Weald the Yoked, Ferrek the Hollow, Faelaine Strand the Hollow and Durtash Delf the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
+The chronicle closes its count of the years with the names they left behind. The realm now speaks of Drukdelve the Famished, Ulvere the Yoked, Alvengard the Hollow, Irisariel Strand the Yoked, Birchstead the Hollow, Quill the Hollow, Lowenne the Hollow, Gnarmere the Hollow, Evenbriar Weald the Yoked, Ferrek the Hollow, Skark Strand the Hollow and Durtash Delf the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
 
 ## The State of the Realm — year 1250
 
-Of the realm's 9 settled regions, 1 rose through the years and 8 collapsed outright.
-3 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Drukdelve, Lowenne and Durtash Delf; the roads have stopped going.
-And 5 places have come back as something else — Alvengard, Tazzundrok Strand and Gnarmere stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
+Of the realm's 10 settled regions, 1 rose through the years and 9 collapsed outright.
+2 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Drukdelve and Durtash Delf; the roads have stopped going.
+And 6 places have come back as something else — Alvengard, Irisariel Strand and Lowenne stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
 
 The Crown holds 7 regions, the Temple 3, the magnates 0; 1 are contested between them, and 1 answer to no one at all.
 
@@ -102,14 +104,14 @@ Of the realm's 4 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers the chronicle records no grievance worth the ink — this year.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 5.4 in every hundred of the realm's people hold 67 of every hundred coins, and live 35.8 times better than those who work for them. Nowhere is the ledger sharper than at Ulvere, where 92 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 46 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 5.3 in every hundred of the realm's people hold 66.6 of every hundred coins, and live 35.2 times better than those who work for them. Nowhere is the ledger sharper than at Ulvere, where 92 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 46 parts in a hundred of the whole spread.
 
 And over all of it stands the Dominion, which holds 3 regions from its foothold at Ulvere and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns; the chronicle is required to note the difference between reigning and ruling.
 
-5 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
+4 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.39 at the founding and 0.62 at the close, and the turning point was the toll crackdown of 1075. The poorest fifth of the realm carries 5.5 times the blight of the richest fifth. Behind the Dremmorrok wall, the median settlement earns 100 in the hundred less than the open country at the same remove. 5 regions sit off the conduit because the ledgers said serving them would not pay, and sickness runs 1.4 times heavier there than in the lit core. Birchstead drinks 1 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 5.4 in a hundred hold 67 of every hundred coins, and stand 35.8 times apart from the rest. The skyway would abolish 18 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 3 regions occupied, the yield assessed at the quay, the free country keeping 1 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The Dremmorrok divides even the weather: the rain falls at 58 on one side and 46 in its lee, and no one on the dry side chose the wind.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.31 at the founding and 0.59 at the close, and the turning point was the toll crackdown of 1075. The poorest fifth of the realm carries 5.3 times the blight of the richest fifth. Behind the Dremmorrok wall, the median settlement earns 100 in the hundred less than the open country at the same remove. 4 regions sit off the conduit because the ledgers said serving them would not pay. Birchstead drinks 1 points of other towns' poison for the crime of standing at the mouth. 9 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 5.3 in a hundred hold 66.6 of every hundred coins, and stand 35.2 times apart from the rest. The skyway would abolish 18 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 3 regions occupied, the yield assessed at the quay, the free country keeping 1 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The Dremmorrok divides even the weather: the rain falls at 58 on one side and 46 in its lee, and no one on the dry side chose the wind.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

@@ -56,6 +56,8 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1125.** The god's fortune rose at Thraldek Delf, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Thraldek Delf.
 
+**Year 1125.** Thraldek Delf rose, and was put down. The garrison came after the hangings, and the injustice that caused the rising was carefully recorded and carefully unaddressed. The people keep the date as the Thraldek Delf Rising.
+
 **Year 1150.** The old Hierarch died, and Sylvasse took the censer without incident — which the chronicle records precisely because it is rare.
 
 **Year 1150.** The rains failed over Gladen, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1150.
@@ -63,8 +65,6 @@ The chronicle divides these years into ages, named for what the realm was living
 **Year 1150.** The ground moved under Drelkruk, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Drelkruk Quake.
 
 **Year 1150.** A storm came off the water and stood over the coast for three days. Gladen took the worst of it, as the exposed shore always does; the Great Storm of 1150 is the name the survivors gave the year.
-
-**Year 1150.** Thraldek Delf rose, and was put down. The garrison came after the hangings, and the injustice that caused the rising was carefully recorded and carefully unaddressed. The people keep the date as the Thraldek Delf Rising.
 
 **Year 1175.** The ground moved under Drelkruk, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Drelkruk Quake.
 
@@ -80,7 +80,7 @@ The chronicle closes its count of the years with the names they left behind. The
 
 ## The State of the Realm — year 1250
 
-Of the realm's 9 settled regions, 8 held steady and 1 collapsed outright.
+Of the realm's 9 settled regions, 7 held steady, 1 declined and 1 collapsed outright.
 3 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Thraldek Delf, Drelkruk and Urtazzek; the roads have stopped going.
 And 1 place has come back as something else — Ferkul stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
 
@@ -90,12 +90,12 @@ Of the realm's 5 gates — the bridges, the passes, the quays — the Crown keep
 
 The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the magnates standing nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.9 in every hundred of the realm's people hold 40.6 of every hundred coins, and live 16.9 times better than those who work for them. Nowhere is the ledger sharper than at Gladen, where 60 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 33 parts in a hundred of the whole spread.
+And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.9 in every hundred of the realm's people hold 40.7 of every hundred coins, and live 16.8 times better than those who work for them. Nowhere is the ledger sharper than at Gladen, where 58 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 27 parts in a hundred of the whole spread.
 
 3 of the realm's settlements still sit off the conduit, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.37, and the turning point was the rising at Thraldek Delf in 1150, which was put down. The poorest fifth of the realm carries 1.7 times the blight of the richest fifth. Behind the Durnharrek wall, the median settlement earns 80 in the hundred less than the open country at the same remove. 3 regions sit off the conduit because the ledgers said serving them would not pay. Iverby drinks 5 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.9 in a hundred hold 40.6 of every hundred coins, and stand 16.9 times apart from the rest. The skyway would abolish 38.7 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.44, and the turning point was the rising at Thraldek Delf in 1125, which was put down. The poorest fifth of the realm carries 1.7 times the blight of the richest fifth. Behind the Durnharrek wall, the median settlement earns 89 in the hundred less than the open country at the same remove. 3 regions sit off the conduit because the ledgers said serving them would not pay. Iverby drinks 5 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.9 in a hundred hold 40.7 of every hundred coins, and stand 16.8 times apart from the rest. The skyway would abolish 38.7 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

@@ -11,18 +11,18 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 2,1050,settlement_abandoned,6,,,,,,,,,,
 2,1050,settlement_founded,9,,,,,,,,,,
 2,1050,drought,4,the Drought of 1050,,,,,,,,,
-2,1050,blight_plague,4,the Ash Fever of 1050,,,,,,,,,
-2,1050,blight_plague,11,the Grey Breath of 1050,,,,,,,,,
+2,1050,blight_plague,11,the Ash Fever of 1050,,,,,,,,,
 3,1075,settlement_abandoned,4,,,,,,,,,,
 3,1075,war,5,the War of 1075,,crown|magnate,,,,,,,
 3,1075,succession,,Ilmare,,temple,,,,,,false,1
 3,1075,succession,,Gharruk,,magnate,,,,,,true,1
 3,1075,drought,5,the Drought of 1075,,,,,,,,,
-3,1075,discovery,5,the Halemook Find,,,,,,,,,
+3,1075,discovery,8,the Wexbraverby Find,,,,,,,,,
+3,1075,blight_plague,5,the Grey Breath of 1075,,,,,,,,,
 3,1075,consecration,6,,,,,,,,,,
 4,1100,succession,,Crannock,,crown,,,,,,false,1
 4,1100,treaty,5,the Peace of Halemook,,crown|magnate,,crown,0,0,,,
-4,1100,discovery,5,the Halemook Find,,,,,,,,,
+4,1100,discovery,8,the Wexbraverby Find,,,,,,,,,
 4,1100,reform,,,,,crown_granary,,,,,,
 4,1100,revolt,4,the High Kellow Rising,won,,,,,,,,
 5,1125,settlement_founded,6,,,,,,,,,,
@@ -33,14 +33,14 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 6,1150,succession,,Voldrok,,magnate,,,,,,false,2
 6,1150,storm,5,the Great Storm of 1150,,,,,,,,,
 6,1150,discovery,8,the Wexbraverby Find,,,,,,,,,
-7,1175,refinery_founded,5,,,,,,,,,,
+7,1175,refinery_founded,8,,,,,,,,,,
 7,1175,succession,,Cramhold,,crown,,,,,,true,2
 7,1175,drought,5,the Drought of 1175,,,,,,,,,
 8,1200,succession,,Marielaine,,temple,,,,,,true,2
 8,1200,flood,3,the Glare Flood,,,,,,,,,
 8,1200,storm,5,the Great Storm of 1200,,,,,,,,,
-9,1225,discovery,5,the Halemook Find,,,,,,,,,
+9,1225,discovery,8,the Wexbraverby Find,,,,,,,,,
 10,1250,succession,,Dovrath,,magnate,,,,,,true,3
 10,1250,drought,5,the Drought of 1250,,,,,,,,,
 10,1250,flood,3,the Glare Flood,,,,,,,,,
-10,1250,discovery,5,the Halemook Find,,,,,,,,,
+10,1250,discovery,8,the Wexbraverby Find,,,,,,,,,

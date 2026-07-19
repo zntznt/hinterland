@@ -28,7 +28,7 @@ The rivers are crossed at Gnarmere Bridge and Gnarzek Bridge; everywhere else th
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Quiet Years** (1000–1050), when the gap widened, **the Restoration** (1075–1125), when the gap narrowed and **the Quiet Years** (1150–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Quiet Years** (1000–1050), when the gap widened, **the Restoration** (1075–1125), when the gap held and **the Quiet Years** (1150–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1025.** In this year the magnates took the gate at Ulvere — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the toll was posted by winter.
 
@@ -62,7 +62,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1100.** At the sanctioned ground by Drukdelve something of the old world stirred and broke. The Temple calls it a testing; the survivors called it otherwise. The blight of it has not faded.
 
-**Year 1100.** Drukdelve rose. The wardline broke before the mob — and the mob held. Drukdelve keeps what it makes now, and its gates toll no one; the ledgers record it as a dangerous precedent, and the town records it as the first good year. The people keep the date as the Drukdelve Rising.
+**Year 1100.** Drukdelve rose. The wardline broke before the mob — and the mob held. Drukdelve keeps what it makes now, and its gates toll no one. But liberty is not bread: the magnates' capital fled with the magnates, the works it had funded went dark, and the skilled followed the money out. The Free town starved — the chronicle records that the injustice was real and the freedom was too, and that neither fed anyone. The people keep the date as the Drukdelve Rising.
 
 **Year 1125.** The old Hierarch died, and Evane took the censer without incident — which the chronicle records precisely because it is rare.
 
@@ -88,7 +88,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1250.** The god's fortune rose at Drukdelve, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Drukdelve.
 
-The chronicle closes its count of the years with the names they left behind. The realm now speaks of Drukdelve the Free, Ulvere the Yoked, Alvengard the Hollow, Tazzundrok Strand the Yoked, Gnarzek the Hollow, Quill the Hollow, Lowenne the Hollow, Gnarmere the Hollow, Evenbriar Weald the Yoked, Ferrek the Hollow, Faelaine Strand the Hollow and Durtash Delf the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
+The chronicle closes its count of the years with the names they left behind. The realm now speaks of Drukdelve the Famished, Ulvere the Yoked, Alvengard the Hollow, Tazzundrok Strand the Yoked, Gnarzek the Hollow, Quill the Hollow, Lowenne the Hollow, Gnarmere the Hollow, Evenbriar Weald the Yoked, Ferrek the Hollow, Faelaine Strand the Hollow and Durtash Delf the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
 
 ## The State of the Realm — year 1250
 

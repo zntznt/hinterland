@@ -52,7 +52,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1100.** In the winter after the fighting, terms were set at Dunholt. The Crown wrote them: the magnates ceded nothing but its claim and kept its ledger, having little in it. The chronicle observes that the terms were written by the party with the deeper ledger, as terms usually are. The clerks copied it fair as the Peace of Dunholt.
 
-**Year 1100.** Grossvar rose. The wardline broke before the mob — and the mob held. Grossvar keeps what it makes now, and its gates toll no one; the ledgers record it as a dangerous precedent, and the town records it as the first good year. The people keep the date as the Grossvar Rising.
+**Year 1100.** Grossvar rose. The wardline broke before the mob — and the mob held. Grossvar keeps what it makes now, and its gates toll no one. And it flourished: the works the charter had throttled ran free, the artifice the tolls had taxed to the bone found its feet, and people came to the free town from the tolled country around it. Liberation released what oppression had suppressed. The people keep the date as the Grossvar Rising.
 
 **Year 1125.** The Dominion's sails stood off Morgremmok Strand at first light, and by winter its writ ran over 7 regions. There was no war to record: the fleet was the argument. The quays now toll for a power beyond the sea, the yield of the occupied country is assessed at the water, and the wires came with the garrison — the first country in the realm to be wired entire, because its cargo is wanted elsewhere. The Dominion's own registers file it as the Landing at Morgremmok Strand.
 

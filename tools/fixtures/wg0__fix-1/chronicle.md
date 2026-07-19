@@ -26,7 +26,7 @@ The rivers are crossed at Linden Bridge alone; everywhere else the banks are mar
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1025), when the gap narrowed, **the Restoration** (1050–1100), when the gap narrowed, **the Long Desolation** (1125–1150), when the gap held and **the Quiet Years** (1175–1250), when the gap narrowed. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1025), when the gap narrowed, **the Restoration** (1050–1100), when the gap narrowed, **the Long Desolation** (1125–1150), when the gap narrowed and **the Quiet Years** (1175–1250), when the gap narrowed. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
 
 **Year 1025.** In this year the sickness came to Irenneford, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Ash Fever of 1025.
 
@@ -56,7 +56,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1125.** The magnates pressed their claim on the crossing at Korgar. No blood is recorded; the ledger did the taking, and the toll did the keeping.
 
-**Year 1125.** Dunholdham rose. The wardline broke before the mob — and the mob held. Dunholdham keeps what it makes now, and its gates toll no one; the ledgers record it as a dangerous precedent, and the town records it as the first good year. The people keep the date as the Dunholdham Rising.
+**Year 1125.** Dunholdham rose. The wardline broke before the mob — and the mob held. Dunholdham keeps what it makes now, and its gates toll no one. But liberty is not bread: the magnates' capital fled with the magnates, the works it had funded went dark, and the skilled followed the money out. The Free town starved — the chronicle records that the injustice was real and the freedom was too, and that neither fed anyone. The people keep the date as the Dunholdham Rising.
 
 **Year 1175.** The god's fortune rose at Irenneford, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Irenneford.
 
@@ -78,7 +78,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1250.** The old First Magnate died, and Tremmok took the chair without incident — which the chronicle records precisely because it is rare.
 
-The chronicle closes its count of the years with the names they left behind. The realm now speaks of Korgar the Hollow, Dunholdham the Free, Glarhold the Hollow, Irenneford the Hollow, Umbere the Hollow, Linden the Hollow, Strakketh the Hollow, Astehold the Hollow, Merivelle Tor the Hollow, Carise the Hollow and Varvek the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
+The chronicle closes its count of the years with the names they left behind. The realm now speaks of Korgar the Hollow, Dunholdham the Famished, Glarhold the Hollow, Irenneford the Hollow, Umbere the Hollow, Linden the Hollow, Strakketh the Hollow, Astehold the Hollow, Merivelle Tor the Hollow, Carise the Hollow and Varvek the Hollow — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
 
 ## The State of the Realm — year 1250
 

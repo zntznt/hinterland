@@ -2907,13 +2907,13 @@ const prov = A1.gj.hinterland;
 // re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
 // the default carries the Concordat-era `world` block (regime chain + series), and
 // `fate` still rides provenance only when set — so a default world has no fate key.
-if (prov && prov.schema_version === 46 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+if (prov && prov.schema_version === 47 && prov.epochs === 0 && prov.responsiveness === 45 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && prov.disposal_doctrine === "concentrate" && !("fate" in prov) &&
     prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=46 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
+  ok("provenance carries schema_version=47 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await gen("#seed=&regions=&we=&wg=");
@@ -3105,6 +3105,69 @@ console.log("# The disposal doctrine (#126, B4): blight physics, the three regim
   }
   if (onRich >= 8) ok(`the poison on the rich: ${onRich}/24 disperse worlds put the blight on the WEALTHIEST ground (corr ≥ 0.4 — ${richSeed}); the injustice tautology is broken`);
   else fail(`blight-on-rich too rare: ${onRich}/24`);
+}
+
+console.log("# The ordinary erosion B5 (#127): the owners' row can fall without a catastrophe");
+
+// H1 makes the owners' row RATCHET UP structurally; B5 makes it fall in ORDINARY times
+// too, decoupled from the fires. `elite_ordinary_delta` is each region's move since
+// founding with the CATASTROPHE shocks charged OUT (won-revolt −25, refinery collapse
+// −10, plague −8, crushed-revolt +10 all removed); `elite_ordinary_mean` is the
+// settled-region mean. Where it reads NEGATIVE, competition-where-the-market-reaches and
+// boom-churn — not a shock — thinned the row. Measured before pinning (24-world eo-*
+// sweep, regions=12 ep=10): the ordinary mean fell in 6/24 worlds while its MEDIAN stayed
+// POSITIVE (+1.2) — the ratchet still rules the average, the fall is the meaningful
+// minority INVERSION. Per-region rank_churn spans −71..+67 (56 climbers / 67 fallers over
+// 200 regions). Pins carry a margin below the measured counts.
+{
+  const N = 24;
+  let ordFell = 0, ordFellSeed = null, bothSignsWorlds = 0;
+  const rc = []; let climbers = 0, fallers = 0;
+  for (let i = 0; i < N; i++) {
+    const g = (await gen(`#seed=eo-${i}&regions=12&ep=10`)).gj;
+    const F = g.hinterland.findings;
+    const P = regionsOf(g).map(f => f.properties).filter(r => r.is_settled);
+    if (F.elite_ordinary_mean < 0) { ordFell++; if (!ordFellSeed) ordFellSeed = `eo-${i}`; }
+    let neg = false, pos = false;
+    for (const r of P) {
+      rc.push(r.rank_churn);
+      if (r.rank_churn > 0) climbers++;
+      if (r.rank_churn < 0) fallers++;
+      if (r.elite_ordinary_delta < -2) neg = true;
+      if (r.elite_ordinary_delta > 2) pos = true;
+    }
+    if (neg && pos) bothSignsWorlds++;
+  }
+  // (a) the inversion exists at meaningful frequency (measured 6/24; pin >=3 for margin)
+  if (ordFell >= 3)
+    ok(`THE OWNERS' ROW FALLS WITHOUT A CATASTROPHE: the ordinary-erosion mean (revolt/collapse/plague charged out) reads NEGATIVE in ${ordFell}/${N} worlds — competition and boom-churn, not a shock, thin the row (${ordFellSeed})`);
+  else fail(`ordinary erosion too rare: ${ordFell}/${N}`);
+  // (b) the row moves BOTH ways in ordinary times (the elitedelta lens is two-signed)
+  if (bothSignsWorlds >= 16)
+    ok(`the owners' row moves BOTH ways in ordinary times: ${bothSignsWorlds}/${N} worlds carry regions that SHED and regions that DEEPENED the row on ordinary drift alone (elite_ordinary_delta both signs)`);
+  else fail(`elite_ordinary_delta not two-signed enough: ${bothSignsWorlds}/${N}`);
+  // (c) the rank-churn lens (A3) shows a measurable spread — climbers and fallers both
+  const rcRange = Math.max(...rc) - Math.min(...rc);
+  if (rcRange >= 60 && climbers >= 20 && fallers >= 20)
+    ok(`the rank-churn lens spreads: wealth rank moves ${Math.min(...rc)}..${Math.max(...rc)} across the sweep (${climbers} climbers, ${fallers} fallers over ${rc.length} regions) — mobility without collapse`);
+  else fail(`rank_churn spread too narrow: range ${rcRange}, ${climbers}up/${fallers}down`);
+}
+
+// EXHIBIT (pinned URL #seed=eo-2&regions=12&ep=10): the owners' row fell HARD, and it was
+// ORDINARY. This world suffered all three catastrophes — a revolt, a refinery collapse, a
+// plague — yet charge every one of them OUT and the row STILL fell: elite_ordinary_mean
+// negative on competition and churn alone. The total fell deeper than the ordinary
+// component (the shocks CUT the row further), so the ordinary mean is the honest floor:
+// even with no fires at all, these owners lost ground.
+{
+  const g = (await gen(`#seed=eo-2&regions=12&ep=10`)).gj;
+  const F = g.hinterland.findings;
+  const P = regionsOf(g).map(f => f.properties).filter(r => r.is_settled);
+  const totMean = P.reduce((a, r) => a + r.elite_delta, 0) / P.length;
+  const hadCat = (g.hinterland.events || []).some(e => ["revolt", "refinery_collapse", "blight_plague"].includes(e.type));
+  if (F.elite_ordinary_mean < 0 && hadCat && totMean < F.elite_ordinary_mean)
+    ok(`THE EXHIBIT (eo-2): the owners' row fell ${totMean.toFixed(1)} points; charge out the shocks this world DID suffer and it STILL fell (ordinary mean ${F.elite_ordinary_mean}) — ordinary erosion, not the fires, thinned the row`);
+  else fail(`eo-2 exhibit failed: ordMean ${F.elite_ordinary_mean}, tot ${totMean.toFixed(1)}, hadCat ${hadCat}`);
 }
 
 console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");

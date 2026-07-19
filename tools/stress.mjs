@@ -490,8 +490,14 @@ function validate(gj, tag) {
     // asset event); a founding is NOT (a reborn cell resets to "none" until a
     // real shock stamps it), so a founding clears the column back to none.
     const byRegion = new Map();
+    // B11 (#133): the imperial REACH events (concession, abandonment, embargo,
+    // courting) are world-scale — located at a coast but not the region's HEADLINE
+    // event_type (like the placeless court events reform/succession). They ride the
+    // events timeline and the chronicle without stamping the region's event column.
+    const REACH_EV = new Set(["concession", "abandonment", "embargo", "courting"]);
     for (const ev of evList) {
       if (ev.type === "settlement_founded") { byRegion.delete(ev.region_id); continue; }
+      if (REACH_EV.has(ev.type)) continue; // not a region headline event
       byRegion.set(ev.region_id, ev);
     }
     for (const r of regions) {

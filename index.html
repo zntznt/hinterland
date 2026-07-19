@@ -4493,7 +4493,11 @@
             if (!reg.occupied && !reg.concessionEnded && coastal && interest >= 0.40) {
               reg.concession = true; reg.concessionEpoch = e + 1;
               reg.foreignClaim = 0.5;                               // half the ore-yield repatriates
-              onGrid[i] = true;                                     // the metropole wires its concession to the sea
+              // NB: the concession is wired to the METROPOLE by sea, not force-hooked
+              // into the realm's aetherstone conduit — so it is NOT marked on_conduit
+              // (that grid is the seat's, and an enclave hookup with no trunk edge
+              // would leave a region on-grid but disconnected). Development rides the
+              // capital inflow below, not the conduit.
               reg.eliteShare = Math.min(92, reg.eliteShare + 3);    // the works' owners are its factors (comprador)
               if (!concessionFired) {
                 concessionFired = true;

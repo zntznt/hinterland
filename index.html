@@ -1487,6 +1487,37 @@
         "galliethe","halcyone","isolaire","jessamine","kyrielle","liothaine",
         "marivelle","nivienne","ophelith","perisandre","rosariel","sylvaine",
         "theonelle","valisse","yseriane","zephyrelle","irisonne","elowenne"
+      ],
+      // C1 (#134): the arcane-industrial registers — the finance houses, the
+      // administrative precincts, the papers, and the OLD faith beneath the city
+      // (the deep-magic layer the modern state paved over). All entries invented.
+      corporate: [
+        "ostrend","calmerce","vantoric","credell","solvent","marchend","ferrand","cindrel",
+        "ledren","wexort","ambrec","sterlow","corven","draymer","vallent","ryndal",
+        "prosek","halcott","mervent","ostrel","fennick","cargen","lumbrec","tressel",
+        "ordwen","vantrum","grellim","ashcred","belloc","dornex","invmark","quorren",
+        "sableco","trennask","virmont","weldcred","osterment","calvent","dravance","merchant"
+      ],
+      precinct: [
+        "wardren","sextant","belloq","cornice","mallory","verund","ordinal","prevost",
+        "cassock","mullion","ferrule","baldric","sennet","corvid","marlow","ostrey",
+        "quadran","vellum","cistern","precept","lindward","thessal","gantry","corriel",
+        "sablen","wardmoor","censwick","tribune","ostrand","mervault","cassend","bellward",
+        "corregate","vantrey","ordwick","precinct"
+      ],
+      gazette: [
+        "clarion","ledger","herald","beacon","dispatch","sentinel","courier","register",
+        "bulletin","gazette","observer","mercury","tribune","standard","vantage","lantern",
+        "argus","ensign","recorder","almanac","compass","signal","digest","chronicle",
+        "bellweather","watchword","pillar","meridian","clarence","heraldry","dispatcher","couriel",
+        "mercurel","tribunel","observ","registrel"
+      ],
+      chthonic: [
+        "ummeroth","khelvane","sythrak","ondimar","vaeloth","threnn","marrowdeep","ossuar",
+        "nyxareth","drommel","gethsemer","corvath","sablemaw","undreth","vorrigal","thessulm",
+        "grendmar","aethungr","molvane","skarn","ulvereth","dwimmer","cthonar","baelgrim",
+        "vessering","morrholt","ashunder","nethrys","umbraxle","khaldreth","syrvane","ondraxa",
+        "vaelmourn","thrennok","ossurath","drommurk"
       ]
     };
     const buildChain = (names) => {
@@ -6558,6 +6589,19 @@
           dominion: model.dominion ? { arrived_epoch: model.dominion.arrived, foothold: model.regions[model.dominion.foothold].id, occupied_n: model.regions.filter(r => r.occupied).length } : null,
           // B11 (#133): the off-map powers — the Metropole that courts by reach, the Rival it is courted against
           powers: { metropole: model.metropole, rival: model.rival, concessions: model.regions.filter(r => r.concession).length, abandoned: model.regions.filter(r => r.concessionEnded).length },
+          // C1 (#134): the arcane-industrial institutions, each named from its own
+          // register — the exchange (finance), the gazette (the record/press), the
+          // precinct (administration), and the buried power (the old faith beneath).
+          // Deterministic in the seed; novel Markov names walked from the new corpora.
+          institutions: (() => {
+            const r = streams(model.seed)("institutions"), u = new Set();
+            return {
+              exchange: markovName("corporate", r, u) + " Exchange",
+              gazette: "The " + markovName("gazette", r, u),
+              precinct: markovName("precinct", r, u) + " Precinct",
+              buried_power: markovName("chthonic", r, u)
+            };
+          })(),
           findings: getFindings(model),
           tensions: { crown_magnate: Math.round(model.tensions.crown_magnate), crown_temple: Math.round(model.tensions.crown_temple), magnate_temple: Math.round(model.tensions.magnate_temple) },
           capital: [round2(model.capPoint[0]), round2(model.capPoint[1])],
@@ -7483,7 +7527,7 @@
       const year = (e) => 1000 + 25 * e;
       const closeY = year(params.ep);
       const town = (id) => model.settlements.find(s => s.regionId === id) || { name: ((model.regions.find(r => r.id === id) || {}).placeName) || "the wild", regionId: id, tier: "none", population: 0 };
-      const tierWord = { metropolis: "the capital", city: "the hub town", "works-town": "the outpost", "frontier-post": "the holdfast" };
+      const tierWord = { metropolis: "the capital", city: "the city", "works-town": "the works-town", "frontier-post": "the frontier post" };
       const list = (xs) => xs.length <= 1 ? (xs[0] || "") :
         xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
       const compass = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"][Math.round(model.windDeg / 45) % 8];
@@ -7657,7 +7701,7 @@
           ]);
           else if (ev.type === "blight_plague") line = pick([
             `Plague took ${t.name}. The blight had sat heavy on that country for years, and when the sickness came it found a town already half-poisoned. A third of the people were carried off or fled.`,
-            `In this year the sickness came to ${t.name}, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do.`,
+            `In this year the sickness came to ${t.name}, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the count; the roads out of town do.`,
           ]) + (ev.name ? ` The roads named it ${ev.name}.` : ``);
           else if (ev.type === "relic_calamity") line = pick([
             `The relic ground by ${t.name} woke. What the old power did there is not well described in the accounts that survive, and the land it touched bears the scar still.`,
@@ -7784,7 +7828,7 @@
           }
           // D7: the years' shocks — weather, ground, discovery, and the god
           else if (ev.type === "drought") line = `The rains failed over ${t.name}, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page ${ev.name}.`;
-          else if (ev.type === "flood") line = `The river rose over ${t.name} and took the low ground with it — the fields, the founding wharves, whatever the water wanted. ${ev.name}, the accounts call it, and they do not agree on the toll.`;
+          else if (ev.type === "flood") line = `The river rose over ${t.name} and took the low ground with it — the fields, the founding wharves, whatever the water wanted. ${ev.name}, the accounts call it, and they do not agree on how many it took.`;
           else if (ev.type === "quake") line = `The ground moved under ${t.name}, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as ${ev.name}.`;
           else if (ev.type === "storm") line = `A storm came off the water and stood over the coast for three days. ${t.name} took the worst of it, as the exposed shore always does; ${ev.name} is the name the survivors gave the year.`;
           else if (ev.type === "discovery") line = `Fortune turned at ${t.name}: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as ${ev.name}.`;
@@ -8735,7 +8779,14 @@
         ["uncounted", model.regions.reduce((s, r) => s + r.uncounted, 0).toLocaleString("en-US") + " people the census misses"],
         ["epochs", (() => { const c = model.regions.reduce((m, r) => { m[r.boomBust] = (m[r.boomBust] || 0) + 1; return m; }, {}); return `${params.ep} run — ${c.boom || 0} boom / ${c.stable || 0} stable / ${c.decline || 0} decline / ${c.collapse || 0} collapse`; })()],
         ["events", model.events.length
-          ? model.events.map(ev => `e${ev.epoch}: ${ev.name && ev.name.startsWith("the ") ? ev.name : ev.type.replace("_", " ") + (ev.region_id !== undefined ? " @ #" + ev.region_id : ev.measure ? " (" + ev.measure.replace("_", " ") + ")" : ev.name ? " (" + ev.name + ")" : "")}`).join(" · ")
+          // C1 (#134): the enum DATA-keys stay stable (refinery_collapse etc.), but the
+          // readout renders them in the new register — the data is the anchor, the
+          // presentation is the skin (so no medieval word reaches the reader).
+          ? (() => {
+              const EVL = { refinery_collapse: "aetherworks collapse", refinery_founded: "aetherworks founded", toll_amnesty: "tariff amnesty", toll_crackdown: "tariff crackdown", conduit_boom: "grid boom" };
+              const lab = (k) => EVL[k] || k.replace("_", " ");
+              return model.events.map(ev => `e${ev.epoch}: ${ev.name && ev.name.startsWith("the ") ? ev.name : lab(ev.type) + (ev.region_id !== undefined ? " @ #" + ev.region_id : ev.measure ? " (" + lab(ev.measure) + ")" : ev.name ? " (" + ev.name + ")" : "")}`).join(" · ");
+            })()
           : "none — a quiet age"],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
         ["the owners", (() => { const FR = getFindings(model); return FR.owners ? `${FR.owners.pop_pct}% of people hold ${FR.owners.coin_pct}% of the coin` : "\u2014"; })()],
@@ -8984,7 +9035,7 @@
           cur = model._seatRun.parent[cur];
           if (held.has(cur)) gates.push(`${(model.settlements.find(s => s.regionId === model.regions[cur].id) || {name: model.regions[cur].placeName || "the gate"}).name} (${held.get(cur)})`);
         }
-        if (gates.length) L.push(`<div class="insp-sec">THE ROAD TO THE SEAT</div><div class="insp-ev">pays at ${gates.join(", ")}</div>`);
+        if (gates.length) L.push(`<div class="insp-sec">THE ROAD TO THE CAPITAL</div><div class="insp-ev">pays at ${gates.join(", ")}</div>`);
       }
       const evs = model.events.filter(ev => ev.region_id === reg.id);
       if (evs.length || reg.occupiedEpoch !== -1) {

@@ -34,7 +34,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1025.** Politics in a capital Korgar had never seen closed the sea lanes to it. the Kestrel Powers's quarrel with the Metropole became Korgar's ruin: the quays that had grown a second fortune on foreign trade stood idle, the cargoes did not come, and the coast that had rivalled the capital busted in a single year. The gap the trade had opened closed the hard way.
 
-**Year 1025.** In this year the sickness came to Forby, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Grey Breath of 1025.
+**Year 1025.** In this year the sickness came to Forby, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the count; the roads out of town do. The roads named it the Grey Breath of 1025.
 
 **Year 1050.** A storm came off the water and stood over the coast for three days. Korgar took the worst of it, as the exposed shore always does; the Great Storm of 1050 is the name the survivors gave the year.
 

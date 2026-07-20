@@ -36,11 +36,11 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1025.** The rains failed over Irisariel Strand, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1025.
 
-**Year 1025.** In this year the sickness came to Irisariel Strand, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Grey Breath of 1025.
+**Year 1025.** In this year the sickness came to Irisariel Strand, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the count; the roads out of town do. The roads named it the Grey Breath of 1025.
 
-**Year 1025.** In this year the sickness came to Lowenne, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Long Cough of 1025.
+**Year 1025.** In this year the sickness came to Lowenne, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the count; the roads out of town do. The roads named it the Long Cough of 1025.
 
-**Year 1025.** In this year the sickness came to Evenbriar Weald, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Long Cough of 1025.
+**Year 1025.** In this year the sickness came to Evenbriar Weald, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the count; the roads out of town do. The roads named it the Long Cough of 1025.
 
 **Year 1050.** Fortune turned at Ulvere: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Ulvere Find.
 
@@ -50,7 +50,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1075.** A storm came off the water and stood over the coast for three days. Ulvere took the worst of it, as the exposed shore always does; the Great Storm of 1075 is the name the survivors gave the year.
 
-**Year 1075.** In this year the sickness came to Quill, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Long Cough of 1075.
+**Year 1075.** In this year the sickness came to Quill, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the count; the roads out of town do. The roads named it the Long Cough of 1075.
 
 **Year 1075.** The capital answered fear with fists: the tariffs rose by decree — the gates' holders had paid for their privileges, and the capital had debts. The chronicle records no debate.
 

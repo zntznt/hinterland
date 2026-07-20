@@ -3615,6 +3615,55 @@ console.log("# Imperial reach B11 (#133): the empire mostly never comes, it buys
   else fail(`gazette silent on the powers: has-row ${/the powers/.test(info)}, metropole ${info.includes(pwG.metropole)}, rival ${info.includes(pwG.rival)}`);
 }
 
+console.log("# The re-skin C1 (#134): the arcane-industrial register + new name registers");
+{
+  // (i) the new NAME REGISTERS produce plausible, NOVEL names across 10 seeds — the
+  //     exchange (corporate), the gazette (press), the precinct (administration), and
+  //     the buried power (chthonic), each Markov-walked from its own invented corpus.
+  const seen = { exchange: new Set(), gazette: new Set(), precinct: new Set(), buried_power: new Set() };
+  let plausible = true, bad = null;
+  for (let i = 0; i < 10; i++) {
+    const inst = (await gen(`#seed=reg-${i}&regions=24&ep=10`)).gj.hinterland.institutions;
+    if (!inst) { plausible = false; bad = `seed reg-${i}: no institutions block`; break; }
+    for (const k of ["exchange", "gazette", "precinct", "buried_power"]) {
+      const v = inst[k];
+      if (typeof v !== "string" || !/^[A-Z][A-Za-z' -]{2,27}$/.test(v)) { plausible = false; bad = `seed reg-${i} ${k}: "${v}"`; break; }
+      seen[k].add(v);
+    }
+    if (!plausible) break;
+  }
+  const varied = Object.values(seen).every(s => s.size >= 5); // novel walks, not a constant
+  if (plausible && varied)
+    ok(`the new name registers produce plausible NOVEL names across 10 seeds: e.g. exchange "${[...seen.exchange][0]}", gazette "${[...seen.gazette][0]}", precinct "${[...seen.precinct][0]}", buried power "${[...seen.buried_power][0]}" (each register ≥5 distinct over 10 seeds)`);
+  else fail(`name registers off: ${bad || "too few distinct — " + Object.entries(seen).map(([k, s]) => k + " " + s.size).join(", ")}`);
+
+  // (ii) NO OLD-REGISTER VOCABULARY survives in USER-FACING output — the clean break
+  //      (schema 54) means the rendered record + readout speak only the new register.
+  //      Grep the chronicle, the info table, and the findings panel across a sweep for
+  //      the medieval words. (The site_character values "outpost"/"works" and internal
+  //      enum data-keys like refinery_collapse are DATA, not user-facing strings, and
+  //      are deliberately out of scope — the acceptance pins user-facing strings.)
+  const FORBIDDEN = /\b(seat|tolls?|tolled|conduit|garrisons?|wardline|refiner(?:y|ies)|holdfast)\b|\bthe works\b/i;
+  let clean = true, hit = null;
+  for (let i = 0; i < 8; i++) {
+    const R = await gen(`#seed=skin-${i}&regions=24&ep=10`, true);
+    const surfaces = [
+      R.chron,
+      R.doc.getElementById("info") ? R.doc.getElementById("info").textContent : "",
+      R.doc.getElementById("findingsText") ? R.doc.getElementById("findingsText").textContent : "",
+    ];
+    R.window.close();
+    for (const s of surfaces) {
+      const m = s.match(FORBIDDEN);
+      if (m) { clean = false; hit = `seed skin-${i}: "${m[0]}" — …${s.slice(Math.max(0, m.index - 30), m.index + 30).replace(/\s+/g, " ")}…`; break; }
+    }
+    if (!clean) break;
+  }
+  if (clean)
+    ok(`the record speaks only the new register: no medieval vocabulary (seat / toll / conduit / garrison / wardline / refinery / holdfast / the works) survives in the chronicle, readout, or findings across 8 seeds`);
+  else fail(`old register leaked into user-facing output: ${hit}`);
+}
+
 console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");
 
 // (viii) Emergence directions: burden rises with blight, falls with reach & wealth.

@@ -38,7 +38,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1025.** The rains failed over Gorby Strand, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1025.
 
-**Year 1025.** In this year the sickness came to Ulvere, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Grey Breath of 1025.
+**Year 1025.** In this year the sickness came to Ulvere, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the count; the roads out of town do. The roads named it the Grey Breath of 1025.
 
 **Year 1050.** Fortune turned at Ulvere: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Ulvere Find.
 

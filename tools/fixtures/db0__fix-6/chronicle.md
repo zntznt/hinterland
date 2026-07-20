@@ -60,7 +60,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1125.** The aetherworks at Halemook fell silent. The fields that fed them had given all they had, and the magnates did not stay for the funeral. The trunk lines still stand there, carrying nothing.
 
-**Year 1125.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on the toll.
+**Year 1125.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on how many it took.
 
 **Year 1125.** A storm came off the water and stood over the coast for three days. Halemook took the worst of it, as the exposed shore always does; the Great Storm of 1125 is the name the survivors gave the year.
 
@@ -80,7 +80,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1200.** The old Hierarch died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Marielaine took the censer, over objections not all of which were buried with their holders.
 
-**Year 1200.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on the toll.
+**Year 1200.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on how many it took.
 
 **Year 1200.** A storm came off the water and stood over the coast for three days. Halemook took the worst of it, as the exposed shore always does; the Great Storm of 1200 is the name the survivors gave the year.
 
@@ -90,7 +90,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1250.** The rains failed over Halemook, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1250.
 
-**Year 1250.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on the toll.
+**Year 1250.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on how many it took.
 
 **Year 1250.** Fortune turned at Murzek: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Murzek Find.
 

@@ -1,6 +1,30 @@
 # Hinterland — the design history (newest first)
 
 **Schema history:**
+- **v54** (the re-skin C1): out of the shire, into the arcane-industrial state (issue
+  #134, §2 + §8 decision 1 — the setting pivot). A **clean versioned break**: the export
+  vocabulary renames once, no alias columns, and old exports stay readable under their old
+  `schema_version`. Column renames: `on_conduit`→`on_grid`, `conduit_access`→`grid_access`,
+  `seat_cost_ground/sky`→`capital_cost_ground/sky`, `centrality_to_seat`→
+  `centrality_to_capital`, `refining_capacity`→`aetherworks_capacity`, `toll_burden`→
+  `tariff_burden`, `wardline_strength`→`constabulary_strength`. Feature kinds: `conduit`→
+  `grid`, `garrison`→`constabulary`. Settlement tiers: `prime/hub/outpost/holdfast`→
+  `metropolis/city/works-town/frontier-post`. And every USER-FACING string moves to the new
+  register — the seat becomes **the capital**, the works/refinery the **aetherworks**, tolls
+  **tariffs**, the conduit the **grid**, the garrison the **constabulary**. Internal identifiers
+  and enum DATA-keys (event types `refinery_collapse`, era `conduit_boom`, measures
+  `toll_amnesty`) stay stable — the data is the anchor, the presentation is the skin, so the
+  readout renders them in the new register (a display-label map) while the columns keep their
+  meaning. The QGIS `.qml` styles need **no change** (they bind only non-renamed fields). New
+  **name registers** extend the Markov corpus — **corporate** (the exchanges), **precinct** (the
+  administration), **gazette** (the record/press), and **chthonic** (the old faith beneath the
+  city) — surfaced as an `institutions` provenance block (exchange / gazette / precinct / buried
+  power), deterministic per seed and novel-walked. `schema_version` 53→54; **declared fixture
+  regeneration** (all 30 cells). Acceptance tests: the new registers produce plausible NOVEL
+  names across 10 seeds; and a committed **grep test** confirms no medieval vocabulary (seat /
+  toll / conduit / garrison / wardline / refinery / holdfast / the works) survives in the
+  rendered record, readout, or findings across a sweep. Two death-toll lines reworded off the
+  word "toll" so the invariant can forbid it outright.
 - **v53** (imperial reach B11): the empire mostly never comes, it buys (issue #133,
   §3.6 — the Phase B capstone). The Dominion was a Viking: it lands, it takes tribute.
   Real contemporary empire works by **REACH**, and the fleet is the rare exception.

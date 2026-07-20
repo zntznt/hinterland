@@ -64,11 +64,11 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1175.** The old First Magnate died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Vulzar took the chair, over objections not all of which were buried with their holders.
 
-**Year 1175.** The river rose over Grothmouth and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Grothmouth Flood, the accounts call it, and they do not agree on the toll.
+**Year 1175.** The river rose over Grothmouth and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Grothmouth Flood, the accounts call it, and they do not agree on how many it took.
 
 **Year 1200.** The rains failed over Ellithielle, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1200.
 
-**Year 1200.** The river rose over Grothmouth and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Grothmouth Flood, the accounts call it, and they do not agree on the toll.
+**Year 1200.** The river rose over Grothmouth and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Grothmouth Flood, the accounts call it, and they do not agree on how many it took.
 
 **Year 1200.** The ground moved under Dhorn, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Dhorn Quake.
 
@@ -78,7 +78,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1225.** The rains failed over Ellithielle, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1225.
 
-**Year 1225.** The river rose over Grothmouth and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Grothmouth Flood, the accounts call it, and they do not agree on the toll.
+**Year 1225.** The river rose over Grothmouth and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Grothmouth Flood, the accounts call it, and they do not agree on how many it took.
 
 **Year 1225.** The ground moved under Dhorn, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Dhorn Quake.
 

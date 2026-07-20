@@ -50,7 +50,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1075.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
 
-**Year 1075.** In this year the sickness came to Halemook, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Ash Fever of 1075.
+**Year 1075.** In this year the sickness came to Halemook, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the count; the roads out of town do. The roads named it the Ash Fever of 1075.
 
 **Year 1075.** The Temple came to Santhielle, to the ground of its suffering, and consecrated it as Evalithe. Pilgrims walk that road now. Where the Crown's writ had failed and the magnates' ledgers saw nothing worth the ink, the faith planted its standard — after the harm, claiming the ground.
 
@@ -68,7 +68,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1125.** In this year the aetherworks at Halemook closed its yards for good. What the ore had built, the ore's end unbuilt; the town kept its wires and lost its wages.
 
-**Year 1125.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on the toll.
+**Year 1125.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on how many it took.
 
 **Year 1125.** A storm came off the water and stood over the coast for three days. Halemook took the worst of it, as the exposed shore always does; the Great Storm of 1125 is the name the survivors gave the year.
 
@@ -88,7 +88,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1200.** The old Hierarch died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Marielaine took the censer, over objections not all of which were buried with their holders.
 
-**Year 1200.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on the toll.
+**Year 1200.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on how many it took.
 
 **Year 1200.** A storm came off the water and stood over the coast for three days. Halemook took the worst of it, as the exposed shore always does; the Great Storm of 1200 is the name the survivors gave the year.
 
@@ -98,7 +98,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1250.** The rains failed over Halemook, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1250.
 
-**Year 1250.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on the toll.
+**Year 1250.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on how many it took.
 
 **Year 1250.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
 

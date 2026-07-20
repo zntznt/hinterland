@@ -76,7 +76,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1225.** The old First Magnate died, and Hulgrumketh took the chair without incident — which the chronicle records precisely because it is rare.
 
-**Year 1225.** The river rose over Iverby and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Iverby Flood, the accounts call it, and they do not agree on the toll.
+**Year 1225.** The river rose over Iverby and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Iverby Flood, the accounts call it, and they do not agree on how many it took.
 
 **Year 1225.** A storm came off the water and stood over the coast for three days. Gladen took the worst of it, as the exposed shore always does; the Great Storm of 1225 is the name the survivors gave the year.
 

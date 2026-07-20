@@ -36,11 +36,11 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1025.** The rains failed over Tazzundrok Strand, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1025.
 
-**Year 1025.** In this year the sickness came to Faelaine Strand, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Ash Fever of 1025.
+**Year 1025.** In this year the sickness came to Faelaine Strand, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the count; the roads out of town do. The roads named it the Ash Fever of 1025.
 
 **Year 1050.** Fortune turned at Ulvere: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Ulvere Find.
 
-**Year 1050.** In this year the sickness came to Evenbriar Weald, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Long Cough of 1050.
+**Year 1050.** In this year the sickness came to Evenbriar Weald, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the count; the roads out of town do. The roads named it the Long Cough of 1050.
 
 **Year 1075.** The old Sovereign died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Evere took the capital, over objections not all of which were buried with their holders.
 
@@ -48,7 +48,7 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1075.** A storm came off the water and stood over the coast for three days. Ulvere took the worst of it, as the exposed shore always does; the Great Storm of 1075 is the name the survivors gave the year.
 
-**Year 1075.** In this year the sickness came to Quill, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the toll; the roads out of town do. The roads named it the Ash Fever of 1075.
+**Year 1075.** In this year the sickness came to Quill, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the count; the roads out of town do. The roads named it the Ash Fever of 1075.
 
 **Year 1075.** The capital, chastened by the years behind it, decreed the Crown Granary: a levy on the fat years and bread in the lean ones — the first decree in the realm's history to move coin downhill. The chronicle notes that it took a wound to buy a mercy.
 

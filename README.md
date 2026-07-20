@@ -29,6 +29,20 @@ Client-side, one file, no build step, no backend.
   chronicle line, and the **verdict space** they populate (gap × floor ×
   growth), no single story owning it.
 
+## What this is (provenance)
+
+This is an **AI-generated project**: all code and documentation were written by
+Claude (Anthropic's AI), directed by a single author. It is a **fiction
+generator and teaching instrument**, not an empirical model — it computes
+statistics about imaginary worlds, has never been validated against real-world
+data, and has not been peer-reviewed by any domain expert. Its mechanisms are
+grounded, as far as such a project can be, in real, openly available social
+science: [docs/grounding.md](docs/grounding.md) maps every mechanism to the
+literature it draws on and states where it diverges;
+[docs/provenance.md](docs/provenance.md) states exactly what the project's
+"measurements" do and do not mean. Read those two pages before treating any
+number this generator produces as a finding.
+
 ## Your first map
 
 1. Open `index.html` (double-click works; one file, no server, no network).

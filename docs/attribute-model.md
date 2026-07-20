@@ -57,11 +57,12 @@ A third commitment was added at the pivot and governs §8:
    blades and the contingency that picks; the code never implements a verdict.
    Concentration can finance or hoard; a reform can save or rot; a rising can free
    a boomtown or starve it. Which happens is a fact about the state, not the code.
-   (Honesty note: for most of the project's history B5, the elite share, did not
-   meet this principle: common events ratcheted it up while ordinary decrements
-   were threshold-gated. The R3 re-derivation replaced that with a two-signed
-   r−g drift plus a discrete shock ledger, which is where the literature actually
-   puts the asymmetry; see [grounding.md](grounding.md) §6.)
+   (Honesty note: B5, the elite share, does not currently meet this principle:
+   common events ratchet it up while ordinary decrements are threshold-gated.
+   A re-derivation to a two-signed r−g drift plus a discrete shock ledger, which
+   is where the literature actually puts the asymmetry, is planned and tracked
+   as [issue #166](https://github.com/zntznt/hinterland/issues/166); see
+   [grounding.md](grounding.md) §6.)
 
 The single most important structural decision the design converged on, and the one
 the pivot then generalized:

@@ -46,11 +46,12 @@ value as the test target ("calibrated to measurement after implementation").
 A test written after seeing its own result cannot fail; such pins are
 **regression tripwires**, they freeze behavior, not validation of it.
 
-As of the honesty pass (2026-07, schema v55), the core mechanisms' calibration
-targets are **pre-registered** instead: `tools/targets.mjs` declares target
-ranges derived from published literature *before* any tuning run, the tuning
-aims at those ranges, and any miss is documented in
-[grounding.md](grounding.md) rather than re-targeted. This is still
+As of the honesty pass (2026-07), the core mechanisms' calibration targets
+are **pre-registered** instead: `tools/targets.mjs` declares target ranges
+derived from published literature *before* any tuning run (the runs themselves
+are deferred engine work, tracked as issues #164-#169), the tuning must aim at
+those ranges, and any miss is to be documented in [grounding.md](grounding.md)
+rather than re-targeted. This is still
 self-testing, the same author writes the targets, the code, and the tests,
 but the targets can no longer be quietly moved to wherever the output landed.
 

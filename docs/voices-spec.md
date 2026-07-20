@@ -232,11 +232,11 @@ Testable invariants for any exported world (the prototype asserts all):
   **V6 (new, the balance tripwire): across a 3-seed sample, at least two of the
      five sentiment bands on EACH side of zero are represented among oral voices,
      and ≥20% of oral sentences draw from non-grievance classes, the spec's own
-     falsifiability check that the street is not a monotone.**
+     sign-reach check that the street is not a monotone (an internal check on generated output).**
 
 ## 4. Worked examples (hand-simulated; the quality bar)
 
-Coins reuse the v1 hand-verified walks: oaths "Farrow", "Velisse"; slang "osten",
+Coins reuse the v1 walks the author read and approved: oaths "Farrow", "Velisse"; slang "osten",
 "norby"; burden "gruk". Illustrative world: towns Ostenford, Haldenmouth "the
 Ashen", Pellow Haven "the Yoked", Vellenmark; river the Melverow, the Ulverwell;
 skyway the Larkmere Lane; events the Water-Rot of 1150, the Landing at Pellow

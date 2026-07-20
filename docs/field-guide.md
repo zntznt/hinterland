@@ -1,21 +1,24 @@
 # Reading a World in Hinterland: A Field Guide
 
-Hinterland is an **instrument**, not an argument. The socioeconomic-inequality
-lens is how we *look*: where each mechanism lands, who keeps what, who bears
-what. But the **verdict is the world's, not the code's**. The engine *can*
+Hinterland is an **instrument for reading generated worlds**, not an argument,
+and not an empirical model: everything it "finds," it finds about its own
+output (see [provenance.md](provenance.md); the real literature its mechanisms
+draw on is in [grounding.md](grounding.md)). The socioeconomic-inequality lens
+is how we *look*: where each mechanism lands, who keeps what, who bears what.
+But the **verdict is the world's, not the code's**. The engine *can*
 manufacture inequality; it can also close a gap, lift a floor, or level down.
 Which it does is a fact about the seed, the knobs, and the world outside, and
-every link in the machinery can be *measured from the exported columns alone*.
+every link in the machinery can be *recomputed from the exported columns alone*.
 This guide tells you where each inequality lives as a lens, which instrument
 shows it, and which experiment isolates the mechanism from the paint.
 
 Two ways a relation can be near-universal are worth flagging up front, because
 this guide flags them: some are **definitions** (a composite is its formula) and
 some are **constructions** (the mountain shadow exists because a ridge count is
-≥ 1 by build). Those are labeled where they occur. Per the falsifiability rule,
+≥ 1 by build). Those are labeled where they occur. Per the sign-reach rule,
 a relation true in every world is either a definition or a bug, never a finding.
 Everything else can invert somewhere in seed × knob space, and the suite exhibits
-the inversion.
+the inversion, an internal property of the generator, not a test of any theory.
 
 The epistemic contract, in one paragraph: **geology is blind** (ore, terrain,
 climate, coasts are generated before any social value exists, and society knobs
@@ -33,7 +36,7 @@ a price collapse, everything wrong and be rescued by a boom.
 |---|---|---|
 | **The lenses** | "The question on the map" | one column at a time, grouped: THE SHAPE (the neutral instruments) / THE COIN / THE LAND / THE STATE / THE REACH / THE PEOPLE / … |
 | **The inspector** | click any region | the whole ledger of one place: land, coin, class rows, state, people, its named features, the gates it pays, its event history |
-| **The findings band** | above the map | this world's measured shape, every number recomputable from the export, including the de-moralized `verdict` (gap × floor × growth) |
+| **The findings band** | above the map | this world's computed shape, every number recomputable from the export, including the de-moralized `verdict` (gap × floor × growth) |
 | **The chronicle** | below the map | the same world narrated; deterministic. Quote it in citations |
 | **The counterfactual menu** | under the disposal-doctrine slider | this world DISPERSED / the FULL GRID / both, side-by-side with the as-rolled world |
 | **The scrubber** | TIME | replay the epochs: wealth, blight, class, the grid, artifice, the occupation |
@@ -112,10 +115,10 @@ the provenance `disposal_doctrine` and `sacrifice_zone`.
 *concentrate*; the counterfactual button re-runs the world **dispersed**: same
 rock, same wind, same dice, only the disposal changed. This is the pivot's
 sharpest edge: the old λ-dial *locked* blight onto the poor, and B4 retired it.
-Across the sweep `corr(blight, wealth)` now spans **both signs** (measured about
+Across the sweep `corr(blight, wealth)` now spans **both signs** (observed in the sweep at about
 −0.40 under concentrate to **+0.98** under disperse, where the poison settles on
 the industrial rich). "The blight falls on the poor" is a doctrine, not a law,
-and the gap between the two maps is that doctrine, measured.
+and the gap between the two maps is that doctrine, made visible as a number.
 **In QGIS:** export both worlds (the disperse world is one hash away) and
 difference the `blight_load` rasters.
 
@@ -236,14 +239,19 @@ eyeballing it. The export ships the two substrates the statistics need: the
 engine's own traversal `cost`) and **`findings.moran` / `findings.moran_blight`**:
 global Moran's I of `wealth` and `blight_load` over that adjacency
 (row-standardized weights, 199-permutation pseudo-p from a dedicated seeded
-substream, so the p-value is a fact of the world). Both recompute exactly from
-the exported edges + columns.
+substream, so the pseudo-p is deterministic per seed). Both recompute exactly
+from the exported edges + columns. One honesty note before using them: the
+generator's fields are produced by smoothing kernels over this same region
+graph, and smoothing induces spatial autocorrelation by construction, so a
+"significant" Moran's I here is expected, not discovered. The informative use
+is comparative (the same world under two doctrines), never a test against "no
+structure."
 
 **LISA / local Moran + Getis-Ord Gi\*** (GeoDa, or PySAL `esda`). Build
 contiguity weights from the `edge` layer (the neighbor graph the engine actually
 used), and run Local Moran on `wealth`, then on `blight_load`. Where a High-High
 blight cluster sits on a Low-Low wealth cluster, each with its p-value, *this
-world's* poison-on-the-poor is measured, not asserted, and in a world under the
+world's* poison-on-the-poor is computed, not eyeballed, and in a world under the
 disperse doctrine you may find the opposite, a blight cluster on the *rich*.
 Gi\* on `disease_burden_per_1k` finds the hotspots the healers never reach.
 
@@ -281,7 +289,7 @@ nothing, the table says so. Each mechanism is described by its **two edges**
 where it has them. The code implements both blades and the contingency; it
 never implements a verdict.
 
-| aspect | moves (both edges where they exist) | where measured |
+| aspect | moves (both edges where they exist) | where computed |
 |---|---|---|
 | ore lodes (`endowment_t0`) | resource curse, or, with artifice, its inversion; retention base; company-town class; strikes → wars | curse scatter; `value_retention`; `artifice_index`; `elite_share` init |
 | terrain ruggedness | travel cost → centrality → wealth/market; aetherworks siting | cost graph; `centrality_to_capital` |
@@ -311,7 +319,7 @@ never implements a verdict.
 | **texture that TESTIFIES:** `epithet`, `events[].name` | nothing mechanically, but both are DERIVED from the columns, so a realm of `the Yoked` is occupied, a byname roll heavy with `the Ashen` is poisoned | the byname roll at the chronicle's close is a one-line shape summary |
 
 The audit's conclusion: **every mechanical aspect of the generator feeds at
-least one measured shape**, and the handful that feed none are presentation,
+least one computed shape**, and the handful that feed none are presentation,
 listed above, on purpose. If you find a column that moves nothing and names
 nothing, file it as a bug.
 
@@ -331,8 +339,9 @@ nothing, file it as a bug.
    ruined or rescued from off the map.
 9. **Move the capital** (arm the pin): geology fixed, fates re-dealt.
 
-*Every claim in this guide is enforced by the suite and its falsifiability block
-(inversion exhibits, knob reach, verdict diversity, definition honesty), or
-printed in the [atlas](atlas.md), which is regenerated from sweeps of measured
-worlds. For why the verdict is no longer pre-written, read the
-[old thesis](old-thesis.md). Nothing here is aspiration.*
+*Every claim in this guide is enforced by the consistency suite's sign-reach
+block (inversion exhibits, knob reach, definition honesty), or printed in the
+[atlas](atlas.md), which is regenerated from sweeps of generated worlds. These
+are internal consistency checks on the generator's own output, nothing more
+([provenance](provenance.md)). For why the verdict is no longer pre-written,
+read the [old thesis](old-thesis.md).*

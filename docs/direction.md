@@ -1,18 +1,22 @@
 # Hinterland: the Instrument Pivot, direction (DECIDED, v3)
 
+*Historical design document. Written before the honesty pass (docs/provenance.md); its 'review' language meant AI self-review, and its falsifiability vocabulary refers to internal sign-reach checks on generated output, as the amended wording now states.*
+
 > Status: **DECIDED 2026-07-16**, every §8 question settled by the owner; this is
 > the working direction. It sets the largest change since the repo began:
 > Hinterland stops being an argument machine and becomes an instrument. Four
 > strands in one plan: the epistemic pivot, the setting pivot (a REGION under
 > imperial reach, arcane-industrial), the generative-prose pivot (the loom), and
-> the red-teamed REIGN + VOICES plan (G5), with the sequencing conflicts between
+> the REIGN + VOICES plan (G5, refined in an AI design pass), with the sequencing
+> conflicts between
 > them resolved. Work proceeds down the §6 ladder.
 
 ---
 
-## 0. Why: the measured indictment
+## 0. Why: the indictment, checked against the build
 
-Three complaints, all verified against the current build (schema v39 + the plate UI):
+Three complaints, all measured on the app itself, the current build (schema v39 + the
+plate UI):
 
 **The sliders don't move the relations.** A 44-world sweep (4 seeds × 11 knob
 configurations, measured through the app's own export) found: `iq` at 0 vs 100
@@ -52,10 +56,12 @@ verdict stops being pre-written.
 
 ## 1. The constitution (principles that govern every change below)
 
-- **P1: Falsifiability.** Every headline relation must be able to invert somewhere
-  in seed × knob space, and the suite must *exhibit* the inversion (see §7). A
-  finding true in 100% of worlds is either a definition (then label it as one) or a
-  bug.
+- **P1: Sign-reach (internal falsifiability).** Every headline relation must be able
+  to invert somewhere in seed × knob space, and the suite must *exhibit* the
+  inversion (see §7). What the suite exhibits is that relations can invert across
+  seed × knob space in the generator's own output; no theory about the real world is
+  being tested. A finding true in 100% of worlds is either a definition (then label
+  it as one) or a bug.
 - **P2: Double edges.** Every mechanism carries both its blades; interplay and time
   decide which cuts. No mechanism may have a hardcoded moral sign. Concentration can
   finance or hoard; a reform can save or rot; a revolt can free a boomtown or kill
@@ -200,7 +206,7 @@ consciousness is deterritorialized: the region's people increasingly think about
 talk about, and orient toward places they will never see, and the voices must show
 it (§3.4's attention column, §4's imported-coinage tier).
 
-**Why this is the falsifiability keystone:** with an exogenous world, the region can
+**Why this is the sign-reach keystone (P1):** with an exogenous world, the region can
 do everything right and be ruined by a price collapse, or do everything wrong and be
 rescued by a boom: P4 (consequence has length) at the world scale. No verdict can
 be read off the policies alone; you have to look at the data. Which is the app.
@@ -303,7 +309,7 @@ main event. The empires press on the Hinterland through:
 
 | reach mechanism | in-world form | lands on existing columns |
 |---|---|---|
-| concessions | foreign capital owns the works; profits repatriate | `retention` becomes partly a FOREIGN claim: the column is already dependency theory's "who keeps what it makes," now applied one level up |
+| concessions | foreign capital owns the works; profits repatriate | `retention` becomes partly a FOREIGN claim: the column is already dependency theory's "who keeps what it makes" (see grounding.md), now applied one level up |
 | debt + conditionality | the grid financed by imperial loans; service drains the seat; creditors DEMAND reforms | reforms arrive from outside, not only from `iq`: structural adjustment as an event class |
 | standards | ore sells only at the Concordat grade; certification fees; local variants die | market access gated on compliance |
 | culture + attention | doctrines, fashions, schooling in the imperial tongue; the young orient toward the metropole | the §3.4 attention column; §4's imported coinage; brain drain via migration |
@@ -312,7 +318,7 @@ main event. The empires press on the Hinterland through:
 | garrison / annexation | the current Dominion machinery, kept as the LIMIT case when reach fails or the ore matters enough | existing occupation columns |
 
 **The fractal reframe (nearly free, deeply clarifying):** the model already applies
-core–periphery economics to the *internal* seat–frontier axis: retention,
+core–periphery economics (see grounding.md) to the *internal* seat–frontier axis: retention,
 centrality, off-grid darkness, even a `comprador_ratio` finding. The pivot is one
 sentence: **the seat is itself somebody's periphery.** The same mechanisms, one
 level up, mostly off-map. The counting house's second edge (§3.2) sharpens
@@ -389,8 +395,9 @@ for composition*, not as fixed text.
 
 **Quality discipline:** every surface migration passes a prototype gate outside the
 app first (the G5 pattern): N samples from a real export, skeleton-masked diversity
-floors (type-token/bigram entropy with slots stripped), a human-approved fixed
-sample committed with the PR, slot audits against the export. Prose changes
+floors (type-token/bigram entropy with slots stripped), an owner-approved fixed
+sample (the project's single author) committed with the PR, slot audits against the
+export. Prose changes
 deliberately change bytes → each migration coordinates with a declared fixture
 regeneration (§6).
 
@@ -402,8 +409,9 @@ the sweep harness before pinning, per house rule.
 
 ## 5. THE REIGN + THE VOICES (G5): folded in
 
-The G5 plan is adopted as drafted (it is already red-teamed and adversarially
-reviewed), with four amendments that fit it to Parts 1–4. The full G5 text follows
+The G5 plan is adopted as drafted (it went through a further AI design pass; no
+external or expert review has occurred), with four amendments that fit it to
+Parts 1–4. The full G5 text follows
 in §5.1 as the working spec; amendments first:
 
 - **(a) Dilemmas are double-edged by construction.** "Every trade-off honest" stops
@@ -464,7 +472,7 @@ in provenance/CSV, narrate in the chronicle, and pass the suite. Schema bump to 
 §6 ladder; the *discipline* (one declared bump per behavior change) is what's
 binding.]
 
-## Architectural keys (verified in exploration)
+## Architectural keys (checked against the code during design)
 
 - `applyAttributes(topology, params, geo)` is a pure function of (geology, knobs);
   the C1 counterfactual (`updateCf`, `CF_MODES`) already re-runs alternates and
@@ -632,7 +640,8 @@ some, judged at the gate).
 **Voice tests:** determinism (same hash → identical voices); generative variety
 (across 30 sampled voices, no two paragraphs identical; measured fragment-class
 entropy above a pinned floor; skeleton-masked type-token/bigram entropy over ~200
-voices + a human-reviewed fixed sample committed with the PR); parameter reflection
+voices + an owner-approved fixed sample (the project's single author) committed with
+the PR); parameter reflection
 (high-toll regions' voices draw toll-class fragments, plagued regions mention their
 named plague; assert class presence, not exact strings); divergence law (unit-test
 of the mapping + fixed-seed ORDERING assertion: the max-legibility-gap region shows
@@ -668,9 +677,9 @@ proven OUTSIDE the app first.
   re-runs the pure stage-3 function; cannot corrupt an export by construction. DOM
   tests + Playwright walkthrough.
 
-## G5 adversarial-review findings (each must land with its fix)
+## G5 design-pass findings (AI self-critique; each must land with its fix)
 
-1. **`averted` revolt outcome ripples through 6 verified consumers**: `crushedIdx`
+1. **`averted` revolt outcome ripples through 6 checked consumers**: `crushedIdx`
    treats `!revoltWon` as crushed and would garrison a town peacefully bought off
    (exclude averted); the epithet cascade must yield no byname for averted; the
    chronicle revolt branch and both turning-point prose sites are binary won/else
@@ -680,7 +689,7 @@ proven OUTSIDE the app first.
    dependent findings (such worlds exist), but the chronicle annexation narration
    and any "annexation implies dominion"-shaped suite check must learn
    `outcome:"repelled"`. Audit before pinning.
-3. **Skipped `rIns()` draws are byte-safe** on AUTO runs only (verified: the
+3. **Skipped `rIns()` draws are byte-safe** on AUTO runs only (checked: the
    conditional draws have no later consumers); steered branches may legally differ
    in draw count. Keep the invariant test on auto runs only.
 4. **Treasury floor**: dilemma costs can drive `treasuries.crown` negative; clamp
@@ -698,7 +707,7 @@ proven OUTSIDE the app first.
 ## G5 known risks (addressed in design)
 
 - "institutions" stream order: respCoin stays pre-loop; skipped conditional draws
-  have no later consumers (verified); draw-then-branch everywhere else.
+  have no later consumers (checked); draw-then-branch everywhere else.
 - Spoilers: UI holds render until the card resolves.
 - Stale ch after seed/ep edits: ignored by design, documented in hints.
 - Counterfactuals during a reign inherit ch/fate (correct); captions say so.
@@ -733,12 +742,12 @@ phase authors content against physics a later phase replaces.
   closed one); **B0.5 the world's shape** (the 1600×1000 rectangle per §2.5;
   rides the same regeneration window as B0, before any mechanism is recalibrated
   against distances that would only change again); B1 artifice index + income scaling; B2 investment pool (banks'
-  second edge, comprador split per §3.6); B3 migration frontier term + emigration/
+  second edge, comprador split per §3.6, see grounding.md); B3 migration frontier term + emigration/
   remittances; B4 disposal doctrine (retire λ); B5 ordinary elite erosion/churn;
   B6 tariff-upkeep coupling + decay; B7 reform long edges + creditor-imposed
   measures; B8 revolt outcome distribution; B9 order axis; B10 mix
   de-collinearization + knob retirements; B11 imperial reach v1 (§3.6 table).
-  EVERY PR ships its falsifiability test (§7) and regenerates fixtures
+  EVERY PR ships its sign-reach test (§7) and regenerates fixtures
   deliberately. The old thesis must remain *reachable* (extraction worlds still
   exist); it just stops being the only world.
 
@@ -772,9 +781,11 @@ Phases B, C, D are internally reorderable at PR granularity; the hard edges are:
 A before everything; B before E (dilemma authoring); D's engine core before D's
 surfaces; the voices gate before D2.
 
-## 7. Acceptance: the falsifiability suite (the pivot's own test)
+## 7. Acceptance: the sign-reach suite (internal falsifiability, the pivot's own test)
 
-Beyond the house suite, the pivot adds a standing acceptance block:
+Beyond the house suite, the pivot adds a standing acceptance block. What this suite
+exhibits is that relations can invert across seed × knob space in the generator's
+own output; it does not test any theory about the real world:
 
 1. **Inversion exhibits.** For every headline relation, a pinned seed×knob fixture
    where it inverts: blight lands on the rich; a periphery out-grows the core; the
@@ -846,6 +857,7 @@ Beyond the house suite, the pivot adds a standing acceptance block:
 ---
 
 *Drafted from: the 44-world knob sweep + mechanism inventory (2026-07-16), the G5
-REIGN+VOICES plan (owner's draft, red-teamed), and the owner's direction: possibility
+REIGN+VOICES plan (owner's draft, refined in an AI design pass), and the owner's
+direction: possibility
 space first, arcane-industrial setting, everything generative, the inequality lens as
 the way we look, not the verdict we wrote.*

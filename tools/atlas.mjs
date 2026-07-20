@@ -65,7 +65,7 @@ for (let i = 0; i < N; i++) {
       R.find(r => r.region_id === e.region_id && r.occupied_epoch !== -1)),
     revoltWon: evs.some(e => e.type === "revolt" && e.outcome === "won"),
     turning: F.turning ? F.turning.type + (F.turning.measure ? ":" + F.turning.measure : "") : "none",
-    offShare: R.filter(r => r.on_conduit === 0).length / R.length,
+    offShare: R.filter(r => r.on_grid === 0).length / R.length,
     shadowShare: R.filter(r => r.range_shadow === 1).length / R.length,
     blightCorr: pearson(R.map(r => r.blight_load), R.map(r => r.wealth)),
     wars: evs.filter(e => e.type === "war").length,
@@ -76,7 +76,7 @@ for (let i = 0; i < N; i++) {
     consecrated: evs.some(e => e.type === "consecration"),
     maxAband: Math.max(...R.map(r => r.abandonment_index)),
     maxDownstream: Math.max(...R.map(r => r.downstream_blight)),
-    maxToll: Math.max(...R.map(r => r.toll_burden)),
+    maxToll: Math.max(...R.map(r => r.tariff_burden)),
     gateConc: gates > 0 ? Math.max(held.crown, held.temple, held.magnate) / gates : 0,
     magGates: held.magnate, templeGates: held.temple,
     treasuries: gj.hinterland.treasuries,
@@ -121,7 +121,7 @@ const rows = [
   ["off-grid share", stat("offShare")],
   ["mountain-shadow share", stat("shadowShare")], ["corr(blight, wealth)", stat("blightCorr")],
   ["events per run", stat("eventsN")], ["seizures", stat("seizures")],
-  ["max abandonment", stat("maxAband")], ["max toll burden", stat("maxToll")],
+  ["max abandonment", stat("maxAband")], ["max tariff burden", stat("maxToll")],
   ["gate concentration", stat("gateConc")],
 ];
 console.log("CALIBRATION (80 worlds, defaults, ep=10):");
@@ -163,12 +163,12 @@ const picks = [
     (w) => line(w, /drinks it clean/)],
   ["The Ghost Country", pickMax("maxAband"), "the deepest abandonment scar",
     (w) => line(w, /emptiest of the ghost country/)],
-  ["The Tolled Road", pickMax("maxToll"), "the most gate-taxed region of the sweep",
+  ["The Tariffed Road", pickMax("maxToll"), "the most gate-taxed region of the sweep",
     (w) => line(w, /did not choose the road/)],
 ];
 const lib = worlds.find(w => w.liberation);
 if (lib) picks.push(["The Town That Freed Itself", lib, "a rising won on ground the Dominion had claimed",
-  (w) => line(w, /rose against the Dominion|threw the Dominion|rose\. The wardline broke/)]);
+  (w) => line(w, /rose against the Dominion|threw the Dominion|rose\. The constabulary line broke|rose\. The wardline broke/)]);
 // B11 (#133): the reach archetypes — the empire that buys, and the one it leaves.
 const conc = worlds.filter(w => w.concN > 0 && w.concWealth !== null && w.concWealth > w.concMedian)
   .sort((a, b) => (b.concWealth - b.concMedian) - (a.concWealth - a.concMedian))[0];
@@ -181,7 +181,7 @@ if (aband) picks.push(["The Abandoned Coast", aband, "courted, developed, then l
 let md = `# The Hinterland Atlas
 
 A calibration sweep of **${N} worlds** (default knobs, 24 regions, 10
-epochs, schema v53) measured end-to-end, and the archetypal extremes it
+epochs, schema v54) measured end-to-end, and the archetypal extremes it
 found. Every world below is one click away — the seed and knobs live in
 the URL hash — and every quotation is the world describing itself (the
 chronicle is deterministic: you will find the same words). For HOW to
@@ -239,16 +239,16 @@ md += `## Laboratory worlds
 
 Knob extremes for the classroom — each isolates one mechanism:
 
-- **The physics baseline** ([db=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&db=0)): no dumping policy — the blight stays at the works and the centers eat their own waste; compare its blight–wealth correlation against the default and the gap is the policy share of the injustice.
-- **The connected realm** ([gt=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&gt=0)): the conduit reaches everyone; darkness as a *choice* becomes visible by its absence.
+- **The physics baseline** ([db=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&db=0)): no dumping policy — the blight stays at the aetherworks and the centers eat their own waste; compare its blight–wealth correlation against the default and the gap is the policy share of the injustice.
+- **The connected realm** ([gt=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&gt=0)): the grid reaches everyone; darkness as a *choice* becomes visible by its absence.
 - **The rationed realm** ([gt=90](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&gt=90)): the ledgers barely say yes to anyone.
 - **The old diagram** ([wg=100, rest 0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&we=0&wf=0&wt=0&wg=100)): wealth as a pure capital-distance gradient — the explicit model this project began with, kept reachable as a control.
 - **The emergent economy** ([wg=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&wg=0)): no authored gradient at all; everything wealth does, it learned from the ground.
-- **The deaf seat** ([iq=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&iq=0)) vs **the listening seat** ([iq=100](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&iq=100)): the same wounds, answered with fists or with mercies — on matched seeds the listening seat runs a measurably lower gini, because the granary hangs on the seat's ear.
-- **The sealed realm** ([hb=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&hb=0)): the quays closed by decree — no sea trade, no port tolls, and no door for the Dominion. The price is smaller than the safety, and that asymmetry is a finding about what this economy is made of.
+- **The deaf capital** ([iq=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&iq=0)) vs **the listening capital** ([iq=100](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&iq=100)): the same wounds, answered with fists or with mercies — on matched seeds the listening capital runs a measurably lower gini, because the granary hangs on the capital's ear.
+- **The sealed realm** ([openness=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&openness=0)): the quays closed by decree — no sea trade, no port tariffs, and no door for the Dominion. The price is smaller than the safety, and that asymmetry is a finding about what this economy is made of.
 - **Both mercies** ([db=0&gt=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&db=0&gt=0)): no dumping and a universal grid at once — the nearest thing this engine has to a just policy regime, run on the same rock as everything above.
 
-*Generated from the calibration sweep (schema v53); regenerate with the
+*Generated from the calibration sweep (schema v54); regenerate with the
 suite's atlas script (node --max-old-space-size=8192 atlas.mjs).*
 `;
 writeFileSync(new URL("../docs/atlas.md", import.meta.url), md);

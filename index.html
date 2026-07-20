@@ -7540,7 +7540,7 @@
       const reigning = (crownLine[crownLine.length - 1] || {}).name || "an unnamed regent";
       L.push(`*The world called "${params.seed}", as set down at ${model.capitalName} in the year ${closeY}, in the reign of ${reigning}.*`);
       L.push(``);
-      L.push(`## The Founding — year 1000`);
+      L.push(`## The Founding, Year 1000`);
       L.push(``);
       const n = model.regions.length;
       // founding works: today's refineries, minus the mid-run foundings, plus the collapsed
@@ -7550,46 +7550,46 @@
       const consIds = new Set(model.events.filter(ev => ev.type === "consecration").map(ev => ev.region_id));
       const shrines0 = model.sanctionedSites.filter(s => !consIds.has(s.regionId));
       const dark0 = model.epochSnaps[0].onGrid.filter(v => !v).length;
-      L.push(`In the beginning of this record the realm counted ${n} settled regions, and ${model.capitalName} held the capital. ` +
-        `The wind stood out of the ${compass}, as it does in that country, and everything else followed from the ground: ` +
-        `where the aetherstone lay, where the land would carry a road, and where it would not.`);
+      L.push(`This record covers a realm of ${n} settled regions, with its capital at ${model.capitalName}. ` +
+        `The wind comes from the ${compass}. Most of what follows was set by the ground itself: ` +
+        `where the aetherstone lies, where the land will carry a road, and where it won't.`);
       {
         const pops = model.regions.map(r => r.popT0).sort((a, b) => b - a);
         const medP = pops[Math.floor(pops.length / 2)];
         L.push(``);
-        L.push(`No charter drew the towns to size. The centuries did: good land compounded, the fairs drew the valleys in, and by year 1000 the largest town held ${pops[0].toLocaleString("en-US")} souls to the median town's ${medP.toLocaleString("en-US")} — a hierarchy grown, not granted, and steeper every century the compounding ran.`);
+        L.push(`No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held ${pops[0].toLocaleString("en-US")} people to the median town's ${medP.toLocaleString("en-US")}. The bigger a town got, the faster it grew.`);
       }
       L.push(``);
-      L.push(`The aetherworks at ${list(works0.map(id => town(id).name))} turned aetherstone to lumen, and the trunk lines ran from their yards to the capital. ` +
-        `The Temple kept holy ground at ${list(shrines0.map(s => `${s.name} (by ${town(s.regionId).name})`))} — out where the sacred substance lies and the Crown's writ runs thin. ` +
+      L.push(`The aetherworks at ${list(works0.map(id => town(id).name))} refine aetherstone into lumen, and the trunk lines run from them to the capital. ` +
+        `The Temple holds sacred ground at ${list(shrines0.map(s => `${s.name} (by ${town(s.regionId).name})`))}, out where the aetherstone lies and the Crown's authority is weak. ` +
         (dark0 > 0
-          ? `${dark0} of the realm's settlements sat off the grid at the founding, in darkness: connected by road — everything is connected by road — but unserved, because the ledgers said serving them would not pay.`
-          : `Every settlement of the realm sat on the grid at the founding — a generosity of the ledgers the chronicle does not expect to last.`));
+          ? `${dark0} settlements started off the grid: reachable by road, but with no power line, because the ledgers said wiring them wouldn't pay.`
+          : `Every settlement started on the grid. The ledgers rarely allow that, and never for long.`));
       {
         const aeries = model.regions.filter(r => r.isSkyport === 1).map(r => town(r.id).name);
         L.push(``);
         L.push(aeries.length >= 2
-          ? `In the founding charters too is the ${model.skywayName} Lane: lift-barges between ${list(aeries)}, above the walls, the fords, and every gate on the ground. ` +
-            `The lanes go where the ground is worst and the cargo richest — a lane to the easy lowland saves nothing — and passage is sold at the aerie door, at a price that is the point. ` +
-            `The road below is for everyone; the sky is not.`
-          : `No skyway was chartered in this realm: the ledgers found no lane worth the lift. The chronicle notes that even the sky is rationed by return.`);
+          ? `There is also the ${model.skywayName} Lane: lift-barges running between ${list(aeries)}, over the walls, fords, and gates below. ` +
+            `The lanes go where the ground is hardest and the cargo most valuable, and you pay to board at the aerie. ` +
+            `The road is open to everyone; the sky isn't.`
+          : `No skyway was built here — the ledgers found no lane worth the lift.`);
       }
       if (model.ridges.length) {
         const shadowN = model.regions.filter(r => r.rangeShadow === 1).length;
         const passNames = model.passes.map(p => p.name);
         L.push(``);
-        L.push(`The ${list(model.ridges.map(R => `${R.name} ${R.kind}`))} ${model.ridges.length > 1 ? "wall" : "walls"} the country, and the roads over the rock go by ${list(passNames)}. ` +
+        L.push(`The ${list(model.ridges.map(R => `${R.name} ${R.kind}`))} ${model.ridges.length > 1 ? "wall" : "walls"} off the country, and the roads across ${model.ridges.length > 1 ? "them" : "it"} go through ${list(passNames)}. ` +
           (shadowN > 0
-            ? `${shadowN} of the realm's regions lie in the mountains' shadow, on the wrong side of the wall from ${model.capitalName} — and the chronicle will show what that costs.`
-            : `By the founding's luck, no region lies beyond the wall from ${model.capitalName}; the chronicle notes that such luck is geography, not justice.`));
+            ? `${shadowN} regions sit in the mountains' shadow, cut off from ${model.capitalName} by the wall. That costs them, as the record will show.`
+            : `As it happened, no region ended up cut off from ${model.capitalName} by the wall. That was luck, not fairness.`));
       }
       for (const RV of model.rivers) {
         const head = town(model.regions[RV.chain[0]].id).name;
         const mouth = town(model.regions[RV.chain[RV.chain.length - 1]].id).name;
         L.push(``);
-        L.push(`The ${RV.name}${RV.kind === "River" ? "" : " " + RV.kind} comes down off the high ground by ${head} and runs through ${RV.chain.length} regions to the border. ` +
-          `The towns along it drink in order: ${head} drinks it clean, and ${mouth}, at the mouth, drinks whatever every town and aetherworks upstream let fall into the water. ` +
-          `The order was set by the land before anyone built anything, and no one who lives at the mouth chose it.`);
+        L.push(`The ${RV.name}${RV.kind === "River" ? "" : " " + RV.kind} runs down from the high ground by ${head} through ${RV.chain.length} regions to the border. ` +
+          `The towns drink from it in order: ${head} gets it clean; ${mouth}, at the mouth, gets whatever every town and aetherworks upstream have dumped in. ` +
+          `Nobody at the mouth chose to be last. The land decided that.`);
       }
       if (model.seaSides.length) {
         const ports = model.regions.filter(r => r.isPort === 1);
@@ -7600,14 +7600,14 @@
         });
         L.push(``);
         const chartNames = model.seaShapes.map(S => S.name).filter(Boolean);
-        L.push(`The sea lies to the ${list(model.seaSides)}${chartNames.length ? `; the charts name it ${list(chartNames)}` : ""}. ` +
+        L.push(`The sea lies to the ${list(model.seaSides)}${chartNames.length ? `, and the charts call it ${list(chartNames)}` : ""}. ` +
           (ports.length
-            ? `The realm's ${ports.length > 1 ? "gates are" : "gate is"} ${list(portBits)}: whatever the mines raise and the aetherworks refine leaves the country there, and whoever holds the quay holds the tariff. ` +
-              `Distance to the water is the realm's second lottery, drawn at the founding like the first.`
+            ? `The realm's ${ports.length > 1 ? "gates are" : "gate is"} ${list(portBits)}: everything the mines raise and the aetherworks refine leaves through ${ports.length > 1 ? "them" : "it"}, and whoever holds the quay collects the tariff. ` +
+              `How far a town sits from the water was luck, decided at the founding like everything else.`
             : (params.hb === 0
-              ? `The quays are sealed by decree: the realm trades with no one beyond the water, and no one beyond the water lands. The chronicle records the price of that safety where it falls — on every coast that might have been a gate.`
-              : `No harbor was raised at the founding; the water waits.`)) +
-          (model.maelstrom ? ` Sailors give a wide berth to the ${model.maelstrom.name}, where the sea turns on itself; no quay was ever raised in its reach.` : ``));
+              ? `The quays are sealed by decree: the realm trades with no one across the water, and no one lands. The cost of that safety falls on every coast that could have been a gate.`
+              : `No harbor was built at the founding; the coast waits.`)) +
+          (model.maelstrom ? ` Sailors keep well clear of the ${model.maelstrom.name}, where the sea turns on itself; no quay was ever built within its reach.` : ``));
       }
       if (model.ruins.length) {
         const ruinBits = model.ruins.map(r => {
@@ -7618,27 +7618,27 @@
         });
         const busiest = model.regions.reduce((a, b) => a.delverFlux >= b.delverFlux ? a : b);
         L.push(``);
-        L.push(`The old world is not gone: ${list(ruinBits)}. ` +
-          `Delvers walk the ${town(busiest.id).name} road every season, because risk is a wage where nothing else pays one; not all of them walk back, and what they carry out is sold in no sanctioned market.`);
+        L.push(`The old world is still here: ${list(ruinBits)}. ` +
+          `Delvers work the ${town(busiest.id).name} road every season, because it pays when nothing else does. Not all of them come back, and what they carry out is sold off the books.`);
       }
       if (model.freeport) {
         const t = town(model.freeport.regionId);
         L.push(``);
-        L.push(`Beyond the last writ-stone, by ${t.name}, the lawless keep a harbor of their own: ${model.freeport.name}. No charter names it, no gate charges it, and the assessors who visit do not go twice. What the realm will not carry on its books leaves the country there, and the ground around it keeps what the gates would have taken` +
-          (params.hb === 0 ? ` — and with the quays sealed by decree, the shadow gate is the only gate left working.` : `.`));
+        L.push(`Past the last boundary stone, by ${t.name}, the lawless keep their own harbor: ${model.freeport.name}. No charter lists it, no gate taxes it, and assessors who visit don't come back a second time. Anything the realm won't carry on its books leaves through here, and the ground around it keeps what the gates would have taken` +
+          (params.hb === 0 ? `. With the quays sealed by decree, this is the only working gate left.` : `.`));
       }
       if (model.sanctuary) {
         const t = town(model.sanctuary.regionId);
         L.push(``);
-        L.push(`High above the roads, by ${t.name}, stands ${model.sanctuary.name} — holy ground the Temple never consecrated and cannot forgive. It heals whoever climbs to it and asks no writ; the census does not climb at all, so the people it shelters are people the realm cannot count. Pilgrims walk to it beside the sanctioned roads, which the Temple is reminded of every festival.`);
+        L.push(`High above the roads, by ${t.name}, stands ${model.sanctuary.name}, holy ground the Temple never sanctioned and can't forgive. It heals anyone who climbs to it and asks nothing. The census never climbs that far, so the people it shelters go uncounted. Pilgrims walk to it alongside the official roads, which the Temple is reminded of every festival.`);
       }
       {
         const still = model.regions.filter(r => r.stillair === 1);
         if (still.length) {
           const bits = still.map(r => town(r.id).name);
           L.push(``);
-          L.push(`Over ${list(bits)} lies ${model.stillName}: ground where the lift-stones simply die. No aerie can be chartered there and no lane lands; elsewhere the sky is rationed by return — here it is refused outright, and no coin appeals the refusal.` +
-            (model.regions.find(r => r.isCapital).stillair === 1 ? ` The capital itself sits in the still, and so no skyway flies in this realm at all.` : ``));
+          L.push(`Over ${list(bits)} lies ${model.stillName}: ground where the lift-stones just stop working. No aerie can be built there and no lane can land. Everywhere else the sky costs money; here it isn't for sale at any price.` +
+            (model.regions.find(r => r.isCapital).stillair === 1 ? ` The capital itself sits in the still, so no skyway flies in this realm at all.` : ``));
         }
       }
       if (model.camps.length) {

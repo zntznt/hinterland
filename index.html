@@ -58,10 +58,10 @@
       GEOLOGY-BLIND to society: the same seed names the same towns under
       every knob, weight, and capital move (tested). A suffix guard
       rejects double-suffix fusions (no Astermereford).
-    - THE LAND'S KINDS: ridges are Teeth/Spine/Range/Hills by measured
-      height and span; rivers are Beck/Brook/River by length; passes are
-      Stair/Pass/Gap by crossing height (thresholds re-pinned to the
-      measured elevation quartiles: med 90, q25 83); seas are named by
+    - THE LAND'S KINDS: ridges are Teeth/Crest/Spine/Range/Wall/Ridge/Hills
+      by measured height and span; rivers are Rill/Beck/Brook/River/Water by
+      length; passes are Stair/Steps/Pass/Saddle/Gap by crossing height
+      (each still recomputes from measured terrain); seas are named by
       area — "X Sea" / "Gulf of X" / "X Deep". The top three roads take
       names from what they carry: the seat's road, the Ore Road, the
       Salt Road.
@@ -1466,7 +1466,16 @@
         "ulvermere","vannock","wexbriar","yeldham","birchstead","coldmere",
         "everwick","foxmoor","gladeholt","hartswell","ivenbrook","lindenmere",
         "millowden","nettlewick","oxenholt","pallowmere","ravensden","sorrelfield",
-        "thistlemoor","umberwell","willowmere","aldergate","dunhollow","merrifold"
+        "thistlemoor","umberwell","willowmere","aldergate","dunhollow","merrifold",
+        "brackenford","hazelmoor","brackleigh","ashenholt","rowanmere","heatherby",
+        "sedgemere","reedholt","mosswell","hollasden","elderwick","larchford",
+        "teaselmoor","mallowmere","yarrowfield","comfreymere","tansywick","vetchford",
+        "wrenholt","heronmere","otterby","badgerholt","harrowmere","mirefold",
+        "wealdmere","woldbrook","coppicewell","spinneyholt","briermoor","marlstead",
+        "dunbriar","fellmoor","mootwell","glenbriar","bramwick","gorsemere",
+        "larkholt","crakemere","ravensholt","hartmere","witherfold","pellbrook",
+        "tarnholt","umbermoor","quillfold","sorrelby","thistleford","nettlemere",
+        "foxbriar","oxenmere","lindenby","willowfold"
       ],
       frontier: [
         "kharzek","drossvar","grendhak","zarvolk","thulgar","vorruk",
@@ -1476,7 +1485,16 @@
         "grothal","varnak","hulderk","brazzek","korvask","drellok",
         "stromvar","gnarrek","thozzurn","valgrek","harrgak","zundrak",
         "ferrok","molvarn","quarzek","rukketh","dhorvek","krazzul",
-        "ulgrath","vondrek","zharkul","tremmok","goldrak","surtash"
+        "ulgrath","vondrek","zharkul","tremmok","goldrak","surtash",
+        "brokthar","dhulverk","skornak","murgruth","vraskul","grumdek",
+        "khazrok","dronkar","skelvurn","thurgak","brolzek","gnathrok",
+        "zerrvak","drumthal","karnhek","vorluk","skraddok","thulmar",
+        "grennak","dhorruk","brakvurn","zolgrath","mordrak","kravzek",
+        "thornuk","druggath","skalvek","vrundak","gharzul","belthok",
+        "korrgak","dhunvar","threggok","mulzeth","skavurn","graldek",
+        "brozzurn","khelrak","vantgrok","druzhak","gnorvek","thulzak",
+        "molgrath","serkvar","brakthul","dhargek","zurnok","kravdurn",
+        "skorvath","vulgrek","thromnak","grommurk"
       ],
       temple: [
         "santhiel","velionne","oriseth","amaranthe","calisse","therane",
@@ -1486,7 +1504,16 @@
         "tessaline","virelaine","anthiel","corvasse","delorienne","faelith",
         "galliethe","halcyone","isolaire","jessamine","kyrielle","liothaine",
         "marivelle","nivienne","ophelith","perisandre","rosariel","sylvaine",
-        "theonelle","valisse","yseriane","zephyrelle","irisonne","elowenne"
+        "theonelle","valisse","yseriane","zephyrelle","irisonne","elowenne",
+        "aurienne","cerinthe","thessarion","ophaline","seraphelle","velanthe",
+        "mariselle","orivane","lysianthe","caeliane","sithariel","novariel",
+        "elorienne","amareth","thalienne","vessorine","isolienne","ophirane",
+        "calyphine","seriane","mirialle","tessarelle","valorienne","anthelune",
+        "corialene","delvienne","faeliane","galienthe","halisorne","ilyanthe",
+        "jessarelle","kyrilane","liosanthe","marivenne","nivelaire","ostralene",
+        "perisonne","rosalienne","sylvorine","theliane","umbrienne","valisienne",
+        "yseraline","zephiriel","elowaine","avelienne","cerulaine","lorianthe",
+        "sarivelle","venthiane","myrialene","althienne"
       ],
       // C1 (#134): the arcane-industrial registers — the finance houses, the
       // administrative precincts, the papers, and the OLD faith beneath the city
@@ -1496,28 +1523,57 @@
         "ledren","wexort","ambrec","sterlow","corven","draymer","vallent","ryndal",
         "prosek","halcott","mervent","ostrel","fennick","cargen","lumbrec","tressel",
         "ordwen","vantrum","grellim","ashcred","belloc","dornex","invmark","quorren",
-        "sableco","trennask","virmont","weldcred","osterment","calvent","dravance","merchant"
+        "sableco","trennask","virmont","weldcred","osterment","calvent","dravance","merchant",
+        "brantell","drammerce","invecord","kelvort","ostravent","calvend",
+        "mercantel","vandrec","sterrend","corvenell","dravell","ferrend",
+        "lumbrend","quorrent","tressend","ambrend","valdoren","cindorec",
+        "wexerce","prosend","calmoren","vantrell","grellant","sabloren",
+        "dornant","ledroren","mervoren","halcend","carrend","weldrend",
+        "virmell","trennort","ostrecred","brammort","dravorent","kelrend",
+        "solvend","marchent","cordwent","venthorec","stannerce","brenolant",
+        "quillerce","calpherce"
       ],
       precinct: [
         "wardren","sextant","belloq","cornice","mallory","verund","ordinal","prevost",
         "cassock","mullion","ferrule","baldric","sennet","corvid","marlow","ostrey",
         "quadran","vellum","cistern","precept","lindward","thessal","gantry","corriel",
         "sablen","wardmoor","censwick","tribune","ostrand","mervault","cassend","bellward",
-        "corregate","vantrey","ordwick","precinct"
+        "corregate","vantrey","ordwick","precinct",
+        "cadrent","dennock","essary","quennard","wardock","sextule",
+        "mullent","ferrant","baldary","cassary","corvent","vellard",
+        "cistock","preceptic","ordane","tribent","quadrent","sennock",
+        "marlent","ostrix","verundic","prevary","bellent","corregen",
+        "vantule","thessic","gantrix","censard","mervard","sablock",
+        "wardule","dennard","cornock","verrent","quennock","ballent",
+        "ostrary","mullary","verdock","cadrock"
       ],
       gazette: [
         "clarion","ledger","herald","beacon","dispatch","sentinel","courier","register",
         "bulletin","gazette","observer","mercury","tribune","standard","vantage","lantern",
         "argus","ensign","recorder","almanac","compass","signal","digest","chronicle",
         "bellweather","watchword","pillar","meridian","clarence","heraldry","dispatcher","couriel",
-        "mercurel","tribunel","observ","registrel"
+        "mercurel","tribunel","observ","registrel",
+        "clariel","heraldar","dispatchel","bannerol","forecrier","sentinal",
+        "courieron","beaconel","gazettel","observon","mercuriel","tribunard",
+        "standerol","lanternel","registron","chronel","almanel","compassel",
+        "signalon","digestel","bulletel","meridiel","pillaron","watchcrier",
+        "ensignol","argusel","vantel","couriard","heraldon","clariograph",
+        "presscrier","dispatchon","clarionel","sentinol","beaconry","gazettard",
+        "observgraph","couriette","heraldette","bannergraph"
       ],
       chthonic: [
         "ummeroth","khelvane","sythrak","ondimar","vaeloth","threnn","marrowdeep","ossuar",
         "nyxareth","drommel","gethsemer","corvath","sablemaw","undreth","vorrigal","thessulm",
         "grendmar","aethungr","molvane","skarn","ulvereth","dwimmer","cthonar","baelgrim",
         "vessering","morrholt","ashunder","nethrys","umbraxle","khaldreth","syrvane","ondraxa",
-        "vaelmourn","thrennok","ossurath","drommurk"
+        "vaelmourn","thrennok","ossurath","drommurk",
+        "baelmoth","drommgrim","ossgrim","cindreth","vaelgrim","khelmoth",
+        "ummereth","nyxoloth","sythrane","ondugrim","vorreth","thessgrim",
+        "grendoth","molvareth","ulvegrim","corvimar","sablereth","undermoth",
+        "nethgrim","baeluther","drommoth","khaldmar","vessmoth","morrgrim",
+        "ashgroth","umbrareth","syrgane","thrennoth","ossureth","gethmoth",
+        "skarngrim","vaunmoth","cindgrim","vraethoth","gloamdeep","dravemoth",
+        "haldreth","murkgrim","ossvane","baelreth"
       ]
     };
     const buildChain = (names) => {
@@ -1583,17 +1639,17 @@
     // -mouth, the fens their Fen, ore country its Delf, the high country
     // its Tor. Roughly half of all places keep the plain base word.
     const PLACE_PARTS = {
-      mouth:  ["{b}mouth"],
-      river:  ["{b}ford", "{b} Ford", "{b}mere", "{b}-on-{R}"],
-      coast:  ["{b} Haven", "{b} Strand", "{b}ness"],
-      high:   ["High {b}", "{b} Crag", "{b} Fell", "{b} Tor"],
-      marsh:  ["{b} Fen", "{b}sedge"],
-      forest: ["{b}holt", "{b} Weald"],
-      ore:    ["{b} Delf", "Nether {b}", "{b}delve"],
-      hold:   ["{b}hold", "{b}gard"],
-      plain:  ["{b}"]
+      mouth:  ["{b}mouth", "{b}pool", "{b}wash", "{b} Reach", "{b} Landing", "{b}mere"],
+      river:  ["{b}ford", "{b} Ford", "{b}mere", "{b}-on-{R}", "{b}bourne", "{b} Crossing", "{b}beck", "{b} Ferry", "{b}wick"],
+      coast:  ["{b} Haven", "{b} Strand", "{b}ness", "{b} Cove", "{b}port", "{b} Point", "{b} Bight"],
+      high:   ["High {b}", "{b} Crag", "{b} Fell", "{b} Tor", "Upper {b}", "{b} Height", "{b} Scar", "Over {b}", "{b} Cairn"],
+      marsh:  ["{b} Fen", "{b}sedge", "{b} Mire", "{b}marsh", "Low {b}", "{b} Slade", "{b}reed"],
+      forest: ["{b}holt", "{b} Weald", "{b}wood", "{b} Shaws", "{b} Grove", "{b}hurst", "{b} Coppice"],
+      ore:    ["{b} Delf", "Nether {b}", "{b}delve", "{b} Lode", "{b}scar", "Deep {b}", "{b} Diggings", "{b}pit"],
+      hold:   ["{b}hold", "{b}gard", "{b} Watch", "{b}stead", "{b} Bastion", "{b}burg"],
+      plain:  ["{b}", "{b}", "{b}", "{b}ton", "{b}by"]
     };
-    const SUFFIXY = /(mere|ford|holt|wick|mouth|ness|delf|hold|gard|sedge|delve|by|moor|well|brook|field|dale|stead)$/;
+    const SUFFIXY = /(mere|ford|holt|wick|mouth|ness|delf|hold|gard|sedge|delve|by|moor|well|brook|field|dale|stead|pool|wash|bourne|beck|port|marsh|reed|wood|hurst|scar|pit|burg|ton)$/;
     const harborName = (n) => / (Haven|Strand)$/.test(n) ? n : n + " Harbor";
     // register is a landscape fact: read only from blind geology
     const nameRegister = (reg) => (reg.endowment0 >= 50 || reg.ruggedness >= 60) ? "frontier" : "lowland";
@@ -4334,7 +4390,10 @@
       // in the world seed's sibling stream, so the powers are stable per world.
       const rImp = fx("imperial");
       const POWERS = ["the Meridian Concord", "the Tashkar Compact", "the Aurean League",
-        "the Cindral Directorate", "the Vantic Crown", "the Kestrel Powers", "the Solvent States"];
+        "the Cindral Directorate", "the Vantic Crown", "the Kestrel Powers", "the Solvent States",
+        "the Ferran Concord", "the Osmark Combine", "the Calderon Accord", "the Verrant Hegemony",
+        "the Corvine League", "the Halcyon Powers", "the Ostreme Coalition", "the Peregrine States",
+        "the Sable Ascendancy", "the Drammel Consortium", "the Vantreth Imperium"];
       const mpi = Math.floor(rImp() * POWERS.length);
       let rvi = Math.floor(rImp() * (POWERS.length - 1)); if (rvi >= mpi) rvi++;
       const metropoleName = POWERS[mpi], rivalName = POWERS[rvi];
@@ -5858,14 +5917,14 @@
       geo.ridges.forEach(R => {
         R.name = markovName("frontier", sx("ridge#" + R.id), usedNames);
         const span = Math.hypot(R.pts[0][0] - R.pts[R.pts.length - 1][0], R.pts[0][1] - R.pts[R.pts.length - 1][1]);
-        R.kind = (R.maxElev >= 86) ? "Teeth" : (span >= 520) ? "Spine" : (R.maxElev >= 68) ? "Range" : "Hills";
+        R.kind = (R.maxElev >= 90) ? "Teeth" : (R.maxElev >= 80) ? "Crest" : (span >= 560) ? "Spine" : (R.maxElev >= 70) ? "Range" : (span >= 400) ? "Wall" : (R.maxElev >= 60) ? "Ridge" : "Hills";
       });
       geo.rivers.forEach(RV => {
         RV.name = markovName("lowland", sx("river#" + RV.id), usedNames);
         // kind by discharge (flow), so a trunk swollen by tributaries is a River
         // even if its own chain is short; recomputable from the exported flow.
         const fl = RV.flow || RV.chain.length;
-        RV.kind = fl <= 3 ? "Beck" : fl <= 5 ? "Brook" : "River";
+        RV.kind = fl <= 2 ? "Rill" : fl <= 3 ? "Beck" : fl <= 5 ? "Brook" : fl <= 8 ? "River" : "Water";
       });
       const mouthSet = new Set(geo.rivers.map(RV => RV.chain[RV.chain.length - 1]));
       const capWord = (w) => w[0].toUpperCase() + w.slice(1);
@@ -5929,6 +5988,8 @@
 
       // E6: the waters and the crossings take names of their own — the
       // sea by its size, the pass by its height
+      const SEA_BIG = [w => `${w} Sea`, w => `${w} Reach`, w => `the ${w} Main`, w => `${w} Waters`, w => `${w} Expanse`];
+      const SEA_SMALL = [w => `Gulf of ${w}`, w => `${w} Deep`, w => `${w} Sound`, w => `${w} Bight`, w => `Bay of ${w}`, w => `${w} Firth`];
       geo.seaShapes.forEach((S, i) => {
         const r2 = sx("seaname#" + i);
         let area = 0;
@@ -5938,14 +5999,15 @@
         for (let t = 0; t < 24; t++) {
           const w = markovWord("lowland", r2, 4, 9);
           if (!w) continue;
-          const n = big ? `${capWord(w)} Sea` : (r2() < 0.5 ? `Gulf of ${capWord(w)}` : `${capWord(w)} Deep`);
+          const forms = big ? SEA_BIG : SEA_SMALL;
+          const n = forms[Math.floor(r2() * forms.length)](capWord(w));
           if (!usedNames.has(n)) { usedNames.add(n); S.name = n; break; }
         }
         if (!S.name) S.name = markovName("lowland", r2, usedNames) + " Sea";
       });
       geo.passes.forEach((p, i) => {
         const r2 = sx("passname#" + i);
-        const kind = p.elev >= 92 ? "Stair" : p.elev >= 75 ? "Pass" : "Gap"; // measured: pass elev med 90, q25 83
+        const kind = p.elev >= 92 ? "Stair" : p.elev >= 84 ? "Steps" : p.elev >= 75 ? "Pass" : p.elev >= 62 ? "Saddle" : "Gap"; // measured: pass elev med 90, q25 83
         for (let t = 0; t < 24; t++) {
           const w = markovWord("frontier", r2, 4, 8);
           if (!w) continue;
@@ -6049,9 +6111,9 @@
         else if (ev.type === "revolt") ev.name = `the ${tn.name} Rising`;
         else if (ev.type === "blight_plague") {
           const reg3 = regions.find(r3 => r3.id === ev.region_id);
-          const pool = reg3.biome === "marsh" ? ["Fen-Ague", "Marsh Breath"]
-            : reg3.downstreamBlight > 0 ? ["Water-Rot", "River Fever"]
-            : ["Grey Breath", "Ash Fever", "Long Cough"];
+          const pool = reg3.biome === "marsh" ? ["Fen-Ague", "Marsh Breath", "Reedwater Fever", "Bog-Rot", "Sedge Chills"]
+            : reg3.downstreamBlight > 0 ? ["Water-Rot", "River Fever", "Downstream Flux", "Grey Water Fever", "Millrace Cough"]
+            : ["Grey Breath", "Ash Fever", "Long Cough", "Dust Fever", "Wasting", "Blacklung"];
           ev.name = `the ${pool[Math.floor(rn() * pool.length)]} of ${y}`;
         }
         // D7: the years' shocks take names too — the land's toponym and the year
@@ -6078,7 +6140,14 @@
           reg.blight >= 80 ? "the Ashen" :
           reg.boomBust === "collapse" ? "the Hollow" :
           plag ? "the Mourning" :
-          (reg.boomBust === "boom" && reg.wealth >= 60) ? "the Rising" : null;
+          (reg.boomBust === "boom" && reg.wealth >= 60) ? "the Rising" :
+          reg.tollBurden >= 80 ? "the Tithed" :
+          reg.refining >= 75 ? "the Kindled" :
+          reg.abandonment >= 60 ? "the Waning" :
+          reg.skyAdvantage >= 58 ? "the Lofted" :
+          reg.blackMarket >= 62 ? "the Shadowed" :
+          reg.marketAccess >= 80 ? "the Open" :
+          reg.socialTrust >= 80 ? "the Steadfast" : null;
       });
       settlements.forEach(s2 => { s2.epithet = regions[s2.regionId].epithet; });
       // DEAD-ZONE ZEROING: an unsettled cell is land with no society, so every
@@ -7351,7 +7420,12 @@
           if (p.gini - q.gini > 0.015 || p.gridFrac - q.gridFrac > 0.02) return "accumulation"; // wealth compounding, grid reaching
           return "quiet";                                                // the years passed as the founding arranged them
         };
-        const NAME = { accumulation: "the Age of Accumulation", gates: "the Age of the Gates", desolation: "the Long Desolation", restoration: "the Restoration", quiet: "the Quiet Years" };
+        const NAME = {
+          accumulation: ["the Age of Accumulation", "the Gathering Years", "the Long Ascent", "the Compounding Age"],
+          gates: ["the Age of the Gates", "the Age of the Crossings", "the Gated Age", "the Age of Tariffs"],
+          desolation: ["the Long Desolation", "the Emptying", "the Hollow Years", "the Great Desolation"],
+          restoration: ["the Restoration", "the Return", "the Mending Years", "the Second Spring"],
+          quiet: ["the Quiet Years", "the Still Years", "the Ordinary Age", "the Settled Years"] };
         // per-epoch character, then SMOOTH it: a single blip year is not an age.
         // Absorb any epoch whose character differs from BOTH neighbours into the
         // run around it, so an age is a genuine stretch, not a flicker.
@@ -7363,7 +7437,7 @@
         let out = [];
         for (let i = 0; i < sm.length; i++) {
           if (out.length && out[out.length - 1].character === sm[i]) out[out.length - 1].to_epoch = i;
-          else out.push({ character: sm[i], name: NAME[sm[i]], from_epoch: i, to_epoch: i });
+          else out.push({ character: sm[i], name: NAME[sm[i]][i % NAME[sm[i]].length], from_epoch: i, to_epoch: i });
         }
         // merge any age still only ONE epoch long into its longer neighbour, so
         // the periodization is a handful of real eras, not a year-by-year list
@@ -7693,23 +7767,38 @@
           if (ev.type === "refinery_collapse") line = pick([
             `The aetherworks at ${t.name} shut down. The fields that fed them were worked out, and the magnates left as soon as the ore did. The trunk lines still stand there, carrying nothing.`,
             `The aetherworks at ${t.name} closed its yards for good. The ore that built the town ran out, and the town kept its wires but lost its wages.`,
+            `The last shift at the ${t.name} aetherworks clocked out and did not come back. The lode was spent. The lumen tanks went cold within the month.`,
+            `The magnates pulled their money out of ${t.name} when the ore stopped paying. The aetherworks went dark, and the town it had grown around emptied behind it.`,
+            `The aetherworks at ${t.name} failed. The seam it drew from was mined to nothing, and the wages stopped a season before the wires did.`,
           ]);
           else if (ev.type === "refinery_founded") line = pick([
             `The magnates built new aetherworks at ${t.name}, where the money had gone. The capital sealed the charter, and the trunk line followed within the season.`,
             `New aetherworks fires were lit at ${t.name}. The capital called it progress. The towns the new trunk line skipped did not.`,
+            `The magnates broke ground on aetherworks at ${t.name}. Where the ore was rich the money followed, and the grid was run out to meet it.`,
+            `Aetherworks rose at ${t.name} on a fresh charter. The lumen came online that year, and the town doubled before the next census could count it.`,
+            `The capital chartered aetherworks at ${t.name}. The wires reached it fast, because someone had already decided the ore was worth the copper.`,
           ]);
           else if (ev.type === "blight_plague") line = pick([
             `Plague took ${t.name}. The blight had sat heavy on that country for years, so the sickness arrived to a town already half-poisoned. A third of the people died or fled.`,
             `Sickness came to ${t.name}. Anyone who had seen the blight-mark had expected it. Where there were healers, their registers do not agree on the death count. The roads out of town do.`,
+            `A plague settled on ${t.name}. The ground had been fouled long before the fever came, and the fever found little to stop it. Whole streets went quiet.`,
+            `Fever ran through ${t.name}. The blight had weakened the town for a generation, and the sick had nowhere clean to lie. The burial rolls ran longer than the tax rolls that year.`,
+            `The sickness reached ${t.name} and stayed. The poisoned ground had done half the work already. Those who could walk left; those who could not were counted after.`,
           ]) + (ev.name ? ` The roads named it ${ev.name}.` : ``);
           else if (ev.type === "relic_calamity") line = pick([
             `The relic ground by ${t.name} woke. The surviving accounts do not say clearly what the old power did there. The land it touched still carries the scar.`,
             `At the sanctioned ground by ${t.name}, something of the old world stirred and broke. The Temple calls it a test. The survivors did not. The blight it left has not faded.`,
+            `Something old came awake in the ground by ${t.name}. What it was, no two accounts agree. What it left behind is plain enough: land that will not grow.`,
+            `The buried power near ${t.name} turned over in its sleep. The Temple sealed the site and said little. The scar it burned into the country is still there to read.`,
+            `Whatever the old world left under ${t.name} broke loose. The records are thin and frightened. The blighted ring around the site kept everyone honest about that much.`,
           ]);
           else if (ev.type === "ore_strike") {
             line = pick([
               `Prospectors struck a hidden lode under ${t.name}. By winter the roads were full of wagons and the town was full of strangers.`,
               `A lode no survey had found came up under ${t.name}. The rush was immediate: retainers, chancers, assayers, and everyone who trails them.`,
+              `Diggers hit rich ore under ${t.name} where no one had thought to look. Within a season the town had tripled, and the price of a bed had tripled with it.`,
+              `A new seam opened under ${t.name}. Word travels fast where ore is concerned, and the strangers were on the road before the assay was even filed.`,
+              `The ground under ${t.name} gave up a lode nobody had mapped. The town filled overnight with people who had nothing but a shovel and a claim.`,
             ]);
             const warAfter = model.events.find(w => w.type === "war" && w.epoch > ev.epoch && w.epoch <= ev.epoch + 2);
             if (warAfter) line += ` The ground was already disputed, and every magnate, priest, and captain in the realm knew what a lode there meant.`;
@@ -7730,6 +7819,9 @@
             line = pick([
               `${F.charAt(0).toUpperCase() + F.slice(1)} took the gate at ${what}. A gate is a quay, a span, or a pass, and whoever holds it holds a line of people who cannot go around. The tariff was posted by winter.`,
               `${F.charAt(0).toUpperCase() + F.slice(1)} pressed ${F === "the magnates" ? "their" : "its"} claim on the crossing at ${what}. No blood is recorded. The claim was made on paper, and the tariff kept it.`,
+              `${F.charAt(0).toUpperCase() + F.slice(1)} seized the crossing at ${what}. Whoever holds the narrow ground sets the price to pass it, and the price went up that season.`,
+              `${F.charAt(0).toUpperCase() + F.slice(1)} moved on the gate at ${what} and held it. There was no fight worth recording. The first tariff notice went up before the ink on the claim was dry.`,
+              `${F.charAt(0).toUpperCase() + F.slice(1)} claimed the gate at ${what} for ${F === "the magnates" ? "their" : "its"} own. The people who used the crossing found the fee waiting the next market day.`,
             ]);
           }
           else if (ev.type === "tower_burned") {

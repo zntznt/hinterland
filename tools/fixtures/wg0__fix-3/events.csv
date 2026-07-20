@@ -13,21 +13,21 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 3,1075,refinery_collapse,0,,,,,,,,,,
 3,1075,seizure,0,,,crown,,,,,,,
 4,1100,ore_strike,8,,,,,,,,,,
-4,1100,succession,,Krazzurn,,magnate,,,,,,true,1
+4,1100,succession,,Dhordruk,,magnate,,,,,,true,1
 4,1100,drought,9,the Drought of 1100,,,,,,,,,
 5,1125,refinery_founded,0,,,,,,,,,,
-5,1125,succession,,Dunholt,,crown,,,,,,false,1
+5,1125,succession,,Evere,,crown,,,,,,false,1
 5,1125,seizure,0,,,magnate,,,,,,,
-5,1125,quake,5,the Drelkruk Quake,,,,,,,,,
-5,1125,ascendancy,4,the Rise of Thraldek Delf,,,,,,,,,
-5,1125,revolt,4,the Thraldek Delf Rising,crushed,,,,,,,,
+5,1125,quake,5,the Drennath Quake,,,,,,,,,
+5,1125,ascendancy,4,the Rise of Skavurnok Delf,,,,,,,,,
+5,1125,revolt,4,the Skavurnok Delf Rising,crushed,,,,,,,,
 6,1150,courting,0,,,,,,,,,,
-6,1150,succession,,Sylvasse,,temple,,,,,,false,1
+6,1150,succession,,Rosane,,temple,,,,,,false,1
 6,1150,drought,0,the Drought of 1150,,,,,,,,,
-6,1150,quake,5,the Drelkruk Quake,,,,,,,,,
+6,1150,quake,5,the Drennath Quake,,,,,,,,,
 6,1150,storm,0,the Great Storm of 1150,,,,,,,,,
-7,1175,quake,5,the Drelkruk Quake,,,,,,,,,
-8,1200,succession,,Umbermerell,,crown,,,,,,false,2
-9,1225,succession,,Hulgrumketh,,magnate,,,,,,false,2
-9,1225,flood,3,the Iverby Flood,,,,,,,,,
+7,1175,quake,5,the Drennath Quake,,,,,,,,,
+8,1200,succession,,Larkholl,,crown,,,,,,false,2
+9,1225,succession,,Vralgrok,,magnate,,,,,,false,2
+9,1225,flood,3,the Quillton Flood,,,,,,,,,
 9,1225,storm,0,the Great Storm of 1225,,,,,,,,,

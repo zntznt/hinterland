@@ -1,6 +1,28 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **generation variety** (owner-directed, no schema change): a wider range of names and
+  more options in every fixed pool. The Markov name corpus grew from 292 to 612 seeds
+  (lowland, frontier, and temple to 100 each; corporate 84; precinct, gazette, and
+  chthonic 76), so the seven registers walk a much larger name space. The toponym grammar
+  `PLACE_PARTS` went from 22 patterns to 62, with new forms per terrain (coves, points,
+  bights, cairns, scars, groves, mires, and more), and `SUFFIXY` extended to guard the new
+  fused endings. Sea names draw from expanded pools (Reach, Main, Waters, Expanse, Sound,
+  Bight, Firth, Bay of X). The land kinds gained deterministic bands: ridges now read
+  Teeth / Crest / Spine / Range / Wall / Ridge / Hills, passes Stair / Steps / Pass /
+  Saddle / Gap, rivers Rill / Beck / Brook / River / Water, each still recomputable from
+  measured terrain. Town bynames grew from 9 to 16 (added: the Tithed, the Kindled, the
+  Waning, the Lofted, the Shadowed, the Open, the Steadfast), each derived from an exported
+  column. Off-map powers went from 7 to 18. Era names became pools of four per character
+  (20 total). Every chronicle event phrasing that had two variants now has five (refinery
+  collapse and founding, plague, relic, ore strike, seizure), and the plague disease-name
+  pools grew. All new prose keeps the plain register and holds the no-em-dash rule; new
+  names avoid the banned real-world and medieval lexicons. `schema_version` stays 54; the
+  columns and enum data-keys are unchanged. **Declared fixture regeneration** (all 30
+  cells, all three surfaces: names, event names, and chronicle all moved). Test mirrors
+  updated in lockstep for the ridge, pass, and river kinds, the sea forms, the epithet
+  ladder, the disease pools, the seizure narration, and the stress name and pass-name
+  validators.
 - **tone pass** (owner-directed, no schema change): the whole app moved to a plain,
   message-first voice. The old register leaned medieval and strung words together in a
   way that buried the point: aphorisms, inverted clever bits, grand abstractions,

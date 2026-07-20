@@ -139,7 +139,7 @@ function validate(gj, tag) {
     // E3/E6: names are markov words OR grammar forms the land selected —
     // plain/fused single words, High/Nether prefixes, geology suffix words,
     // or a river fusion; nothing else is a legal shape
-    if (!/^(?:[A-Z][a-z]{4,19}|(?:High|Nether) [A-Z][a-z]{3,12}|[A-Z][a-z]{3,12} (?:Ford|Haven|Strand|Crag|Fell|Tor|Fen|Weald|Delf)|[A-Z][a-z]{3,12}-on-[A-Z][a-z]{3,19})$/.test(p.name))
+    if (!/^(?:[A-Z][a-z]{4,19}|(?:High|Nether|Upper|Over|Low|Deep) [A-Z][a-z]{3,12}|[A-Z][a-z]{3,12} (?:Ford|Haven|Strand|Crag|Fell|Tor|Fen|Weald|Delf|Reach|Landing|Crossing|Ferry|Cove|Point|Bight|Height|Scar|Cairn|Mire|Slade|Shaws|Grove|Coppice|Lode|Diggings|Watch|Bastion)|[A-Z][a-z]{3,12}-on-[A-Z][a-z]{3,19})$/.test(p.name))
       return fail(`${tag}: malformed name ${p.name}`);
     {
       const rp = regionById.get(p.region_id).properties;
@@ -560,10 +560,10 @@ function validate(gj, tag) {
       if (!regIds.has(p.properties.region_id)) return fail(`${tag}: pass region invalid`);
       passRegIds.add(p.properties.region_id);
       // E6: the crossing has its own name now; its kind recomputes from its height
-      if (!/^[A-Z][a-z]{3,19} (Stair|Pass|Gap)$/.test(p.properties.pass_name || ""))
+      if (!/^[A-Z][a-z]{3,19} (Stair|Steps|Pass|Saddle|Gap)$/.test(p.properties.pass_name || ""))
         return fail(`${tag}: malformed pass_name ${p.properties.pass_name}`);
       const pe = p.properties.pass_elev;
-      if (!Number.isFinite(pe) || p.properties.pass_name.split(" ").pop() !== (pe >= 92 ? "Stair" : pe >= 75 ? "Pass" : "Gap"))
+      if (!Number.isFinite(pe) || p.properties.pass_name.split(" ").pop() !== (pe >= 92 ? "Stair" : pe >= 84 ? "Steps" : pe >= 75 ? "Pass" : pe >= 62 ? "Saddle" : "Gap"))
         return fail(`${tag}: pass kind does not recompute from elev ${pe}`);
     }
     for (const rid in passByRidge)

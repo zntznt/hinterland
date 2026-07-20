@@ -2352,7 +2352,7 @@ console.log("# The faction turn F1 acceptance: the blocs become agents");
     if (evs.some(ev => ev.type === "seizure")) {
       seizeWorlds++;
       chronTested++;
-      if (/took the gate|pressed (its|their) claim/.test(R.chron)) chronOK++;
+      if (/took the gate|pressed (its|their) claim|seized the crossing|moved on the gate|claimed the gate/.test(R.chron)) chronOK++;
     }
     if (evs.some(ev => ev.type === "tower_raised")) raiseWorlds++;
     if (evs.some(ev => ev.type === "tower_burned")) burnWorlds++;
@@ -2706,9 +2706,9 @@ console.log("# The naming of things E6 acceptance: the words are grown from the 
     else if (ev.type === "ascendancy") want = [`the Rise of ${t}`];
     else {
       const rp = regionsOf(E).find(r => r.properties.region_id === ev.region_id).properties;
-      const pool = rp.biome === "marsh" ? ["Fen-Ague", "Marsh Breath"]
-        : rp.downstream_blight > 0 ? ["Water-Rot", "River Fever"]
-        : ["Grey Breath", "Ash Fever", "Long Cough"];
+      const pool = rp.biome === "marsh" ? ["Fen-Ague", "Marsh Breath", "Reedwater Fever", "Bog-Rot", "Sedge Chills"]
+        : rp.downstream_blight > 0 ? ["Water-Rot", "River Fever", "Downstream Flux", "Grey Water Fever", "Millrace Cough"]
+        : ["Grey Breath", "Ash Fever", "Long Cough", "Dust Fever", "Wasting", "Blacklung"];
       want = pool.map(p => `the ${p} of ${y}`);
     }
     if (!want.includes(ev.name)) { bad = `${ev.type}@e${ev.epoch}: "${ev.name}" not in [${want.join(" | ")}]`; break; }
@@ -2734,7 +2734,14 @@ console.log("# The naming of things E6 acceptance: the words are grown from the 
       p.blight_load >= 80 ? "the Ashen" :
       p.boom_bust === "collapse" ? "the Hollow" :
       plag ? "the Mourning" :
-      (p.boom_bust === "boom" && p.wealth >= 60) ? "the Rising" : null;
+      (p.boom_bust === "boom" && p.wealth >= 60) ? "the Rising" :
+      p.tariff_burden >= 80 ? "the Tithed" :
+      p.aetherworks_capacity >= 75 ? "the Kindled" :
+      p.abandonment_index >= 60 ? "the Waning" :
+      p.sky_advantage >= 58 ? "the Lofted" :
+      p.black_market_index >= 62 ? "the Shadowed" :
+      p.market_access >= 80 ? "the Open" :
+      p.social_trust >= 80 ? "the Steadfast" : null;
     if ((st.properties.epithet || null) !== want) { epiBad = `#${p.region_id}: ${st.properties.epithet} != ${want}`; break; }
     if (want) epiN++;
   }
@@ -2743,27 +2750,27 @@ console.log("# The naming of things E6 acceptance: the words are grown from the 
 
   // the waters, the crossings, the rock, the rivers: named, kinds recompute
   const seasE = E.features.filter(f => f.properties.kind === "sea");
-  if (seasE.length && seasE.every(f => / Sea$|^Gulf of | Deep$/.test(f.properties.sea_name || "")))
+  if (seasE.length && seasE.every(f => / (Sea|Reach|Main|Waters|Expanse|Deep|Sound|Bight|Firth)$|^(Gulf|Bay) of /.test(f.properties.sea_name || "")))
     ok(`the charts name the waters (${seasE.map(f => f.properties.sea_name).join(", ")})`);
   else fail("sea names missing or malformed");
   const passesE = E.features.filter(f => f.properties.kind === "pass");
   const passKindOK = passesE.every(f => {
     const k = f.properties.pass_name.split(" ").pop(), e2 = f.properties.pass_elev;
-    return k === (e2 >= 92 ? "Stair" : e2 >= 75 ? "Pass" : "Gap");
+    return k === (e2 >= 92 ? "Stair" : e2 >= 84 ? "Steps" : e2 >= 75 ? "Pass" : e2 >= 62 ? "Saddle" : "Gap");
   });
-  if (passesE.length === 0 || passKindOK) ok("every crossing's kind recomputes from its exported height (Stair>=92 / Pass>=75 / Gap)");
+  if (passesE.length === 0 || passKindOK) ok("every crossing's kind recomputes from its exported height (Stair>=92 / Steps>=84 / Pass>=75 / Saddle>=62 / Gap)");
   else fail("pass kinds do not recompute from pass_elev");
   let kindBad = null;
   for (const f of E.features.filter(f2 => f2.properties.kind === "ridge")) {
     const pts = f.geometry.coordinates;
     const span = Math.hypot(pts[0][0] - pts[pts.length - 1][0], pts[0][1] - pts[pts.length - 1][1]);
     const me = f.properties.max_elev;
-    const want = me >= 86 ? "Teeth" : span >= 520 ? "Spine" : me >= 68 ? "Range" : "Hills";
+    const want = me >= 90 ? "Teeth" : me >= 80 ? "Crest" : span >= 560 ? "Spine" : me >= 70 ? "Range" : span >= 400 ? "Wall" : me >= 60 ? "Ridge" : "Hills";
     if (f.properties.ridge_kind !== want) kindBad = `ridge ${f.properties.ridge_name}: ${f.properties.ridge_kind} != ${want}`;
   }
   for (const f of E.features.filter(f2 => f2.properties.kind === "river")) {
     const n2 = f.properties.chain_regions.length; // v39: the kind reads the chain, not the bed's point count
-    const want = n2 <= 3 ? "Beck" : n2 <= 5 ? "Brook" : "River";
+    const want = n2 <= 2 ? "Rill" : n2 <= 3 ? "Beck" : n2 <= 5 ? "Brook" : n2 <= 8 ? "River" : "Water";
     if (f.properties.river_kind !== want) kindBad = `river ${f.properties.river_name}: ${f.properties.river_kind} != ${want}`;
   }
   if (!kindBad) ok("the rock and the rivers speak their kinds, recomputed from measured size (Teeth/Spine/Range/Hills from geometry, Beck/Brook/River from chain_regions)");

@@ -9,9 +9,9 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 1,1025,blight_plague,1,the Grey Breath of 1025,,,,,,,,,
 2,1050,settlement_abandoned,3,,,,,,,,,,
 2,1050,settlement_founded,8,,,,,,,,,,
-2,1050,discovery,1,the Ulvere Find,,,,,,,,,
-3,1075,succession,,Evere,,crown,,,,,,true,1
-3,1075,succession,,Rumketh,,magnate,,,,,,true,1
+2,1050,discovery,1,the Rushold Find,,,,,,,,,
+3,1075,succession,,Kelmook,,crown,,,,,,true,1
+3,1075,succession,,Brolt,,magnate,,,,,,true,1
 3,1075,storm,1,the Great Storm of 1075,,,,,,,,,
 3,1075,reaction,,,,,toll_crackdown,,,,,,
 3,1075,consecration,1,,,,,,,,,,
@@ -20,23 +20,23 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 4,1100,seizure,1,,,crown,,,,,,,
 4,1100,tower_raised,7,,,apostate,,,,,,,
 4,1100,relic_calamity,0,,,,,,,,,,
-4,1100,revolt,0,the Drukdelve Rising,won,,,,,,,,
+4,1100,revolt,0,the Drolvek Diggings Rising,won,,,,,,,,
 5,1125,settlement_founded,2,,,,,,,,,,
-5,1125,succession,,Evane,,temple,,,,,,false,1
+5,1125,succession,,Haine,,temple,,,,,,false,1
 5,1125,storm,1,the Great Storm of 1125,,,,,,,,,
-5,1125,discovery,1,the Ulvere Find,,,,,,,,,
+5,1125,discovery,1,the Rushold Find,,,,,,,,,
 6,1150,refinery_founded,1,,,,,,,,,,
-6,1150,succession,,Gnarrothrak,,magnate,,,,,,false,2
+6,1150,succession,,Vralvek,,magnate,,,,,,false,2
 6,1150,seizure,1,,,magnate,,,,,,,
 6,1150,drought,6,the Drought of 1150,,,,,,,,,
-6,1150,quake,11,the Durtash Delf Quake,,,,,,,,,
+6,1150,quake,11,the Nether Gnathok Quake,,,,,,,,,
 7,1175,settlement_abandoned,6,,,,,,,,,,
 7,1175,war,1,the War of 1175,,crown|magnate,,,,,,,
-8,1200,succession,,Ladenmere,,crown,,,,,,false,2
-8,1200,treaty,1,the Peace of Ulvere,,crown|magnate,,crown,1,3,,,
+8,1200,succession,,Calden,,crown,,,,,,false,2
+8,1200,treaty,1,the Peace of Rushold,,crown|magnate,,crown,1,3,,,
 8,1200,storm,1,the Great Storm of 1200,,,,,,,,,
 9,1225,seizure,1,,,magnate,,,,,,,
-9,1225,quake,11,the Durtash Delf Quake,,,,,,,,,
+9,1225,quake,11,the Nether Gnathok Quake,,,,,,,,,
 10,1250,seizure,1,,,crown,,,,,,,
-10,1250,quake,11,the Durtash Delf Quake,,,,,,,,,
-10,1250,ascendancy,0,the Rise of Drukdelve,,,,,,,,,
+10,1250,quake,11,the Nether Gnathok Quake,,,,,,,,,
+10,1250,ascendancy,0,the Rise of Drolvek Diggings,,,,,,,,,

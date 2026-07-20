@@ -4,39 +4,39 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 1,1025,settlement_abandoned,3,,,,,,,,,,
 1,1025,settlement_abandoned,6,,,,,,,,,,
 1,1025,settlement_abandoned,7,,,,,,,,,,
-1,1025,blight_plague,2,the Long Cough of 1025,,,,,,,,,
-1,1025,blight_plague,10,the Long Cough of 1025,,,,,,,,,
+1,1025,blight_plague,2,the Wasting of 1025,,,,,,,,,
+1,1025,blight_plague,10,the Wasting of 1025,,,,,,,,,
 1,1025,relic_calamity,1,,,,,,,,,,
 2,1050,settlement_abandoned,2,,,,,,,,,,
 2,1050,settlement_founded,6,,,,,,,,,,
 2,1050,settlement_abandoned,10,,,,,,,,,,
-2,1050,discovery,9,the Nettlewick Find,,,,,,,,,
+2,1050,discovery,9,the Hamwiceweld Find,,,,,,,,,
 3,1075,settlement_founded,10,,,,,,,,,,
 3,1075,ore_strike,9,,,,,,,,,,
-3,1075,war,0,the Dunholt War,,crown|magnate,,,,,,,
-3,1075,succession,,Ivere,,crown,,,,,,false,1
+3,1075,war,0,the Kemerby War,,crown|magnate,,,,,,,
+3,1075,succession,,Ulverfolt,,crown,,,,,,false,1
 3,1075,reform,,,,,toll_amnesty,,,,,,
 3,1075,consecration,2,,,,,,,,,,
-4,1100,succession,,Vassandre,,temple,,,,,,false,1
-4,1100,treaty,0,the Peace of Dunholt,,crown|magnate,,crown,0,0,,,
-4,1100,revolt,1,the Grossvar Rising,won,,,,,,,,
+4,1100,succession,,Sarelle,,temple,,,,,,false,1
+4,1100,treaty,0,the Peace of Kemerby,,crown|magnate,,crown,0,0,,,
+4,1100,revolt,1,the Skulgruk Rising,won,,,,,,,,
 5,1125,settlement_founded,2,,,,,,,,,,
-5,1125,annexation,11,the Landing at Calden Strand,,,,,,,7,,
+5,1125,annexation,11,the Landing at Pellness,,,,,,,7,,
 5,1125,drought,2,the Drought of 1125,,,,,,,,,
 7,1175,refinery_collapse,0,,,,,,,,,,
-7,1175,succession,,Ophyre,,temple,,,,,,false,2
-7,1175,succession,,Vulzar,,magnate,,,,,,true,1
-7,1175,flood,4,the Grothmouth Flood,,,,,,,,,
+7,1175,succession,,Ostrisole,,temple,,,,,,false,2
+7,1175,succession,,Krumth,,magnate,,,,,,true,1
+7,1175,flood,4,the Vurzekmouth Flood,,,,,,,,,
 8,1200,drought,2,the Drought of 1200,,,,,,,,,
-8,1200,flood,4,the Grothmouth Flood,,,,,,,,,
-8,1200,quake,6,the Dhorn Quake,,,,,,,,,
+8,1200,flood,4,the Vurzekmouth Flood,,,,,,,,,
+8,1200,quake,6,the Zolgrek Quake,,,,,,,,,
 9,1225,settlement_abandoned,4,,,,,,,,,,
 9,1225,refinery_founded,11,,,,,,,,,,
-9,1225,succession,,Ulverby,,crown,,,,,,false,2
+9,1225,succession,,Brack,,crown,,,,,,false,2
 9,1225,drought,2,the Drought of 1225,,,,,,,,,
-9,1225,flood,4,the Grothmouth Flood,,,,,,,,,
-9,1225,quake,6,the Dhorn Quake,,,,,,,,,
-9,1225,discovery,9,the Nettlewick Find,,,,,,,,,
+9,1225,flood,4,the Vurzekmouth Flood,,,,,,,,,
+9,1225,quake,6,the Zolgrek Quake,,,,,,,,,
+9,1225,discovery,9,the Hamwiceweld Find,,,,,,,,,
 10,1250,settlement_abandoned,6,,,,,,,,,,
-10,1250,succession,,Amine,,temple,,,,,,true,3
-10,1250,quake,6,the Dhorn Quake,,,,,,,,,
+10,1250,succession,,Novare,,temple,,,,,,true,3
+10,1250,quake,6,the Zolgrek Quake,,,,,,,,,

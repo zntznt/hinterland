@@ -7,9 +7,9 @@
 // implementation"), under which a pin was set by observing the implementation's
 // own output and could therefore never fail.
 //
-// Declared: 2026-07 (schema v55 honesty pass), prior to the R1–R5 re-derivation
-// tuning runs. Citations are given as short keys into docs/grounding.md, which
-// carries the full, verified, open-access references.
+// Declared: 2026-07 (the honesty pass), prior to the deferred re-derivation
+// tuning runs (GitHub issues #164-#169). Citations are given as short keys into
+// docs/grounding.md, which carries the full, verified, open-access references.
 //
 // These are still self-administered tests, the same author writes the targets,
 // the code, and the suite (see docs/provenance.md). What pre-registration buys

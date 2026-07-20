@@ -60,7 +60,9 @@ tables: `events.csv`, `epoch_region.csv`, `rulers.csv`, `tensions.csv`,
   with `wealth`, `elite_share`, `population`, `dominant_bloc`, `occupied`,
   `toll_burden`. Join it to the epoch-series export for the **Temporal
   Controller**, or feed it straight to **DataPlotly**: log(population) vs
-  log(rank) per epoch is the rank-size (Zipf) plot the findings quote.
+  log(rank) per epoch is the rank-size plot the findings quote (a Gibrat-type
+  regularity the growth rule builds in; classical Zipf slope 1 is the
+  large-system limit, see ../grounding.md).
 - **findings.csv** is key/value: the world's own argument, one row per
   claim, including `moran` / `moran_blight` (global Moran's I with its
   permutation p).

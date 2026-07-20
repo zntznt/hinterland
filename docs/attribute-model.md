@@ -1,8 +1,9 @@
 # Hinterland: Attribute Model (design)
 
 > Status: authoritative design; the original spine (§§1–7) and the instrument
-> pivot (§8, the B-era mechanisms) are implemented and verified by the shipped
-> suite (tools/), at **schema v54** (the arcane-industrial re-skin). The
+> pivot (§8, the B-era mechanisms) are implemented and checked by the shipped
+> consistency suite (tools/; internal self-tests, not external validation, see
+> [provenance.md](provenance.md)), at **schema v54** (the arcane-industrial re-skin). The
 > narrative of how each phase landed, measurements, honest recalibrations,
 > fixes, lives in CHANGELOG.md. This document decides which attributes exist, in
 > what order they land, and why.
@@ -16,10 +17,13 @@
 > which one cuts is the world's, not the code's. A relation true in every world is
 > now either a **definition** (label it) or a bug, never a finding (P1).
 >
-> Produced from a structured expert panel (≈20 disciplinary lenses) working off a
-> single binding setting frame. The full per-lens reasoning is in the appendix.
+> Produced from ≈20 AI-authored design lenses (writing personas, not people;
+> see [provenance.md](provenance.md)) working off a single binding setting
+> frame. Each lens is anchored to real, cited literature in
+> [grounding.md](grounding.md). The per-lens digest is in the appendix.
 >
-> Revised after a follow-up design review: generation order pinned as an acyclic
+> Revised after a second AI design pass (no external review; provenance.md):
+> generation order pinned as an acyclic
 > DAG, the endowment/capital relationship flipped so the frontier *emerges* (blind
 > geology + agrarian-core capital), `wealth` concretized as income streams,
 > per-phase acceptance criteria added, and the recompute pipeline split into
@@ -53,8 +57,14 @@ A third commitment was added at the pivot and governs §8:
    blades and the contingency that picks; the code never implements a verdict.
    Concentration can finance or hoard; a reform can save or rot; a rising can free
    a boomtown or starve it. Which happens is a fact about the state, not the code.
+   (Honesty note: B5, the elite share, does not currently meet this principle:
+   common events ratchet it up while ordinary decrements are threshold-gated.
+   A re-derivation to a two-signed r−g drift plus a discrete shock ledger, which
+   is where the literature actually puts the asymmetry, is planned and tracked
+   as [issue #166](https://github.com/zntznt/hinterland/issues/166); see
+   [grounding.md](grounding.md) §6.)
 
-The single most important structural decision the panel converged on, and the one
+The single most important structural decision the design converged on, and the one
 the pivot then generalized:
 
 > **`wealth` must stop being a pure input.** Originally it was a hardcoded gradient
@@ -117,7 +127,7 @@ windfalls; and imperial reach (development *and* ownership).
 
 ## 3. The layered attribute model
 
-The panel proposed ~95 attributes. They collapse into **three layers** by causal
+The design lenses proposed ~95 attributes. They collapse into **three layers** by causal
 role. The design rule is one-directional flow: **primitives** are generated
 independently; **derived** outcomes are computed from them; **relational** columns
 are computed last for mapping. This ordering is what makes emergence honest.
@@ -127,7 +137,7 @@ are computed last for mapping. This ordering is what makes emergence honest.
   gets **rates**.
 - Enums capped: `settlement_tier` (4), `dominant_bloc` (5), `biome_type` (~6).
 - One shared distance-decay basis (`centrality_to_capital`), **not** a new falloff
-  per attribute (the panel's #1 redundancy warning).
+  per attribute (the design pass's #1 redundancy warning).
 - `darkness` is just `100 − grid_access`, a render convenience, never an
   independent analytic variable.
 - Every attribute draws from its **own named RNG substream** (the foundations
@@ -158,10 +168,14 @@ are computed last for mapping. This ordering is what makes emergence honest.
 > political centers historically arise: high carrying-capacity, low-ruggedness,
 > well-situated lowland. Because rich ore disproportionately sits in rugged
 > marginal country and the capital deliberately doesn't, the
-> endowment-vs-centrality anti-correlation **emerges from two independent,
-> individually innocent choices**: geology that ignores politics, and a capital
-> that prefers farmland. No layer is authored against the frontier, yet the
-> frontier appears. (Clicking to pin the capital still works; the derivation only
+> endowment-vs-centrality anti-correlation emerges from those two choices. But
+> the independence should not be oversold: fertility and ruggedness share the
+> elevation field as a common ancestor (fertility carries a hardcoded
+> high-elevation penalty, ruggedness is the elevation gradient), so the
+> capital's avoidance of rough country is partially authored through that
+> shared field, not the coincidence of independent draws. Ore placement is its
+> own noise field, which is why the curse appears in about two-thirds of worlds
+> rather than all of them. (Clicking to pin the capital still works; the derivation only
 > replaces the default.)
 
 ### 3.2 DERIVED socioeconomic outcomes
@@ -276,7 +290,8 @@ chosen to (a) unblock the next and (b) produce at least one new headline map.
   field is a trivial noise layer that seeds the flagship storyline before refining
   exists. Lowest risk, highest unblock.
   *Accept:* population symbols + endowment choropleth render in QGIS, and the two
-  fields are visibly independent: no built-in correlation; geology is innocent.
+  fields show no built-in correlation (ore is its own noise field; but see the
+  capital-placement note above for where geology's layers do share an ancestor).
 
 - **Phase 2: make `wealth` emergent (the intellectual turn).**
   Derive the default (unpinned) **seat placement** from geology (agrarian core:
@@ -286,7 +301,8 @@ chosen to (a) unblock the next and (b) produce at least one new headline map.
   capital-gradient to the `w_g` term. Keep the old behavior reachable at `w_g = 1`
   for comparison.
   *Why:* this is where the project stops being a diagram and becomes an argument.
-  *Accept (calibrated to measurement after implementation):* under default weights
+  *Accept (pinned to the implementation's own observed output, a regression
+  tripwire rather than validation; see provenance.md):* under default weights
   the endowment-vs-wealth scatter has a populated high-endowment/low-wealth
   quadrant, given ore sparsity that is ~5–10% of all regions, with roughly 40% of
   high-endowment regions landing below median wealth and a visible curse in about
@@ -305,7 +321,8 @@ chosen to (a) unblock the next and (b) produce at least one new headline map.
 - **Phase 4: exported blight.**
   Add `blight_load` (downhill/downwind kernel + λ dump-bias) and the
   `injustice_idx` bivariate. Ship the environmental-injustice map.
-  *Accept (calibrated to measurement after implementation):* corr(`blight_load`,
+  *Accept (pinned to the implementation's own observed output, a regression
+  tripwire rather than validation; see provenance.md):* corr(`blight_load`,
   `wealth`) ≈ −0.5 at the default λ; sweeping λ → 0 does not merely weaken it;
   it **flips the sign** (≈ +0.9), because with no dumping policy the spoil stays
   at the aetherworks and the centers eat their own waste. The gap between the two
@@ -319,7 +336,8 @@ chosen to (a) unblock the next and (b) produce at least one new headline map.
   Place facilities (healer/waterworks/wardstation) gated by tier + `on_grid`; compute
   `nearest_facility_distance`, `service_gap_idx`, and the emergent
   `disease_burden_per_1k`. This is the facilities + coverage payload.
-  *Accept (calibrated to measurement after implementation):* burden ships as a
+  *Accept (pinned to the implementation's own observed output, a regression
+  tripwire rather than validation; see provenance.md):* burden ships as a
   per-1k **rate** split into cause components that sum exactly; the
   high-burden/low-care quadrant is populated in 20/20 test worlds; measured
   emergence: corr(burden, blight) ≈ +0.6, corr(burden, healing_reach) ≈ −0.9,
@@ -329,7 +347,8 @@ chosen to (a) unblock the next and (b) produce at least one new headline map.
 
 - **Phase 6: governance overlay.** `dominant_bloc` (+ the deferred institutional
   depth as appetite allows).
-  *Accept (calibrated to measurement after implementation):* the bloc map has
+  *Accept (pinned to the implementation's own observed output, a regression
+  tripwire rather than validation; see provenance.md):* the bloc map has
   exactly 5 categories; contested/ungoverned space exists in 30/30 default test
   worlds; all five categories occur across seeds; the capital answers to the Crown
   (or is contested by the magnates next door) in every test world. Temple reach
@@ -411,7 +430,7 @@ spine exists.**
 
 **Open questions / tradeoffs (decide before Phase 2):**
 1. **Circularity: RESOLVED.** The canonical DAG in §4 settles it: one bounded,
-   seeded forward pass in a pinned order. The two cycles the panel had introduced
+   seeded forward pass in a pinned order. The two cycles the early design had introduced
    are broken structurally: aetherworks siting no longer reads `wealth` (centrality +
    terrain only), and `population` no longer reads `wealth`/`on_grid`/`blight`
    (settlement skeleton draws from tier + carrying capacity). Revisit feedback only
@@ -470,84 +489,99 @@ to appear in the calibration sweep with none over ~40%, so no templated story ow
 the possibility space. "The gap widened while the poorest fifth grew richer than any
 founding generation" is now a world the engine can both generate and narrate.
 
-**The falsifiability suite (the pivot's own test).** Beyond the house suite:
+**The sign-reach suite (the pivot's own internal test).** Beyond the house suite:
 *inversion exhibits* (each headline relation inverts somewhere in seed×knob space,
 at meaningful frequency, as a pinned atlas URL); *knob reach* (every shipped knob's
-extremes change a *relation*, not just a magnitude); *verdict diversity* (the class
-distribution above); and *definition honesty* (composites like `injustice` are
-labeled as composites in every surface that shows them). A relation true in 100% of
-worlds must be a **definition** or a **construction**, labeled as such, or it is a
-bug. See [old-thesis.md](old-thesis.md) for why this test exists.
+extremes change a *relation*, not just a magnitude); and *definition honesty*
+(composites like `injustice` are labeled as composites in every surface that shows
+them). A relation true in 100% of worlds must be a **definition** or a
+**construction**, labeled as such, or it is a bug. These checks operate entirely on
+the generator's own output; they exhibit that the engine's relations can invert,
+not that anything about the real world has been tested (provenance.md). The old
+*verdict diversity* floor (≥6 classes, none over 40%) is retired as an acceptance
+target: it was a designed property, tuned toward, and reporting it as a discovery
+was exactly the circularity this pass removes. The class distribution is now
+reported descriptively. See [old-thesis.md](old-thesis.md) for why this test
+exists.
 
 ---
 
-## 9. Appendix: panel digest
+## 9. Appendix: design-lens digest
 
-> Preserved as the original expert panel's record. It uses the panel's own terms
-> (refinery, conduit, wardline, the seat). Read them through the §2 register
-> (aetherworks, the grid, the constabulary, the capital); the reasoning stands.
+> These lenses are **AI-authored writing personas, not people**: no
+> geographer, economist, or epidemiologist ever reviewed this project (see
+> [provenance.md](provenance.md)). An earlier version of this appendix
+> presented them as "the original expert panel's record," which implied an
+> authority the project does not have. They are kept because the disciplinary
+> decomposition was genuinely useful design scaffolding; each is now anchored
+> to the real, cited literature its concerns come from (full verified
+> references in [grounding.md](grounding.md)). The digest uses the design's
+> original terms (refinery, conduit, wardline, the seat); read them through
+> the §2 register.
 
-The frame was set first by the **setting consultant** (world model + binding
-glossary above); all lenses built on it. One-paragraph digest per lens:
+The frame was set first by the **setting frame** (world model + binding
+glossary above, authored before the lenses); all lenses built on it.
+One-paragraph digest per lens, with its literature anchor:
 
 **Physical & resource base**
 - **Geographer.** Owns the cost field. Pushed `terrain_ruggedness` → `friction_cost`
   → `centrality_to_capital` as the spine of distance-decay, plus `site_quality` vs
-  situation to find stranded good-site/bad-situation places.
+  situation to find stranded good-site/bad-situation places. *(anchors: Tobler 1970; Hansen 1959)*
 - **Ecologist.** Environment *causes* inequity: `biome_type` and `carrying_capacity`
   cap population (thin places get skipped); `blight_load` is a transported externality;
-  `hazard_exposure` is regressive because wardline defense is metered.
+  `hazard_exposure` is regressive because wardline defense is metered. *(anchors: Whittaker 1975)*
 - **Resource/energy engineer.** The chain end to end: `aetherstone_endowment`
   (fixed, frontier-biased) → `extraction_intensity` → `aetherworks_capacity` (sited at
   center) → `on_grid` (grid economics) → `arcane_service_index`. The on/off-grid
   binary is the decisive filter.
-
+ *(anchors: Sachs & Warner 1995; Corden & Neary 1982)*
 **Economy & enterprise**
 - **Economist.** `value_retention` and `fiscal_transfer_net` make "produce much, keep
   little" measurable; `gini_local` exposes enclave/hinterland polarization a regional
-  mean hides.
+  mean hides. *(anchors: Prebisch 1950; Singer 1950; Mehlum, Moene & Torvik 2006)*
 - **Entrepreneur.** `opportunity_surface` peaks where `capital_access` bottoms out,
-  the "frustrated frontier"; `informal_share` marks economies invisible to credit and tax.
+  the "frustrated frontier"; `informal_share` marks economies invisible to credit and tax. *(anchors: De Soto 1989)*
 - **Market researcher.** Demand-side deserts: `purchasing_power`, `lumen_price`
-  (regressive, costs most where it reaches least), `market_desert`, `information_access`.
+  (regressive, costs most where it reaches least), `market_desert`, `information_access`. *(anchors: Caplovitz 1963)*
 - **Industrial engineer.** Siting & throughput: `aetherworks_capacity` (not at the ore),
   `lumen_consumption`, `industrial_capacity`, and blight as exported externality;
-  `supply_chain_fragility` for captive company towns.
+  `supply_chain_fragility` for captive company towns. *(anchors: Weber 1909; Marshall 1890)*
 - **Logistics analyst.** Connectivity as equity: `grid_access`/`darkness`,
   `transport_friction`, `market_access` (gravity), `chokepoint_betweenness` (capture points).
-
+ *(anchors: Hansen 1959; Freeman 1977)*
 **Society & people**
 - **Sociologist.** Names the classes: `class_structure` (rentier/labor/dispossessed),
-  `segregation_index` (enclaves), `social_trust`, `mobility_ceiling` (born labor, die labor).
+  `segregation_index` (enclaves), `social_trust`, `mobility_ceiling` (born labor, die labor). *(anchors: Massey & Denton 1993)*
 - **Demographer.** The denominator: `population`, `pop_density`, `dependency_ratio`,
-  `net_migration` (the periphery emptying uphill), `urbanization`/primacy.
+  `net_migration` (the periphery emptying uphill), `urbanization`/primacy. *(anchors: Gabaix 1999; Eeckhout 2004)*
 - **Anthropologist.** Who the data erases: `tenure_regime` (customary land read as
   empty title), `cultural_distance`, `kinship_reliance`, and `legibility_gap`, a
-  meta-attribute that rescales every per-capita rate to expose the undercount.
+  meta-attribute that rescales every per-capita rate to expose the undercount. *(anchors: Scott 1998)*
 - **Planner.** The rationing rules: the 4-tier hierarchy as policy, `informal_share`,
   `catchment_coverage`/`nearest_facility_distance`, the conduit threshold, land-use mix.
-
+ *(anchors: Christaller 1933)*
 **Power & institutions**
 - **Political scientist.** State capacity as a field: `state_reach_index`,
-  `public_goods_score`, `dominant_bloc`, `clientelism_index` (windfall capture), `voice_deficit`.
+  `public_goods_score`, `dominant_bloc`, `clientelism_index` (windfall capture), `voice_deficit`. *(anchors: Besley & Persson 2009; Herbst 2000)*
 - **Religion scholar.** Parallel conditional welfare: `sanctity_index`, `pilgrim_flux`,
   `orthodoxy_gate` (nominal coverage → effective exclusion), `temple_welfare_share`,
-  `divine_legitimacy`.
+  `divine_legitimacy`. *(anchors: Norris & Inglehart 2004)*
 - **Military analyst.** Security as an uneven public good: `force_projection`,
   `constabulary_strength` (off-grid = defenseless), `security_status`, `conscription_burden`
-  (the periphery pays in blood for defense it doesn't get), `frontier_exposure`.
+  (the periphery pays in blood for defense it doesn't get), `frontier_exposure`. *(anchors: Tilly 1985)*
 - **Historian.** The present as residue: `founding_era`, `legacy_advantage` (head-starts
   persist), `shock_legacy`, `abandonment_index` (the magnates built it then left),
-  `tenure_churn`.
+  `tenure_churn`. *(anchors: David 1985; Dell 2010)*
 - **Criminologist.** The shadow economy as a negative image of the state:
   `smuggling_intensity`, `predation_risk`, `air_piracy_exposure`, `black_market_index`
   (prices the underservice), `enforcement_gap`.
-
+ *(anchors: Schneider & Enste 2000; De Soto 1989)*
 **Health & measurement**
 - **Epidemiologist.** Health must *emerge*, never be painted: `disease_burden_per_1k`
   computed from `blight_exposure` + `safe_water_share` + `vulnerability_idx` −
   `healing_reach` (a metered, on-conduit service). The scissor of rising blight and
-  falling care is the thesis.
+  falling care is the thesis. *(anchors: Preston 1975; Deaton 2003)*
 - **Cartographer.** Disciplines the table for mappability: mandates the `population`
   denominator, precomputes `service_gap_idx` and `injustice_idx`, caps enums, demands
   rates over counts and the right classifier for skewed distributions.
+ *(anchors: Monmonier 1996)*

@@ -12,8 +12,11 @@ The claim was clean and, on its own terms, faithful to a long tradition:
 worked hardest. It is a thing *produced*, like lumen from ore, by arrangements
 someone chose and someone else pays for. The engine dramatized the manufacture
 end to end. Geology laid the aetherstone in the rough margins; the capital
-settled in the soft farmland; so the ground that held the wealth was, by the
-accident of two individually innocent choices, always peripheral. The
+settled in the soft farmland; so the ground that held the wealth was, by what
+we then called the accident of two individually innocent choices, always
+peripheral. (Even that was oversold: fertility and ruggedness share the
+elevation field as a common ancestor, so the choices were never fully
+independent; see grounding.md.) The
 aetherworks were sited at the center, never at the seam, so the value the
 frontier dug was refined and kept elsewhere. The grid reached the places that
 could already pay. The spoil ran downhill onto the poor. The gates tariffed
@@ -88,8 +91,34 @@ That last link is the point of the first three. Extraction is a thing this
 engine can still show you, in full, with the receipts. It is no longer a thing
 this engine has decided for you before you open the file.
 
+## The second-order problem: the pivot graded itself
+
+Honesty about the first failure bought us a subtler second one. The pivot's
+whole apparatus of self-correction, the inversion exhibits, the knob-reach
+checks, the verdict-diversity floor, the "measured before pinned" thresholds,
+was written by the same hand that wrote the mechanisms it was checking, run on
+data the mechanisms generated, and judged against targets set after seeing the
+output. A model that cannot lose its argument is not evidence for it; neither
+is a validation suite that cannot fail its model. The diversity floor was the
+sharpest case: we tuned the engine until the verdict histogram cleared a bar we
+had chosen, then reported the diversity as a property the engine turned out to
+have. It did not turn out to have it. We put it there.
+
+The 2026-07 honesty pass is the response, and its limits should be stated as
+plainly as its fixes. Calibration targets are now declared from published
+literature before tuning (tools/targets.mjs), misses are documented rather than
+re-targeted, the diversity floor is retired, and the borrowed authority, the
+"expert panel" that was writing personas, the "measurements" that were the code
+reading its own output, has been renamed to what it is (provenance.md,
+grounding.md). What remains true is that every check is still administered by
+the project to itself. The honest claim this project can make was never
+"validated"; it is "internally consistent, deterministic, and open about which
+numbers were chosen."
+
 ---
 
-*Companion reading: the [field guide](field-guide.md), how to read a world;
-the [attribute model](attribute-model.md), the mechanisms and their columns;
+*Companion reading: [provenance.md](provenance.md), what this project is and is
+not; [grounding.md](grounding.md), the real literature behind each mechanism;
+the [field guide](field-guide.md), how to read a world; the
+[attribute model](attribute-model.md), the mechanisms and their columns;
 and the [atlas](atlas.md), the calibration sweep and its verdict space.*

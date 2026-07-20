@@ -1,7 +1,9 @@
-# tools: the evidence
+# tools: the consistency suite
 
-Every "measured across N worlds" number and every "the test suite does"
-sentence in the docs has a producer here. The suite runs the REAL page
+Every "observed across N worlds" number and every "the test suite does"
+sentence in the docs has a producer here. These are internal consistency
+checks on the generator's own output, not validation against anything real
+(see ../docs/provenance.md). The suite runs the REAL page
 (jsdom executes `../index.html` and clicks its own export buttons), so
 what is tested is what ships.
 
@@ -11,18 +13,21 @@ npm install                                   # jsdom + d3-delaunay
 node --max-old-space-size=14000 test.mjs      # the main suite (~241 checks + the fixture pin)
 node --max-old-space-size=10000 stress.mjs    # 120-config structural stress + render smoke
 node --max-old-space-size=8192  atlas.mjs     # regenerates ../docs/atlas.md (80-world sweep)
-node --max-old-space-size=8192  sweep.mjs     # prints the knob-reach + chronicle-sameness table (~1 min; measured, not pinned)
+node --max-old-space-size=8192  sweep.mjs     # prints the knob-reach + chronicle-sameness table (~1 min; observed, not pinned)
 node --max-old-space-size=8192  refixture.mjs # regenerates the golden fixtures (a declared act; see below)
 ```
 
 Two processes on purpose: jsdom retains memory per world, and the full
 run generates several hundred worlds; split, each pass fits in an
 ordinary 16 GB container. Both must end `ALL PASS`; a nonzero exit code
-means a failed check, printed with its measured value.
+means a failed check, printed with its observed value.
 
-The suite's acceptance thresholds were MEASURED before they were pinned
-(the numbers in the docs are these numbers), and re-pins are documented
-in the schema history, never silently adjusted.
+Most legacy acceptance thresholds were pinned to the implementation's own
+observed output (a regression tripwire that freezes behavior, not validation
+of it), and re-pins are documented in the schema history, never silently
+adjusted. The core-mechanism targets are the exception since the honesty
+pass: `targets.mjs` declares them from published literature BEFORE tuning
+(see ../docs/grounding.md), and a miss is documented, not re-targeted.
 
 ## The golden fixtures: the byte-pin (issue #118)
 

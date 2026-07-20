@@ -29,6 +29,20 @@ Client-side, one file, no build step, no backend.
   chronicle line, and the **verdict space** they populate (gap × floor ×
   growth), no single story owning it.
 
+## What this is (provenance)
+
+This is an **AI-generated project**: all code and documentation were written by
+Claude (Anthropic's AI), directed by a single author. It is a **fiction
+generator and teaching instrument**, not an empirical model: it computes
+statistics about imaginary worlds, has never been validated against real-world
+data, and has not been peer-reviewed by any domain expert. Its mechanisms are
+grounded, as far as such a project can be, in real, openly available social
+science: [docs/grounding.md](docs/grounding.md) maps every mechanism to the
+literature it draws on and states where it diverges;
+[docs/provenance.md](docs/provenance.md) states exactly what the project's
+"measurements" do and do not mean. Read those two pages before treating any
+number this generator produces as a finding.
+
 ## Your first map
 
 1. Open `index.html` (double-click works; one file, no server, no network).
@@ -146,7 +160,7 @@ precinct / buried power), and `findings`, including the de-moralized
 | `pop_density` | float | persons per 100×100 cell of the planar world |
 | `artifice_index` / `artifice_index_t0` | 0–100 | **B1** the growth channel: command of magically-enabled productivity (machinery, trained hands, licensed workings). Grows by investment, diffuses weakly to neighbors, decays without upkeep, crashes on war/collapse. `_t0` is the founding level, so "the exchange built here" (`A` rose) recomputes from the file |
 | `emigrants_total` / `remittance_income` | int / 0–100 | **B3** migration's second edge: the metropole pulls the young off-map (hardest in poor grid towns), and the diaspora sends coin home: a floor decoupled from local production, not a fortune |
-| `aetherstone_endowment` | 0–100 | ore richness: blind geology, independent of every social layer |
+| `aetherstone_endowment` | 0–100 | ore richness: blind geology, independent of every social layer ("blind" means generated before society and untouched by society knobs; geology's own layers share ancestors, see docs/grounding.md §2) |
 | `terrain_ruggedness` | 0–100 | blind geology; feeds travel friction and aetherworks siting |
 | `fertility` | 0–100 | blind geology; the unpinned capital settles where it is high |
 | `centrality_to_capital` | 0–100 | inverted cost-distance from the capital over the ruggedness-weighted adjacency graph (capital = 100) |
@@ -166,7 +180,7 @@ precinct / buried power), and `findings`, including the de-moralized
 | `service_gap_idx` | 0–100 | precomputed coverage gap: inverse reach + facility distance + off-grid |
 | `temple_reach` / `magnate_reach` / `crown_reach` | 0–100 | the three bloc reach fields (crown reach = `centrality_to_capital`) |
 | `dominant_bloc` | enum | `crown` \| `temple` \| `magnate` \| `contested` \| `ungoverned` \| `dominion`: argmax of the three reach fields; close top-two → contested, all weak → ungoverned; occupied ground always reads `dominion` (data-keys stable; rendered in the new register) |
-| `market_access` | 0–100 | Hansen gravity index over road-network costs (max = 100) |
+| `market_access` | 0–100 | Hansen (1959) accessibility index over road-network costs (max = 100; see docs/grounding.md §3 for the formula and its two divergences from Hansen's) |
 | `pilgrim_flux` | 0–100 | pilgrim through-traffic en route to the nearest sanctioned site |
 | `force_projection` | 0–100 | decay from constabulary posts over cost-distance: how far the state can throw force |
 | `order_level` | 0–100 | **B9** realm order + occupation's local police state: high order stills the shadow (predation, smuggling, revolt) AND the ladder (mobility, investment, churn). Safety and stagnation, one root |
@@ -206,7 +220,7 @@ precinct / buried power), and `findings`, including the de-moralized
 | `occupied` / `occupied_epoch` | 0/1, int | the Dominion holds this ground (a cost-ball around the foothold). `0` with `occupied_epoch ≥ 1` = once occupied, freed by a won rising |
 | `tribute_burden` | 0–3 | the per-epoch tribute rate at the record's close: occupied 3; free realm 1 (crown-bloc) or 2; 0 where the Dominion never came |
 | `concession` / `concession_epoch` | 0/1, int | **B11** imperial reach: a foreign power owns the aetherworks here (courted by attention × sea-reach × remaining ore), the coast force-wired, development capital flowing while the ore is wanted |
-| `foreign_claim` | 0–100 | the share of this region's yield that repatriates to the metropole under the concession. Dependency theory's "who keeps what it makes," one level up |
+| `foreign_claim` | 0–100 | the share of this region's yield that repatriates to the metropole under the concession. dependency theory's "who keeps what it makes" (Prebisch/Singer; see docs/grounding.md §13), one level up |
 | `concession_ended` / `concession_ended_epoch` | 0/1, int | the concession wound up (the lode drew down or attention turned): the *courted → developed → squeezed → abandoned* arc. Ruin (markets leave) and freedom (the levies stop) in one year |
 
 **Settlement features (Point):**
@@ -218,7 +232,7 @@ precinct / buried power), and `findings`, including the de-moralized
 | `name_register` | enum | `lowland` \| `frontier`: the register the place names itself in, read from blind geology |
 | `tier` | enum | `metropolis` \| `city` \| `works-town` \| `frontier-post`. A LABEL for the outcome: the capital is the metropolis by office, the rest rank by grown size; exactly recomputable from the exported populations |
 | `region_id` | int | containing region |
-| `population` | int | settlement population, GROWN by the founding centuries (compound growth on land quality + road migration; rank-size/primacy emergent, `findings.zipf`) |
+| `population` | int | settlement population, GROWN by the founding centuries (compound growth on land quality + road migration; rank-size/primacy a built-in Gibrat-type regularity whose steepness varies, `findings.zipf`; docs/grounding.md §4) |
 | `wealth` / `on_grid` / `arcane_service_index` | n/a | mirror their region |
 | `nearest_facility_distance` / `nearest_healer_dist` | cost-dist | to the closest facility / healer |
 | `disease_burden_per_1k` / `service_gap_idx` | rate / 0–100 | mirror their region |

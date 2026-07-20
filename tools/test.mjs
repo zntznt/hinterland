@@ -82,11 +82,11 @@ function segInt(p, q, a, b) {
   return [p[0] + t * d1x, p[1] + t * d1y];
 }
 const settlesOf = (gj) => gj.features.filter(f => f.properties.kind === "settlement");
-const conduitOf = (gj) => gj.features.filter(f => f.properties.kind === "conduit");
+const conduitOf = (gj) => gj.features.filter(f => f.properties.kind === "grid");
 const facilitiesOf = (gj) => gj.features.filter(f => f.properties.kind === "facility");
 const sanctOf = (gj) => gj.features.filter(f => f.properties.kind === "sanctioned_site");
 const roadsOf = (gj) => gj.features.filter(f => f.properties.kind === "road");
-const garrisonsOf = (gj) => gj.features.filter(f => f.properties.kind === "garrison");
+const garrisonsOf = (gj) => gj.features.filter(f => f.properties.kind === "constabulary");
 const rings = (gj) => regionsOf(gj).map(f => JSON.stringify(f.geometry.coordinates));
 const col = (gj, name) => regionsOf(gj).map(f => f.properties[name]);
 const geology = (gj) => JSON.stringify(regionsOf(gj).map(f => [
@@ -117,16 +117,16 @@ function validate(gj, tag) {
   if (n < 5 || n > 64) return fail(`${tag}: region count ${n} out of range`);
 
   if (settles.length !== n) return fail(`${tag}: settlements ${settles.length} != regions ${n}`);
-  const primes = settles.filter(s => s.properties.tier === "prime");
+  const primes = settles.filter(s => s.properties.tier === "metropolis");
   if (primes.length !== 1) return fail(`${tag}: prime count ${primes.length}`);
   const capRegions = regions.filter(r => r.properties.is_capital_region === 1);
   if (capRegions.length !== 1) return fail(`${tag}: capital region flag count`);
   if (primes[0].properties.region_id !== capRegions[0].properties.region_id)
     return fail(`${tag}: prime not in capital region`);
-  if (capRegions[0].properties.centrality_to_seat !== 100)
-    return fail(`${tag}: capital centrality ${capRegions[0].properties.centrality_to_seat} != 100`);
+  if (capRegions[0].properties.centrality_to_capital !== 100)
+    return fail(`${tag}: capital centrality ${capRegions[0].properties.centrality_to_capital} != 100`);
 
-  const TIERS = new Set(["prime", "hub", "outpost", "holdfast"]);
+  const TIERS = new Set(["metropolis", "city", "works-town", "frontier-post"]);
   const regionById = new Map(regions.map(r => [r.properties.region_id, r]));
   const epochs = gj.hinterland.epochs || 0;
   for (const s of settles) {
@@ -162,7 +162,7 @@ function validate(gj, tag) {
     const nHubT = Math.max(1, Math.round(others.length * 0.2));
     const nOutT = Math.max(1, Math.round(others.length * 0.4));
     for (let i = 0; i < others.length; i++) {
-      const want = i < nHubT ? "hub" : (i < nHubT + nOutT ? "outpost" : "holdfast");
+      const want = i < nHubT ? "city" : (i < nHubT + nOutT ? "works-town" : "frontier-post");
       if (others[i].properties.tier !== want)
         return fail(`${tag}: tier ${others[i].properties.tier} != size-rank ${want} (#${others[i].properties.region_id})`);
     }
@@ -195,11 +195,11 @@ function validate(gj, tag) {
   const K = Math.max(1, Math.round(n / 16));
   const collapsedCount = (gj.hinterland.events || []).filter(ev => ev.type === "refinery_collapse").length;
   const foundedCount = (gj.hinterland.events || []).filter(ev => ev.type === "refinery_founded").length;
-  const refiners = regions.filter(r => r.properties.refining_capacity > 0);
+  const refiners = regions.filter(r => r.properties.aetherworks_capacity > 0);
   if (refiners.length !== K - collapsedCount + foundedCount)
     return fail(`${tag}: refinery count ${refiners.length} != ${K} - ${collapsedCount} collapsed + ${foundedCount} founded`);
   for (const r of refiners) {
-    const c = r.properties.refining_capacity;
+    const c = r.properties.aetherworks_capacity;
     if (c < 60 || c > 100) return fail(`${tag}: refining capacity ${c} outside [60,100]`);
   }
 
@@ -214,18 +214,18 @@ function validate(gj, tag) {
     for (let k = 0; k < ring.length - 1; k++) area += ring[k][0] * ring[k + 1][1] - ring[k + 1][0] * ring[k][1];
     if (area <= 0) return fail(`${tag}: ring not CCW`);
     for (const [x, y] of ring) if (x < -0.01 || x > 1600.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: coord OOB`);
-    for (const key of ["wealth", "aetherstone_endowment", "terrain_ruggedness", "fertility", "centrality_to_seat", "value_retention"]) {
+    for (const key of ["wealth", "aetherstone_endowment", "terrain_ruggedness", "fertility", "centrality_to_capital", "value_retention"]) {
       const v = p[key];
       if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad ${key} ${v}`);
     }
     if (!Number.isInteger(p.population) || p.population <= 0) return fail(`${tag}: bad region population`);
     if (typeof p.pop_density !== "number" || p.pop_density <= 0) return fail(`${tag}: bad pop_density`);
-    if (p.on_conduit !== 0 && p.on_conduit !== 1) return fail(`${tag}: bad on_conduit`);
-    for (const key of ["conduit_access", "arcane_service_index", "elevation", "blight_load", "injustice_idx"]) {
+    if (p.on_grid !== 0 && p.on_grid !== 1) return fail(`${tag}: bad on_grid`);
+    for (const key of ["grid_access", "arcane_service_index", "elevation", "blight_load", "injustice_idx"]) {
       const v = p[key];
       if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad ${key} ${v}`);
     }
-    if (p.on_conduit === 1 && p.conduit_access !== 100) return fail(`${tag}: on-grid access != 100`);
+    if (p.on_grid === 1 && p.grid_access !== 100) return fail(`${tag}: on-grid access != 100`);
     // injustice is a pure presentation product of the two raw fields
     const expInj = Math.round(100 * (p.blight_load / 100) * (1 - p.wealth / 100));
     if (p.injustice_idx !== expInj) return fail(`${tag}: injustice ${p.injustice_idx} != blight×poverty ${expInj}`);
@@ -271,7 +271,7 @@ function validate(gj, tag) {
     const SEC = new Set(["secured", "patrolled", "contested", "ungoverned"]);
     for (const r of regions) {
       const p = r.properties;
-      for (const key of ["force_projection", "wardline_strength", "smuggling_intensity", "predation_risk", "black_market_index", "enforcement_gap"]) {
+      for (const key of ["force_projection", "constabulary_strength", "smuggling_intensity", "predation_risk", "black_market_index", "enforcement_gap"]) {
         const v = p[key];
         if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad ${key} ${v}`);
       }
@@ -368,7 +368,7 @@ function validate(gj, tag) {
       if ((p.exhausted_lode === 1 || p.endowment_t0 >= 50) && p.founding_era !== "relic_era") return fail(`${tag}: ore country not relic_era`);
       if (p.exhausted_lode === 0 && p.endowment_t0 < 50 && p.fertility >= 60 && p.founding_era !== "first_settlement") return fail(`${tag}: fertile land not first_settlement`);
       // exact recomputes
-      const expLegacy = Math.round(0.5 * p.founding_age + 0.3 * p.conduit_access + 0.2 * p.centrality_to_seat);
+      const expLegacy = Math.round(0.5 * p.founding_age + 0.3 * p.grid_access + 0.2 * p.centrality_to_capital);
       if (p.legacy_advantage !== expLegacy) return fail(`${tag}: legacy ${p.legacy_advantage} != ${expLegacy}`);
       const expAband = Math.max(0, Math.min(100, Math.round(
         0.7 * (p.peak_wealth - p.wealth) + ((p.exhausted_lode === 1 || p.ore_depleted === 1) ? 30 : 0))));
@@ -399,12 +399,12 @@ function validate(gj, tag) {
       if (!Number.isInteger(p.uncounted_population) || p.uncounted_population < 0 || p.uncounted_population > p.population)
         return fail(`${tag}: bad uncounted_population ${p.uncounted_population}`);
       // exact recomputes from exported columns
-      const expTenure = (p.centrality_to_seat < 60 && (p.aetherstone_endowment >= 50 || p.exhausted_lode === 1)) ? "contested"
-        : p.centrality_to_seat >= 60 ? "titled"
-        : p.centrality_to_seat < 30 ? "customary" : "mixed";
+      const expTenure = (p.centrality_to_capital < 60 && (p.aetherstone_endowment >= 50 || p.exhausted_lode === 1)) ? "contested"
+        : p.centrality_to_capital >= 60 ? "titled"
+        : p.centrality_to_capital < 30 ? "customary" : "mixed";
       if (p.tenure_regime !== expTenure) return fail(`${tag}: tenure ${p.tenure_regime} != ${expTenure}`);
       const tierOf = settles.find(s => s.properties.region_id === p.region_id).properties.tier;
-      const chainVal = p.refining_capacity > 0 ? 85 : tierOf === "prime" ? 80 : tierOf === "hub" ? 55
+      const chainVal = p.aetherworks_capacity > 0 ? 85 : tierOf === "metropolis" ? 80 : tierOf === "city" ? 55
         : (p.aetherstone_endowment >= 50 ? 15 : 30);
       const expMob = Math.max(0, Math.min(100, Math.round(0.4 * chainVal + 0.35 * p.arcane_service_index + 0.25 * p.market_access) +
         (p.has_camp === 1 ? 4 : 0))); // L1: the bounty is a rung
@@ -413,7 +413,7 @@ function validate(gj, tag) {
       const towerNear = gj.features.some(f => f.properties.kind === "tower" &&
         Math.hypot(f.geometry.coordinates[0] - anchorP[0], f.geometry.coordinates[1] - anchorP[1]) < 220);
       const expTrust = Math.max(0, Math.min(100, Math.round(
-        20 + 0.4 * p.centrality_to_seat + (p.on_conduit ? 12 : 0) - 0.2 * p.blight_load +
+        20 + 0.4 * p.centrality_to_capital + (p.on_grid ? 12 : 0) - 0.2 * p.blight_load +
         0.1 * p.force_projection + (p.dominant_bloc === "crown" ? 8 : p.dominant_bloc === "ungoverned" ? -8 : 0) -
         (towerNear ? 12 : 0))));
       if (p.social_trust !== expTrust) return fail(`${tag}: trust ${p.social_trust} != ${expTrust}`);
@@ -421,7 +421,7 @@ function validate(gj, tag) {
         0.55 * (100 - p.arcane_service_index) + 0.25 * (100 - p.force_projection) + 0.2 * p.cultural_distance)));
       if (p.kinship_reliance !== expKin) return fail(`${tag}: kinship ${p.kinship_reliance} != ${expKin}`);
       const expLegib = Math.max(0, Math.min(100, Math.round(
-        0.4 * p.cultural_distance + 0.3 * (100 - p.centrality_to_seat) + (p.on_conduit ? 0 : 15) +
+        0.4 * p.cultural_distance + 0.3 * (100 - p.centrality_to_capital) + (p.on_grid ? 0 : 15) +
         ((p.tenure_regime === "customary" || p.tenure_regime === "contested") ? 15 : 0) +
         (p.has_sanctuary === 1 ? 15 : 0)))); // L1: the refuge hides its people
       if (p.legibility_gap !== expLegib) return fail(`${tag}: legibility ${p.legibility_gap} != ${expLegib}`);
@@ -825,7 +825,7 @@ function validate(gj, tag) {
     const expGap = (shadow.length >= 2 && open.length >= 2 && med2(open.map(r => r.wealth)) > 0)
       ? Math.round(100 * (1 - med2(shadow.map(r => r.wealth)) / med2(open.map(r => r.wealth)))) : null;
     if (F.shadow_gap_pct !== expGap) return fail(`${tag}: findings shadow_gap ${F.shadow_gap_pct} != ${expGap}`);
-    const dark = P.filter(r => r.on_conduit === 0), lit = P.filter(r => r.on_conduit === 1);
+    const dark = P.filter(r => r.on_grid === 0), lit = P.filter(r => r.on_grid === 1);
     if (F.dark_n !== dark.length) return fail(`${tag}: findings dark_n`);
     const expDB = (dark.length && lit.length)
       ? r1(mean(dark.map(r => r.disease_burden_per_1k)) / Math.max(0.1, mean(lit.map(r => r.disease_burden_per_1k)))) : null;
@@ -833,7 +833,7 @@ function validate(gj, tag) {
     const mouth = P.reduce((a, b) => b.downstream_blight > a.downstream_blight ? b : a, P[0]);
     if (F.mouth_region !== (mouth.downstream_blight > 0 ? mouth.region_id : null)) return fail(`${tag}: findings mouth_region`);
     if (F.mouth_downstream !== mouth.downstream_blight) return fail(`${tag}: findings mouth_downstream`);
-    if (F.toll_paying_n !== P.filter(r => r.toll_burden > 0).length) return fail(`${tag}: findings toll_paying_n`);
+    if (F.toll_paying_n !== P.filter(r => r.tariff_burden > 0).length) return fail(`${tag}: findings toll_paying_n`);
     // the twins: mirror the app's deterministic pick over the exported anchors
     const seatP2 = anchor.get(P.find(r => r.is_capital_region === 1).region_id);
     const dS = (r) => { const a = anchor.get(r.region_id); return Math.hypot(a[0] - seatP2[0], a[1] - seatP2[1]); };
@@ -897,8 +897,8 @@ function validate(gj, tag) {
     for (const r of P) {
       if (!Number.isInteger(r.elite_share) || r.elite_share < 8 || r.elite_share > 92)
         return fail(`${tag}: elite_share out of range: ${r.elite_share}`);
-      const expPP = 2 + (tierOf.get(r.region_id) === "prime" ? 3 : tierOf.get(r.region_id) === "hub" ? 2 : 0)
-        + (r.refining_capacity > 0 ? 2 : 0) + (r.is_port === 1 ? 1 : 0) + (r.is_skyport === 1 ? 1 : 0);
+      const expPP = 2 + (tierOf.get(r.region_id) === "metropolis" ? 3 : tierOf.get(r.region_id) === "city" ? 2 : 0)
+        + (r.aetherworks_capacity > 0 ? 2 : 0) + (r.is_port === 1 ? 1 : 0) + (r.is_skyport === 1 ? 1 : 0);
       if (r.elite_pop_pct !== expPP)
         return fail(`${tag}: elite_pop_pct ${r.elite_pop_pct} != ${expPP} (#${r.region_id})`);
       const expCG = Math.round(((r.elite_share / r.elite_pop_pct) / ((100 - r.elite_share) / (100 - r.elite_pop_pct))) * 10) / 10;
@@ -964,13 +964,13 @@ function validate(gj, tag) {
         return fail(`${tag}: malformed skyway name`);
       for (const r of P) {
         if ((r.is_skyport === 1) !== spIds.has(r.region_id)) return fail(`${tag}: is_skyport mismatch #${r.region_id}`);
-        if (typeof r.seat_cost_ground !== "number" || r.seat_cost_ground < 0)
-          return fail(`${tag}: bad seat_cost_ground ${r.seat_cost_ground}`);
-        if (r.region_id === capId && r.seat_cost_ground !== 0) return fail(`${tag}: the seat's ground cost != 0`);
-        if (r.seat_cost_sky > r.seat_cost_ground + 0.101)
+        if (typeof r.capital_cost_ground !== "number" || r.capital_cost_ground < 0)
+          return fail(`${tag}: bad capital_cost_ground ${r.capital_cost_ground}`);
+        if (r.region_id === capId && r.capital_cost_ground !== 0) return fail(`${tag}: the seat's ground cost != 0`);
+        if (r.capital_cost_sky > r.capital_cost_ground + 0.101)
           return fail(`${tag}: flight costlier than the ground #${r.region_id}`);
-        const expAdv = r.seat_cost_ground > 0
-          ? Math.max(0, Math.round(100 * (1 - r.seat_cost_sky / r.seat_cost_ground))) : 0;
+        const expAdv = r.capital_cost_ground > 0
+          ? Math.max(0, Math.round(100 * (1 - r.capital_cost_sky / r.capital_cost_ground))) : 0;
         if (r.sky_advantage !== expAdv)
           return fail(`${tag}: sky_advantage ${r.sky_advantage} != ${expAdv} (#${r.region_id})`);
       }
@@ -1011,7 +1011,7 @@ function validate(gj, tag) {
         if (r.occupied === 1 && r.occupied_epoch !== D.arrived_epoch)
           return fail(`${tag}: occupied_epoch ${r.occupied_epoch} != arrival ${D.arrived_epoch}`);
         // the extractive corridor: occupied ground is ALWAYS wired
-        if (r.occupied === 1 && r.on_conduit !== 1) return fail(`${tag}: occupied region ${r.region_id} off the corridor`);
+        if (r.occupied === 1 && r.on_grid !== 1) return fail(`${tag}: occupied region ${r.region_id} off the corridor`);
         // once-occupied-now-free ground must carry a won rising
         if (r.occupied === 0 && r.occupied_epoch !== -1) {
           const lib = (gj.hinterland.events || []).some(ev =>
@@ -1031,7 +1031,7 @@ function validate(gj, tag) {
       const freeR = P.filter(r => r.occupied === 0);
       const expSov = occ.length && freeR.length ? {
         occupied_n: occ.length,
-        corridor_wired: occ.filter(r => r.on_conduit === 1).length,
+        corridor_wired: occ.filter(r => r.on_grid === 1).length,
         retent_ratio: r1(mean(freeR.map(r => r.value_retention)) / Math.max(1, mean(occ.map(r => r.value_retention)))),
         growth_gap: med2(freeR.map(r => r.wealth - r.wealth_t0)) - med2(occ.map(r => r.wealth - r.wealth_t0)),
         comprador_ratio: r1(mean(occ.map(r => r.elite_share)) / Math.max(1, mean(freeR.map(r => r.elite_share))))
@@ -1095,8 +1095,8 @@ function validate(gj, tag) {
     for (const a of assetFeatures)
       if (!FACS.has(a.properties.held_by)) return fail(`${tag}: bad held_by ${a.properties.held_by} on ${a.properties.kind}`);
     for (const r of regions) {
-      const tb = r.properties.toll_burden;
-      if (!Number.isInteger(tb) || tb < 0 || tb > 100) return fail(`${tag}: bad toll_burden ${tb}`);
+      const tb = r.properties.tariff_burden;
+      if (!Number.isInteger(tb) || tb < 0 || tb > 100) return fail(`${tag}: bad tariff_burden ${tb}`);
     }
     // the last seizure at a region decides who holds (one of) its gates —
     // unless a LATER treaty redrew the map at the table (F3 cessions)
@@ -1180,12 +1180,12 @@ function validate(gj, tag) {
       byRegion.set(k, (byRegion.get(k) || new Set()).add(f.properties.facility_type));
     }
     const tierById = new Map(settles.map(s => [s.properties.region_id, s.properties.tier]));
-    const onById = new Map(regions.map(r => [r.properties.region_id, r.properties.on_conduit]));
-    const refById = new Map(regions.map(r => [r.properties.region_id, r.properties.refining_capacity]));
+    const onById = new Map(regions.map(r => [r.properties.region_id, r.properties.on_grid]));
+    const refById = new Map(regions.map(r => [r.properties.region_id, r.properties.aetherworks_capacity]));
     for (const r of regions) {
       const id = r.properties.region_id;
       const tier = tierById.get(id);
-      const served = tier === "prime" || (tier === "hub" && onById.get(id) === 1);
+      const served = tier === "metropolis" || (tier === "city" && onById.get(id) === 1);
       const have = byRegion.get(id) || new Set();
       const expect = new Set();
       if (served) { expect.add("healer"); expect.add("waterworks"); expect.add("wardstation"); }
@@ -1207,7 +1207,7 @@ function validate(gj, tag) {
   // Conduit network integrity: valid LineStrings, endpoints on-grid, and every
   // on-grid region in the single component that contains the seat.
   const edges = conduitOf(gj);
-  const onIds = new Set(regions.filter(r => r.properties.on_conduit === 1).map(r => r.properties.region_id));
+  const onIds = new Set(regions.filter(r => r.properties.on_grid === 1).map(r => r.properties.region_id));
   const capId = capRegions[0].properties.region_id;
   if (!onIds.has(capId)) return fail(`${tag}: seat region off-grid`);
   const parentUF = new Map([...onIds].map(id => [id, id]));
@@ -1230,16 +1230,16 @@ function validate(gj, tag) {
   // refineries must be wired
   for (const r of refiners) if (!onIds.has(r.properties.region_id)) return fail(`${tag}: refinery off-grid`);
   // settlement flags mirror their region
-  const regionOn = new Map(regions.map(r => [r.properties.region_id, r.properties.on_conduit]));
+  const regionOn = new Map(regions.map(r => [r.properties.region_id, r.properties.on_grid]));
   for (const s of settles) {
-    if (s.properties.on_conduit !== regionOn.get(s.properties.region_id)) return fail(`${tag}: settlement/region on_conduit mismatch`);
+    if (s.properties.on_grid !== regionOn.get(s.properties.region_id)) return fail(`${tag}: settlement/region on_grid mismatch`);
     const v = s.properties.arcane_service_index;
     if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad settlement asi`);
   }
 
   // Default weights: wealth should track geography (centrality) positively.
   if (n >= 12) {
-    const corr = pearson(col(gj, "centrality_to_seat"), col(gj, "wealth"));
+    const corr = pearson(col(gj, "centrality_to_capital"), col(gj, "wealth"));
     if (corr < 0.1) return fail(`${tag}: wealth/centrality corr ${corr.toFixed(2)} too weak (n=${n})`);
     // endowment sparsity holds for the FOUNDING geology (endowment_t0);
     // the exported aetherstone_endowment is the current, possibly depleted stock
@@ -1271,7 +1271,7 @@ if (JSON.stringify(rings(A1.gj)) === JSON.stringify(rings(Acap.gj))) ok("capital
 else fail("capital move altered topology");
 if (geology(A1.gj) === geology(Acap.gj)) ok("capital move leaves GEOLOGY identical");
 else fail("capital move altered geology");
-if (JSON.stringify(col(A1.gj, "centrality_to_seat")) !== JSON.stringify(col(Acap.gj, "centrality_to_seat")))
+if (JSON.stringify(col(A1.gj, "centrality_to_capital")) !== JSON.stringify(col(Acap.gj, "centrality_to_capital")))
   ok("capital move recomputes centrality (society layer)");
 else fail("capital move did not change centrality");
 
@@ -1324,12 +1324,12 @@ console.log("# Mountain ranges G1 acceptance: geography is destiny");
       pairs++;
       if (sr.properties.wealth < mate.properties.wealth) poorer++;
       if (sr.properties.market_access < mate.properties.market_access) lessMarket++;
-      if (sr.properties.centrality_to_seat < mate.properties.centrality_to_seat) lessCentral++;
+      if (sr.properties.centrality_to_capital < mate.properties.centrality_to_capital) lessCentral++;
     }
     // darkness pools behind the wall
     if (shadow.length >= 3 && open.length >= 3) {
       darkTested++;
-      const offShare = (xs) => xs.filter(r => r.properties.on_conduit === 0).length / xs.length;
+      const offShare = (xs) => xs.filter(r => r.properties.on_grid === 0).length / xs.length;
       if (offShare(shadow) > offShare(open)) darkSeeds++;
       // Z1: the market shadow lives at the DISTRIBUTION level now — a
       // big grown town behind the wall is its own market, so matched
@@ -1518,8 +1518,8 @@ console.log("# The strata H1 acceptance: class exists within the walls");
     const bad = P.filter(r => {
       // the founding split is clamped first (matching the app), THEN the counting
       // house adds its +6 and the ledger re-clamps — two clamps, same as the app.
-      const base = clamp8(Math.round(24 + 0.32 * r.refining_capacity + 0.12 * r.endowment_t0 +
-        (tierOf.get(r.region_id) === "prime" ? 8 : tierOf.get(r.region_id) === "hub" ? 4 : 0)));
+      const base = clamp8(Math.round(24 + 0.32 * r.aetherworks_capacity + 0.12 * r.endowment_t0 +
+        (tierOf.get(r.region_id) === "metropolis" ? 8 : tierOf.get(r.region_id) === "city" ? 4 : 0)));
       const withCH = (r.structures || "").split(" ").includes("counting_house") ? clamp8(base + 6) : base;
       return r.elite_share !== withCH;
     });
@@ -1542,7 +1542,7 @@ console.log("# The strata H1 acceptance: class exists within the walls");
     const F = R.gj.hinterland.findings;
     const P = regionsOf(R.gj).map(f => f.properties);
     if (F.within_pct !== null) within.push(F.within_pct);
-    corr.push(pearson(P.map(r => r.refining_capacity), P.map(r => r.elite_share)));
+    corr.push(pearson(P.map(r => r.aetherworks_capacity), P.map(r => r.elite_share)));
     if (F.owners) coin.push(F.owners.coin_pct);
     satWorst = Math.max(satWorst, P.filter(r => r.elite_share >= 92).length / P.length);
     // the ledger answers history: read the shock's epoch in the series
@@ -1749,7 +1749,7 @@ console.log("# The surface catches up U2: inspector, lenses, legends, menus, flo
     const P0 = regionsOf(gj)[0].properties;
     return texts.includes(String(P0[col]));
   };
-  if (lensCheck("retention", "value_retention") && lensCheck("tolls", "toll_burden") && lensCheck("rain", "rainfall"))
+  if (lensCheck("retention", "value_retention") && lensCheck("tolls", "tariff_burden") && lensCheck("rain", "rainfall"))
     ok("the new lenses draw the exported columns (retention, tolls, rainfall spot-checked against region 0)");
   else fail("a lens draws numbers the export does not carry");
   // categorical swatches
@@ -1777,8 +1777,8 @@ console.log("# The surface catches up U2: inspector, lenses, legends, menus, flo
   doc.getElementById("cfBtnGrid").click();
   const statTxt = doc.getElementById("cfStats").textContent;
   const Z = await gen("#seed=v1-0&regions=24&ep=10&gt=0");
-  const zDark = regionsOf(Z.gj).filter(r => r.properties.on_conduit === 0).length;
-  const aDark = regionsOf(gj).filter(r => r.properties.on_conduit === 0).length;
+  const zDark = regionsOf(Z.gj).filter(r => r.properties.on_grid === 0).length;
+  const aDark = regionsOf(gj).filter(r => r.properties.on_grid === 0).length;
   if (statTxt.includes("lights") && statTxt.includes(`${zDark}`) && statTxt.includes(`${aDark}`))
     ok(`THE COUNTERFACTUAL MENU: the Grid Charter exhibit quotes the true off-grid counts (${aDark} as rolled, ${zDark} under the charter)`);
   else fail("grid counterfactual numbers diverge from a fresh gt=0 world");
@@ -2144,7 +2144,7 @@ console.log("# The skyway S1 acceptance: geography is destiny only for those who
   const K0 = await gen("#seed=sky-static&regions=24&ep=0"), K10 = await gen("#seed=sky-static&regions=24&ep=10");
   const settledK10 = new Set(regionsOf(K10.gj).filter(f => f.properties.is_settled === 1).map(f => f.properties.region_id));
   const cols = (g) => regionsOf(g.gj).filter(f => settledK10.has(f.properties.region_id))
-    .map(f => [f.properties.region_id, f.properties.is_skyport, f.properties.seat_cost_ground, f.properties.seat_cost_sky, f.properties.sky_advantage].join(",")).join("|");
+    .map(f => [f.properties.region_id, f.properties.is_skyport, f.properties.capital_cost_ground, f.properties.capital_cost_sky, f.properties.sky_advantage].join(",")).join("|");
   if (cols(K0) === cols(K10))
     ok("the skyway is founding infrastructure: is_skyport + both cost columns + sky_advantage byte-stable across the epoch knob for every surviving town");
   else fail("sky columns drift with ep");
@@ -2329,11 +2329,11 @@ console.log("# The faction turn F1 acceptance: the blocs become agents");
     const mercy = evs.some(ev => ev.measure === "toll_amnesty" || ev.measure === "crown_granary" ||
       (ev.type === "revolt" && ev.outcome === "won"));
     // the toll wounds the TAXED ROAD, so correlate over living towns only: a dead
-    // zone has toll_burden 0 and a wealth that fell to 0 (a huge negative delta),
+    // zone has tariff_burden 0 and a wealth that fell to 0 (a huge negative delta),
     // which would drag the sign positive though no toll ever touched it.
     if (!mercy) {
       const live = regions.filter(r => r.is_settled === 1);
-      tollCorr += pearson(live.map(r => r.toll_burden), live.map(r => r.wealth - r.wealth_t0)); tollN++;
+      tollCorr += pearson(live.map(r => r.tariff_burden), live.map(r => r.wealth - r.wealth_t0)); tollN++;
     }
   }
   tollCorr /= Math.max(1, tollN);
@@ -2741,7 +2741,7 @@ console.log("# The naming of things E6 acceptance: the words are grown from the 
 
   // the great roads: at most three, named only for what they carry
   const namedRoads = E.features.filter(f => f.properties.kind === "road" && f.properties.road_name);
-  const capNameE = settE.find(s => s.properties.tier === "prime").properties.name;
+  const capNameE = settE.find(s => s.properties.tier === "metropolis").properties.name;
   const legal = new Set([`the ${capNameE} Road`, "the Ore Road", "the Salt Road"]);
   if (namedRoads.length >= 1 && namedRoads.length <= 3 && namedRoads.every(f => legal.has(f.properties.road_name)))
     ok(`the great roads take names from what they carry (${namedRoads.map(f => f.properties.road_name).join(", ")})`);
@@ -2922,13 +2922,13 @@ const prov = A1.gj.hinterland;
 // re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
 // the default carries the Concordat-era `world` block (regime chain + series), and
 // `fate` still rides provenance only when set — so a default world has no fate key.
-if (prov && prov.schema_version === 53 && prov.epochs === 0 && prov.responsiveness === 45 && prov.order === 50 && prov.openness === 100 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+if (prov && prov.schema_version === 54 && prov.epochs === 0 && prov.responsiveness === 45 && prov.order === 50 && prov.openness === 100 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && prov.disposal_doctrine === "concentrate" && !("fate" in prov) &&
     prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=53 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
+  ok("provenance carries schema_version=54 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await gen("#seed=&regions=&we=&wg=");
@@ -2950,8 +2950,8 @@ console.log("# Phase 3 acceptance: neutral zero, darkness, grid economics");
   if (JSON.stringify(rings(A1.gj)) === JSON.stringify(rings(Agt.gj)) && geology(A1.gj) === geology(Agt.gj))
     ok("grid-threshold change leaves topology + geology identical");
   else fail("grid-threshold change altered topology/geology");
-  const on1 = col(A1.gj, "on_conduit").reduce((s, v) => s + v, 0);
-  const on9 = col(Agt.gj, "on_conduit").reduce((s, v) => s + v, 0);
+  const on1 = col(A1.gj, "on_grid").reduce((s, v) => s + v, 0);
+  const on9 = col(Agt.gj, "on_grid").reduce((s, v) => s + v, 0);
   if (on9 < on1) ok(`raising the threshold expands darkness (${on1} -> ${on9} on-grid)`);
   else fail(`threshold has no effect (${on1} -> ${on9})`);
 }
@@ -2961,7 +2961,7 @@ console.log("# Phase 3 acceptance: neutral zero, darkness, grid economics");
   let allOn = true;
   for (let i = 0; i < 6; i++) {
     const g = (await gen(`#seed=nz${i}&regions=24&gt=0`)).gj;
-    if (col(g, "on_conduit").some(v => v !== 1)) allOn = false;
+    if (col(g, "on_grid").some(v => v !== 1)) allOn = false;
   }
   if (allOn) ok("neutral zero: gt=0 connects every settlement (6 seeds)");
   else fail("gt=0 left settlements off-grid");
@@ -2973,8 +2973,8 @@ console.log("# Phase 3 acceptance: neutral zero, darkness, grid economics");
   for (let i = 0; i < N; i++) {
     const g = (await gen(`#seed=dark${i}&regions=24`)).gj;
     const regions = regionsOf(g);
-    const on = regions.filter(r => r.properties.on_conduit === 1);
-    const off = regions.filter(r => r.properties.on_conduit === 0);
+    const on = regions.filter(r => r.properties.on_grid === 1);
+    const off = regions.filter(r => r.properties.on_grid === 0);
     onShareSum += on.length / regions.length;
     if (off.length > 0) seedsWithDark++;
     if (off.length && on.length) {
@@ -2996,8 +2996,8 @@ console.log("# Phase 3 acceptance: neutral zero, darkness, grid economics");
   for (let i = 0; i < N; i++) {
     const g = (await gen(`#seed=svc${i}&regions=24`)).gj;
     const regions = regionsOf(g);
-    const on = regions.filter(r => r.properties.on_conduit === 1).map(r => r.properties.arcane_service_index);
-    const off = regions.filter(r => r.properties.on_conduit === 0).map(r => r.properties.arcane_service_index);
+    const on = regions.filter(r => r.properties.on_grid === 1).map(r => r.properties.arcane_service_index);
+    const off = regions.filter(r => r.properties.on_grid === 0).map(r => r.properties.arcane_service_index);
     if (on.length && off.length) { tested++; if (median(on) > median(off)) good++; }
   }
   if (tested > 0 && good === tested) ok(`arcane services gated by the grid (${good}/${tested} seeds)`);
@@ -3026,7 +3026,7 @@ console.log("# The disposal doctrine (#126, B4): blight physics, the three regim
     const regions = regionsOf(g);
     const worst = regions.reduce((a, b) => a.properties.blight_load >= b.properties.blight_load ? a : b);
     const wc = cen(worst.geometry.coordinates[0]);
-    const near = regions.filter(r => r.properties.refining_capacity > 0).some(r => {
+    const near = regions.filter(r => r.properties.aetherworks_capacity > 0).some(r => {
       const c = cen(r.geometry.coordinates[0]);
       return Math.hypot(c[0] - wc[0], c[1] - wc[1]) < 300;
     });
@@ -3465,9 +3465,9 @@ console.log("# The mix pulls apart B10 (#132): a second pole, two knobs retired"
   // (i) old links MAP FORWARD: an hb=0 link seals the quays via openness=0
   const sealed = (await gen("#seed=alpha&regions=24&hb=0")).gj.hinterland;
   const openLink = (await gen("#seed=alpha&regions=24&openness=0")).gj.hinterland;
-  if (sealed.schema_version === 53 && sealed.openness === 0 && sealed.harbors_closed === true &&
+  if (sealed.schema_version === 54 && sealed.openness === 0 && sealed.harbors_closed === true &&
       openLink.openness === 0 && openLink.harbors_closed === true)
-    ok(`old links map forward: hb=0 seals the quays through openness=0 (harbors_closed), same as openness=0 (schema 53)`);
+    ok(`old links map forward: hb=0 seals the quays through openness=0 (harbors_closed), same as openness=0 (schema 54)`);
   else fail(`forward mapping broken: hb=0 openness ${sealed.openness}/closed ${sealed.harbors_closed}`);
 
   // (ii) EXHIBIT — a trade world whose largest CITY is NOT the seat (the second pole).
@@ -3505,8 +3505,8 @@ console.log("# The mix pulls apart B10 (#132): a second pole, two knobs retired"
   };
   const tradeSea = await measure("wt=80&we=7&wf=7&wg=6", r => r.sea_access);
   const legacySea = await measure("wg=80&we=7&wf=7&wt=6", r => r.sea_access);
-  const legacyCen = await measure("wg=80&we=7&wf=7&wt=6", r => r.centrality_to_seat);
-  const tradeCen = await measure("wt=80&we=7&wf=7&wg=6", r => r.centrality_to_seat);
+  const legacyCen = await measure("wg=80&we=7&wf=7&wt=6", r => r.centrality_to_capital);
+  const tradeCen = await measure("wt=80&we=7&wf=7&wg=6", r => r.centrality_to_capital);
   const artA = await measure("wf=80&we=7&wt=7&wg=6", r => r.artifice_index);
   const extA = await measure("we=80&wf=7&wt=7&wg=6", r => r.artifice_index);
   // trade anchors to the SEA (higher than legacy does), legacy to the SEAT centrality
@@ -3615,6 +3615,55 @@ console.log("# Imperial reach B11 (#133): the empire mostly never comes, it buys
   else fail(`gazette silent on the powers: has-row ${/the powers/.test(info)}, metropole ${info.includes(pwG.metropole)}, rival ${info.includes(pwG.rival)}`);
 }
 
+console.log("# The re-skin C1 (#134): the arcane-industrial register + new name registers");
+{
+  // (i) the new NAME REGISTERS produce plausible, NOVEL names across 10 seeds — the
+  //     exchange (corporate), the gazette (press), the precinct (administration), and
+  //     the buried power (chthonic), each Markov-walked from its own invented corpus.
+  const seen = { exchange: new Set(), gazette: new Set(), precinct: new Set(), buried_power: new Set() };
+  let plausible = true, bad = null;
+  for (let i = 0; i < 10; i++) {
+    const inst = (await gen(`#seed=reg-${i}&regions=24&ep=10`)).gj.hinterland.institutions;
+    if (!inst) { plausible = false; bad = `seed reg-${i}: no institutions block`; break; }
+    for (const k of ["exchange", "gazette", "precinct", "buried_power"]) {
+      const v = inst[k];
+      if (typeof v !== "string" || !/^[A-Z][A-Za-z' -]{2,27}$/.test(v)) { plausible = false; bad = `seed reg-${i} ${k}: "${v}"`; break; }
+      seen[k].add(v);
+    }
+    if (!plausible) break;
+  }
+  const varied = Object.values(seen).every(s => s.size >= 5); // novel walks, not a constant
+  if (plausible && varied)
+    ok(`the new name registers produce plausible NOVEL names across 10 seeds: e.g. exchange "${[...seen.exchange][0]}", gazette "${[...seen.gazette][0]}", precinct "${[...seen.precinct][0]}", buried power "${[...seen.buried_power][0]}" (each register ≥5 distinct over 10 seeds)`);
+  else fail(`name registers off: ${bad || "too few distinct — " + Object.entries(seen).map(([k, s]) => k + " " + s.size).join(", ")}`);
+
+  // (ii) NO OLD-REGISTER VOCABULARY survives in USER-FACING output — the clean break
+  //      (schema 54) means the rendered record + readout speak only the new register.
+  //      Grep the chronicle, the info table, and the findings panel across a sweep for
+  //      the medieval words. (The site_character values "outpost"/"works" and internal
+  //      enum data-keys like refinery_collapse are DATA, not user-facing strings, and
+  //      are deliberately out of scope — the acceptance pins user-facing strings.)
+  const FORBIDDEN = /\b(seat|tolls?|tolled|conduit|garrisons?|wardline|refiner(?:y|ies)|holdfast)\b|\bthe works\b/i;
+  let clean = true, hit = null;
+  for (let i = 0; i < 8; i++) {
+    const R = await gen(`#seed=skin-${i}&regions=24&ep=10`, true);
+    const surfaces = [
+      R.chron,
+      R.doc.getElementById("info") ? R.doc.getElementById("info").textContent : "",
+      R.doc.getElementById("findingsText") ? R.doc.getElementById("findingsText").textContent : "",
+    ];
+    R.window.close();
+    for (const s of surfaces) {
+      const m = s.match(FORBIDDEN);
+      if (m) { clean = false; hit = `seed skin-${i}: "${m[0]}" — …${s.slice(Math.max(0, m.index - 30), m.index + 30).replace(/\s+/g, " ")}…`; break; }
+    }
+    if (!clean) break;
+  }
+  if (clean)
+    ok(`the record speaks only the new register: no medieval vocabulary (seat / toll / conduit / garrison / wardline / refinery / holdfast / the works) survives in the chronicle, readout, or findings across 8 seeds`);
+  else fail(`old register leaked into user-facing output: ${hit}`);
+}
+
 console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");
 
 // (viii) Emergence directions: burden rises with blight, falls with reach & wealth.
@@ -3652,8 +3701,8 @@ console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");
   for (let i = 0; i < N; i++) {
     const g = (await gen(`#seed=cg${i}&regions=24`)).gj;
     const regions = regionsOf(g);
-    const on = regions.filter(r => r.properties.on_conduit === 1).map(r => r.properties.service_gap_idx);
-    const off = regions.filter(r => r.properties.on_conduit === 0).map(r => r.properties.service_gap_idx);
+    const on = regions.filter(r => r.properties.on_grid === 1).map(r => r.properties.service_gap_idx);
+    const off = regions.filter(r => r.properties.on_grid === 0).map(r => r.properties.service_gap_idx);
     if (on.length && off.length) { tested++; if (median(off) > median(on)) good++; }
   }
   if (tested > 0 && good === tested) ok(`service gap tracks the grid (${good}/${tested} seeds)`);
@@ -3698,14 +3747,14 @@ console.log("# Second wave W1 acceptance: roads for everyone, flows, pilgrims");
     const g = (await gen(`#seed=rd${i}&regions=24`)).gj;
     const regions = regionsOf(g);
     // market access should track centrality (roads radiate around the core)
-    maCorr += pearson(col(g, "market_access"), col(g, "centrality_to_seat"));
+    maCorr += pearson(col(g, "market_access"), col(g, "centrality_to_capital"));
     // sanctioned-site regions are pilgrim sinks: flux above world median
     const mf = median(col(g, "pilgrim_flux"));
     const siteIds = new Set(sanctOf(g).map(s => s.properties.region_id));
     const sitesHigh = regions.filter(r => siteIds.has(r.properties.region_id) && r.properties.pilgrim_flux >= mf).length;
     if (sitesHigh === siteIds.size) siteFlux++;
     // the road network reaches off-grid settlements the conduit refused
-    const offGrid = regions.filter(r => r.properties.on_conduit === 0);
+    const offGrid = regions.filter(r => r.properties.on_grid === 0);
     if (offGrid.length > 0) offRoadOK++; // connectivity already asserted in validate()
   }
   maCorr /= N;
@@ -3736,8 +3785,8 @@ console.log("# Second wave W2 acceptance: the shadow is the state's negative ima
     // black markets price the underservice
     bmCorr += pearson(col(g, "black_market_index"), col(g, "arcane_service_index"));
     // wardlines need lumen: off-grid wards weaker than on-grid
-    const on = regions.filter(r => P(r).on_conduit === 1).map(r => P(r).wardline_strength);
-    const off = regions.filter(r => P(r).on_conduit === 0).map(r => P(r).wardline_strength);
+    const on = regions.filter(r => P(r).on_grid === 1).map(r => P(r).constabulary_strength);
+    const off = regions.filter(r => P(r).on_grid === 0).map(r => P(r).constabulary_strength);
     if (on.length && off.length && median(on) > median(off)) wardOK++;
     // the enforcement gap opens outside secured space
     const sec = regions.filter(r => P(r).security_status === "secured").map(r => P(r).enforcement_gap);
@@ -3803,8 +3852,8 @@ console.log("# Dynamic engine D1 acceptance: time makes the loops real");
   const gt0 = regionsOf(E8a).map(r => r.properties.endowment_t0).join(",");
   if (g0 === gt0) ok("endowment_t0 at ep=8 equals the founding geology at ep=0 (blindness preserved through time)");
   else fail("founding geology drifted");
-  const on0 = col(E0, "on_conduit").reduce((s, v) => s + v, 0);
-  const on8 = col(E8a, "on_conduit").reduce((s, v) => s + v, 0);
+  const on0 = col(E0, "on_grid").reduce((s, v) => s + v, 0);
+  const on8 = col(E8a, "on_grid").reduce((s, v) => s + v, 0);
   if (on8 >= on0) ok(`the grid ratchets outward through time (${on0} -> ${on8} on-grid)`);
   else fail(`grid shrank: ${on0} -> ${on8}`);
 
@@ -3827,7 +3876,7 @@ console.log("# Dynamic engine D1 acceptance: time makes the loops real");
     if (calm.length > 3) {
       drainWorlds.push({
         x: calm.map(r => P(r).population - P(r).population_t0),
-        y: calm.map(r => 0.5 * P(r).wealth + 25 * P(r).on_conduit + 0.25 * (100 - P(r).blight_load)),
+        y: calm.map(r => 0.5 * P(r).wealth + 25 * P(r).on_grid + 0.25 * (100 - P(r).blight_load)),
       });
     }
     const cats = new Set(regions.map(r => P(r).boom_bust));
@@ -3876,7 +3925,7 @@ console.log("# In-run events D3 acceptance: history with dates");
         collapses = 1; collapseCount++;
         // scarred = dead works + a hysteresis abandonment_index, OR the town
         // emptied out entirely (a dead zone zeros the index but IS the scar)
-        if ((p.refining_capacity === 0 && p.abandonment_index > 0) || p.is_settled === 0) collapseScarred++;
+        if ((p.aetherworks_capacity === 0 && p.abandonment_index > 0) || p.is_settled === 0) collapseScarred++;
       }
       if (ev.type === "blight_plague") {
         plagues = 1; plagueCount++;
@@ -4048,7 +4097,7 @@ console.log("# Temporal bridge D2 acceptance: the history is exportable and scru
   const nR = regionsOf(m).length, nS = settlesOf(m).length;
   const sRegions = s.features.filter(f => f.properties.kind === "region");
   const sSettles = s.features.filter(f => f.properties.kind === "settlement");
-  const sConduit = s.features.filter(f => f.properties.kind === "conduit");
+  const sConduit = s.features.filter(f => f.properties.kind === "grid");
   const sRoads = s.features.filter(f => f.properties.kind === "road");
   if (s.hinterland.series === true && s.hinterland.epochs === EP &&
       sRegions.length === nR * (EP + 1) && sSettles.length === nS * (EP + 1) &&
@@ -4071,7 +4120,7 @@ console.log("# Temporal bridge D2 acceptance: the history is exportable and scru
   let finalOK = true, foundingOK = true;
   for (const f of sRegions) {
     const p = f.properties, mp = mainByR.get(p.region_id);
-    if (p.epoch === EP && (p.wealth !== mp.wealth || p.aetherstone_endowment !== mp.aetherstone_endowment || p.on_conduit !== mp.on_conduit || p.elite_share !== mp.elite_share)) finalOK = false;
+    if (p.epoch === EP && (p.wealth !== mp.wealth || p.aetherstone_endowment !== mp.aetherstone_endowment || p.on_grid !== mp.on_grid || p.elite_share !== mp.elite_share)) finalOK = false;
     if (p.epoch === 0 && (p.wealth !== mp.wealth_t0 || p.aetherstone_endowment !== mp.endowment_t0 || p.population !== mp.population_t0)) foundingOK = false;
   }
   if (finalOK) ok("series frame ep equals the main export incl. elite_share (the last frame IS the map)");
@@ -4111,20 +4160,20 @@ console.log("# Second wave W4 acceptance: trust vs kin, born labor, the uncounte
     // born labor, die labor: ore-only FRONTIER regions (no refinery, no hub
     // status — the pure extraction case) sit under the mobility median
     const tierById = new Map(settlesOf(g).map(s => [s.properties.region_id, s.properties.tier]));
-    const oreOnly = regions.filter(r => P(r).aetherstone_endowment >= 50 && P(r).refining_capacity === 0 &&
-      ["outpost", "holdfast"].includes(tierById.get(P(r).region_id)));
+    const oreOnly = regions.filter(r => P(r).aetherstone_endowment >= 50 && P(r).aetherworks_capacity === 0 &&
+      ["works-town", "frontier-post"].includes(tierById.get(P(r).region_id)));
     if (oreOnly.length) {
       bornLaborSeeds++;
       const mm = median(col(g, "mobility_ceiling"));
       if (median(oreOnly.map(r => P(r).mobility_ceiling)) <= mm) bornLabor++;
     }
     // the uncounted concentrate in the periphery
-    legibCorr += pearson(col(g, "legibility_gap"), col(g, "centrality_to_seat"));
-    const on = regions.filter(r => P(r).on_conduit === 1).map(r => P(r).legibility_gap);
-    const off = regions.filter(r => P(r).on_conduit === 0).map(r => P(r).legibility_gap);
+    legibCorr += pearson(col(g, "legibility_gap"), col(g, "centrality_to_capital"));
+    const on = regions.filter(r => P(r).on_grid === 1).map(r => P(r).legibility_gap);
+    const off = regions.filter(r => P(r).on_grid === 0).map(r => P(r).legibility_gap);
     if (on.length && off.length && median(off) > median(on)) uncountedPeriph++;
     // the enclave signature: refinery districts stand apart
-    const refs = regions.filter(r => P(r).refining_capacity > 0);
+    const refs = regions.filter(r => P(r).aetherworks_capacity > 0);
     const ms = median(col(g, "segregation_index"));
     if (refs.every(r => P(r).segregation_index >= ms)) enclave++;
   }
@@ -4265,7 +4314,7 @@ console.log("# QGIS substrates Q1 acceptance (#55/#56): edges, moran, CSV tables
       ok(`events.csv carries one row per event (${gj.hinterland.events.length}), in timeline order`);
     else fail(`events.csv rows ${rows(first[0])} != events ${gj.hinterland.events.length}`);
     if (rows(first[1]) === qRegions.length * (gj.hinterland.epochs + 1) &&
-        first[1].startsWith("region_id,epoch,epoch_date,wealth,elite_share,population,dominant_bloc,occupied,toll_burden"))
+        first[1].startsWith("region_id,epoch,epoch_date,wealth,elite_share,population,dominant_bloc,occupied,tariff_burden"))
       ok(`epoch_region.csv is the full long table (${qRegions.length} regions x ${gj.hinterland.epochs + 1} epochs)`);
     else fail("epoch_region.csv shape wrong");
   }
@@ -4500,7 +4549,7 @@ console.log("# The artifice index (#123, B1): the pie can grow — total wealth 
   let exhibitSeed = null;
   for (let i = 0; i < 30 && !exhibitSeed; i++) {
     const P = regsOf((await gen(`#seed=piv-${i}&regions=18&ep=10`)).gj);
-    const per = P.filter(r => r.centrality_to_seat < 40), core = P.filter(r => r.centrality_to_seat >= 60);
+    const per = P.filter(r => r.centrality_to_capital < 40), core = P.filter(r => r.centrality_to_capital >= 60);
     if (per.some(pr => core.some(cr => pr.artifice_index > cr.artifice_index + 15 && pr.wealth > cr.wealth + 3))) exhibitSeed = `piv-${i}`;
   }
   if (exhibitSeed) ok(`the exhibit exists: a high-artifice periphery out-earns a low-artifice core (${exhibitSeed})`);
@@ -4596,7 +4645,7 @@ console.log("# Migration both ways (#125, B3): the frontier term, emigration off
   let frontier = 0, exhibitSeed = null;
   for (let i = 0; i < 24; i++) {
     const R = regsOf((await gen(`#seed=fr-${i}&regions=22&ep=10`)).gj);
-    if (R.some(r => r.centrality_to_seat < 45 && r.is_settled && r.population > r.population_t0 * 1.12)) {
+    if (R.some(r => r.centrality_to_capital < 45 && r.is_settled && r.population > r.population_t0 * 1.12)) {
       frontier++; if (!exhibitSeed) exhibitSeed = `fr-${i}`;
     }
   }

@@ -4,23 +4,23 @@
 
 ## The Founding — year 1000
 
-In the beginning of this record the realm counted 12 settled regions, and Gladen held the seat. The wind stood out of the northeast, as it does in that country, and everything else followed from the ground: where the aetherstone lay, where the land would carry a road, and where it would not.
+In the beginning of this record the realm counted 12 settled regions, and Gladen held the capital. The wind stood out of the northeast, as it does in that country, and everything else followed from the ground: where the aetherstone lay, where the land would carry a road, and where it would not.
 
 No charter drew the towns to size. The centuries did: good land compounded, the fairs drew the valleys in, and by year 1000 the largest town held 13,396 souls to the median town's 2,794 — a hierarchy grown, not granted, and steeper every century the compounding ran.
 
-The works at Gladen turned aetherstone to lumen, and the trunk lines ran from their yards to the seat. The Temple kept holy ground at Delliothe (by Thraldek Delf) — out where the sacred substance lies and the Crown's writ runs thin. Every settlement of the realm sat on the conduit at the founding — a generosity of the ledgers the chronicle does not expect to last.
+The aetherworks at Gladen turned aetherstone to lumen, and the trunk lines ran from their yards to the capital. The Temple kept holy ground at Delliothe (by Thraldek Delf) — out where the sacred substance lies and the Crown's writ runs thin. Every settlement of the realm sat on the grid at the founding — a generosity of the ledgers the chronicle does not expect to last.
 
 No skyway was chartered in this realm: the ledgers found no lane worth the lift. The chronicle notes that even the sky is rationed by return.
 
 The Durnharrek Teeth, Grukketh Teeth, Bellok Teeth and Huldek Teeth wall the country, and the roads over the rock go by Murzek Stair, Ghak Stair and Dral Pass. 6 of the realm's regions lie in the mountains' shadow, on the wrong side of the wall from Gladen — and the chronicle will show what that costs.
 
-The Evenbroor Beck comes down off the high ground by Deholt-on-Evenbroor and runs through 3 regions to the border. The towns along it drink in order: Deholt-on-Evenbroor drinks it clean, and Iverby, at the mouth, drinks whatever every town and works upstream let fall into the water. The order was set by the land before anyone built anything, and no one who lives at the mouth chose it.
+The Evenbroor Beck comes down off the high ground by Deholt-on-Evenbroor and runs through 3 regions to the border. The towns along it drink in order: Deholt-on-Evenbroor drinks it clean, and Iverby, at the mouth, drinks whatever every town and aetherworks upstream let fall into the water. The order was set by the land before anyone built anything, and no one who lives at the mouth chose it.
 
-The sea lies to the south; the charts name it Wick Sea. The realm's gate is Gladen Harbor: whatever the mines raise and the works refine leaves the country there, and whoever holds the quay holds the toll. Distance to the water is the realm's second lottery, drawn at the founding like the first.
+The sea lies to the south; the charts name it Wick Sea. The realm's gate is Gladen Harbor: whatever the mines raise and the aetherworks refine leaves the country there, and whoever holds the quay holds the tariff. Distance to the water is the realm's second lottery, drawn at the founding like the first.
 
 The old world is not gone: the delve called Thorvek gapes in the old workings by Dromvalgrak, the tomb of Noviriene keeps its silence in the barrens by Drelkruk and the deadhold of Peraphyre stands empty by Thraldek Delf, and its ground is poisoned yet. Delvers walk the Dromvalgrak road every season, because risk is a wage where nothing else pays one; not all of them walk back, and what they carry out is sold in no sanctioned market.
 
-Beyond the last writ-stone, by Thraldek Delf, the lawless keep a harbor of their own: Aldham Quay. No charter names it, no gate tolls it, and the assessors who visit do not go twice. What the realm will not carry on its books leaves the country there, and the ground around it keeps what the gates would have taken.
+Beyond the last writ-stone, by Thraldek Delf, the lawless keep a harbor of their own: Aldham Quay. No charter names it, no gate charges it, and the assessors who visit do not go twice. What the realm will not carry on its books leaves the country there, and the ground around it keeps what the gates would have taken.
 
 High above the roads, by Urtazzek, stands Lionne Refuge — holy ground the Temple never consecrated and cannot forgive. It heals whoever climbs to it and asks no writ; the census does not climb at all, so the people it shelters are people the realm cannot count. Pilgrims walk to it beside the sanctioned roads, which the Temple is reminded of every festival.
 
@@ -28,19 +28,19 @@ The rivers are crossed at Iverby Bridge alone; everywhere else the banks are mar
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Quiet Years** (1000–1050), when the gap narrowed and **the Age of the Gates** (1075–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates tolled, the towns emptied or came back.
+The chronicle divides these years into ages, named for what the realm was living through: **the Quiet Years** (1000–1050), when the gap narrowed and **the Age of the Gates** (1075–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates charged tariffs, the towns emptied or came back.
 
-**Year 1025.** Politics in a capital Gladen had never seen closed the sea lanes to it. the Solvent States's quarrel with the Metropole became Gladen's ruin: the quays that had grown a second fortune on foreign trade stood idle, the cargoes did not come, and the coast that had rivalled the seat busted in a single year. The gap the trade had opened closed the hard way.
+**Year 1025.** Politics in a capital Gladen had never seen closed the sea lanes to it. the Solvent States's quarrel with the Metropole became Gladen's ruin: the quays that had grown a second fortune on foreign trade stood idle, the cargoes did not come, and the coast that had rivalled the capital busted in a single year. The gap the trade had opened closed the hard way.
 
-**Year 1025.** In this year the magnates took the gate at Gladen — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the toll was posted by winter.
+**Year 1025.** In this year the magnates took the gate at Gladen — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the tariff was posted by winter.
 
 **Year 1025.** The rains failed over Gladen, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1025.
 
 **Year 1050.** The rains failed over Gladen, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1050.
 
-**Year 1075.** In this year the refinery at Gladen closed its yards for good. What the ore had built, the ore's end unbuilt; the town kept its wires and lost its wages.
+**Year 1075.** In this year the aetherworks at Gladen closed its yards for good. What the ore had built, the ore's end unbuilt; the town kept its wires and lost its wages.
 
-**Year 1075.** The Crown pressed its claim on the crossing at Gladen. No blood is recorded; the ledger did the taking, and the toll did the keeping.
+**Year 1075.** The Crown pressed its claim on the crossing at Gladen. No blood is recorded; the ledger did the taking, and the tariff did the keeping.
 
 **Year 1100.** A lode no survey had found came up under Urtazzek. The rush was immediate: retainers, chancers, assayers, and everyone who follows them.
 
@@ -48,19 +48,19 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1100.** The rains failed over Ferkul, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1100.
 
-**Year 1125.** New refinery fires were lit at Gladen. The seat called it progress; the towns the new trunk line passed over called it something else.
+**Year 1125.** New aetherworks fires were lit at Gladen. The capital called it progress; the towns the new trunk line passed over called it something else.
 
-**Year 1125.** The old Sovereign died, and Dunholt took the seat without incident — which the chronicle records precisely because it is rare.
+**Year 1125.** The old Sovereign died, and Dunholt took the capital without incident — which the chronicle records precisely because it is rare.
 
-**Year 1125.** In this year the magnates took the gate at Gladen — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the toll was posted by winter.
+**Year 1125.** In this year the magnates took the gate at Gladen — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the tariff was posted by winter.
 
 **Year 1125.** The ground moved under Drelkruk, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Drelkruk Quake.
 
 **Year 1125.** The god's fortune rose at Thraldek Delf, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Thraldek Delf.
 
-**Year 1125.** Thraldek Delf rose, and was put down. The garrison came after the hangings, and the injustice that caused the rising was carefully recorded and carefully unaddressed. The people keep the date as the Thraldek Delf Rising.
+**Year 1125.** Thraldek Delf rose, and was put down. The constabulary came after the hangings, and the injustice that caused the rising was carefully recorded and carefully unaddressed. The people keep the date as the Thraldek Delf Rising.
 
-**Year 1150.** the Solvent States sent envoys to Gladen Harbor, and the seat pretended not to notice. Nothing was signed — a rich coast the Metropole had not yet claimed is a coast worth courting, and the powers beyond the sea prefer to be asked. The chronicle notes it because such notes are how the next annexation begins.
+**Year 1150.** the Solvent States sent envoys to Gladen Harbor, and the capital pretended not to notice. Nothing was signed — a rich coast the Metropole had not yet claimed is a coast worth courting, and the powers beyond the sea prefer to be asked. The chronicle notes it because such notes are how the next annexation begins.
 
 **Year 1150.** The old Hierarch died, and Sylvasse took the censer without incident — which the chronicle records precisely because it is rare.
 
@@ -72,11 +72,11 @@ The chronicle divides these years into ages, named for what the realm was living
 
 **Year 1175.** The ground moved under Drelkruk, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Drelkruk Quake.
 
-**Year 1200.** The old Sovereign died, and Umbermerell took the seat without incident — which the chronicle records precisely because it is rare.
+**Year 1200.** The old Sovereign died, and Umbermerell took the capital without incident — which the chronicle records precisely because it is rare.
 
 **Year 1225.** The old First Magnate died, and Hulgrumketh took the chair without incident — which the chronicle records precisely because it is rare.
 
-**Year 1225.** The river rose over Iverby and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Iverby Flood, the accounts call it, and they do not agree on the toll.
+**Year 1225.** The river rose over Iverby and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Iverby Flood, the accounts call it, and they do not agree on how many it took.
 
 **Year 1225.** A storm came off the water and stood over the coast for three days. Gladen took the worst of it, as the exposed shore always does; the Great Storm of 1225 is the name the survivors gave the year.
 
@@ -92,14 +92,14 @@ The Crown holds 9 regions, the Temple 1, the magnates 0; 1 are contested between
 
 Of the realm's 5 gates — the bridges, the passes, the quays — the Crown keeps 3, the Temple 0, and the magnates 1; 1 stand untolled. Every levy on the list is paid by people who did not choose the road.
 
-The toll ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the magnates standing nearest to blows.
+The tariff ledgers run deepest with the Crown, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the magnates standing nearest to blows.
 
 And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 3.9 in every hundred of the realm's people hold 39.1 of every hundred coins, and live 15.6 times better than those who work for them. Nowhere is the ledger sharper than at Gladen, where 56 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 26 parts in a hundred of the whole spread.
 
-At the record's close the conduit reaches every settlement of the realm. The chronicle notes it without comment, so that later readers may check whether it lasted.
+At the record's close the grid reaches every settlement of the realm. The chronicle notes it without comment, so that later readers may check whether it lasted.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.42, and the turning point was the rising at Thraldek Delf in 1125, which was put down. The poorest fifth of the realm carries 5 times the blight of the richest fifth. Behind the Durnharrek wall, the median settlement earns 83 in the hundred less than the open country at the same remove. 0 regions sit off the conduit because the ledgers said serving them would not pay. Iverby drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tolls at gates whose holders they never chose. And within every wall the shares were already set: 3.9 in a hundred hold 39.1 of every hundred coins, and stand 15.6 times apart from the rest. The skyway would abolish 38.7 parts in a hundred of the walled country's distance to the seat, and the walled country's labor may not board it.
+The chronicler is required to close with what the numbers say, and the numbers say this. This world held its shape, the spread of fortunes standing at 0.42, and the turning point was the rising at Thraldek Delf in 1125, which was put down. The poorest fifth of the realm carries 5 times the blight of the richest fifth. Behind the Durnharrek wall, the median settlement earns 83 in the hundred less than the open country at the same remove. 0 regions sit off the grid because the ledgers said serving them would not pay. Iverby drinks 4 points of other towns' poison for the crime of standing at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And within every wall the shares were already set: 3.9 in a hundred hold 39.1 of every hundred coins, and stand 15.6 times apart from the rest. The skyway would abolish 38.7 parts in a hundred of the walled country's distance to the capital, and the walled country's labor may not board it.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

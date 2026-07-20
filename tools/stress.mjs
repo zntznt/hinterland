@@ -74,11 +74,11 @@ function segInt(p, q, a, b) {
   return [p[0] + t * d1x, p[1] + t * d1y];
 }
 const settlesOf = (gj) => gj.features.filter(f => f.properties.kind === "settlement");
-const conduitOf = (gj) => gj.features.filter(f => f.properties.kind === "conduit");
+const conduitOf = (gj) => gj.features.filter(f => f.properties.kind === "grid");
 const facilitiesOf = (gj) => gj.features.filter(f => f.properties.kind === "facility");
 const sanctOf = (gj) => gj.features.filter(f => f.properties.kind === "sanctioned_site");
 const roadsOf = (gj) => gj.features.filter(f => f.properties.kind === "road");
-const garrisonsOf = (gj) => gj.features.filter(f => f.properties.kind === "garrison");
+const garrisonsOf = (gj) => gj.features.filter(f => f.properties.kind === "constabulary");
 const rings = (gj) => regionsOf(gj).map(f => JSON.stringify(f.geometry.coordinates));
 const col = (gj, name) => regionsOf(gj).map(f => f.properties[name]);
 const geology = (gj) => JSON.stringify(regionsOf(gj).map(f => [
@@ -120,16 +120,16 @@ function validate(gj, tag) {
   // an unsettled cell holds no one: population 0, tier none
   for (const r of regions) if (r.properties.is_settled === 0 && r.properties.population !== 0)
     return fail(`${tag}: unsettled cell ${r.properties.region_id} has population ${r.properties.population}`);
-  const primes = settles.filter(s => s.properties.tier === "prime");
+  const primes = settles.filter(s => s.properties.tier === "metropolis");
   if (primes.length !== 1) return fail(`${tag}: prime count ${primes.length}`);
   const capRegions = regions.filter(r => r.properties.is_capital_region === 1);
   if (capRegions.length !== 1) return fail(`${tag}: capital region flag count`);
   if (primes[0].properties.region_id !== capRegions[0].properties.region_id)
     return fail(`${tag}: prime not in capital region`);
-  if (capRegions[0].properties.centrality_to_seat !== 100)
-    return fail(`${tag}: capital centrality ${capRegions[0].properties.centrality_to_seat} != 100`);
+  if (capRegions[0].properties.centrality_to_capital !== 100)
+    return fail(`${tag}: capital centrality ${capRegions[0].properties.centrality_to_capital} != 100`);
 
-  const TIERS = new Set(["prime", "hub", "outpost", "holdfast"]);
+  const TIERS = new Set(["metropolis", "city", "works-town", "frontier-post"]);
   const regionById = new Map(regions.map(r => [r.properties.region_id, r]));
   const epochs = gj.hinterland.epochs || 0;
   for (const s of settles) {
@@ -164,7 +164,7 @@ function validate(gj, tag) {
     const nHubT = Math.max(1, Math.round(others.length * 0.2));
     const nOutT = Math.max(1, Math.round(others.length * 0.4));
     for (let i = 0; i < others.length; i++) {
-      const want = i < nHubT ? "hub" : (i < nHubT + nOutT ? "outpost" : "holdfast");
+      const want = i < nHubT ? "city" : (i < nHubT + nOutT ? "works-town" : "frontier-post");
       if (others[i].properties.tier !== want)
         return fail(`${tag}: tier ${others[i].properties.tier} != size-rank ${want} (#${others[i].properties.region_id})`);
     }
@@ -197,11 +197,11 @@ function validate(gj, tag) {
   const K = Math.max(1, Math.round(n / 16));
   const collapsedCount = (gj.hinterland.events || []).filter(ev => ev.type === "refinery_collapse").length;
   const foundedCount = (gj.hinterland.events || []).filter(ev => ev.type === "refinery_founded").length;
-  const refiners = regions.filter(r => r.properties.refining_capacity > 0);
+  const refiners = regions.filter(r => r.properties.aetherworks_capacity > 0);
   if (refiners.length !== K - collapsedCount + foundedCount)
     return fail(`${tag}: refinery count ${refiners.length} != ${K} - ${collapsedCount} collapsed + ${foundedCount} founded`);
   for (const r of refiners) {
-    const c = r.properties.refining_capacity;
+    const c = r.properties.aetherworks_capacity;
     if (c < 60 || c > 100) return fail(`${tag}: refining capacity ${c} outside [60,100]`);
   }
 
@@ -216,7 +216,7 @@ function validate(gj, tag) {
     for (let k = 0; k < ring.length - 1; k++) area += ring[k][0] * ring[k + 1][1] - ring[k + 1][0] * ring[k][1];
     if (area <= 0) return fail(`${tag}: ring not CCW`);
     for (const [x, y] of ring) if (x < -0.01 || x > 1600.01 || y < -0.01 || y > 1000.01) return fail(`${tag}: coord OOB`);
-    for (const key of ["wealth", "aetherstone_endowment", "terrain_ruggedness", "fertility", "centrality_to_seat", "value_retention",
+    for (const key of ["wealth", "aetherstone_endowment", "terrain_ruggedness", "fertility", "centrality_to_capital", "value_retention",
                        "water_access", "water_access_effective"]) {
       const v = p[key];
       if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad ${key} ${v}`);
@@ -233,12 +233,12 @@ function validate(gj, tag) {
     if ((p.is_settled === 1) !== (p.population > 0)) return fail(`${tag}: settled/population mismatch (settled ${p.is_settled}, pop ${p.population})`);
     if (typeof p.pop_density !== "number" || p.pop_density < 0) return fail(`${tag}: bad pop_density`);
     if ((p.is_settled === 1) !== (p.pop_density > 0)) return fail(`${tag}: settled/density mismatch`);
-    if (p.on_conduit !== 0 && p.on_conduit !== 1) return fail(`${tag}: bad on_conduit`);
-    for (const key of ["conduit_access", "arcane_service_index", "elevation", "blight_load", "injustice_idx"]) {
+    if (p.on_grid !== 0 && p.on_grid !== 1) return fail(`${tag}: bad on_grid`);
+    for (const key of ["grid_access", "arcane_service_index", "elevation", "blight_load", "injustice_idx"]) {
       const v = p[key];
       if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad ${key} ${v}`);
     }
-    if (p.on_conduit === 1 && p.conduit_access !== 100) return fail(`${tag}: on-grid access != 100`);
+    if (p.on_grid === 1 && p.grid_access !== 100) return fail(`${tag}: on-grid access != 100`);
     // injustice is a pure presentation product of the two raw fields
     const expInj = Math.round(100 * (p.blight_load / 100) * (1 - p.wealth / 100));
     if (p.injustice_idx !== expInj) return fail(`${tag}: injustice ${p.injustice_idx} != blight×poverty ${expInj}`);
@@ -297,7 +297,7 @@ function validate(gj, tag) {
         if (p.security_status !== "none") return fail(`${tag}: unsettled cell ${p.region_id} security ${p.security_status} != none`);
         continue;
       }
-      for (const key of ["force_projection", "wardline_strength", "smuggling_intensity", "predation_risk", "black_market_index", "enforcement_gap"]) {
+      for (const key of ["force_projection", "constabulary_strength", "smuggling_intensity", "predation_risk", "black_market_index", "enforcement_gap"]) {
         const v = p[key];
         if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad ${key} ${v}`);
       }
@@ -408,7 +408,7 @@ function validate(gj, tag) {
       if ((p.exhausted_lode === 1 || p.endowment_t0 >= 50) && p.founding_era !== "relic_era") return fail(`${tag}: ore country not relic_era`);
       if (p.exhausted_lode === 0 && p.endowment_t0 < 50 && p.fertility >= 60 && p.founding_era !== "first_settlement") return fail(`${tag}: fertile land not first_settlement`);
       // exact recomputes
-      const expLegacy = Math.round(0.5 * p.founding_age + 0.3 * p.conduit_access + 0.2 * p.centrality_to_seat);
+      const expLegacy = Math.round(0.5 * p.founding_age + 0.3 * p.grid_access + 0.2 * p.centrality_to_capital);
       if (p.legacy_advantage !== expLegacy) return fail(`${tag}: legacy ${p.legacy_advantage} != ${expLegacy}`);
       const expAband = Math.max(0, Math.min(100, Math.round(
         0.7 * (p.peak_wealth - p.wealth) + ((p.exhausted_lode === 1 || p.ore_depleted === 1) ? 30 : 0))));
@@ -447,12 +447,12 @@ function validate(gj, tag) {
       if (!Number.isInteger(p.uncounted_population) || p.uncounted_population < 0 || p.uncounted_population > p.population)
         return fail(`${tag}: bad uncounted_population ${p.uncounted_population}`);
       // exact recomputes from exported columns
-      const expTenure = (p.centrality_to_seat < 60 && (p.aetherstone_endowment >= 50 || p.exhausted_lode === 1)) ? "contested"
-        : p.centrality_to_seat >= 60 ? "titled"
-        : p.centrality_to_seat < 30 ? "customary" : "mixed";
+      const expTenure = (p.centrality_to_capital < 60 && (p.aetherstone_endowment >= 50 || p.exhausted_lode === 1)) ? "contested"
+        : p.centrality_to_capital >= 60 ? "titled"
+        : p.centrality_to_capital < 30 ? "customary" : "mixed";
       if (p.tenure_regime !== expTenure) return fail(`${tag}: tenure ${p.tenure_regime} != ${expTenure}`);
       const tierOf = settles.find(s => s.properties.region_id === p.region_id).properties.tier;
-      const chainVal = p.refining_capacity > 0 ? 85 : tierOf === "prime" ? 80 : tierOf === "hub" ? 55
+      const chainVal = p.aetherworks_capacity > 0 ? 85 : tierOf === "metropolis" ? 80 : tierOf === "city" ? 55
         : (p.aetherstone_endowment >= 50 ? 15 : 30);
       const expMob = Math.max(0, Math.min(100, Math.round(0.4 * chainVal + 0.35 * p.arcane_service_index + 0.25 * p.market_access) +
         (p.has_camp === 1 ? 4 : 0))); // L1: the bounty is a rung
@@ -461,7 +461,7 @@ function validate(gj, tag) {
       const towerNear = gj.features.some(f => f.properties.kind === "tower" &&
         Math.hypot(f.geometry.coordinates[0] - anchorP[0], f.geometry.coordinates[1] - anchorP[1]) < 220);
       const expTrust = Math.max(0, Math.min(100, Math.round(
-        20 + 0.4 * p.centrality_to_seat + (p.on_conduit ? 12 : 0) - 0.2 * p.blight_load +
+        20 + 0.4 * p.centrality_to_capital + (p.on_grid ? 12 : 0) - 0.2 * p.blight_load +
         0.1 * p.force_projection + (p.dominant_bloc === "crown" ? 8 : p.dominant_bloc === "ungoverned" ? -8 : 0) -
         (towerNear ? 12 : 0))));
       if (p.social_trust !== expTrust) return fail(`${tag}: trust ${p.social_trust} != ${expTrust}`);
@@ -469,7 +469,7 @@ function validate(gj, tag) {
         0.55 * (100 - p.arcane_service_index) + 0.25 * (100 - p.force_projection) + 0.2 * p.cultural_distance)));
       if (p.kinship_reliance !== expKin) return fail(`${tag}: kinship ${p.kinship_reliance} != ${expKin}`);
       const expLegib = Math.max(0, Math.min(100, Math.round(
-        0.4 * p.cultural_distance + 0.3 * (100 - p.centrality_to_seat) + (p.on_conduit ? 0 : 15) +
+        0.4 * p.cultural_distance + 0.3 * (100 - p.centrality_to_capital) + (p.on_grid ? 0 : 15) +
         ((p.tenure_regime === "customary" || p.tenure_regime === "contested") ? 15 : 0) +
         (p.has_sanctuary === 1 ? 15 : 0)))); // L1: the refuge hides its people
       if (p.legibility_gap !== expLegib) return fail(`${tag}: legibility ${p.legibility_gap} != ${expLegib}`);
@@ -908,7 +908,7 @@ function validate(gj, tag) {
     const expGap = (shadow.length >= 2 && open.length >= 2 && med2(open.map(r => r.wealth)) > 0)
       ? Math.round(100 * (1 - med2(shadow.map(r => r.wealth)) / med2(open.map(r => r.wealth)))) : null;
     if (F.shadow_gap_pct !== expGap) return fail(`${tag}: findings shadow_gap ${F.shadow_gap_pct} != ${expGap}`);
-    const dark = P.filter(r => r.on_conduit === 0), lit = P.filter(r => r.on_conduit === 1);
+    const dark = P.filter(r => r.on_grid === 0), lit = P.filter(r => r.on_grid === 1);
     if (F.dark_n !== dark.length) return fail(`${tag}: findings dark_n`);
     const expDB = (dark.length && lit.length)
       ? r1(mean(dark.map(r => r.disease_burden_per_1k)) / Math.max(0.1, mean(lit.map(r => r.disease_burden_per_1k)))) : null;
@@ -916,7 +916,7 @@ function validate(gj, tag) {
     const mouth = P.reduce((a, b) => b.downstream_blight > a.downstream_blight ? b : a, P[0]);
     if (F.mouth_region !== (mouth.downstream_blight > 0 ? mouth.region_id : null)) return fail(`${tag}: findings mouth_region`);
     if (F.mouth_downstream !== mouth.downstream_blight) return fail(`${tag}: findings mouth_downstream`);
-    if (F.toll_paying_n !== P.filter(r => r.toll_burden > 0).length) return fail(`${tag}: findings toll_paying_n`);
+    if (F.toll_paying_n !== P.filter(r => r.tariff_burden > 0).length) return fail(`${tag}: findings toll_paying_n`);
     // the twins: mirror the app's deterministic pick over the exported anchors
     const seatP2 = anchor.get(P.find(r => r.is_capital_region === 1).region_id);
     const dS = (r) => { const a = anchor.get(r.region_id); return Math.hypot(a[0] - seatP2[0], a[1] - seatP2[1]); };
@@ -986,8 +986,8 @@ function validate(gj, tag) {
       }
       if (!Number.isInteger(r.elite_share) || r.elite_share < 8 || r.elite_share > 92)
         return fail(`${tag}: elite_share out of range: ${r.elite_share}`);
-      const expPP = 2 + (tierOf.get(r.region_id) === "prime" ? 3 : tierOf.get(r.region_id) === "hub" ? 2 : 0)
-        + (r.refining_capacity > 0 ? 2 : 0) + (r.is_port === 1 ? 1 : 0) + (r.is_skyport === 1 ? 1 : 0);
+      const expPP = 2 + (tierOf.get(r.region_id) === "metropolis" ? 3 : tierOf.get(r.region_id) === "city" ? 2 : 0)
+        + (r.aetherworks_capacity > 0 ? 2 : 0) + (r.is_port === 1 ? 1 : 0) + (r.is_skyport === 1 ? 1 : 0);
       if (r.elite_pop_pct !== expPP)
         return fail(`${tag}: elite_pop_pct ${r.elite_pop_pct} != ${expPP} (#${r.region_id})`);
       const expCG = Math.round(((r.elite_share / r.elite_pop_pct) / ((100 - r.elite_share) / (100 - r.elite_pop_pct))) * 10) / 10;
@@ -1056,13 +1056,13 @@ function validate(gj, tag) {
         return fail(`${tag}: malformed skyway name`);
       for (const r of P) {
         if ((r.is_skyport === 1) !== spIds.has(r.region_id)) return fail(`${tag}: is_skyport mismatch #${r.region_id}`);
-        if (typeof r.seat_cost_ground !== "number" || r.seat_cost_ground < 0)
-          return fail(`${tag}: bad seat_cost_ground ${r.seat_cost_ground}`);
-        if (r.region_id === capId && r.seat_cost_ground !== 0) return fail(`${tag}: the seat's ground cost != 0`);
-        if (r.seat_cost_sky > r.seat_cost_ground + 0.101)
+        if (typeof r.capital_cost_ground !== "number" || r.capital_cost_ground < 0)
+          return fail(`${tag}: bad capital_cost_ground ${r.capital_cost_ground}`);
+        if (r.region_id === capId && r.capital_cost_ground !== 0) return fail(`${tag}: the seat's ground cost != 0`);
+        if (r.capital_cost_sky > r.capital_cost_ground + 0.101)
           return fail(`${tag}: flight costlier than the ground #${r.region_id}`);
-        const expAdv = r.seat_cost_ground > 0
-          ? Math.max(0, Math.round(100 * (1 - r.seat_cost_sky / r.seat_cost_ground))) : 0;
+        const expAdv = r.capital_cost_ground > 0
+          ? Math.max(0, Math.round(100 * (1 - r.capital_cost_sky / r.capital_cost_ground))) : 0;
         if (r.sky_advantage !== expAdv)
           return fail(`${tag}: sky_advantage ${r.sky_advantage} != ${expAdv} (#${r.region_id})`);
       }
@@ -1103,7 +1103,7 @@ function validate(gj, tag) {
         if (r.occupied === 1 && r.occupied_epoch !== D.arrived_epoch)
           return fail(`${tag}: occupied_epoch ${r.occupied_epoch} != arrival ${D.arrived_epoch}`);
         // the extractive corridor: occupied ground is ALWAYS wired
-        if (r.occupied === 1 && r.on_conduit !== 1) return fail(`${tag}: occupied region ${r.region_id} off the corridor`);
+        if (r.occupied === 1 && r.on_grid !== 1) return fail(`${tag}: occupied region ${r.region_id} off the corridor`);
         // once-occupied-now-free ground must carry a won rising
         if (r.occupied === 0 && r.occupied_epoch !== -1) {
           const lib = (gj.hinterland.events || []).some(ev =>
@@ -1123,7 +1123,7 @@ function validate(gj, tag) {
       const freeR = P.filter(r => r.occupied === 0);
       const expSov = occ.length && freeR.length ? {
         occupied_n: occ.length,
-        corridor_wired: occ.filter(r => r.on_conduit === 1).length,
+        corridor_wired: occ.filter(r => r.on_grid === 1).length,
         retent_ratio: r1(mean(freeR.map(r => r.value_retention)) / Math.max(1, mean(occ.map(r => r.value_retention)))),
         growth_gap: med2(freeR.map(r => r.wealth - r.wealth_t0)) - med2(occ.map(r => r.wealth - r.wealth_t0)),
         comprador_ratio: r1(mean(occ.map(r => r.elite_share)) / Math.max(1, mean(freeR.map(r => r.elite_share))))
@@ -1187,8 +1187,8 @@ function validate(gj, tag) {
     for (const a of assetFeatures)
       if (!FACS.has(a.properties.held_by)) return fail(`${tag}: bad held_by ${a.properties.held_by} on ${a.properties.kind}`);
     for (const r of regions) {
-      const tb = r.properties.toll_burden;
-      if (!Number.isInteger(tb) || tb < 0 || tb > 100) return fail(`${tag}: bad toll_burden ${tb}`);
+      const tb = r.properties.tariff_burden;
+      if (!Number.isInteger(tb) || tb < 0 || tb > 100) return fail(`${tag}: bad tariff_burden ${tb}`);
     }
     // the last seizure at a region decides who holds (one of) its gates —
     // unless a LATER treaty redrew the map at the table (F3 cessions)
@@ -1280,12 +1280,12 @@ function validate(gj, tag) {
       byRegion.set(k, (byRegion.get(k) || new Set()).add(f.properties.facility_type));
     }
     const tierById = new Map(settles.map(s => [s.properties.region_id, s.properties.tier]));
-    const onById = new Map(regions.map(r => [r.properties.region_id, r.properties.on_conduit]));
-    const refById = new Map(regions.map(r => [r.properties.region_id, r.properties.refining_capacity]));
+    const onById = new Map(regions.map(r => [r.properties.region_id, r.properties.on_grid]));
+    const refById = new Map(regions.map(r => [r.properties.region_id, r.properties.aetherworks_capacity]));
     for (const r of regions) {
       const id = r.properties.region_id;
       const tier = tierById.get(id);
-      const served = tier === "prime" || (tier === "hub" && onById.get(id) === 1);
+      const served = tier === "metropolis" || (tier === "city" && onById.get(id) === 1);
       const have = byRegion.get(id) || new Set();
       const expect = new Set();
       if (served) { expect.add("healer"); expect.add("waterworks"); expect.add("wardstation"); }
@@ -1307,7 +1307,7 @@ function validate(gj, tag) {
   // Conduit network integrity: valid LineStrings, endpoints on-grid, and every
   // on-grid region in the single component that contains the seat.
   const edges = conduitOf(gj);
-  const onIds = new Set(regions.filter(r => r.properties.on_conduit === 1).map(r => r.properties.region_id));
+  const onIds = new Set(regions.filter(r => r.properties.on_grid === 1).map(r => r.properties.region_id));
   const capId = capRegions[0].properties.region_id;
   if (!onIds.has(capId)) return fail(`${tag}: seat region off-grid`);
   const parentUF = new Map([...onIds].map(id => [id, id]));
@@ -1330,9 +1330,9 @@ function validate(gj, tag) {
   // refineries must be wired
   for (const r of refiners) if (!onIds.has(r.properties.region_id)) return fail(`${tag}: refinery off-grid`);
   // settlement flags mirror their region
-  const regionOn = new Map(regions.map(r => [r.properties.region_id, r.properties.on_conduit]));
+  const regionOn = new Map(regions.map(r => [r.properties.region_id, r.properties.on_grid]));
   for (const s of settles) {
-    if (s.properties.on_conduit !== regionOn.get(s.properties.region_id)) return fail(`${tag}: settlement/region on_conduit mismatch`);
+    if (s.properties.on_grid !== regionOn.get(s.properties.region_id)) return fail(`${tag}: settlement/region on_grid mismatch`);
     const v = s.properties.arcane_service_index;
     if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad settlement asi`);
   }
@@ -1342,7 +1342,7 @@ function validate(gj, tag) {
   // sits, which only dilutes the relationship among the places that have one).
   const settledForCorr = regionsOf(gj).filter(f => f.properties.is_settled === 1);
   if (settledForCorr.length >= 12) {
-    const corr = pearson(settledForCorr.map(f => f.properties.centrality_to_seat), settledForCorr.map(f => f.properties.wealth));
+    const corr = pearson(settledForCorr.map(f => f.properties.centrality_to_capital), settledForCorr.map(f => f.properties.wealth));
     if (corr < 0.1) return fail(`${tag}: wealth/centrality corr ${corr.toFixed(2)} too weak (n=${settledForCorr.length})`);
     // endowment sparsity holds for the FOUNDING geology (endowment_t0);
     // the exported aetherstone_endowment is the current, possibly depleted stock
@@ -1430,7 +1430,7 @@ console.log("# Phase 2 acceptance: legacy mode, emergent mode, resource curse, s
   let sum = 0; const N = 10;
   for (let i = 0; i < N; i++) {
     const g = (await gen(`#seed=em${i}&regions=24&relax=2&bias=80&we=35&wf=25&wt=30&wg=0`)).gj;
-    sum += pearson(col(g, "centrality_to_seat"), col(g, "wealth"));
+    sum += pearson(col(g, "centrality_to_capital"), col(g, "wealth"));
   }
   const mean = sum / N;
   if (mean >= 0.45) ok(`gradient=0: wealth still spatially structured (mean centrality corr ${mean.toFixed(2)})`);

@@ -20,12 +20,12 @@ layer you duplicate:
 ```
 
 Any other `kind` (`ridge`, `river`, `conduit`, `bridge`, `pass`, `port`,
-`ruin`, …) works the same way. The capital region is `is_capital_region = 1`
-— the seat flag lives on the region features, no extra layer needed.
+`ruin`, …) works the same way. The capital region is `is_capital_region = 1`.
+The seat flag lives on the region features, no extra layer needed.
 
 ## 2. Assign the CRS (kills the WGS84 warning)
 
-The world is a flat plane, 0–1600 × 0–1000 (16:10), y-up — not Earth. `hinterland.prj`
+The world is a flat plane, 0–1600 × 0–1000 (16:10), y-up, not Earth. `hinterland.prj`
 carries a WKT2 **engineering CRS** ("Hinterland planar grid", metre units,
 east/north axes). In QGIS: *Layer Properties → Source → Assigned CRS →
 custom → import from* `hinterland.prj` (or *Settings → Custom Projections*
@@ -41,7 +41,7 @@ Right-click a layer → *Properties → Symbology → Style → Load Style…*:
 |---|---|---|
 | `regions-wealth.qml` | regions | graduated fill, the app's wealth ramp, 7 classes |
 | `regions-injustice.qml` | regions | graduated fill, the app's injustice ramp, 7 classes |
-| `edges-cost.qml` | edges | line width graduated by `cost` — the friction graph made visible |
+| `edges-cost.qml` | edges | line width graduated by `cost`, the friction graph made visible |
 | `settlements.qml` | settlements | circle size by `population`, labeled by `name` |
 
 The ramps interpolate the same lo→hi colors the app's RAMPS table uses, so
@@ -56,12 +56,12 @@ tables: `events.csv`, `epoch_region.csv`, `rulers.csv`, `tensions.csv`,
 - **events.csv** joins to regions on `region_id` (*Layer Properties →
   Joins*, or *Relations* for a one-to-many child table: click a region,
   read its history).
-- **epoch_region.csv** is the long table — one row per (region, epoch)
+- **epoch_region.csv** is the long table, one row per (region, epoch)
   with `wealth`, `elite_share`, `population`, `dominant_bloc`, `occupied`,
   `toll_burden`. Join it to the epoch-series export for the **Temporal
   Controller**, or feed it straight to **DataPlotly**: log(population) vs
   log(rank) per epoch is the rank-size (Zipf) plot the findings quote.
-- **findings.csv** is key/value — the world's own argument, one row per
+- **findings.csv** is key/value: the world's own argument, one row per
   claim, including `moran` / `moran_blight` (global Moran's I with its
   permutation p).
 

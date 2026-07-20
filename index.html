@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Hinterland — generator</title>
+<title>Hinterland generator</title>
 <!--
   Hinterland — procedural region-scale map generator.
   Client-side, static, no build step. Open directly from disk or host on Pages.
@@ -1114,7 +1114,7 @@
             <input type="text" id="fate" inputmode="text" placeholder="(same as the seed)" />
             <button id="diceFate" title="Reroll the luck">&#127922;</button>
           </div>
-          <div class="hint">Same rock, different luck. Blank = the seed's own fate. A reroll shakes only the politics — geology, names and founding hold.</div>
+          <div class="hint">Same rock, different luck. Leave it blank to use the seed's own fate. A reroll changes only the politics. Geology, names, and the founding stay fixed.</div>
         </div>
         <div class="row">
           <label for="world">World</label>
@@ -1122,7 +1122,7 @@
             <input type="text" id="world" inputmode="text" placeholder="concordat-settlement" />
             <button id="diceWorld" title="Roll a different world history">&#127922;</button>
           </div>
-          <div class="hint">The world outside — prices, empires, distant wars. Default is the shared Concordat era. A different world can rescue a doomed region or ruin a thriving one; it never touches the rock.</div>
+          <div class="hint">The world outside: prices, empires, distant wars. The default is the shared Concordat era. A different world can rescue a doomed region or ruin a thriving one. It never touches the rock.</div>
         </div>
         <div class="row">
           <label>Regions <span class="val" id="regionsVal"></span></label>
@@ -1171,7 +1171,7 @@
           <button id="cfBtn" type="button">&#8644; the counterfactual: this world DISPERSED (the spoil spread, no hand aiming it)</button>
           <button id="cfBtnGrid" type="button">&#8644; the counterfactual: the FULL GRID (threshold 0)</button>
           <button id="cfBtnBoth" type="button">&#8644; both mercies at once</button>
-          <div class="hint">Same rock, same wind, same dice &mdash; only the policy differs. The gap is the policy.</div>
+          <div class="hint">Same rock, same wind, same dice. Only the policy differs. The gap is the policy.</div>
         </div>
       </div>
 
@@ -1180,18 +1180,18 @@
         <div class="row">
           <label>Responsiveness <span class="val" id="iqVal"></span></label>
           <input type="range" id="iq" min="0" max="100" step="1" />
-          <div class="hint">How likely the capital answers the realm's first wound with a mercy instead of a fist. The dice still roll; this weights them. 45 = the old world.</div>
+          <div class="hint">How likely the capital is to meet the realm's first crisis with relief instead of force. The dice still roll; this only weights them. 45 = the old world.</div>
         </div>
         <div class="row">
           <label>Order <span class="val" id="orderVal"></span></label>
           <input type="range" id="order" min="0" max="100" step="1" />
-          <div class="hint">The order axis, open ground to police state. High order stills predation, smuggling and revolt &mdash; and stills the ladder too: mobility, entry, the appetite to risk capital. Safety and stagnation share a root. 50 = the old world.</div>
+          <div class="hint">The order axis, from open ground to police state. High order holds down predation, smuggling, and revolt. It also holds down mobility, new entry, and the appetite to risk capital. Safety and stagnation come from the same place. 50 = the old world.</div>
         </div>
         <div class="row">
           <label>Openness <span class="val" id="opennessVal"></span></label>
           <input type="range" id="openness" min="0" max="100" step="1" />
-          <div class="hint">Foreign trade and diplomacy exposure, sealed quays to open coast. It scales the sea leg of trade (a trade world grows a second pole at the coast) and, at 0, seals the harbors entirely — no ports, no Dominion. 100 = open (the old world).</div>
-          <div class="hint">Seal the quays: no sea trade, no port tariffs &mdash; and no door for the Dominion. Isolation is a policy with a price.</div>
+          <div class="hint">Foreign trade and diplomacy exposure, from sealed quays to open coast. It scales the sea leg of trade, so a trade world grows a second pole at the coast. At 0 it seals the harbors entirely: no ports, no Dominion. 100 = open (the old world).</div>
+          <div class="hint">Seal the quays and you lose sea trade, port tariffs, and the door the Dominion comes through. Isolation is a policy, and it costs something.</div>
         </div>
       </div>
 
@@ -1216,7 +1216,7 @@
     </div>
     <input type="text" id="lensFilter" placeholder="filter the plates&hellip;" autocomplete="off" />
     <div id="lensList"></div>
-    <div class="glyphkey">Preview only &mdash; the export always carries every column. &#9632; aetherworks &middot; gold lines grid (dashed = off-grid) &middot; H/W/D healer/waterworks/wardstation &middot; &#9650; shrine &middot; G constabulary &middot; &#9875; port &middot; &#9670; ruin &middot; &#9820; tower &middot; &#9552; bridge &middot; &#8745; pass &middot; &#9673; maelstrom &middot; &#9055; aerie (violet dashes = the skyway) &middot; &#9873; the Dominion's foothold &middot; red dashes join the twins.
+    <div class="glyphkey">Preview only. The export always carries every column. &#9632; aetherworks &middot; gold lines grid (dashed = off-grid) &middot; H/W/D healer/waterworks/wardstation &middot; &#9650; shrine &middot; G constabulary &middot; &#9875; port &middot; &#9670; ruin &middot; &#9820; tower &middot; &#9552; bridge &middot; &#8745; pass &middot; &#9673; maelstrom &middot; &#9055; aerie (violet dashes = the skyway) &middot; &#9873; the Dominion's foothold &middot; red dashes join the twins.
       The institutions (on parchment and the institution plates): &#164; counting house &middot; &#8224; temple &middot; &#9814; keep &middot; &#10002; library &middot; &#9874; guildhall &middot; &#9671; market.</div>
   </aside>
   </main>
@@ -1231,21 +1231,21 @@
       </div>
       <div id="inspBody"></div>
     </div>
-    <div class="drawer-note">click any region on the plate &mdash; its ledger opens here</div>
+    <div class="drawer-note">click any region on the plate to open its ledger here</div>
   </aside>
 
   <!-- The report: the same world, argued and narrated -->
   <article id="report">
     <section id="findingsBox">
       <div class="findings-inner">
-        <div class="findings-title">WHAT THIS WORLD SHOWS &mdash; COMPUTED FROM ITS OWN EXPORTED COLUMNS</div>
+        <div class="findings-title">WHAT THIS WORLD SHOWS, ALL COMPUTED FROM ITS OWN EXPORTED COLUMNS</div>
         <div id="findingsText"></div>
         <p class="manifesto">
           Every map this makes is an <b>argument about inequality</b>: who gets served and who sits in
           darkness, who breathes the poison and who ships it downstream, who holds the gates and who pays
-          the tariff — none of it painted, all of it <b>emergent</b> from blind geology, a cost-gated grid,
-          and factions that seize, tax, and go to war. The fantasy is the carrier; the attribute table is
-          the argument. Seeded, reproducible, QGIS-ready.
+          the tariff. None of it is painted. It is all <b>emergent</b> from blind geology, a cost-gated grid,
+          and factions that seize, tax, and go to war. The fantasy is only the presentation. The real content
+          is the attribute table. Seeded, reproducible, QGIS-ready.
         </p>
       </div>
     </section>
@@ -1253,11 +1253,11 @@
   <!-- The counterfactual (C1): the lambda experiment, on the page -->
   <section id="cfBox" style="display:none">
     <div class="cf-inner">
-      <div class="sec-title">THE COUNTERFACTUAL &mdash; SAME ROCK, SAME WIND, SAME DICE; ONLY THE POLICY DIFFERS</div>
+      <div class="sec-title">THE COUNTERFACTUAL: SAME ROCK, SAME WIND, SAME DICE; ONLY THE POLICY DIFFERS</div>
       <div id="cfNote"></div>
       <div class="cf-grid" id="cfGrid">
         <div class="cf-pane"><div class="cf-cap" id="cfCapL"></div><div id="cfLeft"></div></div>
-        <div class="cf-pane"><div class="cf-cap" id="cfCapR2">DISPERSED (spoil spread, none aimed) &mdash; injustice</div><div id="cfRight"></div></div>
+        <div class="cf-pane"><div class="cf-cap" id="cfCapR2">DISPERSED (spoil spread, none aimed): injustice</div><div id="cfRight"></div></div>
       </div>
       <div id="cfStats"></div>
     </div>
@@ -1266,7 +1266,7 @@
     <!-- The chronicle, promoted: the main body text of the report -->
     <div class="report-grid">
       <section id="chronBox">
-        <div class="sec-title">THE CHRONICLE &mdash; THE WORLD NARRATING ITSELF</div>
+        <div class="sec-title">THE CHRONICLE: THE WORLD NARRATING ITSELF</div>
         <div id="chronText"></div>
       </section>
       <aside id="worldPanel">
@@ -1288,7 +1288,7 @@
         <button id="dlTables">&#8681; Download tables (CSV)</button>
       </div>
       <div class="colophon-links">
-        <span>Hinterland &mdash; every number on this page recomputes from the exported columns.</span>
+        <span>Hinterland. Every number on this page recomputes from the exported columns.</span>
         <a href="docs/atlas.md">The Atlas: 80 worlds, measured</a>
         <a href="docs/field-guide.md">The Field Guide: how to read the inequalities</a>
         <a href="docs/attribute-model.md">The attribute model</a>
@@ -6914,7 +6914,7 @@
       foundage:   { lo: [247, 243, 233], hi: [112, 84, 56],   label: "founding age (how old the town is)" },
       legacy:     { lo: [250, 244, 227], hi: [161, 120, 38],  label: "legacy advantage (born ahead)" },
       refining:   { lo: [252, 240, 230], hi: [176, 88, 26],   label: "refining capacity (where value is added)" },
-      finance:    { lo: [246, 242, 250], hi: [63, 0, 125],    label: "elite share — ¤ marks the counting houses (+6 to the owners' row where finance sits)" },
+      finance:    { lo: [246, 242, 250], hi: [63, 0, 125],    label: "elite share: ¤ marks the counting houses (+6 to the owners' row where finance sits)" },
       flips:      { lo: [246, 244, 240], hi: [122, 31, 31],   label: "bloc flips (ground that changed hands as fortunes shifted)" },
       elitedelta: { lo: [179, 88, 6],    hi: [84, 39, 136],   label: "owners' row since the founding (shrank → grew)" }, // diverging like delta: readable to every kind of eye
       rankchurn:  { lo: [140, 45, 4],    hi: [1, 102, 94],    label: "wealth rank since the founding (fell → climbed)" }, // B5 (#127): diverging — ordinary mobility
@@ -7538,9 +7538,9 @@
       L.push(``);
       const crownLine = model.dynasties.crown;
       const reigning = (crownLine[crownLine.length - 1] || {}).name || "an unnamed regent";
-      L.push(`*The world called "${params.seed}", as set down at ${model.capitalName} in the year ${closeY}, in the reign of ${reigning}.*`);
+      L.push(`*The world called "${params.seed}". Written down at ${model.capitalName} in the year ${closeY}, during the reign of ${reigning}.*`);
       L.push(``);
-      L.push(`## The Founding — year 1000`);
+      L.push(`## The Founding, Year 1000`);
       L.push(``);
       const n = model.regions.length;
       // founding works: today's refineries, minus the mid-run foundings, plus the collapsed
@@ -7550,46 +7550,46 @@
       const consIds = new Set(model.events.filter(ev => ev.type === "consecration").map(ev => ev.region_id));
       const shrines0 = model.sanctionedSites.filter(s => !consIds.has(s.regionId));
       const dark0 = model.epochSnaps[0].onGrid.filter(v => !v).length;
-      L.push(`In the beginning of this record the realm counted ${n} settled regions, and ${model.capitalName} held the capital. ` +
-        `The wind stood out of the ${compass}, as it does in that country, and everything else followed from the ground: ` +
-        `where the aetherstone lay, where the land would carry a road, and where it would not.`);
+      L.push(`This record covers a realm of ${n} settled regions, with its capital at ${model.capitalName}. ` +
+        `The wind comes from the ${compass}. Most of what follows was set by the ground itself: ` +
+        `where the aetherstone lies, where the land will carry a road, and where it won't.`);
       {
         const pops = model.regions.map(r => r.popT0).sort((a, b) => b - a);
         const medP = pops[Math.floor(pops.length / 2)];
         L.push(``);
-        L.push(`No charter drew the towns to size. The centuries did: good land compounded, the fairs drew the valleys in, and by year 1000 the largest town held ${pops[0].toLocaleString("en-US")} souls to the median town's ${medP.toLocaleString("en-US")} — a hierarchy grown, not granted, and steeper every century the compounding ran.`);
+        L.push(`No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held ${pops[0].toLocaleString("en-US")} people to the median town's ${medP.toLocaleString("en-US")}. The bigger a town got, the faster it grew.`);
       }
       L.push(``);
-      L.push(`The aetherworks at ${list(works0.map(id => town(id).name))} turned aetherstone to lumen, and the trunk lines ran from their yards to the capital. ` +
-        `The Temple kept holy ground at ${list(shrines0.map(s => `${s.name} (by ${town(s.regionId).name})`))} — out where the sacred substance lies and the Crown's writ runs thin. ` +
+      L.push(`The aetherworks at ${list(works0.map(id => town(id).name))} refine aetherstone into lumen, and the trunk lines run from them to the capital. ` +
+        `The Temple holds sacred ground at ${list(shrines0.map(s => `${s.name} (by ${town(s.regionId).name})`))}, out where the aetherstone lies and the Crown's authority is weak. ` +
         (dark0 > 0
-          ? `${dark0} of the realm's settlements sat off the grid at the founding, in darkness: connected by road — everything is connected by road — but unserved, because the ledgers said serving them would not pay.`
-          : `Every settlement of the realm sat on the grid at the founding — a generosity of the ledgers the chronicle does not expect to last.`));
+          ? `${dark0} settlements started off the grid: reachable by road, but with no power line, because the ledgers said wiring them wouldn't pay.`
+          : `Every settlement started on the grid. The ledgers rarely allow that, and never for long.`));
       {
         const aeries = model.regions.filter(r => r.isSkyport === 1).map(r => town(r.id).name);
         L.push(``);
         L.push(aeries.length >= 2
-          ? `In the founding charters too is the ${model.skywayName} Lane: lift-barges between ${list(aeries)}, above the walls, the fords, and every gate on the ground. ` +
-            `The lanes go where the ground is worst and the cargo richest — a lane to the easy lowland saves nothing — and passage is sold at the aerie door, at a price that is the point. ` +
-            `The road below is for everyone; the sky is not.`
-          : `No skyway was chartered in this realm: the ledgers found no lane worth the lift. The chronicle notes that even the sky is rationed by return.`);
+          ? `There is also the ${model.skywayName} Lane: lift-barges running between ${list(aeries)}, over the walls, fords, and gates below. ` +
+            `The lanes go where the ground is hardest and the cargo most valuable, and you pay to board at the aerie. ` +
+            `The road is open to everyone; the sky isn't.`
+          : `No skyway was built here. The ledgers found no lane worth the lift.`);
       }
       if (model.ridges.length) {
         const shadowN = model.regions.filter(r => r.rangeShadow === 1).length;
         const passNames = model.passes.map(p => p.name);
         L.push(``);
-        L.push(`The ${list(model.ridges.map(R => `${R.name} ${R.kind}`))} ${model.ridges.length > 1 ? "wall" : "walls"} the country, and the roads over the rock go by ${list(passNames)}. ` +
+        L.push(`The ${list(model.ridges.map(R => `${R.name} ${R.kind}`))} ${model.ridges.length > 1 ? "wall" : "walls"} off the country, and the roads across ${model.ridges.length > 1 ? "them" : "it"} go through ${list(passNames)}. ` +
           (shadowN > 0
-            ? `${shadowN} of the realm's regions lie in the mountains' shadow, on the wrong side of the wall from ${model.capitalName} — and the chronicle will show what that costs.`
-            : `By the founding's luck, no region lies beyond the wall from ${model.capitalName}; the chronicle notes that such luck is geography, not justice.`));
+            ? `${shadowN} regions sit in the mountains' shadow, cut off from ${model.capitalName} by the wall. That costs them, as the record will show.`
+            : `As it happened, no region ended up cut off from ${model.capitalName} by the wall. That was luck, not fairness.`));
       }
       for (const RV of model.rivers) {
         const head = town(model.regions[RV.chain[0]].id).name;
         const mouth = town(model.regions[RV.chain[RV.chain.length - 1]].id).name;
         L.push(``);
-        L.push(`The ${RV.name}${RV.kind === "River" ? "" : " " + RV.kind} comes down off the high ground by ${head} and runs through ${RV.chain.length} regions to the border. ` +
-          `The towns along it drink in order: ${head} drinks it clean, and ${mouth}, at the mouth, drinks whatever every town and aetherworks upstream let fall into the water. ` +
-          `The order was set by the land before anyone built anything, and no one who lives at the mouth chose it.`);
+        L.push(`The ${RV.name}${RV.kind === "River" ? "" : " " + RV.kind} runs down from the high ground by ${head} through ${RV.chain.length} regions to the border. ` +
+          `The towns drink from it in order: ${head} gets it clean; ${mouth}, at the mouth, gets whatever every town and aetherworks upstream have dumped in. ` +
+          `Nobody at the mouth chose to be last. The land decided that.`);
       }
       if (model.seaSides.length) {
         const ports = model.regions.filter(r => r.isPort === 1);
@@ -7600,14 +7600,14 @@
         });
         L.push(``);
         const chartNames = model.seaShapes.map(S => S.name).filter(Boolean);
-        L.push(`The sea lies to the ${list(model.seaSides)}${chartNames.length ? `; the charts name it ${list(chartNames)}` : ""}. ` +
+        L.push(`The sea lies to the ${list(model.seaSides)}${chartNames.length ? `, and the charts call it ${list(chartNames)}` : ""}. ` +
           (ports.length
-            ? `The realm's ${ports.length > 1 ? "gates are" : "gate is"} ${list(portBits)}: whatever the mines raise and the aetherworks refine leaves the country there, and whoever holds the quay holds the tariff. ` +
-              `Distance to the water is the realm's second lottery, drawn at the founding like the first.`
+            ? `The realm's ${ports.length > 1 ? "gates are" : "gate is"} ${list(portBits)}: everything the mines raise and the aetherworks refine leaves through ${ports.length > 1 ? "them" : "it"}, and whoever holds the quay collects the tariff. ` +
+              `How far a town sits from the water was luck, decided at the founding like everything else.`
             : (params.hb === 0
-              ? `The quays are sealed by decree: the realm trades with no one beyond the water, and no one beyond the water lands. The chronicle records the price of that safety where it falls — on every coast that might have been a gate.`
-              : `No harbor was raised at the founding; the water waits.`)) +
-          (model.maelstrom ? ` Sailors give a wide berth to the ${model.maelstrom.name}, where the sea turns on itself; no quay was ever raised in its reach.` : ``));
+              ? `The quays are sealed by decree: the realm trades with no one across the water, and no one lands. The cost of that safety falls on every coast that could have been a gate.`
+              : `No harbor was built at the founding; the coast waits.`)) +
+          (model.maelstrom ? ` Sailors keep well clear of the ${model.maelstrom.name}, where the sea turns on itself; no quay was ever built within its reach.` : ``));
       }
       if (model.ruins.length) {
         const ruinBits = model.ruins.map(r => {
@@ -7618,27 +7618,27 @@
         });
         const busiest = model.regions.reduce((a, b) => a.delverFlux >= b.delverFlux ? a : b);
         L.push(``);
-        L.push(`The old world is not gone: ${list(ruinBits)}. ` +
-          `Delvers walk the ${town(busiest.id).name} road every season, because risk is a wage where nothing else pays one; not all of them walk back, and what they carry out is sold in no sanctioned market.`);
+        L.push(`The old world is still here: ${list(ruinBits)}. ` +
+          `Delvers work the ${town(busiest.id).name} road every season, because it pays when nothing else does. Not all of them come back, and what they carry out is sold off the books.`);
       }
       if (model.freeport) {
         const t = town(model.freeport.regionId);
         L.push(``);
-        L.push(`Beyond the last writ-stone, by ${t.name}, the lawless keep a harbor of their own: ${model.freeport.name}. No charter names it, no gate charges it, and the assessors who visit do not go twice. What the realm will not carry on its books leaves the country there, and the ground around it keeps what the gates would have taken` +
-          (params.hb === 0 ? ` — and with the quays sealed by decree, the shadow gate is the only gate left working.` : `.`));
+        L.push(`Past the last boundary stone, by ${t.name}, the lawless keep their own harbor: ${model.freeport.name}. No charter lists it, no gate taxes it, and assessors who visit don't come back a second time. Anything the realm won't carry on its books leaves through here, and the ground around it keeps what the gates would have taken` +
+          (params.hb === 0 ? `. With the quays sealed by decree, this is the only working gate left.` : `.`));
       }
       if (model.sanctuary) {
         const t = town(model.sanctuary.regionId);
         L.push(``);
-        L.push(`High above the roads, by ${t.name}, stands ${model.sanctuary.name} — holy ground the Temple never consecrated and cannot forgive. It heals whoever climbs to it and asks no writ; the census does not climb at all, so the people it shelters are people the realm cannot count. Pilgrims walk to it beside the sanctioned roads, which the Temple is reminded of every festival.`);
+        L.push(`High above the roads, by ${t.name}, stands ${model.sanctuary.name}, holy ground the Temple never sanctioned and can't forgive. It heals anyone who climbs to it and asks nothing. The census never climbs that far, so the people it shelters go uncounted. Pilgrims walk to it alongside the official roads, which the Temple is reminded of every festival.`);
       }
       {
         const still = model.regions.filter(r => r.stillair === 1);
         if (still.length) {
           const bits = still.map(r => town(r.id).name);
           L.push(``);
-          L.push(`Over ${list(bits)} lies ${model.stillName}: ground where the lift-stones simply die. No aerie can be chartered there and no lane lands; elsewhere the sky is rationed by return — here it is refused outright, and no coin appeals the refusal.` +
-            (model.regions.find(r => r.isCapital).stillair === 1 ? ` The capital itself sits in the still, and so no skyway flies in this realm at all.` : ``));
+          L.push(`Over ${list(bits)} lies ${model.stillName}: ground where the lift-stones just stop working. No aerie can be built there and no lane can land. Everywhere else the sky costs money; here it isn't for sale at any price.` +
+            (model.regions.find(r => r.isCapital).stillair === 1 ? ` The capital itself sits in the still, so no skyway flies in this realm at all.` : ``));
         }
       }
       if (model.camps.length) {
@@ -7651,7 +7651,7 @@
         if (towers.length) {
           const bits = towers.map(reg => `${town(reg.id).name} Tower`);
           L.push(``);
-          L.push(`${towers.length > 1 ? "Apostates keep" : "An apostate keeps"} ${list(bits)}, out where the constabulary line fails and the grid never came — selling in the darkness what the grid will not carry. ` +
+          L.push(`${towers.length > 1 ? "Apostates keep" : "An apostate keeps"} ${list(bits)}, out where the constabulary line fails and the grid never came, selling in the darkness what the grid will not carry. ` +
             `The Temple calls it heresy; the magnates call it competition; the people it heals call it the only healer who ever came.`);
         }
       }
@@ -7676,15 +7676,14 @@
             const spread = (a) => a.gini_end > a.gini_start + 0.02 ? "the gap widened"
               : a.gini_start > a.gini_end + 0.02 ? "the gap narrowed" : "the gap held";
             const bits = FA.map(a => `**${a.name}** (${span(a)}), when ${spread(a)}`);
-            L.push(`The chronicle divides these years into ages, named for what the realm was living through: ${list(bits)}. ` +
-              `The names are not decreed; they are read from the record — from where the wealth concentrated, the gates charged tariffs, the towns emptied or came back.`);
+            L.push(`These years split into ages, each named for what the realm was living through: ${list(bits)}. ` +
+              `No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.`);
             L.push(``);
           }
         }
         if (model.events.length === 0) {
-          L.push(`The chronicle records no upheavals: the years passed as the founding had arranged them, ` +
-            `which is not the same as saying they passed kindly. The grid crawled where the money went, ` +
-            `the ore drew down, and the poison settled where it always settles.`);
+          L.push(`No upheavals are recorded. The years passed as the founding had set them up, which does not mean they passed kindly. ` +
+            `The grid crawled toward the money, the ore drew down, and the poison settled where it always settles.`);
         }
         const strikeEv = model.events.find(ev => ev.type === "ore_strike");
         for (const ev of model.events) {
@@ -7692,81 +7691,81 @@
           const y = year(ev.epoch);
           let line = "";
           if (ev.type === "refinery_collapse") line = pick([
-            `The aetherworks at ${t.name} fell silent. The fields that fed them had given all they had, and the magnates did not stay for the funeral. The trunk lines still stand there, carrying nothing.`,
-            `In this year the aetherworks at ${t.name} closed its yards for good. What the ore had built, the ore's end unbuilt; the town kept its wires and lost its wages.`,
+            `The aetherworks at ${t.name} shut down. The fields that fed them were worked out, and the magnates left as soon as the ore did. The trunk lines still stand there, carrying nothing.`,
+            `The aetherworks at ${t.name} closed its yards for good. The ore that built the town ran out, and the town kept its wires but lost its wages.`,
           ]);
           else if (ev.type === "refinery_founded") line = pick([
-            `The magnates raised new aetherworks at ${t.name}, where the money had gone. The charter was sealed at ${model.capitalName}, and the trunk line followed within the season.`,
-            `New aetherworks fires were lit at ${t.name}. The capital called it progress; the towns the new trunk line passed over called it something else.`,
+            `The magnates built new aetherworks at ${t.name}, where the money had gone. The capital sealed the charter, and the trunk line followed within the season.`,
+            `New aetherworks fires were lit at ${t.name}. The capital called it progress. The towns the new trunk line skipped did not.`,
           ]);
           else if (ev.type === "blight_plague") line = pick([
-            `Plague took ${t.name}. The blight had sat heavy on that country for years, and when the sickness came it found a town already half-poisoned. A third of the people were carried off or fled.`,
-            `In this year the sickness came to ${t.name}, as everyone who had seen its blight-mark knew it would. The healers' registers — where there were healers — do not agree on the count; the roads out of town do.`,
+            `Plague took ${t.name}. The blight had sat heavy on that country for years, so the sickness arrived to a town already half-poisoned. A third of the people died or fled.`,
+            `Sickness came to ${t.name}. Anyone who had seen the blight-mark had expected it. Where there were healers, their registers do not agree on the death count. The roads out of town do.`,
           ]) + (ev.name ? ` The roads named it ${ev.name}.` : ``);
           else if (ev.type === "relic_calamity") line = pick([
-            `The relic ground by ${t.name} woke. What the old power did there is not well described in the accounts that survive, and the land it touched bears the scar still.`,
-            `At the sanctioned ground by ${t.name} something of the old world stirred and broke. The Temple calls it a testing; the survivors called it otherwise. The blight of it has not faded.`,
+            `The relic ground by ${t.name} woke. The surviving accounts do not say clearly what the old power did there. The land it touched still carries the scar.`,
+            `At the sanctioned ground by ${t.name}, something of the old world stirred and broke. The Temple calls it a test. The survivors did not. The blight it left has not faded.`,
           ]);
           else if (ev.type === "ore_strike") {
             line = pick([
-              `Prospectors struck a hidden lode under ${t.name}, and by winter the roads were full of wagons and the town was full of strangers.`,
-              `A lode no survey had found came up under ${t.name}. The rush was immediate: retainers, chancers, assayers, and everyone who follows them.`,
+              `Prospectors struck a hidden lode under ${t.name}. By winter the roads were full of wagons and the town was full of strangers.`,
+              `A lode no survey had found came up under ${t.name}. The rush was immediate: retainers, chancers, assayers, and everyone who trails them.`,
             ]);
             const warAfter = model.events.find(w => w.type === "war" && w.epoch > ev.epoch && w.epoch <= ev.epoch + 2);
-            if (warAfter) line += ` The ground was disputed ground, and every magnate, priest, and captain in the realm knew what that meant.`;
+            if (warAfter) line += ` The ground was already disputed, and every magnate, priest, and captain in the realm knew what a lode there meant.`;
           }
           else if (ev.type === "war") {
             const chained = strikeEv && ev.epoch > strikeEv.epoch && ev.epoch <= strikeEv.epoch + 2;
             const FN = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };
-            const powers = ev.factions ? ` The powers that met there were ${FN[ev.factions[0]]} and ${FN[ev.factions[1]]}; the ground was merely where they met.` : ``;
+            const powers = ev.factions ? ` The two powers fighting there were ${FN[ev.factions[0]]} and ${FN[ev.factions[1]]}. The town was just where they met.` : ``;
             line = (chained
-              ? `War came to ${t.name}, ${25 * (ev.epoch - strikeEv.epoch)} years after the strike — armies follow ore.${powers} `
-              : `War came to ${t.name}, as it comes to ground that great powers claim and none can hold.${powers} `) +
-              `When the fighting burned out, ${tierWord[t.tier]} was the poorer by a third of its people and a quarter of its wealth, and the mines and aetherworks were ruined ground. The Crown's constabulary arrived after the blood, and stayed.` +
-              (ev.name ? ` The scribes head the page: ${ev.name}.` : ``);
+              ? `War came to ${t.name}, ${25 * (ev.epoch - strikeEv.epoch)} years after the strike. Armies follow ore.${powers} `
+              : `War came to ${t.name}. It comes to ground that great powers claim and none can hold.${powers} `) +
+              `When the fighting stopped, ${tierWord[t.tier]} had lost a third of its people and a quarter of its wealth, and the mines and aetherworks were wrecked. The Crown's constabulary arrived after the blood, and stayed.` +
+              (ev.name ? ` The scribes titled the page ${ev.name}.` : ``);
           }
           else if (ev.type === "seizure") {
             const F = ev.faction === "crown" ? "the Crown" : ev.faction === "temple" ? "the Temple" : "the magnates";
             const what = t.name; // the gate is named for its town
             line = pick([
-              `In this year ${F} took the gate at ${what} — quay, span, or pass, whoever holds it holds a queue of people who cannot go around — and the tariff was posted by winter.`,
-              `${F.charAt(0).toUpperCase() + F.slice(1)} pressed ${F === "the magnates" ? "their" : "its"} claim on the crossing at ${what}. No blood is recorded; the ledger did the taking, and the tariff did the keeping.`,
+              `${F.charAt(0).toUpperCase() + F.slice(1)} took the gate at ${what}. A gate is a quay, a span, or a pass, and whoever holds it holds a line of people who cannot go around. The tariff was posted by winter.`,
+              `${F.charAt(0).toUpperCase() + F.slice(1)} pressed ${F === "the magnates" ? "their" : "its"} claim on the crossing at ${what}. No blood is recorded. The claim was made on paper, and the tariff kept it.`,
             ]);
           }
           else if (ev.type === "tower_burned") {
             const F = ev.faction === "crown" ? "the Crown's soldiers" : "the Temple's censors";
-            line = `${F.charAt(0).toUpperCase() + F.slice(1)} burned the tower at ${t.name}. The chronicle is obliged to note what the writs do not: the healer the darkness had is gone, and nothing came to replace it.`;
+            line = `${F.charAt(0).toUpperCase() + F.slice(1)} burned the tower at ${t.name}. The writs do not say what this cost. The one healer the darkness had is gone, and nothing came to replace it.`;
           }
           else if (ev.type === "tower_raised") {
-            line = `An apostate raised a tower at ${t.name}, out where no writ runs and the grid never came. The neighbors did not report it for a season; the neighbors were its first customers.`;
+            line = `An apostate raised a tower at ${t.name}, out where no writ runs and the grid never came. The neighbors did not report it for a season. They were its first customers.`;
           }
           else if (ev.type === "succession") {
             const TITLE = { crown: "Sovereign", temple: "Hierarch", magnate: "First Magnate" };
             const SEATW = { crown: "the capital", temple: "the censer", magnate: "the chair" };
             line = ev.contested
-              ? `The old ${TITLE[ev.faction]} died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end ${ev.name} took ${SEATW[ev.faction]}, over objections not all of which were buried with their holders.`
-              : `The old ${TITLE[ev.faction]} died, and ${ev.name} took ${SEATW[ev.faction]} without incident — which the chronicle records precisely because it is rare.`;
+              ? `The old ${TITLE[ev.faction]} died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end ${ev.name} took ${SEATW[ev.faction]}. Some who objected were killed, and the objections did not stop.`
+              : `The old ${TITLE[ev.faction]} died, and ${ev.name} took ${SEATW[ev.faction]} without incident. That is rare enough to be worth recording.`;
           }
           else if (ev.type === "reform") {
             const PROSE = {
-              dumping_reform: "a Dumping Reform: the spoil trains go where the land is empty now, not where the people are poor",
-              grid_charter: "a Grid Charter: the bar for connection dropped, and the wires crept further out than the ledgers alone would ever have carried them",
-              toll_amnesty: "a Tariff Amnesty: the gates still stand, but the levies are capped by decree",
-              retention_act: "a Retention Act: an ore price floor, fixed at the capital — the bottom half of the realm keeps more of what its own ground produces",
-              crown_granary: "the Crown Granary: a levy on the fat years and bread in the lean ones — the first decree in the realm's history to move coin downhill"
+              dumping_reform: "a Dumping Reform. The spoil trains now go where the land is empty, not where the people are poor",
+              grid_charter: "a Grid Charter. The bar for connection dropped, and the wires reached further out than the ledgers alone would ever have carried them",
+              toll_amnesty: "a Tariff Amnesty. The gates still stand, but the fees are capped by decree",
+              retention_act: "a Retention Act. It set a floor under the ore price, fixed at the capital, so the bottom half of the realm keeps more of what its own ground produces",
+              crown_granary: "the Crown Granary. It taxes the fat years to buy bread for the lean ones. It is the first decree in the realm's history to move coin downhill"
             };
-            line = `The capital, chastened by the years behind it, decreed ${PROSE[ev.measure]}. The chronicle notes that it took a wound to buy a mercy.`;
+            line = `The capital passed ${PROSE[ev.measure]}. It had blocked reform for years, and only gave in once the damage was bad enough.`;
           }
           else if (ev.type === "reaction") {
             const PROSE = {
-              dumping_entrenched: "the dumping was entrenched in law, and the spoil sought out the poor with new confidence",
-              toll_crackdown: "the tariffs rose by decree — the gates' holders had paid for their privileges, and the capital had debts"
+              dumping_entrenched: "the dumping was written into law, and the spoil trains sought out the poor more openly than before",
+              toll_crackdown: "the tariffs rose by decree. The gates' holders had paid for their privileges, and the capital owed them"
             };
-            line = `The capital answered fear with fists: ${PROSE[ev.measure]}. The chronicle records no debate.`;
+            line = `The capital met the unrest with force: ${PROSE[ev.measure]}. There was no debate on record.`;
           }
           else if (ev.type === "imposition") {
             // B7 (#129): a measure the realm did not choose — narrated AS imposed
-            line = `This measure came not from the capital but from its creditors. With the imperial loans unserviced and the doctrine pressing abroad, the financiers DEMANDED their adjustment: the granary shuttered, the gates told to collect, the books balanced on the backs that could least bear it. The chronicle names it structural adjustment; the towns named it what it was — a decree written in another capital.`;
+            line = `This measure did not come from the capital. It came from the capital's creditors. The imperial loans had gone unpaid and the doctrine was pressing abroad, so the financiers demanded an adjustment: close the granary, order the gates to collect, and balance the books on the people who could least afford it. The official term is structural adjustment. The towns called it a decree written in another capital.`;
           }
           else if (ev.type === "revolt") {
             const rr = model.regions.find(r => r.id === ev.region_id);
@@ -7775,63 +7774,63 @@
             // two arcs. A Free town that FLOURISHED (suppressed potential released) or
             // one that STARVED (the fled capital and order left it hollow).
             const wonArc = ev.arc === "starved"
-              ? ` But liberty is not bread: the magnates' capital fled with the magnates, the aetherworks it had funded went dark, and the skilled followed the money out. The Free town starved — the chronicle records that the injustice was real and the freedom was too, and that neither fed anyone.`
-              : ` And it flourished: the aetherworks the charter had throttled ran free, the artifice the tariffs had taxed to the bone found its feet, and people came to the free town from the tariffed country around it. Liberation released what oppression had suppressed.`;
+              ? ` But freedom is not food. The magnates' capital left with the magnates, the aetherworks it had funded went dark, and the skilled workers followed the money out. The free town starved. The injustice had been real and so was the freedom, and neither one fed anyone.`
+              : ` And it flourished. The aetherworks the charter had held back ran at full tilt, the crafts the tariffs had taxed to the bone found their feet, and people came to the free town from the tariffed country around it. Freedom released what the old order had held down.`;
             line = underDominion
               ? (ev.outcome === "won"
-                ? `${t.name} rose against the Dominion itself — and won. The factors were thrown into the harbor, the assessment tables burned, and the town keeps what it makes now.${wonArc}`
-                : `${t.name} rose against the Dominion, and the imperial constabulary did what imperial constabularies are kept for. The chronicle records the rising because the assessment tables do not.`)
+                ? `${t.name} rose against the Dominion itself, and won. The factors were thrown into the harbor, the assessment tables were burned, and the town keeps what it makes now.${wonArc}`
+                : `${t.name} rose against the Dominion, and the imperial constabulary put it down, which is what the imperial constabulary is there to do. The assessment tables do not mention the rising, so this record does.`)
               : (ev.outcome === "won"
-                ? `${t.name} rose. The constabulary line broke before the mob — and the mob held. ${t.name} keeps what it makes now, and its gates charge no one.${wonArc}`
-                : `${t.name} rose, and was put down. The constabulary came after the hangings, and the injustice that caused the rising was carefully recorded and carefully unaddressed.`);
+                ? `${t.name} rose. The constabulary line broke and the mob held. ${t.name} keeps what it makes now, and its gates charge no one.${wonArc}`
+                : `${t.name} rose, and was put down. The constabulary arrived after the hangings. The injustice that caused the rising was written down in full and then left alone.`);
             if (ev.name) line += ` The people keep the date as ${ev.name}.`;
           }
           else if (ev.type === "treaty") {
             const FN3 = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };
             const W2 = FN3[ev.winner], L2 = FN3[ev.factions.find(f => f !== ev.winner)];
             const terms = (ev.ceded > 0 ? `${L2} ceded ${ev.ceded === 1 ? "a gate" : ev.ceded + " gates"}` : `${L2} ceded nothing but its claim`) +
-              (ev.tribute > 0 ? ` and paid ${ev.tribute} in tribute out of its ledger` : ` and kept its ledger, having little in it`);
+              (ev.tribute > 0 ? ` and paid ${ev.tribute} in tribute out of its ledger` : ` and kept its ledger, which held little`);
             line = `In the winter after the fighting, terms were set at ${t.name}. ${W2.charAt(0).toUpperCase() + W2.slice(1)} wrote them: ${terms}. ` +
-              `The chronicle observes that the terms were written by the party with the deeper ledger, as terms usually are.` +
-              (ev.name ? ` The clerks copied it fair as ${ev.name}.` : ``);
+              `The side with the deeper ledger wrote the terms, which is how terms are usually written.` +
+              (ev.name ? ` The clerks filed the fair copy as ${ev.name}.` : ``);
           }
           else if (ev.type === "annexation") {
-            line = `The Dominion's sails stood off ${harborName(t.name)} at first light, and by winter its writ ran over ${ev.occupied} regions. ` +
-              `There was no war to record: the fleet was the argument. The quays now levy for a power beyond the sea, the yield of the occupied country is assessed at the water, ` +
-              `and the wires came with the constabulary — the first country in the realm to be wired entire, because its cargo is wanted elsewhere.` +
+            line = `The Dominion's fleet stood off ${harborName(t.name)} at dawn, and by winter it held ${ev.occupied} regions. ` +
+              `There was no fighting. Nobody could stop it. The quays now collect for a power across the sea, the yield of the occupied country is assessed at the water, ` +
+              `and the wires arrived with the constabulary. It is the first country in the realm to be wired end to end, because its cargo is wanted elsewhere.` +
               (ev.name ? ` The Dominion's own registers file it as ${ev.name}.` : ``);
           }
           else if (ev.type === "concession") {
             // B11 (#133): the empire that buys instead of landing
-            line = `${ev.power || "the Metropole"} did not send a fleet to ${harborName(t.name)}; it sent factors and a charter. ` +
-              `The aetherworks were bought, the coast was wired to the sea within the season, and the coin came in to build — the town grew richer than it had ever been. ` +
-              `The registers at the capital still bear the town's name; the registers that matter now are kept in another capital, and half of what the ground yields is entered there.`;
+            line = `${ev.power || "the Metropole"} did not send a fleet to ${harborName(t.name)}. It sent factors and a charter. ` +
+              `The aetherworks were bought, the coast was wired to the sea within the season, and money came in to build. The town grew richer than it had ever been. ` +
+              `The registers at the capital still carry the town's name. The registers that matter now are kept in another capital, and half of what the ground yields is entered there.`;
           }
           else if (ev.type === "abandonment") {
             const startY = ev.since !== undefined ? 1000 + 25 * ev.since : null;
             line = `${ev.power || "the Metropole"} wound up its concession at ${t.name}${startY ? `, ${25 * (ev.epoch - ev.since)} years after it opened it in ${startY}` : ``}. ` +
-              `The lode had drawn down, and attention leaves with the ore: the factors sailed, the credit stopped, and the aetherworks they had built went quiet. ` +
-              `It cut both ways. The markets that had made the town rich were gone — but so were the levies, and the ground kept what it made for the first time in a generation. Ruin and freedom, in the same ledger, in the same year.`;
+              `The lode had drawn down, and the attention left with the ore. The factors sailed, the credit stopped, and the aetherworks they had built went quiet. ` +
+              `It cut both ways. The markets that had made the town rich were gone, but so were the levies, and the ground kept what it made for the first time in a generation. The town got its ruin and its freedom in the same year.`;
           }
           else if (ev.type === "embargo") {
-            line = `Politics in a capital ${t.name} had never seen closed the sea lanes to it. ${ev.power ? ev.power + "'s" : "A rival power's"} quarrel with the Metropole became ${t.name}'s ruin: ` +
-              `the quays that had grown a second fortune on foreign trade stood idle, the cargoes did not come, and the coast that had rivalled the capital busted in a single year. The gap the trade had opened closed the hard way.`;
+            line = `Politics in a capital ${t.name} had never seen closed the sea lanes to it. A quarrel between ${ev.power || "a rival power"} and the Metropole became ${t.name}'s ruin. ` +
+              `The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.`;
           }
           else if (ev.type === "courting") {
             line = `${ev.power || "the Rival"} sent envoys to ${harborName(t.name)}, and the capital pretended not to notice. ` +
-              `Nothing was signed — a rich coast the Metropole had not yet claimed is a coast worth courting, and the powers beyond the sea prefer to be asked. The chronicle notes it because such notes are how the next annexation begins.`;
+              `Nothing was signed. A rich coast the Metropole has not yet claimed is a coast worth courting, and the powers across the sea prefer to be invited. This is how the next annexation usually begins.`;
           }
           else if (ev.type === "consecration") {
             const shrine = model.sanctionedSites.find(s => s.regionId === ev.region_id);
             line = `The Temple came to ${t.name}, to the ground of its suffering, and consecrated it as ${shrine ? shrine.name : "holy ground"}. ` +
-              `Pilgrims walk that road now. Where the Crown's writ had failed and the magnates' ledgers saw nothing worth the ink, the faith planted its standard — after the harm, claiming the ground.`;
+              `Pilgrims walk that road now. The Crown's writ had failed there and the magnates' ledgers had seen nothing worth the ink. The faith moved in after the harm was done, and claimed the ground.`;
           }
           // D7: the years' shocks — weather, ground, discovery, and the god
-          else if (ev.type === "drought") line = `The rains failed over ${t.name}, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page ${ev.name}.`;
-          else if (ev.type === "flood") line = `The river rose over ${t.name} and took the low ground with it — the fields, the founding wharves, whatever the water wanted. ${ev.name}, the accounts call it, and they do not agree on how many it took.`;
+          else if (ev.type === "drought") line = `The rains failed over ${t.name}, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page ${ev.name}.`;
+          else if (ev.type === "flood") line = `The river rose over ${t.name} and took the low ground with it: the fields, the founding wharves, whatever stood in the way. The accounts call it ${ev.name}, and they do not agree on how many it took.`;
           else if (ev.type === "quake") line = `The ground moved under ${t.name}, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as ${ev.name}.`;
           else if (ev.type === "storm") line = `A storm came off the water and stood over the coast for three days. ${t.name} took the worst of it, as the exposed shore always does; ${ev.name} is the name the survivors gave the year.`;
-          else if (ev.type === "discovery") line = `Fortune turned at ${t.name}: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as ${ev.name}.`;
+          else if (ev.type === "discovery") line = `Fortune turned at ${t.name}: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as ${ev.name}.`;
           else if (ev.type === "ascendancy") line = `The god's fortune rose at ${t.name}, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as ${ev.name}.`;
           if (!line) continue; // an unrecognized event leaves no year-line
           L.push(`**Year ${y}.** ${line}`);
@@ -7840,14 +7839,14 @@
         // E6: the years leave bynames where they pass — derived, not drawn
         const byn = model.regions.filter(r => r.epithet).map(r => `${town(r.id).name} ${r.epithet}`);
         if (byn.length) {
-          L.push(`The chronicle closes its count of the years with the names they left behind. The realm now speaks of ${list(byn)} — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.`);
+          L.push(`The years leave names behind them. The realm now speaks of ${list(byn)}: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.`);
           L.push(``);
         }
       }
 
       // -- the state of the realm --------------------------------------------
       L.push(``);
-      L.push(`## The State of the Realm — year ${closeY}`);
+      L.push(`## The State of the Realm, Year ${closeY}`);
       L.push(``);
       if (params.ep > 0) {
         const bb = { boom: 0, stable: 0, decline: 0, collapse: 0, abandoned: 0 };
@@ -7863,19 +7862,19 @@
         const deadholds = model.regions.filter(r => !r.settled && r.abandonedEpoch >= 0);
         if (deadholds.length) {
           const names = deadholds.slice(0, 4).map(r => r.placeName).filter(Boolean);
-          L.push(`${deadholds.length} ${deadholds.length === 1 ? "holding stands" : "holdings stand"} empty now — the deadholds, where a town was and is not. The maps still name ${list(names)}${deadholds.length > names.length ? " among others" : ""}; the roads have stopped going.`);
+          L.push(`${deadholds.length} ${deadholds.length === 1 ? "holding stands" : "holdings stand"} empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name ${list(names)}${deadholds.length > names.length ? " among others" : ""}, but the roads have stopped going there.`);
         }
         const reborn = model.regions.filter(r => r.settled && r.rebirths >= 1);
         if (reborn.length) {
           const rn2 = reborn.slice(0, 3).map(r => town(r.id).name).filter(Boolean);
-          L.push(`And ${reborn.length} ${reborn.length === 1 ? "place has" : "places have"} come back as something else — ${list(rn2)} stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.`);
+          L.push(`And ${reborn.length} ${reborn.length === 1 ? "place has" : "places have"} come back as something else. ${list(rn2)} stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.`);
         }
         const ghost = model.regions.reduce((a, b) => a.abandonment >= b.abandonment ? a : b);
         if (ghost.abandonment >= 35)
-          L.push(`${town(ghost.id).name} is the emptiest of the ghost country: its best years are a memory the roads no longer visit.`);
+          L.push(`${town(ghost.id).name} is the emptiest of the ghost country. Its best years are gone, and the roads no longer go there.`);
         const riser = model.regions.reduce((a, b) => (a.wealth - a.wealthT0) >= (b.wealth - b.wealthT0) ? a : b);
         if (riser.wealth - riser.wealthT0 > 10)
-          L.push(`${town(riser.id).name} rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.`);
+          L.push(`${town(riser.id).name} rose further than any other place in the record. In this realm, that says as much about where it stood as about anything it did.`);
         L.push(``);
       }
       const bc = { crown: 0, temple: 0, magnate: 0, contested: 0, ungoverned: 0 };
@@ -7886,8 +7885,8 @@
         const hc = { crown: 0, temple: 0, magnate: 0, none: 0 };
         model.holdings.forEach(h => { hc[h.heldBy]++; });
         L.push(``);
-        L.push(`Of the realm's ${model.holdings.length} gates — the bridges, the passes, the quays — ` +
-          `the Crown keeps ${hc.crown}, the Temple ${hc.temple}, and the magnates ${hc.magnate}; ${hc.none} stand untolled. ` +
+        L.push(`Of the realm's ${model.holdings.length} gates, meaning the bridges, the passes, and the quays, ` +
+          `the Crown keeps ${hc.crown}, the Temple ${hc.temple}, and the magnates ${hc.magnate}. ${hc.none} stand untolled. ` +
           `Every levy on the list is paid by people who did not choose the road.`);
         const tr = model.treasuries;
         if (tr.crown + tr.temple + tr.magnate > 0) {
@@ -7897,10 +7896,10 @@
           const pairs = [["crown_magnate", "the Crown and the magnates"], ["crown_temple", "the Crown and the Temple"], ["magnate_temple", "the magnates and the Temple"]];
           const worst = pairs.reduce((a, b) => tn[a[0]] >= tn[b[0]] ? a : b);
           L.push(``);
-          L.push(`The tariff ledgers run deepest with ${FN2[richest]}, and the ledger buys the next gate — money begets reach begets money. ` +
+          L.push(`The tariff ledgers run deepest with ${FN2[richest]}, and coin buys the next gate. More gates mean more coin, which buys more gates. ` +
             (tn[worst[0]] >= 20
-              ? `Between the powers, the chronicle records ${worst[1]} standing nearest to blows.`
-              : `Between the powers the chronicle records no grievance worth the ink — this year.`));
+              ? `Of the powers, ${worst[1]} stand nearest to blows.`
+              : `For now, none of the powers hold a grievance worth the ink.`));
         }
       }
       { // H1: the chronicle counts the owners' row (no phrasing dice:
@@ -7909,10 +7908,10 @@
         if (FS.owners && FS.class_gap !== null) {
           const ct0 = town(FS.company_town);
           L.push(``);
-          L.push(`And in every town the record counts two peoples under one name: the owners' row and the labor it hires. ` +
-            `Taken together, ${FS.owners.pop_pct} in every hundred of the realm's people hold ${FS.owners.coin_pct} of every hundred coins, and live ${FS.class_gap} times better than those who work for them. ` +
-            `Nowhere is the ledger sharper than at ${ct0.name}, where ${FS.company_share} coins in the hundred belong to the few` +
-            (FS.within_pct !== null && FS.within_pct >= 15 ? `; a map of regions, which knows towns but not rows, misses ${FS.within_pct} parts in a hundred of the whole spread` : ``) + `.`);
+          L.push(`And every town holds two peoples under one name: the owners' row and the labor it hires. ` +
+            `Together, ${FS.owners.pop_pct} in every hundred of the realm's people hold ${FS.owners.coin_pct} of every hundred coins, and live ${FS.class_gap} times better than the people who work for them. ` +
+            `The gap is sharpest at ${ct0.name}, where ${FS.company_share} coins in every hundred belong to the few` +
+            (FS.within_pct !== null && FS.within_pct >= 15 ? `. A map drawn by region cannot show this, since it sees towns but not rows, and it misses ${FS.within_pct} parts in a hundred of the whole spread` : ``) + `.`);
         }
       }
       { // X1: the state of the realm counts its sovereign — or its master
@@ -7922,7 +7921,7 @@
           L.push(``);
           L.push(`And over all of it stands the Dominion, which holds ${occN} regions from its foothold at ${fh.name} and calls the arrangement trade. ` +
             `The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. ` +
-            `The Crown still reigns; the chronicle is required to note the difference between reigning and ruling.`);
+            `The Crown still reigns. It no longer rules the occupied country, and the two are not the same thing.`);
         } else if (model.dominion === null && params.ep > 0) {
           // no clause: worlds the Dominion never reached tell no tale of it
         }
@@ -7930,8 +7929,8 @@
       const darkNow = model.regions.filter(r => !r.onConduit).length;
       L.push(``);
       L.push(darkNow > 0
-        ? `${darkNow} of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go; the chronicle can only note, year after year, where that is not.`
-        : `At the record's close the grid reaches every settlement of the realm. The chronicle notes it without comment, so that later readers may check whether it lasted.`);
+        ? `${darkNow} of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.`
+        : `At the record's close, the grid reaches every settlement in the realm. That is written here plainly, so a later reader can check whether it lasted.`);
       // A1: the chronicler is required to close with what the numbers say
       {
         const F = getFindings(model);
@@ -7945,50 +7944,50 @@
           const MEAS = { dumping_reform: "the Dumping Reform", grid_charter: "the Grid Charter", toll_amnesty: "the Tariff Amnesty",
             retention_act: "the Retention Act", crown_granary: "the Crown Granary", dumping_entrenched: "the entrenchment of the dumping", toll_crackdown: "the tariff crackdown" };
           let tsent = dG <= -0.04
-            ? `This world closed some of its gap: the spread of fortunes measured ${F.gini_t0.toFixed(2)} at the founding and ${F.gini.toFixed(2)} at the close`
+            ? `This world closed some of its gap. The wealth gap went from ${F.gini_t0.toFixed(2)} at the founding to ${F.gini.toFixed(2)} at the close`
             : dG >= 0.04
-            ? `This world entrenched: the spread of fortunes measured ${F.gini_t0.toFixed(2)} at the founding and ${F.gini.toFixed(2)} at the close`
-            : `This world held its shape, the spread of fortunes standing at ${F.gini.toFixed(2)}`;
+            ? `This world got more unequal. The wealth gap went from ${F.gini_t0.toFixed(2)} at the founding to ${F.gini.toFixed(2)} at the close`
+            : `This world held its shape. The wealth gap stayed at ${F.gini.toFixed(2)}`;
           if (F.turning) {
             const y = 1000 + 25 * F.turning.epoch;
             tsent += F.turning.type === "revolt" && rev
-              ? `, and the turning point was the rising at ${town(rev.region_id).name} in ${y}${F.turning.outcome === "won" ? (rev.arc === "starved" ? ", which won its freedom and starved on it" : ", which won and flourished") : ", which was put down"}.` // B8 (#130): the two won-arcs
-              : `, and the turning point was ${MEAS[F.turning.measure]} of ${y}.`;
+              ? `. It turned on the rising at ${town(rev.region_id).name} in ${y}${F.turning.outcome === "won" ? (rev.arc === "starved" ? ", which won its freedom and then starved" : ", which won and flourished") : ", which was put down"}.` // B8 (#130): the two won-arcs
+              : `. It turned on ${MEAS[F.turning.measure]} in ${y}.`;
           } else {
-            tsent += `; no reform came, no rising came, and the loops ran unopposed.`;
+            tsent += `. No reform came and no rising came, and the loops ran unopposed.`;
           }
           V.push(tsent);
         }
         V.push(`The poorest fifth of the realm carries ${F.blight_ratio} times the blight of the richest fifth.`);
         if (F.shadow_gap_pct !== null && F.shadow_gap_pct > 0 && model.ridges.length)
-          V.push(`Behind the ${model.ridges[0].name} wall, the median settlement earns ${F.shadow_gap_pct} in the hundred less than the open country at the same remove.`);
+          V.push(`Behind the ${model.ridges[0].name} wall, the median settlement earns ${F.shadow_gap_pct} in the hundred less than the open country at the same distance.`);
         V.push(`${F.dark_n} regions sit off the grid because the ledgers said serving them would not pay` +
           (F.dark_burden_ratio !== null && F.dark_burden_ratio > 1 ? `, and sickness runs ${F.dark_burden_ratio} times heavier there than in the lit core.` : `.`));
         if (F.mouth_region !== null)
-          V.push(`${town(F.mouth_region).name} drinks ${F.mouth_downstream} points of other towns' poison for the crime of standing at the mouth.`);
+          V.push(`${town(F.mouth_region).name} drinks ${F.mouth_downstream} points of other towns' poison, only because it stands at the mouth.`);
         if (F.toll_paying_n > 0)
           V.push(`${F.toll_paying_n} regions pay tariffs at gates whose holders they never chose.`);
         if (F.owners && F.class_gap !== null)
-          V.push(`And within every wall the shares were already set: ${F.owners.pop_pct} in a hundred hold ${F.owners.coin_pct} of every hundred coins, and stand ${F.class_gap} times apart from the rest.`);
+          V.push(`And inside every town, the shares were set from the start: ${F.owners.pop_pct} in a hundred hold ${F.owners.coin_pct} of every hundred coins, and live ${F.class_gap} times better than the rest.`);
         if (F.sky && F.sky.shadow_adv !== null && F.sky.open_adv !== null && F.sky.shadow_adv > F.sky.open_adv)
-          V.push(`The skyway would abolish ${F.sky.shadow_adv} parts in a hundred of the walled country's distance to the capital, and the walled country's labor may not board it.`);
+          V.push(`The skyway would cut ${F.sky.shadow_adv} parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.`);
         if (F.sovereignty)
-          V.push(`And the realm's own ledger is a column in someone else's: ${F.sovereignty.occupied_n} regions occupied, the yield assessed at the quay, the free country keeping ${F.sovereignty.retent_ratio} times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others.`);
+          V.push(`And the whole realm's ledger is now one column in someone else's book: ${F.sovereignty.occupied_n} regions occupied, the yield assessed at the quay, the free country keeping ${F.sovereignty.retent_ratio} times the share the occupied country keeps. The gap between who is sovereign and who is occupied is the largest one in the realm, and it shapes every other.`);
         if (F.concessions && F.concessions.concession_n > 0)
-          V.push(`The empire mostly never came; it bought. ${F.concessions.concession_n} ${F.concessions.concession_n === 1 ? "coast is" : "coasts are"} a foreign concession — richer than the realm's median at ${F.concessions.conc_wealth} against ${F.concessions.median_wealth}, and owning barely half of it, ${Math.round(100 * F.concessions.foreign_claim)} in the hundred of the yield entered in ${esc(model.metropole)}'s books, not the realm's.`);
+          V.push(`The empire mostly did not invade. It bought in. ${F.concessions.concession_n} ${F.concessions.concession_n === 1 ? "coast is" : "coasts are"} a foreign concession, richer than the realm's median at ${F.concessions.conc_wealth} against ${F.concessions.median_wealth}, and owning barely half of it: ${Math.round(100 * F.concessions.foreign_claim)} in the hundred of the yield is entered in ${esc(model.metropole)}'s books, not the realm's.`);
         if (F.concessions && F.concessions.abandoned_n > 0)
-          V.push(`And ${F.concessions.abandoned_n} ${F.concessions.abandoned_n === 1 ? "coast was" : "coasts were"} courted, developed, and then let go when the lode ran thin — the attention left with the ore, and the ground got its ruin and its freedom in the same year.`);
+          V.push(`And ${F.concessions.abandoned_n} ${F.concessions.abandoned_n === 1 ? "coast was" : "coasts were"} courted, developed, and then let go when the lode ran thin. The attention left with the ore, and the ground got its ruin and its freedom in the same year.`);
         if (F.rain_split && F.rain_split.wet - F.rain_split.dry >= 8 && model.ridges.length)
           V.push(`The ${model.ridges[0].name} divides even the weather: the rain falls at ${F.rain_split.wet} on one side and ${F.rain_split.dry} in its lee, and no one on the dry side chose the wind.`);
         if (F.twins)
-          V.push(`And ${town(F.twins.open).name} and ${town(F.twins.shadow).name} stand the same distance from the capital, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.`);
-        L.push(`The chronicler is required to close with what the numbers say, and the numbers say this. ` + V.join(` `));
+          V.push(`And ${town(F.twins.open).name} and ${town(F.twins.shadow).name} stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.`);
+        L.push(`The record closes with what the numbers say. ` + V.join(` `));
         L.push(``);
         L.push(`None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.`);
       }
       if (params.ep === 0) {
         L.push(``);
-        L.push(`*Here the record ends at its beginning: the world is newly founded, and its years are still to run.*`);
+        L.push(`*The record ends where it began. The world is newly founded, and its years are still to run.*`);
       }
       return L.join("\n").replace(/\n{3,}/g, "\n\n") + "\n";
     }
@@ -8004,20 +8003,20 @@
         const MEASURES = { dumping_reform: "a Dumping Reform", grid_charter: "a Grid Charter", toll_amnesty: "a Tariff Amnesty",
           retention_act: "a Retention Act", crown_granary: "the Crown Granary", dumping_entrenched: "the dumping entrenched in law", toll_crackdown: "a tariff crackdown" };
         let lead = dG <= -0.04
-          ? `<span style="color:#8fbf7f; font-weight:700">THIS WORLD CLOSED THE GAP</span> — gini ${F.gini_t0.toFixed(2)} at the founding, ${F.gini.toFixed(2)} at the close.`
+          ? `<span style="color:#8fbf7f; font-weight:700">THIS WORLD CLOSED THE GAP.</span> The wealth gap went from ${F.gini_t0.toFixed(2)} at the founding to ${F.gini.toFixed(2)} at the close.`
           : dG >= 0.04
-          ? `<span style="color:#e08268; font-weight:700">THIS WORLD ENTRENCHED</span> — gini ${F.gini_t0.toFixed(2)} at the founding, ${F.gini.toFixed(2)} at the close.`
-          : `<b>This world held its shape</b> — gini ${F.gini.toFixed(2)}` +
-            (F.gini < 0.35 ? ", unusually level as worlds go." : F.gini > 0.62 ? ", among the most unequal the dice can roll." : ", near the middle of all possible worlds.");
+          ? `<span style="color:#e08268; font-weight:700">THIS WORLD GOT MORE UNEQUAL.</span> The wealth gap went from ${F.gini_t0.toFixed(2)} at the founding to ${F.gini.toFixed(2)} at the close.`
+          : `<b>This world held its shape.</b> The wealth gap stayed at ${F.gini.toFixed(2)}` +
+            (F.gini < 0.35 ? ". That is unusually level." : F.gini > 0.62 ? ". That is about as unequal as these worlds get." : ". That is near the middle of all possible worlds.");
         if (F.turning) {
           const y = 1000 + 25 * F.turning.epoch;
           lead += F.turning.type === "revolt"
-            ? ` The turning point: the revolt of ${y} — ${F.turning.outcome === "won" ? (F.turning.arc === "starved" ? "<b>and it won, and starved</b>." : "<b>and it won, and flourished</b>.") : "crushed."}` // B8 (#130): the two won-arcs
+            ? ` It turned on the revolt of ${y}. ${F.turning.outcome === "won" ? (F.turning.arc === "starved" ? "<b>The revolt won, then the town starved.</b>" : "<b>The revolt won, and the town flourished.</b>") : "<b>The revolt was crushed.</b>"}` // B8 (#130): the two won-arcs
             : F.turning.type === "reform"
-            ? ` The turning point: ${MEASURES[F.turning.measure]}, ${y}.`
-            : ` The turning point: reaction — ${MEASURES[F.turning.measure]}, ${y}.`;
+            ? ` It turned on ${MEASURES[F.turning.measure]} in ${y}.`
+            : ` It turned on a reaction, ${MEASURES[F.turning.measure]}, in ${y}.`;
         } else if (EP > 0) {
-          lead += ` No reform, no revolt: the loops ran unopposed.`;
+          lead += ` No reform came and no revolt came. The loops ran unopposed.`;
         }
         L.push(lead);
       }
@@ -8029,46 +8028,46 @@
       }
       if (F.owners && F.class_gap !== null) {
         const ct = town(F.company_town);
-        L.push(`Within the walls, not between them: <b>${F.owners.pop_pct}%</b> of this realm's people hold <b>${F.owners.coin_pct}%</b> of its coin — the owners' row lives <b>${F.class_gap}×</b> better than the labor it hires` +
-          (F.within_pct !== null && F.within_pct >= 15 ? `, and <b>${F.within_pct}%</b> of the inequality is invisible on any map of regions` : ``) +
-          `. The sharpest company town is <b>${esc(ct.name)}</b>: ${F.company_share} of every 100 coins under its roofs belong to its owners' row.`);
+        L.push(`The gap runs inside each town, not only between them. <b>${F.owners.pop_pct}%</b> of this realm's people hold <b>${F.owners.coin_pct}%</b> of its coin, and the owners' row lives <b>${F.class_gap}×</b> better than the labor it hires` +
+          (F.within_pct !== null && F.within_pct >= 15 ? `. A map drawn by region misses much of it: <b>${F.within_pct}%</b> of the spread sits inside the towns` : ``) +
+          `. The sharpest company town is <b>${esc(ct.name)}</b>, where ${F.company_share} of every 100 coins belong to its owners' row.`);
       }
       L.push(`The poorest fifth of this realm carries <b>${F.blight_ratio}×</b> the blight of the richest fifth.`);
       if (F.moran && F.moran_blight)
-        L.push(`And the clustering is measured, not eyeballed: global Moran's I puts wealth at <b>${F.moran.I.toFixed(3)}</b> and blight at <b>${F.moran_blight.I.toFixed(3)}</b>, against ${F.moran.expected.toFixed(3)} expected under no structure (p ${F.moran.p.toFixed(3)} / ${F.moran_blight.p.toFixed(3)}, ${F.moran.n_perm} permutations over the region adjacency).`);
+        L.push(`The clustering is measured, not guessed. Global Moran's I puts wealth at <b>${F.moran.I.toFixed(3)}</b> and blight at <b>${F.moran_blight.I.toFixed(3)}</b>, against ${F.moran.expected.toFixed(3)} expected under no structure (p ${F.moran.p.toFixed(3)} / ${F.moran_blight.p.toFixed(3)}, ${F.moran.n_perm} permutations over the region adjacency).`);
       if (F.shadow_gap_pct !== null && F.shadow_gap_pct > 0 && model.ridges.length)
-        L.push(`Behind the ${esc(model.ridges[0].name)} wall, the median settlement earns <b>${F.shadow_gap_pct}% less</b> than the open country at the same remove from the capital.`);
+        L.push(`Behind the ${esc(model.ridges[0].name)} wall, the median settlement earns <b>${F.shadow_gap_pct}% less</b> than the open country at the same distance from the capital.`);
       L.push(`<b>${F.dark_n}</b> of ${model.regions.length} regions sit off the grid because serving them would not pay` +
-        (F.dark_burden_ratio !== null && F.dark_burden_ratio > 1 ? ` — and they carry <b>${F.dark_burden_ratio}×</b> the disease burden of the lit core.` : `.`));
+        (F.dark_burden_ratio !== null && F.dark_burden_ratio > 1 ? `. They carry <b>${F.dark_burden_ratio}×</b> the disease burden of the lit core.` : `.`));
       if (F.mouth_region !== null)
-        L.push(`${esc(town(F.mouth_region).name)}, at the river's mouth, drinks <b>${F.mouth_downstream} points</b> of other towns' poison — an order set by the land before anyone built anything.`);
+        L.push(`${esc(town(F.mouth_region).name)}, at the river's mouth, drinks <b>${F.mouth_downstream} points</b> of other towns' poison. The land set that order before anyone built anything.`);
       if (F.toll_paying_n > 0)
         L.push(`<b>${F.toll_paying_n}</b> regions pay a tariff at gates whose holders they never chose.`);
       if (F.rain_split && F.rain_split.wet - F.rain_split.dry >= 8 && model.ridges.length)
-        L.push(`The ${esc(model.ridges[0].name)} splits the rain: median rainfall <b>${F.rain_split.wet}</b> on its wet side, <b>${F.rain_split.dry}</b> in its shadow — and the farms followed the rain.`);
+        L.push(`The ${esc(model.ridges[0].name)} splits the rain: median rainfall <b>${F.rain_split.wet}</b> on its wet side and <b>${F.rain_split.dry}</b> in its shadow. The farms followed the rain.`);
       if (F.twins) {
         const a = reg(F.twins.shadow), b = reg(F.twins.open);
         L.push(`<span style="color:#d9b96c">THE TWINS:</span> <b>${esc(town(b.id).name)}</b> and <b>${esc(town(a.id).name)}</b> stand the same distance from the capital. ` +
           `${esc(town(b.id).name)}: wealth ${b.wealth}, market ${b.marketAccess}, burden ${b.burden}. ` +
           `${esc(town(a.id).name)}, behind the wall: wealth ${a.wealth}, market ${a.marketAccess}, burden ${a.burden}. ` +
-          `<b>The difference is the mountain</b> — the red line on the map joins them.`);
+          `<b>The difference is the mountain.</b> The red line on the map joins them.`);
       }
       if (F.zipf)
-        L.push(`The towns obey a <b>rank-size law no one decreed</b>: slope α ${F.zipf.alpha.toFixed(2)} across the whole system (Zipf's constant is ≈1), the big-town tail on a straight line (fit ${F.zipf.tail_r2.toFixed(2)}), the largest holding ${F.zipf.primacy}× the second. Sizes were GROWN — the same compounding that writes the wealth map wrote the census first.`);
+        L.push(`The towns obey a <b>rank-size law no one decreed</b>: slope α ${F.zipf.alpha.toFixed(2)} across the whole system (Zipf's constant is ≈1), the big-town tail on a straight line (fit ${F.zipf.tail_r2.toFixed(2)}), the largest holding ${F.zipf.primacy}× the second. Sizes were GROWN. The same compounding that writes the wealth map wrote the census first.`);
       if (F.sovereignty) {
         L.push(`<span style="color:#8a7a68">THE DOMINION:</span> <b>${F.sovereignty.occupied_n}</b> regions are occupied ground, and every levy in them is paid to a power no one here can petition. ` +
-          `The free country keeps <b>${F.sovereignty.retent_ratio}×</b> the share of its own value that the occupied country keeps — yet the occupied zone is the realm's best-wired country (${F.sovereignty.corridor_wired}/${F.sovereignty.occupied_n} on the grid): <b>the grid reaches you when someone else wants what you have</b>.` +
-          (F.sovereignty.comprador_ratio > 1 ? ` And the occupied owners' row holds ${F.sovereignty.comprador_ratio}× the free realm's share: the occupation did not replace the owners, it hired them.` : ``));
+          `The free country keeps <b>${F.sovereignty.retent_ratio}×</b> the share of its own value that the occupied country keeps. Yet the occupied zone is the realm's best-wired country (${F.sovereignty.corridor_wired}/${F.sovereignty.occupied_n} on the grid): <b>the grid reaches you when someone else wants what you have</b>.` +
+          (F.sovereignty.comprador_ratio > 1 ? ` And the occupied owners' row holds ${F.sovereignty.comprador_ratio}× the free realm's share. The occupation did not replace the owners; it hired them.` : ``));
       }
       if (F.concessions && (F.concessions.concession_n > 0 || F.concessions.abandoned_n > 0)) {
-        L.push(`<span style="color:#8a7a68">THE REACH:</span> the empire mostly never came — it bought. ` +
-          (F.concessions.concession_n > 0 ? `<b>${F.concessions.concession_n}</b> ${F.concessions.concession_n === 1 ? "coast is" : "coasts are"} a foreign concession: richer than the median (<b>${F.concessions.conc_wealth}</b> vs ${F.concessions.median_wealth}) and <b>${Math.round(100 * F.concessions.foreign_claim)}%</b> of the yield repatriated to ${esc(model.metropole)} — <b>developed and owned in the same ledger</b>. ` : ``) +
-          (F.concessions.abandoned_n > 0 ? `<b>${F.concessions.abandoned_n}</b> ${F.concessions.abandoned_n === 1 ? "coast was" : "coasts were"} wound up when the lode ran thin: <b>attention leaves with the ore</b>, and the ground got its ruin and its freedom in the same year.` : ``));
+        L.push(`<span style="color:#8a7a68">THE REACH:</span> the empire mostly did not invade. It bought in. ` +
+          (F.concessions.concession_n > 0 ? `<b>${F.concessions.concession_n}</b> ${F.concessions.concession_n === 1 ? "coast is" : "coasts are"} a foreign concession, richer than the median (<b>${F.concessions.conc_wealth}</b> vs ${F.concessions.median_wealth}), with <b>${Math.round(100 * F.concessions.foreign_claim)}%</b> of the yield sent home to ${esc(model.metropole)}. <b>It was developed and owned in the same ledger.</b> ` : ``) +
+          (F.concessions.abandoned_n > 0 ? `<b>${F.concessions.abandoned_n}</b> ${F.concessions.abandoned_n === 1 ? "coast was" : "coasts were"} wound up when the lode ran thin. <b>The attention left with the ore</b>, and the ground got its ruin and its freedom in the same year.` : ``));
       }
       if (F.sky && F.sky.shadow_adv !== null && F.sky.open_adv !== null && F.sky.shadow_adv >= F.sky.open_adv + 5)
-        L.push(`<span style="color:#8fa8d9">THE SKYWAY:</span> behind the wall the lanes would cut the road to the capital by <b>${F.sky.shadow_adv}%</b> (the open country gains ${F.sky.open_adv}%) — and boarding is an owners' privilege. ` +
+        L.push(`<span style="color:#8fa8d9">THE SKYWAY:</span> behind the wall the lanes would cut the road to the capital by <b>${F.sky.shadow_adv}%</b> (the open country gains ${F.sky.open_adv}%). But boarding is an owners' privilege. ` +
           (F.twins && F.sky.twin_sky !== null && F.sky.twin_sky > 0 ? `The owners' row of the shadow twin measures the wall at <b>${F.sky.twin_sky}% less</b>; its labor still walks the pass. ` : ``) +
-          `<b>Geography is destiny only for those who can't afford to leave it.</b>`);
+          `<b>The sky would help the walled country most, but only its owners can board.</b>`);
       L.push(`<span style="opacity:0.75; font-size:13px">None of this was painted. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. Every number recomputes from the exported columns.</span>`);
       return L.join("<br>");
     }
@@ -8084,7 +8083,7 @@
       const F = getFindings(model);
       const dG = F.gini - F.gini_t0;
       const pulls = [
-        `<b>${dG <= -0.04 ? "the gap closed" : dG >= 0.04 ? "the world entrenched" : "the world held its shape"}</b> — gini ${F.gini_t0.toFixed(2)} → ${F.gini.toFixed(2)}`
+        `<b>${dG <= -0.04 ? "the gap closed" : dG >= 0.04 ? "the world got more unequal" : "the world held its shape"}</b>: gini ${F.gini_t0.toFixed(2)} → ${F.gini.toFixed(2)}`
       ];
       if (F.owners) pulls.push(`<b>${F.owners.pop_pct}%</b> of the people hold <b>${F.owners.coin_pct}%</b> of the coin`);
       const echo = timelineHTML(model, params);
@@ -8221,7 +8220,7 @@
         const dE = snaps.length > 1 ? SE(reg) - snaps[0].eliteShare[reg.id] : 0;
         const tip = atlas
           ? `${tt ? esc(tt.name) : "region " + reg.id}`
-          : `${tt ? esc(tt.name) : "region " + reg.id} — ${LENS.q}: ${esc(String(cellValue(reg)))}` +
+          : `${tt ? esc(tt.name) : "region " + reg.id} · ${LENS.q}: ${esc(String(cellValue(reg)))}` +
             (reg.siteCharacter && reg.siteCharacter !== "none" && reg.siteCharacter !== "outpost" ? ` · ${reg.siteCharacter}` : "") +
             (Math.abs(dE) >= 3 ? ` · owners' row ${dE > 0 ? "+" : ""}${dE} since founding` : "");
         parts.push(`<path d="${d}" data-region="${reg.id}" fill="${atlas ? parchmentBiome(reg.biome) : cellFill(reg)}" stroke="${stroke}" stroke-width="${sw}"><title>${tip}</title></path>`);
@@ -8695,7 +8694,7 @@
       }
       if (params.ep > 0) {
         const ageName = ageAt(getFindings(model).ages, Math.min(scrubEpoch, snaps.length - 1));
-        parts.push(`<text x="${WX - 40}" y="46" font-size="26" text-anchor="end" fill="#000" opacity="0.65" paint-order="stroke" stroke="#fff" stroke-width="4">epoch ${Math.min(scrubEpoch, snaps.length - 1)}/${params.ep}${ageName ? " — " + ageName : ""}</text>`);
+        parts.push(`<text x="${WX - 40}" y="46" font-size="26" text-anchor="end" fill="#000" opacity="0.65" paint-order="stroke" stroke="#fff" stroke-width="4">epoch ${Math.min(scrubEpoch, snaps.length - 1)}/${params.ep}${ageName ? " · " + ageName : ""}</text>`);
       }
       if (inspectId >= 0 && inspectId < model.regions.length) {
         const reg = model.regions[inspectId];
@@ -8734,7 +8733,7 @@
         const bar = document.getElementById("legendBar");
         const CATS = LENS.cats || null;
         if (atlas) { // #63: no lens on parchment — the legend stands down
-          document.getElementById("legendLabel").textContent = "atlas — the land itself";
+          document.getElementById("legendLabel").textContent = "atlas: the land itself";
           bar.classList.remove("cats");
           bar.parentElement.classList.add("no-ends");
           bar.innerHTML = "";
@@ -8774,10 +8773,10 @@
         ["worst burden", Math.max(...model.regions.map(r => r.burden)).toFixed(1) + " /1k"],
         ["blocs", (() => { const c = model.regions.reduce((m, r) => { const b = r.occupied ? "dominion" : r.bloc; m[b] = (m[b] || 0) + 1; return m; }, {}); return ["crown", "temple", "magnate", "contested", "ungoverned"].map(b => `${c[b] || 0} ${b.slice(0, 3)}`).join(" / ") + (c.dominion ? ` / ${c.dominion} dom` : ``); })()],
         ["roads", (() => { const c = model.roadEdges.reduce((m, e) => { m[e.cls] = (m[e.cls] || 0) + 1; return m; }, {}); return `${model.roadEdges.length} edges (${c.highway || 0} hwy / ${c.road || 0} road / ${c.track || 0} track)`; })()],
-        ["security", (() => { const c = model.regions.reduce((m, r) => { m[r.security] = (m[r.security] || 0) + 1; return m; }, {}); return `${model.garrisons.length} constabularies — ${c.secured || 0} sec / ${c.patrolled || 0} pat / ${c.contested || 0} con / ${c.ungoverned || 0} ung`; })()],
+        ["security", (() => { const c = model.regions.reduce((m, r) => { m[r.security] = (m[r.security] || 0) + 1; return m; }, {}); return `${model.garrisons.length} constabularies: ${c.secured || 0} sec / ${c.patrolled || 0} pat / ${c.contested || 0} con / ${c.ungoverned || 0} ung`; })()],
         ["deep time", (() => { const dead = model.regions.filter(r => r.exhausted).length; const shocked = model.regions.filter(r => r.shock !== "none").length; return `${dead} dead-lode regions · ${shocked} scarred by shocks`; })()],
         ["uncounted", model.regions.reduce((s, r) => s + r.uncounted, 0).toLocaleString("en-US") + " people the census misses"],
-        ["epochs", (() => { const c = model.regions.reduce((m, r) => { m[r.boomBust] = (m[r.boomBust] || 0) + 1; return m; }, {}); return `${params.ep} run — ${c.boom || 0} boom / ${c.stable || 0} stable / ${c.decline || 0} decline / ${c.collapse || 0} collapse`; })()],
+        ["epochs", (() => { const c = model.regions.reduce((m, r) => { m[r.boomBust] = (m[r.boomBust] || 0) + 1; return m; }, {}); return `${params.ep} run: ${c.boom || 0} boom / ${c.stable || 0} stable / ${c.decline || 0} decline / ${c.collapse || 0} collapse`; })()],
         ["events", model.events.length
           // C1 (#134): the enum DATA-keys stay stable (refinery_collapse etc.), but the
           // readout renders them in the new register — the data is the anchor, the
@@ -8787,12 +8786,12 @@
               const lab = (k) => EVL[k] || k.replace("_", " ");
               return model.events.map(ev => `e${ev.epoch}: ${ev.name && ev.name.startsWith("the ") ? ev.name : lab(ev.type) + (ev.region_id !== undefined ? " @ #" + ev.region_id : ev.measure ? " (" + lab(ev.measure) + ")" : ev.name ? " (" + ev.name + ")" : "")}`).join(" · ");
             })()
-          : "none — a quiet age"],
+          : "none: a quiet age"],
         ["wealth min / max", `${Math.min(...ws)} / ${Math.max(...ws)}`],
-        ["the owners", (() => { const FR = getFindings(model); return FR.owners ? `${FR.owners.pop_pct}% of people hold ${FR.owners.coin_pct}% of the coin` : "\u2014"; })()],
-        ["the skyway", (() => { const sp = model.regions.filter(r => r.isSkyport === 1); return sp.length >= 2 ? `${esc(model.skywayName)} Lane — ${sp.length} aeries (${sp.map(r => esc((model.settlements.find(s => s.regionId === r.id) || {name:(model.regions.find(rg=>rg.id===r.id)||{}).placeName||"the aerie"}).name)).join(", ")})` : "no lane worth the lift"; })()],
-        ["the dominion", model.dominion ? `arrived ${1000 + 25 * model.dominion.arrived} — ${model.regions.filter(r => r.occupied).length} regions occupied` : "beyond the horizon, this age"],
-        ["the powers", (() => { const c = model.regions.filter(r => r.concession).length, a = model.regions.filter(r => r.concessionEnded).length; return `${esc(model.metropole || "?")} courts · ${esc(model.rival || "?")} rivals` + (c ? ` — ${c} concession${c > 1 ? "s" : ""}` : "") + (a ? `${c ? "," : " —"} ${a} wound up` : "") + (!c && !a ? " — reach, not a landing, this age" : ""); })()],
+        ["the owners", (() => { const FR = getFindings(model); return FR.owners ? `${FR.owners.pop_pct}% of people hold ${FR.owners.coin_pct}% of the coin` : "not measured"; })()],
+        ["the skyway", (() => { const sp = model.regions.filter(r => r.isSkyport === 1); return sp.length >= 2 ? `${esc(model.skywayName)} Lane: ${sp.length} aeries (${sp.map(r => esc((model.settlements.find(s => s.regionId === r.id) || {name:(model.regions.find(rg=>rg.id===r.id)||{}).placeName||"the aerie"}).name)).join(", ")})` : "no lane worth the lift"; })()],
+        ["the dominion", model.dominion ? `arrived ${1000 + 25 * model.dominion.arrived}: ${model.regions.filter(r => r.occupied).length} regions occupied` : "beyond the horizon, this age"],
+        ["the powers", (() => { const c = model.regions.filter(r => r.concession).length, a = model.regions.filter(r => r.concessionEnded).length; return `${esc(model.metropole || "?")} courts · ${esc(model.rival || "?")} rivals` + (c ? ` · ${c} concession${c > 1 ? "s" : ""}` : "") + (a ? `${c ? "," : " ·"} ${a} wound up` : "") + (!c && !a ? " · reach, not a landing, this age" : ""); })()],
         ["rank-size", (() => { const F5 = getFindings(model); return F5.zipf ? `α ${F5.zipf.alpha.toFixed(2)} · tail fit ${F5.zipf.tail_r2.toFixed(2)} · primacy ${F5.zipf.primacy}×` : "too few towns to fit"; })()],
         ["richest lode", Math.max(...model.regions.map(r => r.endowment)) + " (endowment)"],
         ["CRS", "planar 0–1600 × 0–1000 (y-up)"]
@@ -8827,7 +8826,7 @@
         L.push(`<div class="insp-sec">THE RANGE</div><table>` +
           row("grade", `${R.kind} · peak elevation ${R.maxElev}`) +
           row("form", `${R.pts.length}-node crest${R.isSpur ? " (a spur off a main range)" : ""}`) +
-          row("passes", myPasses.length ? myPasses.map(p => p.name || "an unnamed pass").join(" · ") : "no pass crosses it — a full wall") +
+          row("passes", myPasses.length ? myPasses.map(p => p.name || "an unnamed pass").join(" · ") : "no pass crosses it, a full wall") +
           `</table>`);
         if (spurs && !R.isSpur) L.push(`<div class="insp-ev">the realm's ranges throw ${spurs} spur${spurs === 1 ? "" : "s"} between them</div>`);
       } else if (selFeat.kind === "river") {
@@ -8850,7 +8849,7 @@
         L.push(`<div class="insp-sec">THE CROSSING</div><table>` +
           row("through", R ? `${R.name} ${R.kind} (peak ${R.maxElev})` : "a range") +
           row("worth", "the one gap an army or a caravan takes instead of the wall") +
-          row("held by", p.heldBy && p.heldBy !== "none" ? p.heldBy : "no one — a free crossing") +
+          row("held by", p.heldBy && p.heldBy !== "none" ? p.heldBy : "no one, a free crossing") +
           `</table>`);
       } else {
         // wild-layer point features: {kind, id} where id indexes the model array
@@ -8884,13 +8883,13 @@
         rows: (r, row) => row("peril / yield", `${r.peril} / ${r.yield}`) + row("kind", r.type === "delve" ? "old workings, still worth the digging" : r.type === "tomb" ? "a barrow best left shut" : "a deadhold, poisoned before living memory") },
       deadhold: { get: (i) => model.regions.filter(r => !r.settled && r.abandonedEpoch >= 0)[i],
         name: (r) => "the ruins of " + (r.placeName || "a forgotten hold"), sub: (r) => `deadhold · a town that emptied in ${1000 + 25 * r.abandonedEpoch}`, cap: "THE DEADHOLD",
-        rows: (r, row) => row("fell", `${1000 + 25 * r.abandonedEpoch}`) + row("rebirths", r.rebirths ? `came back ${r.rebirths}× before` : "never came back") + row("the ground", "still what it was — only the people are gone") },
+        rows: (r, row) => row("fell", `${1000 + 25 * r.abandonedEpoch}`) + row("rebirths", r.rebirths ? `came back ${r.rebirths}× before` : "never came back") + row("the ground", "still what it was, only the people are gone") },
       sanct: { get: (i) => model.sanctionedSites[i],
         name: (s) => `the shrine ${s.name}`, sub: () => "sanctioned site · holy ground", cap: "THE SHRINE",
         rows: (s, row) => row("consecrated", "where the Temple planted its standard, often after the harm") },
       maelstrom: { get: () => model.maelstrom,
         name: (m) => m.name, sub: () => "the maelstrom · a turning of the sea", cap: "THE MAELSTROM",
-        rows: (m, row) => row("side", `the ${m.side} water`) + row("sailors", "shun it — ports keep clear of its reach") }
+        rows: (m, row) => row("side", `the ${m.side} water`) + row("sailors", "they shun it, and ports keep clear of its reach") }
     };
 
     function renderInspector() {
@@ -8915,11 +8914,11 @@
           drow("ore", `${reg.E} in the ground${reg.exhausted ? " · DEAD LODE" : ""}`) +
           `</table>`];
         D.push(`<div class="insp-sec">THE GHOST COUNTRY</div><div class="insp-ev">` +
-          (reg.abandonedEpoch >= 0 ? `a town stood here and emptied in <b>${yr(reg.abandonedEpoch)}</b>${reg.rebirths ? ` — it had come back ${reg.rebirths}× before` : ""}. The ground is still what it was; only the people are gone.` : `no one ever settled this ground.`) +
+          (reg.abandonedEpoch >= 0 ? `a town stood here and emptied in <b>${yr(reg.abandonedEpoch)}</b>${reg.rebirths ? `. It had come back ${reg.rebirths}× before` : ""}. The ground is still what it was; only the people are gone.` : `no one ever settled this ground.`) +
           `</div>`);
         const dev = model.events.filter(ev => ev.region_id === reg.id);
         if (dev.length) D.push(`<div class="insp-sec">ITS STORY</div>` +
-          dev.map(ev => `<div class="insp-ev"><b>${yr(ev.epoch)}</b> — ${ev.name && ev.name.startsWith("the ") ? ev.name : ev.type.replace(/_/g, " ")}</div>`).join(""));
+          dev.map(ev => `<div class="insp-ev"><b>${yr(ev.epoch)}</b>: ${ev.name && ev.name.startsWith("the ") ? ev.name : ev.type.replace(/_/g, " ")}</div>`).join(""));
         document.getElementById("inspBody").innerHTML = D.join("");
         return;
       }
@@ -8942,7 +8941,7 @@
         // B6 (#128): the crossing this town keeps (if any) — sound, decaying, or rotted —
         // and the friction it PAYS for others' rotted spans on its road to market
         (reg.crossingCondition !== null && reg.crossingCondition !== undefined
-          ? row("crossing", `its ${reg.crossingType} is ${reg.crossingCondition >= 0.85 ? "sound" : reg.crossingCondition >= 0.4 ? "decaying" : "rotted"} (${Math.round(reg.crossingCondition * 100)}% kept — ${reg.crossingHeldBy && reg.crossingHeldBy !== "none" ? "tariffs fund upkeep" : "no tariff funds it"})`)
+          ? row("crossing", `its ${reg.crossingType} is ${reg.crossingCondition >= 0.85 ? "sound" : reg.crossingCondition >= 0.4 ? "decaying" : "rotted"} (${Math.round(reg.crossingCondition * 100)}% kept, ${reg.crossingHeldBy && reg.crossingHeldBy !== "none" ? "tariffs fund upkeep" : "no tariff funds it"})`)
           : "") +
         (reg.crossFriction > 0 ? row("rotted road", `+${reg.crossFriction} trade friction from decayed spans between it and the market`) : "") +
         (model.dominion ? row("tribute", `${reg.occupied ? 3 : (reg.bloc === "crown" ? 1 : 2)} per year to the Dominion`) : "") +
@@ -8981,7 +8980,7 @@
               // world capital into the local works — and whether that reads as
               // development finance or comprador extraction is a fact about THIS
               // town's history, not a verdict: did the works actually grow?
-              ? `development finance: the counting house built the aetherworks here (artifice ${reg.A0}→${reg.A}) — and still banks +6 to the owners' row`
+              ? `development finance: the counting house built the aetherworks here (artifice ${reg.A0}→${reg.A}). It still banks +6 to the owners' row`
               : `comprador extraction: the counting house banks the town's coin to the owners' row (+6), the aetherworks no richer for it (artifice ${reg.A0}→${reg.A})`)
           : "") +
         `</table>`);
@@ -9004,14 +9003,14 @@
       // #91: the institutions lead — they are what the town IS, with the
       // counting house carrying its mechanism so the cause is never silent
       const STRUCT_TELL = {
-        counting_house: "a counting house — intermediates world capital into the aetherworks, and banks its cut to the owners' row (+6 elite share)",
+        counting_house: "a counting house: it intermediates world capital into the aetherworks, and banks its cut to the owners' row (+6 elite share)",
         temple: "a temple", keep: "a keep", guildhall: "a guildhall",
         library: "a library", market: "a market", tavern: "a tavern"
       };
       (reg.structures || []).forEach(t => { if (STRUCT_TELL[t]) stands.push(STRUCT_TELL[t]); });
       if (reg.refining > 0) stands.push("the aetherworks");
       if (reg.isPort === 1) stands.push(harborName(st.name));
-      if (reg.isFreeport === 1 && model.freeport) stands.push(`${model.freeport.name} (freeport — no writ runs here)`);
+      if (reg.isFreeport === 1 && model.freeport) stands.push(`${model.freeport.name} (freeport, no writ runs here)`);
       if (reg.hasSanctuary === 1 && model.sanctuary) stands.push(`${model.sanctuary.name} (unsanctioned)`);
       for (const cp of model.camps) if (cp.regionId === reg.id) stands.push(`${cp.name} (hunters)`);
       if (reg.isSkyport === 1) stands.push(`${st.name} Aerie`);
@@ -9040,8 +9039,8 @@
       const evs = model.events.filter(ev => ev.region_id === reg.id);
       if (evs.length || reg.occupiedEpoch !== -1) {
         L.push(`<div class="insp-sec">ITS STORY</div>` +
-          evs.map(ev => `<div class="insp-ev"><b>${yr(ev.epoch)}</b> — ${ev.name && ev.name.startsWith("the ") ? ev.name : ev.type.replace(/_/g, " ")}${ev.outcome ? " (" + ev.outcome + ")" : ""}${ev.faction ? " (" + ev.faction + ")" : ""}</div>`).join("") +
-          (reg.occupiedEpoch !== -1 && !reg.occupied ? `<div class="insp-ev"><b>freed</b> — threw the Dominion out</div>` : ""));
+          evs.map(ev => `<div class="insp-ev"><b>${yr(ev.epoch)}</b>: ${ev.name && ev.name.startsWith("the ") ? ev.name : ev.type.replace(/_/g, " ")}${ev.outcome ? " (" + ev.outcome + ")" : ""}${ev.faction ? " (" + ev.faction + ")" : ""}</div>`).join("") +
+          (reg.occupiedEpoch !== -1 && !reg.occupied ? `<div class="insp-ev"><b>freed</b>: threw the Dominion out</div>` : ""));
       }
       document.getElementById("inspBody").innerHTML = L.join("");
     }
@@ -9053,13 +9052,13 @@
     // export is byte-identical before and after.
     let cfOn = false, cfMode = "db";
     const CF_MODES = {
-      db:   { over: (p) => ({ ...p, db: 0 }),        capR: "DISPERSED (spoil spread, none aimed) &mdash; injustice",
+      db:   { over: (p) => ({ ...p, db: 0 }),        capR: "DISPERSED (spoil spread, none aimed): injustice",
               already: (p) => p.db < 34,
               note: `This world already disperses its spoil (doctrine below concentrate): the blight falls where the wind and the water carry it, with no hand aiming it. Concentrate or treat to see what a doctrine adds.` },
-      gt:   { over: (p) => ({ ...p, gt: 0 }),        capR: "THE FULL GRID (threshold 0) &mdash; injustice",
+      gt:   { over: (p) => ({ ...p, gt: 0 }),        capR: "THE FULL GRID (threshold 0): injustice",
               already: (p) => p.gt === 0,
               note: `This world already wires everyone (threshold 0): the grid is a right, not a return. Raise the grid threshold to see what the ledgers withhold.` },
-      both: { over: (p) => ({ ...p, db: 0, gt: 0 }), capR: "BOTH MERCIES (dispersed, threshold 0) &mdash; injustice",
+      both: { over: (p) => ({ ...p, db: 0, gt: 0 }), capR: "BOTH MERCIES (dispersed, threshold 0): injustice",
               already: (p) => p.db < 34 && p.gt === 0,
               note: `This world already runs on both mercies. There is nothing left to forgive it.` }
     };
@@ -9107,7 +9106,7 @@
       const asF = getFindings(model);
       const asPlagues = model.events.filter(ev => ev.type === "blight_plague").length;
       const asDark = model.regions.filter(r => !r.onConduit).length;
-      document.getElementById("cfCapL").innerHTML = `AS ROLLED (${model.disposalDoctrine}, threshold ${params.gt}) &mdash; injustice`;
+      document.getElementById("cfCapL").innerHTML = `AS ROLLED (${model.disposalDoctrine}, threshold ${params.gt}): injustice`;
       document.getElementById("cfCapR2").innerHTML = MODE.capR;
       document.getElementById("cfLeft").innerHTML = cfPaneSVG(asVals);
       document.getElementById("cfRight").innerHTML = cfPaneSVG(cfVals);
@@ -9121,7 +9120,7 @@
         ? `Both mercies together: <b>${dRatio > 0 ? dRatio + "&times; less blight on the poorest fifth" : "the blight unchanged"}</b> and <b>${dDark > 0 ? dDark + " settlements lit" : "the grid unchanged"}</b>. <b>The gap between these maps is a policy.</b>`
         : dRatio > 0
         ? `The doctrine alone puts <b>${dRatio}&times; extra blight</b> on the poorest fifth, over the dispersed spread the wind and water would have made. <b>The gap between these maps is a policy.</b>`
-        : `In this world the dispersed spread already found the poor; the doctrine moved little the terrain had not. The chronicle notes that innocence of this kind is luck, not virtue &mdash; and that a doctrine can also land the poison on the RICH, where the ratio reads the other way.`;
+        : `In this world the dispersed spread already found the poor; the doctrine moved little the terrain had not. That kind of innocence is luck, not virtue. A doctrine can also land the poison on the RICH, where the ratio reads the other way.`;
       stats.innerHTML = verdict +
         `<table><tr><th></th><th>as rolled</th><th>the counterfactual</th></tr>` +
         `<tr><td>poorest fifth's blight vs richest's</td><td><b>${asF.blight_ratio}&times;</b></td><td><b>${cfF.blight_ratio}&times;</b></td></tr>` +
@@ -9369,7 +9368,7 @@
       renderInspector();
       updateCf();
       writeHash();
-      toast("world recomputed — same rock, new society"); // the rewrite is never silent
+      toast("world recomputed: same rock, new society"); // the rewrite is never silent
     }
 
     // Coalesce rapid re-render requests (view/POI/mode toggles, scrub drags)
@@ -9511,7 +9510,7 @@
         .sort((a, b) => b.eliteShare - a.eliteShare);
       const st = chTowns.length ? model.settlements.find(s => s.regionId === chTowns[0].id) : null;
       return `<div class="sec-title">THE INSTITUTIONS</div><table>${rows}</table>` +
-        (st ? `<div class="insp-ev">the sharpest counting-house town is <b>${esc(st.name)}</b> — the house banks the coin to the owners' row (+6 elite share).</div>` : "");
+        (st ? `<div class="insp-ev">the sharpest counting-house town is <b>${esc(st.name)}</b>. The house banks the coin to the owners' row (+6 elite share).</div>` : "");
     }
 
     // ---- The drift (#93): a region's history as sparklines ------------------
@@ -9538,7 +9537,7 @@
       // gauge shades that band rather than faking a precise line
       const gauge = (k) => { const v = Math.round(model.tensions[k]); return `<tr><td>${TN[k]}</td><td><span class="pw-bar pw-tension"><i style="width:${Math.min(100, v)}%"></i></span> ${v}${v >= 55 ? " · war-ripe" : ""}</td></tr>`; };
       const ledger = model.events.filter(ev => ["war", "seizure", "treaty", "annexation"].includes(ev.type))
-        .map(ev => `<div class="insp-ev"><b>${1000 + 25 * ev.epoch}</b> — ${esc(ev.name || ev.type.replace(/_/g, " "))}</div>`).join("");
+        .map(ev => `<div class="insp-ev"><b>${1000 + 25 * ev.epoch}</b>: ${esc(ev.name || ev.type.replace(/_/g, " "))}</div>`).join("");
       return `<div class="sec-title">THE POWERS</div><table>` +
         FACTIONS.map(bar).join("") + Object.keys(TN).map(gauge).join("") + `</table>` +
         (ledger ? `<div class="lens-cap">SEIZURES, TREATIES, WARS</div>${ledger}`
@@ -9592,7 +9591,7 @@
     function updateAgeLabel() {
       if (!model) return;
       const name = ageAt(getFindings(model).ages, scrubEpoch);
-      document.getElementById("ageLabel").textContent = name ? `— ${name}` : "";
+      document.getElementById("ageLabel").textContent = name ? `· ${name}` : "";
     }
 
     // ---- The index of plates: the lens browser, generated from LENSES ------
@@ -10023,7 +10022,7 @@
         writeHash();
         const link = location.href;
         try { await navigator.clipboard.writeText(link); toast("Share link copied ✓"); }
-        catch (_) { toast("Copy failed — link is in the address bar"); }
+        catch (_) { toast("Copy failed. The link is in the address bar"); }
       });
 
       window.addEventListener("hashchange", () => { params = readHash(); applyHashView(); syncControls(); regenerateTopology(); });

@@ -1395,6 +1395,36 @@ RA0.series = RA10.series = null; // only gj + chron are read; the series would p
   else fail("chronicle silent on the mountains");
 }
 
+console.log("# The plain register: no em dash survives into any owner-facing surface");
+
+{
+  // The prose was rewritten to a plain, message-first register with ZERO em
+  // dashes (U+2014). This tripwire guards that: an em dash reintroduced into
+  // ANY owner-facing surface — the chronicle, the findings panel, the info
+  // table, or the region report — fails the suite loudly. En dashes (U+2013,
+  // used in year ranges) and arrows (→) are allowed; only the em dash is banned.
+  const EM = /—/g;
+  const seeds = ["alpha", "x1-1", "f2-1", "ir-3", "ris-6", "le-7", "e5-0", "d6-2"];
+  let emFound = 0;
+  for (const s of seeds) {
+    const W = await gen(`#seed=${s}&regions=24&ep=10`, true);
+    const surfaces = {
+      "the chronicle": W.chron,
+      "#findingsText": W.doc.getElementById("findingsText").textContent,
+      "#info": W.doc.getElementById("info").textContent,
+      "#report": W.doc.getElementById("report").textContent,
+    };
+    for (const [name, text] of Object.entries(surfaces)) {
+      const n = (text.match(EM) || []).length;
+      if (n > 0) { emFound += n; fail(`em dash (U+2014) in ${name} of seed ${s}: ${n} occurrence(s)`); }
+    }
+    W.window.close();
+  }
+  if (emFound === 0)
+    ok(`the plain register holds: no em dash (U+2014) in the chronicle, findings, info, or report across ${seeds.length} seeds`);
+  else fail(`the register broke: ${emFound} em dash(es) reached an owner-facing surface`);
+}
+
 console.log("# The physical world G4 acceptance: rock, rain, and what follows");
 
 {
@@ -1603,7 +1633,7 @@ console.log("# The strata H1 acceptance: class exists within the walls");
     ok("THIS WORLD reads out the owners' share");
   else fail("readout silent on owners");
   const RC = RA10;
-  if (RC.chron.includes("two peoples under one name") && RC.chron.includes("within every wall the shares were already set"))
+  if (RC.chron.includes("two peoples under one name") && RC.chron.includes("the shares were set from the start"))
     ok("the chronicle counts the owners' row and the verdict closes on it");
   else fail("chronicle silent on class");
 }
@@ -2003,7 +2033,7 @@ console.log("# The founding centuries Z1 acceptance: the census is grown, not pa
   if (/rank-size/.test(A1.doc.getElementById("info").textContent)) ok("THIS WORLD reads out the rank-size fit");
   else fail("readout silent on rank-size");
   const RZ = RA10;
-  if (RZ.chron.includes("a hierarchy grown, not granted"))
+  if (RZ.chron.includes("The bigger a town got, the faster it grew"))
     ok("the chronicle knows how the towns got their sizes");
   else fail("chronicle silent on the grown census");
 }
@@ -2082,8 +2112,8 @@ console.log("# The Dominion X1 acceptance: sovereignty is the last inequality");
     if (/THE DOMINION/.test(domWorld.doc.getElementById("findingsText").textContent))
       ok("the findings panel argues the sovereignty ledger");
     else fail("panel silent on sovereignty");
-    if (domWorld.chron.includes("The Dominion's sails") &&
-        domWorld.chron.includes("sovereignty was the last inequality"))
+    if (domWorld.chron.includes("The Dominion's fleet stood off") &&
+        domWorld.chron.includes("who is sovereign and who is occupied is the largest one in the realm"))
       ok("the chronicle records the annexation and the verdict closes on sovereignty");
     else fail("chronicle silent on the Dominion");
     // the series shows the occupation beginning
@@ -2171,7 +2201,7 @@ console.log("# The skyway S1 acceptance: geography is destiny only for those who
     ok("THIS WORLD reads out the skyway charter");
   else fail("readout silent on the skyway");
   const RS = RA10;
-  if (RS.chron.includes("the sky is not") || RS.chron.includes("no lane worth the lift"))
+  if (RS.chron.includes("the sky isn't") || RS.chron.includes("no lane worth the lift"))
     ok("the chronicle records the charter: the road below is for everyone; the sky is not");
   else fail("chronicle silent on the skyway");
 }
@@ -2221,7 +2251,7 @@ console.log("# Dynasties E5 acceptance: the powers have faces");
     const evs = (R.gj.hinterland.events || []).filter(ev => ev.type === "succession");
     if (evs.length) succWorlds++;
     if (evs.some(ev => ev.contested)) crisisWorlds++;
-    if (R.chron.includes("in the reign of")) reignDated++;
+    if (R.chron.includes("the reign of")) reignDated++;
     if (evs.length) {
       narratedTested++;
       if (evs.every(ev => R.chron.includes(ev.name))) narrated++;
@@ -2292,7 +2322,7 @@ console.log("# Escalation F2 acceptance: money begets reach, wars become policy"
     }
     if (evs.some(ev => ev.type === "war")) {
       warWorlds++;
-      if (R.chron.includes("The powers that met there were")) warNamed++;
+      if (R.chron.includes("The two powers fighting there were")) warNamed++;
     }
   }
   if (paidTested > 0 && paid === paidTested)
@@ -2409,7 +2439,7 @@ console.log("# The wild layer P1 acceptance: anomalies warp the ledger");
 {
   const R = RA0;
   const ruinNames = ruinsOf(R.gj).map(r => r.properties.ruin_name);
-  if (R.chron.includes("The old world is not gone") && ruinNames.every(nm => R.chron.includes(nm)) &&
+  if (R.chron.includes("The old world is still here") && ruinNames.every(nm => R.chron.includes(nm)) &&
       (towersOf(R.gj).length === 0 || R.chron.includes(" Tower")) &&
       (bridgesOf(R.gj).length === 0 || R.chron.includes(" Bridge")))
     ok(`the chronicle tells the wild map (${ruinNames.join(", ")})`);
@@ -2539,7 +2569,7 @@ const R1S = { rivN: 0, seaMouth: 0, borderMouth: 0, confMouth: 0, corridorBad: n
 {
   const R = RA0;
   const names = riversOf(R.gj).map(r => r.properties.river_name);
-  if (names.length && names.every(nm => R.chron.includes(nm)) && R.chron.includes("drinks it clean"))
+  if (names.length && names.every(nm => R.chron.includes(nm)) && R.chron.includes("gets it clean"))
     ok(`the chronicle tells the drinking order (${names.map(n => "the " + n).join(", ")})`);
   else fail("chronicle silent on the rivers");
 }
@@ -3571,7 +3601,7 @@ console.log("# Imperial reach B11 (#133): the empire mostly never comes, it buys
     // the ABANDONMENT ARC, narrated END-TO-END: the same world's chronicle carries
     // both the concession's opening and its winding-up (attention leaving with the ore)
     const concEv = ev.find(e => e.type === "concession"), abEv = ev.find(e => e.type === "abandonment");
-    if (concEv && abEv && /sent factors and a charter/.test(chron) && /wound up its concession/.test(chron) && /attention leaves with the ore/.test(chron)) {
+    if (concEv && abEv && /sent factors and a charter/.test(chron) && /wound up its concession/.test(chron) && /attention left with the ore/.test(chron)) {
       arcNarrated++;
       if (!arcEx) arcEx = `ir-${i}: concession opened e${concEv.epoch}, wound up e${abEv.epoch}`;
     }

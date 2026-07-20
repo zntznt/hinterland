@@ -1,8 +1,24 @@
-# Hinterland — the design history (newest first)
+# Hinterland: the design history (newest first)
 
 **Schema history:**
+- **tone pass** (owner-directed, no schema change): the whole app moved to a plain,
+  message-first voice. The old register leaned medieval and strung words together in a
+  way that buried the point: aphorisms, inverted clever bits, grand abstractions,
+  editorial asides. Those are gone. The chronicle, the findings panel, the inspector,
+  the HUD, the hints, the lens labels, the title and colophon, and the reader-facing docs
+  (README, field guide, attribute model, old thesis, atlas, QGIS bundle) all say what
+  happened in short, plain sentences. The setting texture stays (aetherworks, grid,
+  Concordat, Dominion, tariffs, gates), stated plainly, not stripped to generic. **Hard
+  rule: no em dashes anywhere.** Every em dash in the app, the docs, and the tooling was
+  restructured into a period, a comma, or two sentences, never swapped for a hyphen. A
+  committed grep test now fails the build if an em dash appears in the rendered chronicle,
+  findings, report, or info across the seed sweep. `schema_version` stays 54; the export
+  columns, event data-keys, and QGIS styles are untouched. **Declared fixture
+  regeneration** (all 30 cells; only `chronicle.md` moved, the GeoJSON and `events.csv`
+  are byte-identical). Roughly 20 chronicle and findings phrase assertions re-pinned to
+  the new prose.
 - **v54** (the re-skin C1): out of the shire, into the arcane-industrial state (issue
-  #134, §2 + §8 decision 1 — the setting pivot). A **clean versioned break**: the export
+  #134, §2 + §8 decision 1, the setting pivot). A **clean versioned break**: the export
   vocabulary renames once, no alias columns, and old exports stay readable under their old
   `schema_version`. Column renames: `on_conduit`→`on_grid`, `conduit_access`→`grid_access`,
   `seat_cost_ground/sky`→`capital_cost_ground/sky`, `centrality_to_seat`→
@@ -10,15 +26,15 @@
   `tariff_burden`, `wardline_strength`→`constabulary_strength`. Feature kinds: `conduit`→
   `grid`, `garrison`→`constabulary`. Settlement tiers: `prime/hub/outpost/holdfast`→
   `metropolis/city/works-town/frontier-post`. And every USER-FACING string moves to the new
-  register — the seat becomes **the capital**, the works/refinery the **aetherworks**, tolls
+  register: the seat becomes **the capital**, the works/refinery the **aetherworks**, tolls
   **tariffs**, the conduit the **grid**, the garrison the **constabulary**. Internal identifiers
   and enum DATA-keys (event types `refinery_collapse`, era `conduit_boom`, measures
-  `toll_amnesty`) stay stable — the data is the anchor, the presentation is the skin, so the
+  `toll_amnesty`) stay stable. The data is the anchor, the presentation is the skin, so the
   readout renders them in the new register (a display-label map) while the columns keep their
   meaning. The QGIS `.qml` styles need **no change** (they bind only non-renamed fields). New
-  **name registers** extend the Markov corpus — **corporate** (the exchanges), **precinct** (the
+  **name registers** extend the Markov corpus: **corporate** (the exchanges), **precinct** (the
   administration), **gazette** (the record/press), and **chthonic** (the old faith beneath the
-  city) — surfaced as an `institutions` provenance block (exchange / gazette / precinct / buried
+  city), surfaced as an `institutions` provenance block (exchange / gazette / precinct / buried
   power), deterministic per seed and novel-walked. `schema_version` 53→54; **declared fixture
   regeneration** (all 30 cells). Acceptance tests: the new registers produce plausible NOVEL
   names across 10 seeds; and a committed **grep test** confirms no medieval vocabulary (seat /
@@ -26,62 +42,62 @@
   rendered record, readout, or findings across a sweep. Two death-toll lines reworded off the
   word "toll" so the invariant can forbid it outright.
 - **v53** (imperial reach B11): the empire mostly never comes, it buys (issue #133,
-  §3.6 — the Phase B capstone). The Dominion was a Viking: it lands, it takes tribute.
+  §3.6, the Phase B capstone). The Dominion was a Viking: it lands, it takes tribute.
   Real contemporary empire works by **REACH**, and the fleet is the rare exception.
   B11 mechanizes one empire pressing on the coast through three channels struck each
-  epoch BEFORE income: **CONCESSIONS** — the Metropole's **attention**, keyed to a
+  epoch BEFORE income: **CONCESSIONS**, the Metropole's **attention**, keyed to a
   region's **remaining ore** (`attention × sea-reach × E`), courts a rich coast; when
   it crosses the bar a concession opens: foreign capital **owns the works** (`retention`
-  becomes a **foreign claim** — half the ore-yield repatriates, the dependency-theory
+  becomes a **foreign claim**: half the ore-yield repatriates, the dependency-theory
   column applied one level up), the coast is force-wired, and **development capital**
   flows in while the ore is wanted. As the lode draws down (or attention turns) the
-  concession is **wound up** — the markets leave (**ruin**) and the levies stop
+  concession is **wound up**: the markets leave (**ruin**) and the levies stop
   (**freedom**): the *courted → developed → squeezed → abandoned* arc, generated from
-  the depleting ore alone. **EMBARGO** — a hostile world regime (`trade_war`) shuts the
+  the depleting ore alone. **EMBARGO**: a hostile world regime (`trade_war`) shuts the
   sea lanes, so an exposed coast loses its trade pole for the epoch and the second pole
-  **busts**. **THE LIMIT CASE** — the Dominion's landing is demoted (the coin cut from a
+  **busts**. **THE LIMIT CASE**: the Dominion's landing is demoted (the coin cut from a
   half to a third): the empire mostly judges reach enough and sends factors, not a
   garrison; annexation is now the exception, not the rule. A named **RIVAL** rides the
-  regime chain, the gazette ("the powers" row), and a **courting** diplomacy event —
+  regime chain, the gazette ("the powers" row), and a **courting** diplomacy event:
   the second power, with no reach machinery of its own. And the de-moralized **VERDICT
   CLASS** ships: §3.5's **gap × floor**, qualified by realm **growth** (boom/stagnant/
-  collapse) — a class per world in `findings.verdict`. New columns: `concession`,
+  collapse): a class per world in `findings.verdict`. New columns: `concession`,
   `concession_epoch`, `foreign_claim`, `concession_ended`, `concession_ended_epoch`
   per region; `powers` (metropole/rival/counts) in provenance; `findings.verdict` and
   `findings.concessions`. `schema_version` 52→53; **declared fixture regeneration**.
-  Exhibits (pinned): **the concession** — `#seed=ir-0&regions=24&ep=10`: a coast the
+  Exhibits (pinned): **the concession**, `#seed=ir-0&regions=24&ep=10`: a coast the
   Metropole developed to wealth **70** against the realm's median **14**, and keeps
-  **half** of what its own ground yields — richer, and owned. **The abandonment arc** —
+  **half** of what its own ground yields, richer, and owned. **The abandonment arc**,
   `#seed=ir-7&regions=24&ep=10`: a concession opened in 1025 and wound up in 1250, the
   attention leaving with the ore, narrated end to end. **ATLAS REGENERATION** (§3.5
   verdict diversity, the §7.3 pin): across the 80-world sweep the possibility space
-  stays open — **≥6 §3.5 classes present, none over 40%** (measured 12–13 classes,
+  stays open: **≥6 §3.5 classes present, none over 40%** (measured 12–13 classes,
   ~23–25% max), so no templated verdict owns the world. Downstream re-pin (§2.5, the
   landing demoted): the Dominion X1 arrival band relaxed `25–75% → 10–55%` (measured
   25% on the design sweep, down from ~48%); the reach events (concession/abandonment/
-  embargo/courting) are world-scale — located at a coast but not a region's headline
+  embargo/courting) are world-scale, located at a coast but not a region's headline
   `event_type`, so the event-column invariant excludes them.
 - **v52** (the mix pulls apart B10): a second pole, two knobs retired (issue #132,
   §3.3 decisions 4). The income mix promised four levers and delivered a
   re-parameterization: trade and legacy both peaked at the seat, so the four weights
-  moved the same relation. B10 **de-collinearizes** the mix — the four terms now anchor
+  moved the same relation. B10 **de-collinearizes** the mix: the four terms now anchor
   to DIFFERENT geography: **extraction** to the seams (ore stock), **artifice** to `A`
   (trained capacity, strongest at the works), **legacy** to the authored gradient (the
-  seat), and **trade** re-anchors to the **COAST** — `sea_access`, gated by a new
+  seat), and **trade** re-anchors to the **COAST**: `sea_access`, gated by a new
   **`openness`** knob and scaled by the world's **foreign demand**, priced against
   seat-centrality. So a trade-heavy, open, demand-favoured coast grows a **SECOND POLE**
   that RIVALS the capital instead of feeding it: across a 24-world `tp-*` trade sweep,
   the largest city is a coast, not the seat, in **16/24** worlds. Measured, each weight
   now makes its OWN anchor the strongest predictor of wealth (trade→sea corr 0.91 vs
   legacy's 0.57; legacy→seat centrality 0.81 vs trade's 0.65; artifice→A 0.84 vs
-  extraction's 0.51) — the four ratios move relations in **distinguishable directions**
+  extraction's 0.51): the four ratios move relations in **distinguishable directions**
   (the §7.2 mix-reach acceptance). **Two knobs retire for two added** (the panel stays
-  flat: `order` landed in B9, `openness` here): **`hb`** (harbors) folds into `openness`
-  — its sealed end (openness 0) IS the old closed harbor, and old `hb=0` links map
+  flat: `order` landed in B9, `openness` here): **`hb`** (harbors) folds into `openness`:
+  its sealed end (openness 0) IS the old closed harbor, and old `hb=0` links map
   forward; **`bias`** folds into the legacy gradient's definition (parse-only, so old
   `bias=` links keep meaning). New `openness` provenance field + slider; `bias`/`hb`
   sliders removed; `schema_version` 51→52; declared fixture regeneration. Exhibit
-  (pinned): **the second pole** — `#seed=tp-0&regions=24&ep=10&wt=80&we=8&wf=6&wg=6`:
+  (pinned): **the second pole**, `#seed=tp-0&regions=24&ep=10&wt=80&we=8&wf=6&wg=6`:
   a coastal city out-grew the seat many times over, a trade republic that never asked
   the capital's leave. Downstream re-pins (§2.5, the mix moved the worlds): the crushed-
   revolt expropriation pin relaxed `=== -> >= seen-1` (a poor coast-less town's ordinary
@@ -93,48 +109,48 @@
 - **v51** (the order axis B9): safety and stagnation share a root (issue #131, §3.2
   policing row + §3.3 order knob). A new knob, **`order`** (0 **open** ↔ 100 **police
   state**; **50 = neutral, the old world**). High order **STILLS** the shadow and the
-  street — predation (the constabulary's `force_projection` stiffens realm-wide, ±30
-  off the midpoint), smuggling, and revolt (the bar to rise climbs) — **AND STILLS the
+  street: predation (the constabulary's `force_projection` stiffens realm-wide, ±30
+  off the midpoint), smuggling, and revolt (the bar to rise climbs). **AND STILLS the
   ladder**: mobility freezes, the appetite to **risk capital** dampens (the B2 invest
   pool shrinks, so the works grow slower), and elite churn locks. Safety and stagnation
   are the two edges of the one root: a police state is stable and can **stagnate**; an
   open realm is dynamic and **dangerous**. The axis **retires B5's raw `occupied` churn
-  proxy** — churn now freezes with the **order LEVEL**, of which occupation is a local
+  proxy**: churn now freezes with the **order LEVEL**, of which occupation is a local
   **+50** (so an occupied region at the default order still reads order_level 100 and
   fully freezes, byte-identical to B5; a global police state freezes everyone; an open
   realm churns harder). Because every wiring is **scaled off the midpoint**, `order=50`
-  is a **no-op** — the default realm is untouched to the byte (only the new `order`
+  is a **no-op**: the default realm is untouched to the byte (only the new `order`
   provenance field and `order_level` column move; events and chronicle are identical),
-  and every existing pin holds. The knob's **reach shows at the extremes** — the §7.2
+  and every existing pin holds. The knob's **reach shows at the extremes**: the §7.2
   knob-reach acceptance: `order`'s extremes change a **relation**, not just a magnitude.
   New `order_level` region column (realm order + occupation's local police state) and
   the **order/liberty lens** (A3 family); a UI slider; `schema_version` 50→51; declared
-  fixture regeneration (30/90 — only the geojson, since the dynamics are unmoved at the
+  fixture regeneration (30/90, only the geojson, since the dynamics are unmoved at the
   default). Measured (16-world `ord-*` sweep, order 0 vs 100): the police state runs
   **safer** (predation lower in ~16/16 worlds) and **more stagnant** (mobility lower in
-  ~16/16) — the two edges move together. Exhibits (pinned): **the police state stagnates**
-  — in 12/16 seeds the OPEN realm (order 0) out-grew and out-mobilized the same world
+  ~16/16): the two edges move together. Exhibits (pinned): **the police state stagnates**,
+  in 12/16 seeds the OPEN realm (order 0) out-grew and out-mobilized the same world
   under a police state (order 100), e.g. `#seed=ord-1&regions=24&ep=10&order=0` vs
-  `&order=100`; **the open ground is eaten** — `#seed=ord-2&...&order=0` carries a region
+  `&order=100`; **the open ground is eaten**, `#seed=ord-2&...&order=0` carries a region
   whose predation the police state would have cut by 15+, liberty's price the unguarded
   road.
 - **v50** (after the rising B8): liberation is a distribution, not a verdict
-  (issue #130, §3.2 revolts row). A won rising used to resolve to a single verdict —
+  (issue #130, §3.2 revolts row). A won rising used to resolve to a single verdict:
   the town goes Free, keeps what it makes, its charters burn. B8 makes the **won
   outcome a DISTRIBUTION** that forks against the freed town's **own fundamentals**:
-  a town of **suppressed potential** — real artifice, an economic base the tolls and
-  the charter throttled, a reach held down — **BOOMS** when the manor burns (its `A`
+  a town of **suppressed potential**, real artifice, an economic base the tolls and
+  the charter throttled, a reach held down, **BOOMS** when the manor burns (its `A`
   and population surge, people flock to the Free town from the tolled country around
   it); a town **propped up** by the magnates' capital and the garrison's order
   **STARVES** when both flee (the works go dark, the skilled leave, `A` and population
   fall). World noise so two towns of the same fundamentals can still fork (the §3.5
   verdict). Crushed and averted arms are unchanged. New `arc` on the won revolt event
   (`flourished` | `starved`) and a `won_arc` region column; the **consumers learn both
-  arcs** — the chronicle narrates the Free that flourished vs the Free that starved,
+  arcs**: the chronicle narrates the Free that flourished vs the Free that starved,
   the epithet forks (`the Free` / `the Famished`), and the turning-point prose closes
-  on which fate the rising bought. The **retention act's** old sibling — the freed
-  town — now has its own two-sided story. Measured across a 40-world `ris-*` sweep:
-  13 risings flourished, 21 starved — both present at frequency (pinned floor). The
+  on which fate the rising bought. The **retention act's** old sibling, the freed
+  town, now has its own two-sided story. Measured across a 40-world `ris-*` sweep:
+  13 risings flourished, 21 starved, both present at frequency (pinned floor). The
   arc is no label: the freed town's artifice ends a median 57 where it flourished and
   24 where it starved. `schema_version` 49→50; `won_arc` reset at the founding for
   stage-3 purity; declared fixture regeneration. The G5 adversarial revolt-consumer
@@ -142,7 +158,7 @@
 - **v49** (reform long edges B7): every mercy can curdle, every levy can build
   (issue #129, §3.2 reforms row + §3.6 debt conditionality). Under V1 a reform just
   damped a term and only the granary moved coin down. B7 gives **every measure a
-  LONG EDGE** — delayed and state-contingent (P4: time + the state it lands in):
+  LONG EDGE**: delayed and state-contingent (P4: time + the state it lands in):
   the **grid charter** is strung on an imperial loan the seat services out of its
   treasury for the rest of the run (`charter_debt` / `debt_service`); the **granary**,
   run on through a **sustained peace** (3+ quiet epochs), breeds `granary_dependency`
@@ -151,30 +167,30 @@
   the owners' row and the artifice it funded; the **toll amnesty** rots the bridges
   (the B6 decay arc). And `iq` becomes a **posture**: when a **deaf seat** (low iq)
   stays silent while the world's **doctrine presses** (`doctrine_pressure` from the
-  world series), its **creditors DEMAND a measure** the realm did not choose —
+  world series), its **creditors DEMAND a measure** the realm did not choose:
   structural adjustment, a reform **imposed from outside**, a new event class
   (`imposition`, `imposed_by: creditors`) distinct from the seat's iq-chosen mercies;
   the chronicle names it a decree written in another capital. The **retention act is
-  now reachable** — it reads the realm's richest ore *seam* (a concentrated resource
+  now reachable**: it reads the realm's richest ore *seam* (a concentrated resource
   a price floor can protect) rather than its ore-poor bottom half, so a resource-rich
   unequal realm can floor the price instead of importing bread. New `reform_edges`
   block in provenance (charter_debt, debt_service, granary_dependency, granary_drain,
   capital_flight, impositions); `schema_version` 48→49; declared fixture regeneration.
   This is the **knob-reach fix** the falsifiability suite (§7.2) named: `iq`'s extremes
-  now change a **relation**, not just magnitudes — a deaf seat (iq=0) is governed from
+  now change a **relation**, not just magnitudes: a deaf seat (iq=0) is governed from
   OUTSIDE (5/24 worlds take an imposed measure, 0 reform) while a listening one (iq=100)
   governs itself (23/24 reform, 0 imposed): the CLASS of governance flips. Exhibits
-  (pinned): **the granary's double edge** — the same decree fed a famine world with
+  (pinned): **the granary's double edge**, the same decree fed a famine world with
   little idle waste (`#seed=le-2&regions=24&ep=10&iq=100`: drain 1, dependency 9) and
   bred a fiscal crisis in a quieter-run realm (`#seed=le-5&...`: drain 5, dependency 45);
-  **the measure imposed** — `#seed=le-7&regions=24&ep=10&iq=0`: the deaf seat reformed
+  **the measure imposed**, `#seed=le-7&regions=24&ep=10&iq=0`: the deaf seat reformed
   nothing, so its creditors demanded a structural adjustment, narrated as foreign.
 - **v48** (tariffs fund the bridges B6): extraction and upkeep are one ledger
   (issue #128, §3.2 tariffs row). The gates that TAX the roads are the same gates
   that MAINTAIN them. A held crossing (bridge/pass/port) that still collects a real
   toll keeps itself in repair; an **unheld span**, or one under a **toll amnesty**
   (the reform caps `tollScale` to 0.4, below the `UPKEEP_TOLL_MIN` 0.7 that funds
-  upkeep), goes unfunded and **ROTS** a step each epoch — its spared wall creeps
+  upkeep), goes unfunded and **ROTS** a step each epoch: its spared wall creeps
   back (a rotted bridge re-fords its river, 0.6→2.2; a rotted pass re-walls its
   ridge, 1.4→4.5). A garrison re-tolls for the Dominion, so occupied crossings stay
   funded. The decay **chokes trade**: `computeCrossingFriction` walks each region's
@@ -194,10 +210,10 @@
   consistency suite extended for decay states (a re-forded river edge is exempt from
   the sound 1.5× barge ceiling but floors at its sound multiplier; `is_decayed` agrees
   with `condition < 1` on river/pass edges only). Exhibits (pinned): **the reform
-  backfires** — `#seed=am-8&regions=24&ep=10&iq=100`: the toll amnesty (epoch 3) lifts
-  the tolls, then all 8 spans rot and trade collapses — 22 towns pay the friction, 82%
+  backfires**, `#seed=am-8&regions=24&ep=10&iq=100`: the toll amnesty (epoch 3) lifts
+  the tolls, then all 8 spans rot and trade collapses: 22 towns pay the friction, 82%
   end poorer than they founded, mean wealth 21→13; **the toll-heavy realm outlasts the
-  toll-free** — the SAME world at `iq=0` hears no reform, keeps its tolls, funds every
+  toll-free**, the SAME world at `iq=0` hears no reform, keeps its tolls, funds every
   span (0 decayed, trade_drag 0) and its towns end richer (mean 17.5 vs 12.7) than the
   `iq=100` world that granted the amnesty and rotted them.
 - **v47** (ordinary erosion B5): the owners' row can fall without a catastrophe
@@ -205,52 +221,52 @@
   structurally and fell **only on catastrophe** (a won revolt burning the charters,
   a refinery collapse, a plague). B5 gives it an ordinary downward edge: where the
   **market reaches**, competition bids concentrated rents down and the owners capture
-  less of every gain — a wired, central hub does not hold a monopoly the way an
+  less of every gain: a wired, central hub does not hold a monopoly the way an
   isolated valley does. One `rentKeep = 1 − 0.85·marketAccess` term (market access =
   central AND on the grid) now scales BOTH the rent-capture ratchet (the toll house,
   the works, the seam, the aerie) AND the owners' share of the town's **wealth
-  upswing** — the boom is bid toward labor where rivals compete for it, though the
+  upswing**: the boom is bid toward labor where rivals compete for it, though the
   owners still bear the whole of a bust. On top of that a standing **competition**
   decay eats at high concentration where access is high, and **boom-churn** mints new
-  owners (rank churn without collapse) — the §3.2 "boom entry mints new owners." A
+  owners (rank churn without collapse): the §3.2 "boom entry mints new owners." A
   **police state freezes it all**: under occupation the rents are held by force, so
   the row neither erodes nor churns (an `occupied` proxy until B9's order axis).
   Because a **refinery collapse is a universal endgame** (extraction always depletes,
-  the works always eventually go dark), no full-length world is literally event-free —
+  the works always eventually go dark), no full-length world is literally event-free,
   so "falls without a catastrophe" is measured on the **ordinary component**, not on
   event-absence: new `elite_ordinary_delta` (per region) / `elite_ordinary_mean`
   (findings) read the row's move since founding with the catastrophe shocks charged
   OUT (won-revolt −25, refinery collapse −10, plague −8, crushed-revolt +10 all
-  removed). Where the ordinary mean reads NEGATIVE, competition and churn — not a
-  shock — thinned the row. Measured across a 24-world `eo-*` sweep (regions=12 ep=10):
-  the ordinary mean falls in **6/24** worlds while its MEDIAN stays POSITIVE (+1.2) —
+  removed). Where the ordinary mean reads NEGATIVE, competition and churn, not a
+  shock, thinned the row. Measured across a 24-world `eo-*` sweep (regions=12 ep=10):
+  the ordinary mean falls in **6/24** worlds while its MEDIAN stays POSITIVE (+1.2),
   the ratchet still rules the average, the fall is the meaningful-minority INVERSION,
   not the new rule; per-region rank_churn spans −71..+67 (climbers and fallers both).
   The H1 class pins re-measured and held (corr(refining, elite) median 0.65, owners
   still hold ~48% of the coin, no saturation, within-region inequality intact). New
   `elite_ordinary_delta` column (main export) + `elite_ordinary_mean` finding;
   `schema_version` 46→47; declared fixture regeneration. Exhibit (pinned): **the row
-  falls without a fire** — `#seed=eo-2&regions=12&ep=10`: the owners' row fell 7.9
+  falls without a fire**, `#seed=eo-2&regions=12&ep=10`: the owners' row fell 7.9
   points; charge out the revolt, the refinery collapse, AND the plague this world DID
-  suffer and it STILL fell (ordinary mean −2.6) — ordinary erosion, not the fires,
+  suffer and it STILL fell (ordinary mean −2.6): ordinary erosion, not the fires,
   thinned the row.
 - **v46** (the disposal doctrine B4): the λ dial retired (issue #126, §3.2 spoil
-  row + §3.3). The saturated "dump bias" dial — a one-way knob whose extreme just
-  aimed the refinery spoil harder at the poor — becomes a three-way **disposal
+  row + §3.3). The saturated "dump bias" dial, a one-way knob whose extreme just
+  aimed the refinery spoil harder at the poor, becomes a three-way **disposal
   doctrine** the `db` knob now selects (0–33 **disperse**, 34–66 **concentrate**,
-  67–100 **treat**; old `db=` links keep meaning — low db was the physics spread,
+  67–100 **treat**; old `db=` links keep meaning: low db was the physics spread,
   mid-high aimed the spoil at the poor; default 60 → concentrate). **Disperse**
-  spreads the tailings by distance alone — no hand aims them, so they settle near
+  spreads the tailings by distance alone: no hand aims them, so they settle near
   the industrial (wealthy) core. **Concentrate** hauls the bulk onto ONE fixed
-  sacrifice zone — a currently-sparse, cheap, grid-wired seat the realm writes off
-  — with the rest on the poor margin; the zone's poison **ramps with the works**
+  sacrifice zone, a currently-sparse, cheap, grid-wired seat the realm writes off,
+  with the rest on the poor margin; the zone's poison **ramps with the works**
   (near-nothing at the founding, full by mid-run), so a cheap empty zone reads as
   attractive frontier early and the harm arrives late (P4). **Treat** disperses,
   then the realm cleans up where it can afford the coin AND fields the works (`A`):
   a rich, developed core clears its own spoil while a wealthy-but-A-poor seat
-  cannot — so the poison can land on the RICH. The consequence is the whole point:
+  cannot, so the poison can land on the RICH. The consequence is the whole point:
   the old near-tautology (injustice = blight × poverty, after blight was *aimed* at
-  poverty) is broken — across the sweep **corr(blight, wealth) now spans both signs**
+  poverty) is broken: across the sweep **corr(blight, wealth) now spans both signs**
   (measured −0.40 concentrate to +0.98 disperse), the model no longer counted on to
   put the blight on the poor. New `disposal_doctrine` + `sacrifice_zone` columns
   (both metadata blocks); the counterfactual reframed to the dispersed baseline;
@@ -259,84 +275,84 @@
   declared fixture regeneration; the old λ-sweep pin (which asserted blight LOCKED
   negative) rewritten as the sign-unlock pin. Downstream calibrations (the doctrine
   reshaped the default world): the concentrate margin is **population×poverty
-  weighted** so the poison harms PEOPLE — it plagues the crowded poor towns and
+  weighted** so the poison harms PEOPLE: it plagues the crowded poor towns and
   gives the Temple LIVING ground to consecrate (the sacrifice zone is written off
   and never consecrated, or a shrine would die with it); the plague, revolt, and
   harbor pins re-measured (won risings still burn the charters at 14/15; the
   isolation price stays modest; the plague still levels at 41/41). Exhibits
   (pinned): **the contained
-  sacrifice** — `#seed=dbz-2&db=50&regions=20&ep=10`, "Skalgarruk Fell" (region 8):
-  blight 100 on ground its 636 people had left, the harm landing on no one — the
-  doctrine "worked"; **the ruined sacrifice** — `#seed=dbz-8&db=50&regions=20&ep=10`,
+  sacrifice**, `#seed=dbz-2&db=50&regions=20&ep=10`, "Skalgarruk Fell" (region 8):
+  blight 100 on ground its 636 people had left, the harm landing on no one, the
+  doctrine "worked"; **the ruined sacrifice**, `#seed=dbz-8&db=50&regions=20&ep=10`,
   "Crannord" (region 4): the same doctrine, but the opened cheap land drew a settler
-  rush (1,319 → 2,264, +72%) before the poison ramped in — 2,109 souls still stood
+  rush (1,319 → 2,264, +72%) before the poison ramped in, 2,109 souls still stood
   on it at blight 72, the harm the containment was supposed to prevent (P4); **the
-  poison on the rich** — `#seed=dbz-11&db=15&regions=20&ep=10`, "Forrow" (region 8):
-  under disperse the wealthiest ground carries blight 100, corr(blight, wealth) 0.99
-  — the marquee inversion of the old thesis.
+  poison on the rich**, `#seed=dbz-11&db=15&regions=20&ep=10`, "Forrow" (region 8):
+  under disperse the wealthiest ground carries blight 100, corr(blight, wealth) 0.99,
+  the marquee inversion of the old thesis.
 - **v45** (migration both ways B3): migration's second edge (issue #125, §3.2
   migration row + §3.6 diaspora). Three new flows join the old drift-toward-
   winners, and populations can now move DOWN the wealth gradient when opportunity
   or the metropole says so. **Emigration off-map**: the metropole pulls the young
-  away, hardest where the grid exposes them to it and the local ladder is short —
+  away, hardest where the grid exposes them to it and the local ladder is short,
   a proxy for the §3.4 attention column (where a region's mind lives). It is a
   real population dip, not a move to a neighbour, and it concentrates in the poor
   grid towns, not the prosperous seats. **Remittances**: the accumulated diaspora
-  sends coin home — a wealth inflow decoupled from local production that holds a
+  sends coin home: a wealth inflow decoupled from local production that holds a
   floor under the emptying town (dependency theory's remittance economy),
   sqrt-scaled and capped at ONE coin an epoch so it is a floor, not a fortune. A
   heavy-diaspora periphery can draw a real remittance-economy share (a fifth of
   some worlds' wealth, as it is for the Nepals and Tajikistans of the world), but
-  the inflow never pegs a town's wealth or reverses a bust world's decline — under
+  the inflow never pegs a town's wealth or reverses a bust world's decline: under
   the hard Concordat default the pie still shrinks in 18/20 worlds (the calibration
   that keeps the B1 "un-conserved, world-driven" pin true: cap 1, not 2). **The
   frontier term**: when the
   realm's cores squeeze rents hard (high mean owners' share), the dear cores push
   their squeezed labour OUT (a rent drag) and a cheap peripheral cell the grid has
-  reached pulls it IN — people flow OUTWARD against the wealth gradient and a
+  reached pulls it IN: people flow OUTWARD against the wealth gradient and a
   periphery can boom. New `emigrants_total` + `remittance_income` columns (main
   export), per-epoch `emigration`/`remittance` in the series, and the diaspora
   drawn in THE DRIFT (the souls dip against the wealth floor). So migration is no
   longer a one-way drain: the pooled pop→attractiveness correlation falls to ~0,
-  but the MEDIAN world still favours its winners — the drift toward attractiveness
+  but the MEDIAN world still favours its winners: the drift toward attractiveness
   is the common case (~54% of worlds), the frontier and the diaspora the negative
   tail. `schema_version` 44→45; declared fixture regeneration; the migration suite
   pin re-measured from the pooled correlation (B2's robust-under-volatility choice)
   to the **per-world median** (B3 lets migration run both ways, so the pooled
-  measure is no longer the claim — the acceptance is "favours winners in the
+  measure is no longer the claim: the acceptance is "favours winners in the
   median world, not the only case"). Two more suite adjustments B3 forced out into
-  the open: (a) the **rush pin** re-pinned 0.55→0.50 — the metropole now SKIMS the
+  the open: (a) the **rush pin** re-pinned 0.55→0.50: the metropole now SKIMS the
   ore rush (emigration pulls the young off-map exactly where opportunity flares, so
   a struck lode keeps none of the people it draws; the honest floor is "half the
   strikes visibly boom", not "most"); (b) the **world-isolation** check ("the world
   never touches the rock") corrected to assert the FOUNDING endowment (`endowment_t0`)
-  rather than the current ore stock — the latter is moved by economy-driven
+  rather than the current ore stock: the latter is moved by economy-driven
   discoveries whose target keys on world-dependent wealth, so two worlds legitimately
   hold different ore in the same seat (a latent test-field bug that passed under B2
   only because seed=wo's discovery didn't flip seats until B3's remittances moved
   wealth; the model's world-dependence there is correct, the B0 premise itself).
-  Exhibits (pinned): **the frontier** —
+  Exhibits (pinned): **the frontier**,
   `#seed=fr-13&regions=22&ep=10`, "Oxmook" (region 13, centrality 39): a
   low-centrality cell grew its population 525→830 (+58%) as rent-squeezed labour
-  flowed outward to cheap land; **the remittance floor** —
+  flowed outward to cheap land; **the remittance floor**,
   `#seed=em-22&regions=22&ep=10`, "Quillmere" (region 21): its population dipped
   25334→21683 (−14%) under a diaspora of 2,010, and its wealth held at 20 on the
-  coin sent home — a floor no local production put there.
+  coin sent home: a floor no local production put there.
 - **v44** (the investment pool B2): the counting house's second edge (issue
   #124, §3.2 double-edge inventory + §3.6 comprador split). Concentration stops
   being a one-way ratchet. Each epoch an **investment pool** forms from the
-  owners' coin — `1.8 × wealth × eliteShare`, LEVERAGED by the counting house
+  owners' coin: `1.8 × wealth × eliteShare`, LEVERAGED by the counting house
   (credit reaches past cash on hand) and tilted by the world price. A
   **development share** decides how much of it BUILDS the works (`A` grows,
   opportunity-gated by `(100−A)/100`) versus merely HOARDS to the owners' row:
   `dev = 0.16 + 0.006·retention + 0.55·(price−1)`. So the same institution reads
   two ways, and WHICH is a fact about the town's RETENTION (does value stay to
   build, or is it a foreign claim?) and the world REGIME (does capital dare?),
-  never a verdict the code writes — a high-retention boom finances development; a
+  never a verdict the code writes: a high-retention boom finances development; a
   low-retention bust hoards (comprador extraction, the §3.6 fractal reframe: the
   seat is itself somebody's periphery). A **bust risk** rises as the price falls
   (rare in good times, to 40%/epoch in a deep downturn): a busted placement wipes
-  part of the works (`A ×0.72`) and the owners eat the loss (−4 elite share) —
+  part of the works (`A ×0.72`) and the owners eat the loss (−4 elite share),
   **elite share's first ORDINARY decrement pathway** (before B2 the owners' row
   fell only on war or industrial collapse).
   New `artifice_index_t0` column (the works as founded) so "the counting house
@@ -345,32 +361,32 @@
   (development finance where the works grew, comprador extraction where they did
   not). A **verdict-diversity instrument** lands in the sweep and a suite pin: the
   §3.5 gap × floor verdict space must reach ≥3 of its six quadrants across the
-  seeds (§7.3's mush tripwire — a world engine that only lands in one corner is
+  seeds (§7.3's mush tripwire: a world engine that only lands in one corner is
   the failure this project exists to avoid); measured 5/6. `schema_version` 43→44;
   declared fixture regeneration. **Two prior suite pins re-measured** against
   B2's tighter world-coupling: (1) the migration→attractiveness correlation moves
   from a fragile per-world median to a **pooled** estimate over every calm region
-  in the sweep — B2's wealth volatility genuinely weakened the close-state
+  in the sweep: B2's wealth volatility genuinely weakened the close-state
   cross-section (a town that boomed early and busted late reads low attractiveness
   at the close yet gained population), but the drain stays positive on net; (2)
   the "un-conserved pie" demonstration moves from the default world to **world
-  histories** — the investment pool's bust channel tightened the coupling so hard
+  histories**: the investment pool's bust channel tightened the coupling so hard
   that the shared, bust-leaning Concordat default now shrinks the pie in every
   geology, so un-conservation is shown across worlds (the hard default shrinks,
   a sustained boom grows the very same ground). The matched exhibits (pinned) are
-  two low-retention, foreign-intermediated towns under opposite regimes — the
+  two low-retention, foreign-intermediated towns under opposite regimes, the
   falsifiability keystone made concrete:
-  **development finance** — `#seed=e-3&world=era-26&regions=22&ep=10`,
+  **development finance**, `#seed=e-3&world=era-26&regions=22&ep=10`,
   "Marnmerwick Strand" (region 4, retention 34): a decade-long boom drove the
-  counting house to BUILD — artifice 62→85, and the realm floor (p10 regional
-  wealth) rose 7→13 with it. **comprador extraction** —
+  counting house to BUILD: artifice 62→85, and the realm floor (p10 regional
+  wealth) rose 7→13 with it. **comprador extraction**,
   `#seed=e-4&world=era-49&regions=22&ep=10`, "Linden" (region 9, retention 27,
-  owners' row 82): the same kind of structure in a trade war HOARDED — artifice
+  owners' row 82): the same kind of structure in a trade war HOARDED, artifice
   fell 86→43, the works gutted, the owners' row deep and the class gap 71×. Alike
-  in how little they keep; only the world differs — the edge is discovered, not
+  in how little they keep; only the world differs: the edge is discovered, not
   decreed.
 - **v43** (the artifice index B1): the zero-sum breaker (issue #123, §3.1). Each
-  region gains **`A` (0–100)** — its command of magically-enabled productivity
+  region gains **`A` (0–100)**: its command of magically-enabled productivity
   (machinery, trained hands, licensed workings). Income is A-SCALED (the mix
   terms multiply against `0.3 + A/100`, ≈1.0 at the founding artifice so founding
   wealth barely moves, rising to 1.3 as the works learn and falling toward 0.3 as
@@ -384,12 +400,12 @@
   `A`-per-epoch snapshot, the **artifice lens** ("where the works learn") in THE
   SHAPE, and an artifice spark in THE DRIFT. `schema_version` 42→43; declared
   fixture regeneration. Exhibit (pinned):
-  `#seed=piv-19&regions=18&ep=10` — a high-artifice periphery (region 7, A=67,
+  `#seed=piv-19&regions=18&ep=10`: a high-artifice periphery (region 7, A=67,
   wealth 29) out-earns the low-artifice SEAT itself (region 15, A=51, wealth 15):
   the works learned faster than the capital, and artifice beat centrality.
 - **v42** (the world becomes a rectangle B0.5): the world stops being a square
   (issue #122, §2.5 decision 11). `W = 1000` generalizes to **`WX = 1600, WY =
-  1000`** (a fixed 16:10 rectangle for every world) across ~90 coordinate sites —
+  1000`** (a fixed 16:10 rectangle for every world) across ~90 coordinate sites:
   Voronoi bounds, seed/lode scatter, the ridge walk, river tracing and clamps,
   the flood/elevation grid (`CS` split into `CSX`/`CSY`), coastline/sea sides,
   temperature latitude, hit-testing, the frame/neatline/vignette, and the
@@ -404,92 +420,92 @@
   fixture regeneration; both suites re-pinned against the rectangle (the camera
   viewBoxes recomputed, distance-dependent thresholds re-measured). One emergent
   finding worth naming: the wider realm **steepens the urban hierarchy from
-  Zipf-like (α≈1.2) to PRIMATE (α median ≈1.8)** — a bigger hinterland for the
+  Zipf-like (α≈1.2) to PRIMATE (α median ≈1.8)**: a bigger hinterland for the
   capital to dominate. The rank-size claim is re-pinned to primacy accordingly
   (the Zipf calc is coordinate-free, so this is geography, not a bug). Four other
   distance-dependent thresholds (plagues, ruin-shadow, twins, risings-on-occupied
   ground) re-measured; `PASS_R` stays 90 (a local crossing tolerance, not a reach).
 - **v41** (the world outside B0): the Hinterland stops being a closed system
-  (issue #121). A THIRD seed — `world=`, default the shared **Concordat era**
-  (decision 7) — keys `worldStreams()`, a Markov **regime chain** over six world
+  (issue #121). A THIRD seed, `world=`, default the shared **Concordat era**
+  (decision 7), keys `worldStreams()`, a Markov **regime chain** over six world
   conditions (long boom / trade war / imperial rivalry / doctrinal panic /
   distant war / retrenchment) with real persistence (median run ≥ 2 epochs), and
   five derived per-epoch series: the **aetherstone price index** (the first
-  consumer — it shocks extraction + refining income in the epoch loop),
+  consumer, it shocks extraction + refining income in the epoch loop),
   imperial attention, foreign demand, doctrine pressure, and metropole pull (the
   latter four ride the export now and couple to their mechanisms later). The
   **observability law** holds: the outside is never drawn, only exported as
-  numbers under `hinterland.world`. Deterministic in the world seed alone — two
+  numbers under `hinterland.world`. Deterministic in the world seed alone: two
   worlds differ in prices, wealth, and (through wealth → injustice → the revolt)
   sometimes events, but NEVER in geology or names; the founding (ep=0) is
   world-invariant (the world acts only through the epochs). This is the
   falsifiability keystone: a region can do everything right and be ruined by a
-  price collapse, or everything wrong and be rescued by a boom — no verdict reads
+  price collapse, or everything wrong and be rescued by a boom: no verdict reads
   off the policies alone. `world=` rides the hash off-default only (the `lens=`
   precedent); THE WORLD gains a `World` input + a reroll die. Declared fixture
   regeneration; `schema_version` bumps 40→41; two suite pins re-measured against
   the world-coupled model (a region the world killed has no owners' row to
   expropriate; the toll sample widened as more revolts win). The falsifiability
   exhibits, pinned: a **badly-knobbed realm rescued** by a decade-long boom
-  (`#seed=rescue-a&world=era-26&regions=18&ep=10&we=10&wf=10&wt=15&wg=5` — mean
+  (`#seed=rescue-a&world=era-26&regions=18&ep=10&we=10&wf=10&wt=15&wg=5`, mean
   wealth 13→17) and a **well-knobbed realm ruined** by a decade-long trade war
-  (`#seed=ruin5&world=era-49&regions=18&ep=10&we=45&wf=35&wt=40&wg=5` — 15→11):
+  (`#seed=ruin5&world=era-49&regions=18&ep=10&we=45&wf=35&wt=40&wg=5`, 15→11):
   no verdict reads off the policies alone.
-- **v40 addendum (A3, the neutral instruments — declared regen, no format bump)**:
+- **v40 addendum (A3, the neutral instruments, declared regen, no format bump)**:
   the shape metrics land (issue #120) so a reader can see *any* world, not only
   the one the old argument expected. Five new findings, additive under
   `hinterland.findings`: `growth` (total + population-weighted per-capita wealth,
   close vs founding), `floor` (p10 regional wealth, close vs founding),
   `absolute_mobility` (share of settled regions richer than their founding
-  selves), `rank_churn` (Spearman ρ of wealth ranks founding→close — 1 = the
+  selves), `rank_churn` (Spearman ρ of wealth ranks founding→close, 1 = the
   order froze), and `volatility` (mean per-region boom/bust amplitude). All
   measured on the SETTLED realm at both ends, so abandoned zeros never fake
-  growth or a fallen floor. Two new lenses join a **THE SHAPE** group — `growth`
+  growth or a fallen floor. Two new lenses join a **THE SHAPE** group: `growth`
   (per-region wealth since founding, a diverging %) and `volatility` (boom/bust
   amplitude). The **boot lens flips to `wealth`** (decision 3): the neutral coin,
   not a verdict; `injustice` survives as one plate among many, relabeled to what
-  it is — the `blight × poverty` composite — in both legend and index. New
+  it is, the `blight × poverty` composite, in both legend and index. New
   `tools/sweep.mjs` prints the knob-reach and chronicle-sameness table
-  (measured, not yet pinned — the ceilings land in D4). Additive only:
+  (measured, not yet pinned; the ceilings land in D4). Additive only:
   `schema_version` stays 40; the golden fixtures were regenerated
-  (`node tools/refixture.mjs`) to carry the new findings — a DECLARED act, this
+  (`node tools/refixture.mjs`) to carry the new findings, a DECLARED act, this
   entry its record. The old 3-way ΔGini verdict is untouched (the §3.5 swap is D5).
 - **v40** (the fate seed A2): same rock, different luck (issue #119). A second
   RNG family `fx = streams(params.fate || params.seed)` runs beside `sx`, and
-  exactly six political tags re-key to it — `events`, `factions`,
+  exactly six political tags re-key to it: `events`, `factions`,
   `institutions`, `revolt`, `dominion`, `dynasty`. Geology, founding, siting and
   naming stay on `sx`, so two fates on one seed share a byte-identical founding
   snapshot (ep=0) and diverge only in their histories. `fate` defaults to empty
   and falls back to the seed, so `fx === sx` draw-for-draw and the default world
-  is unchanged — the golden fixtures (v39-addendum) stay green untouched, the
+  is unchanged: the golden fixtures (v39-addendum) stay green untouched, the
   first proof the allowlist works: `schema_version` bumps 39→40 (allowlisted)
   and `fate` rides the hash and provenance OFF-DEFAULT ONLY (the `lens=`
   precedent), so a default export never carries the key. A reroll die in THE
   WORLD reshuffles the luck (random 5-char token, then deterministic) without
   moving the seat or the rock.
-- **v39 addendum (A1, the byte-pin — no format change)**: the golden fixture
+- **v39 addendum (A1, the byte-pin, no format change)**: the golden fixture
   harness lands (issue #118). `tools/fixtures/` freezes the exports of a
-  seed×knob matrix — 6 seeds × { default + `db=0` / `gt=0` / `wg=0` / `iq=100` }
+  seed×knob matrix: 6 seeds × { default + `db=0` / `gt=0` / `wg=0` / `iq=100` }
   × { `world.geojson`, `events.csv`, `chronicle.md` }, 30 cells at 12 regions,
-  `ep=10` — and the suite's last check re-derives every cell live and asserts
+  `ep=10`. The suite's last check re-derives every cell live and asserts
   it equal **modulo an explicit allowlist** (schema_version; provenance keys
   emitted only when a new param is non-empty; csv columns added only when
   steered). This is the enforcement every later pivot PR answers to: a model
   change that moves a world moves these bytes, and the check fails until the
-  move is DECLARED — `node tools/refixture.mjs` to regenerate, `git diff
+  move is DECLARED: `node tools/refixture.mjs` to regenerate, `git diff
   tools/fixtures` to read what moved, and a line HERE saying why. A fixture
   change with no schema-history note is exactly what the pin exists to catch.
   The matrix and the compare live in `tools/fixtures.matrix.mjs`, imported by
   both the checker (`test.mjs`) and the writer (`refixture.mjs`) so the two
   cannot diverge. No export bytes change; `schema_version` stays 39.
 - **v39** (the river finds its bed): a river's LineString was its 3–7
-  settlement anchors drawn point-to-point — on the map the water wandered
+  settlement anchors drawn point-to-point. On the map the water wandered
   sideways and could die inland, which no river does. Now each river ships
   its BED: a fine polyline (measured 9–37 points after Douglas-Peucker at
   tolerance 2.5) walked downhill over the continuous elevation surface from
   a sampled high source, bent through the chain regions in order (every
-  chain region still holds a trace point — tested), and ended only in the
-  traced sea — the mouth visibly enters the water — or off the map edge,
+  chain region still holds a trace point, tested), and ended only in the
+  traced sea (the mouth visibly enters the water) or off the map edge,
   never mid-land. New river property `chain_regions` (region ids in
   downstream order) carries what the geometry used to: `river_kind` and the
   drinking order recompute from it, not from the coordinate count. The
@@ -502,25 +518,25 @@
   target until a microtask checkpoint, so the old synchronous run retained
   all ~450 closed JSDOM windows and could die at the heap cap), and the
   stress render smoke was re-pinned to the two-genre split it predated
-  (ridges and passes are atlas ink since #60/#63 — the data-mode boot
+  (ridges and passes are atlas ink since #60/#63: the data-mode boot
   draws none, and a mode flip now checks the pen's map instead).
 - **v38** (the substrates ship): the export stops withholding what it was
   computed on (issues #55/#56). New `edge` LineString features (main
-  export only): one per region-adjacency edge the cost engine walks —
+  export only): one per region-adjacency edge the cost engine walks:
   `base_len`, `cost` (the engine's own edgeCost), `friction_mult`, exactly
   one of `is_ridge_crossing` / `is_pass` / `is_river` / `is_ford`, and
-  `held_by` (the gate holder among the edge's two regions) — so QGIS
+  `held_by` (the gate holder among the edge's two regions), so QGIS
   Network Analysis can reproduce `centrality_to_seat` and run
   close-the-pass counterfactuals. A **Download tables (CSV)** button
   flattens the provenance no table join could reach: `events.csv`,
   `epoch_region.csv` (the long per-(region, epoch) table, now carrying
   `dominant_bloc` and `toll_burden` per epoch), `rulers.csv`,
-  `tensions.csv`, `treasuries.csv`, `findings.csv` — RFC-quoted,
+  `tensions.csv`, `treasuries.csv`, `findings.csv`. All RFC-quoted,
   deterministic row order, byte-stable per world. New
   `findings.moran` / `findings.moran_blight`: global Moran's I of wealth
   and blight over the SAME adjacency (row-standardized, 199 permutations
   from a dedicated `moran` substream; measured on 3 seeds: wealth I
-  0.47–0.57 at p 0.005 — the clustering claim now ships with its own
+  0.47–0.57 at p 0.005; the clustering claim now ships with its own
   significance test, recomputable from the exported edges + columns).
   Plus a static QGIS bundle (`docs/qgis/`): a WKT2 engineering CRS
   (`hinterland.prj`, kills the WGS84 warning), 7-class `.qml` styles
@@ -528,18 +544,18 @@
   the export is byte-identical minus the additions (tested).
 - **v37** (the honest artifact): the evidence ships with the claim. The
   verification suite, the structural-stress runner, and the 80-world
-  atlas sweep are now IN THE REPO (`tools/` — every "measured across N
+  atlas sweep are now IN THE REPO (`tools/`: every "measured across N
   worlds" number and every "the test suite does" sentence has a
   producer you can run). `d3-delaunay` is vendored inline, so the
   one-file, open-from-disk promise holds with no network and no CDN.
   New region columns `anchor_x` / `anchor_y` export the settlement
   anchor that `range_shadow` and every seat-distance is measured from
-  (it is NOT the polygon centroid on relocated coastal ground — using
+  (it is NOT the polygon centroid on relocated coastal ground; using
   the centroid recomputes the wrong shadow; join the settlement point
   or read the new columns). `within_pct` reconciled to the current
   measured median (39%) everywhere it is quoted.
 - **v36** (the places between L1): four location types that influence the
-  model — the freeport (shadow gate: smuggler sink, founding retention
+  model: the freeport (shadow gate: smuggler sink, founding retention
   offset, invisible to official sea_access, immune to sealed quays and
   to the Dominion), the stillair (geology-stable no-lift tract: no
   aeries, a stilled seat grounds the whole skyway), the high sanctuary
@@ -553,14 +569,14 @@
 - **v35** (the naming of things E6): the words are grown from the world.
   Settlement names gain a toponym grammar whose qualifying parts are
   selected by GEOLOGY (mouth/ford/haven/tor/fen/holt/delf/hold…, ~half
-  stay plain — measured 53/22/25 plain/fused/spaced); ridges, rivers,
+  stay plain, measured 53/22/25 plain/fused/spaced); ridges, rivers,
   passes and seas take kinds from their measured size (`ridge_kind` +
   `max_elev`, `river_kind`, `pass_name` + `pass_elev` with Stair/Pass/Gap
   pinned to the measured elevation quartiles, `sea_name` by area); the
   top three roads are named for what they carry (`road_name`); history
   files its events under names that recompute exactly from the exported
-  columns (`events[].name` — Seam Wars, Peaces, Risings, Landings,
-  ground-matched plague names); towns earn DERIVED bynames (`epithet` —
+  columns (`events[].name`: Seam Wars, Peaces, Risings, Landings,
+  ground-matched plague names); towns earn DERIVED bynames (`epithet`:
   the Yoked/Unyoked/Free/Gilded/Ashen/Hollow/Mourning/Rising, 26% of
   towns). The toponymy stays byte-stable across every knob, weight, and
   capital move (tested); society flavors bynames and events, never
@@ -568,12 +584,12 @@
 - **v34** (the two levers P2): `responsiveness` (0–100, default 45 = the
   old hidden dice, byte-identical at the default) weights the
   reform-or-reaction coin; `harbors_closed` seals the quays (no ports,
-  no sea trade, no port tolls, no Dominion — the fleet needs a quay).
+  no sea trade, no port tolls, no Dominion: the fleet needs a quay).
   Both ride the hash and the provenance. Measured: deaf seat 0 reforms /
   listening seat all-wounded-reformed, mean gini 0.058 lower on the same
   seeds; sealed quays 0 arrivals with a small honest price (~0.6 coastal
-  wealth — mineral realm, not maritime).
-- **v33 addendum (U2, no format change)**: the surface catches up — the
+  wealth, mineral realm, not maritime).
+- **v33 addendum (U2, no format change)**: the surface catches up: the
   region inspector (one click, the whole ledger), 13 new lenses under
   grouped headings, named swatches on categorical legends, the
   counterfactual menu (λ / the full grid / both), traffic-weighted
@@ -583,13 +599,13 @@
   series' frame zero; the reset moved before the snapshot and the
   in-page-equals-fresh-boot byte test (shipped: `tools/test.mjs`) now
   covers the series export too.
-- **v33** (the map is a map M1): the sea becomes a coastline — the shore
+- **v33** (the map is a map M1): the sea becomes a coastline: the shore
   shelf wanders (bays/headlands/skerries), sea features become polygons
   WITH HOLES (islands; `islands` property), the sea level negotiates
   down until every region keeps dry ground, and last-resort towns stand
   on raised holms. Region anchors relocate off wet centroids (two
   passes: against the continuous field, then against the traced
-  polygon — the authoritative water). Harbors move to the waterfront;
+  polygon, the authoritative water). Harbors move to the waterfront;
   ruins/towers/sanctioned sites move to their own dry in-cell points
   (the wild-reach columns recompute from the exported points, as
   before). Mountains render as mass (hachures/peaks/fine display
@@ -597,9 +613,9 @@
   won-revolt deep-fall share and the collapse-aftermath share moved
   under the re-rolled coastal geography; the D6 chain and pinned seeds
   held.
-- **v32 addendum (C1, no format change)**: the counterfactual exhibit —
+- **v32 addendum (C1, no format change)**: the counterfactual exhibit:
   the λ experiment moves from the test suite onto the page (side-by-side
-  injustice maps + numbers; alternate run restored byte-exactly) — and
+  injustice maps + numbers; alternate run restored byte-exactly). And
   the STAGE-3 PURITY FIX: in-page society-knob changes after an ep>0
   render had silently recomputed on depleted ore since the dynamic
   engine landed; applyAttributes now restores the geology as founded on
@@ -621,13 +637,13 @@
   census around the new seat at the same realm scale; won-revolt ledger
   drops re-pinned −8..−24 (gate-town rents soften some falls); mobility
   ceiling 0.75 → 0.7.
-- **v31** (the Dominion X1): sovereignty is the last inequality — the
+- **v31** (the Dominion X1): sovereignty is the last inequality: the
   whole realm can be someone else's hinterland. An off-map empire lands
   (seeded coin + a clear harbor; ~half of worlds with time) at the best
   quay: `annexation` event, `occupied`/`occupied_epoch`/`tribute_burden`
   columns, `dominant_bloc` gains `dominion`, `held_by` gains `dominion`
   (garrisoned gates that no faction can seize back), retention ×0.6 in
-  the zone, the zone force-wired to the quay (an ENCLAVE grid — the
+  the zone, the zone force-wired to the quay (an ENCLAVE grid: the
   corridor connects the mine to the ship, not the country to itself),
   occupied elite_share +4 (the comprador bargain), tribute incidence
   shields the crown bloc, risings on occupied ground face the imperial
@@ -642,31 +658,31 @@
 - **v30** (the skyway S1): geography is destiny only for those who can't
   afford to leave it. Aeries + lanes chartered at the founding by gain ×
   value (flight's saving over the ground, times the wealth/ore/works
-  worth moving) — so the lanes emergently serve the far, walled, rich
+  worth moving), so the lanes emergently serve the far, walled, rich
   country; `seat_cost_ground` / `seat_cost_sky` / `sky_advantage` (derived,
   exactly recomputable), `is_skyport`; `hinterland.skyway` provenance;
   findings gain `sky` (shadow vs open mean advantage, `reached_n`,
   `twin_sky`). Class-conditional geography: aeries are owners' districts
-  (`elite_pop_pct` +1, +0.6 elite share per epoch — the ONLY loop
+  (`elite_pop_pct` +1, +0.6 elite share per epoch: the ONLY loop
   coupling; wealth, migration, and every event history are byte-identical
   to v29). Measured: shadow mean advantage ≥ open in 27/29 worlds (median
   ~44–50%), twins split by class in 25/29, aeries at/above the median
   elite share in 29/30.
-- **v29** (the strata H1): class exists — within the walls, not only
+- **v29** (the strata H1): class exists: within the walls, not only
   between them. `elite_share` (simulated like wealth: structure-founded,
-  history-moved, NO new dice — every seeded world keeps its exact old
+  history-moved, NO new dice: every seeded world keeps its exact old
   history with a class ledger written under it), `elite_pop_pct` +
   `class_gap` (derived, exactly recomputable), `elite_share` per frame in
   the epoch series, and the findings gain the two-level ledger:
   `gini_people` vs `gini_between_people`, `within_pct` (measured median
-  58% of person-level inequality is INSIDE regions — invisible to any
+  58% of person-level inequality is INSIDE regions, invisible to any
   between-place map), `owners` (~5% of people hold ~53% of coin,
   `class_gap` ≈24×), `company_town`/`company_share`. Measured before
   calibrating: corr(refining, elite_share) 0.72; won revolts drop the
   owners' share ≥16 points in 10/10; plagues level in 67/69 (the two
-  exceptions are gate towns whose rents out-ran the shock — the ratchet
+  exceptions are gate towns whose rents out-ran the shock: the ratchet
   is honest).
-- **v28** (the physical world G4): geology becomes a causal chain —
+- **v28** (the physical world G4): geology becomes a causal chain:
   elevation is a continuous surface (continental tilt + tectonic uplift
   along the ridge axes + shelving shore), ruggedness is its SLOPE, the sea
   is a flooded shape (`sea` polygons + `hinterland.sea_level`, `on_coast`
@@ -676,9 +692,9 @@
   `rain_split`. Recalibrated, measured first: the plume's downhill term
   damped (the tilt made downhill systematic), the D1 drain reframed onto
   the attractiveness composite the migration mechanic actually reads, λ
-  floor −0.15, resource-curse and several shares eased — the physical
+  floor −0.15, resource-curse and several shares eased: the physical
   world legitimately moved them.
-- **v27** (divergent histories V1): the counter-currents — leveling plagues
+- **v27** (divergent histories V1): the counter-currents: leveling plagues
   (+15 retention to survivors), reform/reaction events two epochs after the
   first wound (measures that mutate the loop's own parameters: dumping
   eased or entrenched, grid charter, toll amnesty/crackdown, retention act,
@@ -686,7 +702,7 @@
   won/crushed; a won rising frees its town, softens every toll, and can
   extract a granary concession; a crushed one gets a garrison). Findings
   gain `gini` / `gini_t0` / `turning`; histories measurably fork.
-- **v26** (the argument surface A1): the app states its findings —
+- **v26** (the argument surface A1): the app states its findings:
   `hinterland.findings` in provenance (quintile blight ratio, shadow
   earnings gap, darkness burden ratio, the river's mouth, toll payers, and
   the twins), exactly recomputable from the exported columns; an on-page
@@ -698,7 +714,7 @@
   courtly (faction + ruler, no region); contested successions freeze the
   faction's seizure turn and raise tension with both rivals; the chronicle
   is dated by the reigning Sovereign.
-- **v24** (peace terms F3): wars end in treaties — the winter after a war
+- **v24** (peace terms F3): wars end in treaties: the winter after a war
   with room in the record, a `treaty` event (factions, `winner`, `ceded`,
   `tribute`) redraws the map at the table: the loser cedes up to two held
   gates nearest the battlefield and pays half its treasury to the victor.
@@ -706,7 +722,7 @@
 - **v23** (escalation + the oligarchy loop F2): faction treasuries (held
   gates pay 3/epoch; seizures cost 12; the ledger lowers the next seizure
   bar) and pair tensions (+25 per rival taking, +1.2 per contested meeting
-  ground per epoch, 8% decay) exported in provenance; wars become policy —
+  ground per epoch, 8% decay) exported in provenance; wars become policy:
   a pair past a seeded tension bar fires the war machinery, the battlefield
   prefers that pair's contested ground, and every war event carries its two
   `factions`. Recalibrated (measured first): drain floor 0.2→0.15 (policy
@@ -719,9 +735,9 @@
   town banks it; apostate towers are raised (`tower_raised`) where
   governance keeps failing and burned (`tower_burned`) when Crown or
   Temple reach closes in. Recalibrated (measured first): collapse
-  aftermath 0.8→0.65 — a collapsed works town that holds a tolled gate
+  aftermath 0.8→0.65: a collapsed works town that holds a tolled gate
   can bank its way back to peak.
-- **v21** (the wild layer P1): anomalies — objects the ledger did not order.
+- **v21** (the wild layer P1): anomalies: objects the ledger did not order.
   New feature kinds `ruin` (delve/tomb/deadhold with peril + yield), `bridge`
   (river banks become ×2.2 fords except at bridge towns), `tower` (apostate
   arcanists; −12 trust within 220 units, exactly recomputable), `maelstrom`
@@ -732,7 +748,7 @@
 - **v20** (the sea + ports G3): 1–2 adjacent box edges become sea (blind);
   new `coast` and `port` feature kinds + `hinterland.sea_sides`; region
   columns `on_coast` (exactly recomputable), `is_port`, `sea_access`; the
-  trade income stream becomes 0.65 centrality + 0.35 sea access — two
+  trade income stream becomes 0.65 centrality + 0.35 sea access: two
   geographic poles. Recalibrated (measured first): λ-sweep floor −0.25→−0.20
   (the sea is a blight-independent wealth pole; the policy gap is unchanged
   at ~1.0) and resource-curse ratio 35%→28% (ore country near the harbor
@@ -743,19 +759,19 @@
   recomputable); river edges ×0.6 in the cost graph, ridge crossings become
   pass-grade gorges; floodplain fertility; riverine `safe_water` bonus that
   upstream contamination eats; the chronicle tells the drinking order.
-- **v18** (mountain ranges + passes G1): geography with shape — 1–2 named
+- **v18** (mountain ranges + passes G1): geography with shape: 1–2 named
   ridge polylines per world (blind geology) that wall the cost graph except
   at 1–2 passes each; new `ridge` and `pass` feature kinds, region columns
   `range_shadow` (exactly recomputable) and `is_pass`; the epoch series
   carries both; the chronicle names the ranges. Recalibrated: the drain
   spiral is now measured on the open side of the wall (geography legitimately
   fragments the global correlation into per-side spirals).
-- **v17** (Markov toponymy E3): real procedural names — order-2 character
+- **v17** (Markov toponymy E3): real procedural names: order-2 character
   chains over three invented registers replace the syllable placeholder;
   settlements gain `name_register` (lowland/frontier, a pure geology fact),
   sanctioned sites gain `site_name` (liturgical register); all names unique
   per world and stable across capital moves, weights, and epochs.
-- **v16** (causal chains + the faith in motion D6): events cause events — an
+- **v16** (causal chains + the faith in motion D6): events cause events: an
   ore strike on contested ground guarantees and accelerates the war, and two
   epochs after the run's first wound (plague or calamity) the Temple
   consecrates it: new `consecration` event type, an in-run addition to the
@@ -770,7 +786,7 @@
   lived flips of ruler.
 - **v13** (in-run events D3) added lived history: region columns `event_type`,
   `event_epoch`, `event_severity`; an `events` timeline in provenance;
-  sanctioned sites now anchor to the founding geology (`endowment_t0`) —
+  sanctioned sites now anchor to the founding geology (`endowment_t0`):
   ancient places don't move as mines deplete.
 - **v12** (dynamic engine D1) added time: the `epochs` knob (0 = founding
   snapshot; each epoch depletes ore, compounds wealth, migrates people along
@@ -821,18 +837,18 @@
    points are reaction; the rest is silence. At the default the dice are
    byte-identical to every world ever rolled; at 0 the seat never
    reforms (measured 0/N worlds); at 100 every wounded world gets its
-   mercy (N/N) — and the same seeds run a mean **0.058 gini lower**
+   mercy (N/N), and the same seeds run a mean **0.058 gini lower**
    under the listening seat, because the granary, the only measure that
    ever closes a gap, hangs on the seat's ear. **Close the harbors**
-   (`harbors_closed`): no ports are chartered — no sea trade, no port
+   (`harbors_closed`): no ports are chartered: no sea trade, no port
    tolls, and NO DOOR FOR THE DOMINION (0/N arrivals sealed vs ~60%
    open). The measured price of isolation is real but small (~0.6
    median coastal wealth): this realm's wealth is mineral, not
-   maritime — the chronicle calls the sealing safety bought with
+   maritime: the chronicle calls the sealing safety bought with
    poverty, and the ledger calls it cheap. Geology untouched: the sea
    is still there; the realm just refuses it.
 6. **The U2 check (the surface catches up):** the app now shows what it
-   computes. **Click any region** for its full ledger — the land, the
+   computes. **Click any region** for its full ledger: the land, the
    coin (wealth, retention, tolls, tribute), the two rows (the owners'
    share and the per-head gap), the state's reach, the people, what
    stands there by name, the gates it pays on the road to the seat, and
@@ -843,10 +859,10 @@
    fertility, retention, tolls, tribute, sea access, wealth-since-
    founding, smuggling, trust, mobility. Categorical legends carry named
    swatches. The **counterfactual menu** generalizes C1: λ = 0, the full
-   grid (threshold 0), or both mercies at once — each verified byte-
+   grid (threshold 0), or both mercies at once: each verified byte-
    equal to a fresh world at those knobs. Roads draw by the **traffic**
    the model always computed, and the scrubber animates the
-   **occupation** (the flag goes up in the year it went up — which
+   **occupation** (the flag goes up in the year it went up, which
    exposed and fixed a second stage-3 purity leak: the occupied flag was
    reset after the founding snapshot, so re-runs leaked last run's
    occupation into frame zero of the series; the purity byte-test (in the
@@ -857,22 +873,22 @@
    shelf's reach and steepness wander along the coast (bays reaching a
    median ~150 units inland, headlands, the occasional skerry), sea
    polygons carry **island holes** (GeoJSON polygons with interior rings;
-   `islands` counts them), and the sea level **negotiates** — it lowers
+   `islands` counts them), and the sea level **negotiates**: it lowers
    itself until every region keeps dry ground, and a town sunk in a
    noise pit raises a **holm** (a small island under the town). **No
-   town, ruin, tower, or shrine stands in the water** — a permanent
+   town, ruin, tower, or shrine stands in the water**: a permanent
    invariant tested on every stress config. **Places are places**:
    harbors sit at the waterfront (the cell's lowest boundary point),
-   ruins/towers/shrines at their own dry sites away from the town — load
+   ruins/towers/shrines at their own dry sites away from the town: load
    the point layers over the polygons and nothing hovers. **Mountains
    are mass**: hachure strokes down the flanks, ▲ peaks, fine display
    contours; the ridge axis survives only as a faint dashed guide under
    its name. Region anchors moved off wet centroids (the anchor is a
    town site), so every euclidean column keeps recomputing from the
    settlement points the file actually carries.
-8. **The C1 check (the counterfactual — the λ experiment on the page):**
+8. **The C1 check (the counterfactual, the λ experiment on the page):**
    under the Dump bias slider, one button re-runs THIS world at **λ = 0**
-   — same rock, same wind, same dice; only the spoil routing differs —
+   (same rock, same wind, same dice; only the spoil routing differs)
    and shows the two injustice maps side by side with the numbers: the
    poorest fifth's blight burden, the plague count, the gini, as rolled
    vs physics-only. On the default world the dumping alone adds 0.6× to
@@ -882,12 +898,12 @@
    leaves the world as rolled **byte-untouched**. C1 also fixed a real,
    silent bug this feature depended on: the loop wrote ore depletion
    back into the founding endowment, so after any ep>0 render, dragging
-   any society slider recomputed the world on **mined-out ground** — the
+   any society slider recomputed the world on **mined-out ground**: the
    screen and its own share link disagreed. Stage 3 is now a pure
    function of (geology, knobs), proven by an in-page-equals-fresh-boot
    byte test. Exports from fresh loads were never affected (no schema
    change).
-9. **The Z1 check (the founding centuries — the census is grown, not
+9. **The Z1 check (the founding centuries, the census is grown, not
    painted):** settlement sizes are no longer dealt from tier bands. Every
    region starts as a hamlet and the centuries before year 1000 run the
    same physics as the recorded epochs, blind to wealth: compound growth
@@ -895,69 +911,69 @@
    (log-damped agglomeration + preferential attachment; distance shields
    the remote hamlet from being emptied), a floor under the smallest.
    Plot log(population) against log(rank) on the settlements layer: a
-   line no one drew. `findings.zipf` carries the fit — full-system slope
+   line no one drew. `findings.zipf` carries the fit: full-system slope
    `alpha` (median ≈1.2, Zipf's constant is ≈1), `tail_alpha` and
-   `tail_r2` (the big-town tail is straight at ≈0.91 — hamlets deviate,
-   cities obey, as in the world we live in), and `primacy` — all exactly
+   `tail_r2` (the big-town tail is straight at ≈0.91, hamlets deviate,
+   cities obey, as in the world we live in), and `primacy`, all exactly
    recomputable from the exported settlement populations. **Tiers are now
    labels for the outcome**: the seat is prime by office; everyone else
    ranks by what they grew to, and the suite recomputes every tier from
    the exported sizes. Moving the capital now re-grows the census around
    the new seat (the seat's pull is physics) at the same realm scale.
-10. **The X1 check (the Dominion — sovereignty is the last inequality):**
+10. **The X1 check (the Dominion, sovereignty is the last inequality):**
    in roughly half of all worlds with time and a harbor, an empire from
    beyond the sea lands at the realm's best quay (an `annexation` event;
    `hinterland.dominion` carries the arrival epoch, the foothold, and the
-   occupied count — landlocked coasts and harbors inside the maelstrom's
+   occupied count; landlocked coasts and harbors inside the maelstrom's
    reach are shielded: the whole world has a geographic lottery of its
    own). Categorize `dominant_bloc`: occupied ground reads **`dominion`**.
    Filter `occupied = 1` and check three things the columns prove: the
    occupied country keeps the **smallest share of its own value**
    (`value_retention` cut at annexation), carries the **best wires in the
-   realm** (`occupied = 1 ⇒ on_conduit = 1`, the extractive corridor — an
+   realm** (`occupied = 1 ⇒ on_conduit = 1`, the extractive corridor, an
    ENCLAVE grid running to the quay, not the seat), and pays
    `tribute_burden = 3` while the free realm pays the Crown's assessment
-   (crown-bloc 1, everyone else 2 — the Crown shields its own; sovereignty
+   (crown-bloc 1, everyone else 2; the Crown shields its own; sovereignty
    inequality reproduces the domestic hierarchy). Gates on occupied ground
-   read `held_by = "dominion"` — tolls paid to a power no one in the realm
+   read `held_by = "dominion"`: tolls paid to a power no one in the realm
    can petition, banked by no one in it. `findings.sovereignty` states the
    ledger (retention ratio, the corridor, the growth gap, and the
    **comprador ratio**: the occupied owners' row out-holds the free
-   realm's — the occupation does not replace the owners, it hires them).
+   realm's: the occupation does not replace the owners, it hires them).
    A won revolt on occupied ground is a **liberation** (`occupied = 0`
    with `occupied_epoch` kept as the scar).
-11. **The S1 check (the skyway — geography is destiny only for those who
+11. **The S1 check (the skyway, geography is destiny only for those who
    can't afford to leave it):** load the `skyport` points and `skylane`
    lines: lift lanes chartered at the founding by the same ledger logic
-   that rations the conduit — an aerie goes where flight beats the ground
+   that rations the conduit: an aerie goes where flight beats the ground
    by the most and where there is value worth moving (wealth, ore, the
    works), which is exactly the far, walled, rich country, because a lane
    to the easy lowland saves nothing. Choropleth `sky_advantage` (exactly
    recomputable from `seat_cost_ground` and `seat_cost_sky`): the deep
-   end of the ramp pools **behind the wall** — the mean advantage in the
+   end of the ramp pools **behind the wall**: the mean advantage in the
    mountains' shadow beats the open country's in ~85% of worlds (median
    ~44%), while the median region gains nothing; the lanes serve the
    tail, which is the point. The catch is the boarding rule, and the
    boarding rule is CLASS: aeries are owners' districts (`elite_pop_pct`
    counts them; the aerie accrues elite share each epoch), so the twins
-   finding splits by row — `findings.sky.twin_sky` is how much of the
+   finding splits by row: `findings.sky.twin_sky` is how much of the
    wall the shadow twin's owners simply fly over while its labor walks
    the pass. The skyway touches ONLY the class ledger: wealth, migration,
    and every event history are byte-identical to v29.
-12. **The H1 check (class exists — within the walls):** every region is now
+12. **The H1 check (class exists: within the walls):** every region is now
    two peoples under one name: the owners' row and the labor it hires.
-   Choropleth `elite_share` (the owners' slice of the region's coin —
+   Choropleth `elite_share` (the owners' slice of the region's coin,
    founded on pure structure: the works, the claimed seams, the court; then
    moved by the same history as everything else, with **no new dice**) and
    set it beside `wealth`: the company town is rich AND owned.
    `elite_pop_pct` and `class_gap` are **derived and exactly recomputable**
    (tier + works + harbor; owners' coin per owner over labor's coin per
-   laborer — field-calc it yourself and diff). The findings carry the
+   laborer, field-calc it yourself and diff). The findings carry the
    two-level ledger: `gini_people` (population-weighted gini over the 2N
    class rows) against `gini_between_people` (the same gini with each
-   region collapsed to one people) — and `within_pct`, the share of the
+   region collapsed to one people), and `within_pct`, the share of the
    realm's person-level inequality a region map **cannot see** (median
-   ≈39% under the grown census — a third to a half; it measured ≈58%
+   ≈39% under the grown census, a third to a half; it measured ≈58%
    under the old authored tier bands, and Z1's realistic city sizes
    legitimately shifted weight to the between-place spread). `owners`
    says who owns the realm
@@ -970,49 +986,49 @@
    chain of shapes, not parallel noise. Load the **sea** polygons (an
    irregular coastline flooded from a per-world `hinterland.sea_level`),
    the **contour** MultiLineStrings (elevation levels including the
-   shoreline), and choropleth the new climate columns — `temperature`
+   shoreline), and choropleth the new climate columns: `temperature`
    (latitude minus mountain lapse, corr with latitude ≈ −0.85) and
    `rainfall` (moisture marched in against the wind, raining out on the
    windward slopes). Categorize `biome` (alpine / badland / moor / marsh /
-   forest / steppe / grassland — **exactly recomputable** from the ordered
+   forest / steppe / grassland, **exactly recomputable** from the ordered
    rules over temperature, rainfall, elevation, and the river) and check
-   `fertility`: it is now **derived** — 0.5·rain + 0.3·warmth + floodplain −
-   altitude — so any farm traces back to a rainfall pattern, a mountain, a
+   `fertility`: it is now **derived**: 0.5·rain + 0.3·warmth + floodplain −
+   altitude, so any farm traces back to a rainfall pattern, a mountain, a
    plate. The rain shadow is the sharpest new lottery: the findings carry
-   `rain_split` (median rainfall either side of the first ridge — the wall
+   `rain_split` (median rainfall either side of the first ridge, the wall
    that cuts you off from trade also decides whether you get rain), and
    `on_coast` now means your cell touches the actual water shape.
-14. **The V1 check (histories diverge):** the criticism this phase answers —
-   "the same story is told regardless of how it's rolled" — is now a tested
+14. **The V1 check (histories diverge):** the criticism this phase answers,
+   "the same story is told regardless of how it's rolled", is now a tested
    falsehood. `hinterland.findings` carries `gini_t0` and `gini` (exactly
    recomputable from `wealth_t0` / `wealth`) and a `turning` point: across a
-   sweep, some worlds **close their gap**, some **entrench**, some hold —
+   sweep, some worlds **close their gap**, some **entrench**, some hold,
    and the cause is always in the timeline. The counter-currents: the
    **leveling plague** (survivors charge more: +15 permanent retention),
    **reform and reaction** two epochs after the first wound (Dumping Reform,
-   Grid Charter, Toll Amnesty, Retention Act, or the Crown Granary — the
-   only measure that ever closes a gap is the one that moves coin downhill
-   — versus entrenched dumping and toll crackdowns, all of which shift the
-   loop's own parameters mid-run), and the **revolt** — the periphery's one
+   Grid Charter, Toll Amnesty, Retention Act, or the Crown Granary; the
+   only measure that ever closes a gap is the one that moves coin downhill,
+   versus entrenched dumping and toll crackdowns, all of which shift the
+   loop's own parameters mid-run), and the **revolt**: the periphery's one
    rising per run, `outcome` won (a free town: keeps what it makes, tolls
    no one, and may frighten the seat into a concession) or crushed (a
    garrison after the hangings). Filter events on `reform` / `reaction` /
    `revolt` and join against the gini trajectory: the fork is the finding.
 15. **The A1 check (the argument surface):** the app now says what it
    measures. `hinterland.findings` in the provenance carries this world's
-   thesis claims — the poorest fifth's blight against the richest fifth's,
+   thesis claims: the poorest fifth's blight against the richest fifth's,
    the mountain-shadow earnings gap, the darkness count and its burden
    ratio, who drinks the river last, who pays the gates, and **the twins**
    (the sharpest same-distance pair across the wall, drawn as a red line on
-   the preview) — every one *exactly recomputable from the exported
+   the preview), every one *exactly recomputable from the exported
    columns*, and the same numbers appear in the on-page findings panel and
    in the chronicle's closing section, "What the Record Shows." In QGIS,
    recompute any finding from the file and it will match to the digit.
 16. **The E5 check (the powers have faces):** the provenance carries
-   `hinterland.rulers` — three full lines (Sovereign / Hierarch / First
+   `hinterland.rulers`: three full lines (Sovereign / Hierarch / First
    Magnate) with `name`, `from_epoch`, `contested`, reigns of 3–7 epochs
    drawn blind. `succession` events are **courtly**: they carry a faction
-   and a ruler, never a region — power changes hands in a room, not on a
+   and a ruler, never a region. Power changes hands in a room, not on a
    map. A contested succession (~30%) freezes that faction's seizures for
    the year and raises its tension with both rivals: cross the succession
    epochs against the seizure/war timeline and watch rivals move on a
@@ -1021,16 +1037,16 @@
 17. **The F3 check (defeat is an institution):** the winter after every war
    with room in the record, a `treaty` event lands (epoch = war + 1, same
    two `factions`, plus `winner`, `ceded`, `tribute`): the winner is
-   whichever power brings more to the battlefield — live reach plus ledger
-   depth — the loser cedes up to two of its held gates nearest the field
+   whichever power brings more to the battlefield (live reach plus ledger
+   depth), the loser cedes up to two of its held gates nearest the field
    (watch `held_by` flip on the asset layers), and half its treasury moves
    to the victor's. **Victory compounds**: the tribute funds the winner's
    next seizure, so the oligarchy loop runs through war as well as
    commerce. Join `treaty.winner` against the final `held_by` map and
-   `hinterland.treasuries` — the peace explains the ownership map better
+   `hinterland.treasuries`: the peace explains the ownership map better
    than the war does.
 18. **The F2 check (money begets reach begets money):** the provenance now
-   carries the ledgers — `hinterland.treasuries` (every held gate pays its
+   carries the ledgers: `hinterland.treasuries` (every held gate pays its
    holder 3 per epoch; each seizure debits 12, and a fat ledger lowers the
    next seizure's bar) and `hinterland.tensions` (the three faction pairs:
    +25 when one seizes from the other, +1.2 per epoch per contested region
@@ -1039,98 +1055,98 @@
    most gates (~79%). And wars are **policy, not weather**: a pair past the
    tension bar fires the war machinery within two epochs, the battlefield
    prefers contested ground where THAT pair meets, and every `war` event
-   carries its two `factions` — join them against `dominant_bloc` and the
+   carries its two `factions`: join them against `dominant_bloc` and the
    front line explains itself.
 19. **The F1 check (the blocs become agents):** the chokepoints are now
-   OWNED — style `held_by` on the bridge/pass/port layers (crown / temple /
+   OWNED: style `held_by` on the bridge/pass/port layers (crown / temple /
    magnate / none) and read `hinterland.events` for the `seizure` entries
    (each carries a `faction`): the ownership map is a history of takings,
-   not a paint job. Choropleth `toll_burden` — every held gate on a
-   region's least-cost paths to the seat and to its port levies — against
+   not a paint job. Choropleth `toll_burden` (every held gate on a
+   region's least-cost paths to the seat and to its port levies) against
    `wealth − wealth_t0`: the taxed roads grow slower (corr ≈ −0.19) while
    the gate towns bank the difference. Watch the tower lifecycle in the
    timeline too: `tower_raised` where governance keeps failing,
-   `tower_burned` when Crown force or Temple reach closes in — and the
+   `tower_burned` when Crown force or Temple reach closes in, and the
    burned region's black market and trust heal, because the exports carry
    the final state.
 20. **The P1 check (the wild layer):** everything on the map before this was
    infrastructure obeying a ledger; the wild layer is the objects that
-   don't. Overlay **ruins** (◆ — `ruin_type` = delve / tomb / deadhold, with
+   don't. Overlay **ruins** (◆, `ruin_type` = delve / tomb / deadhold, with
    `peril` and `yield`), **towers** (♜), **bridges** (═) and the
    **maelstrom** (◉) on the shadow-economy maps: ruin hosts sit in the
    high-predation/high-black-market quadrant (~70%), tower hosts are
-   low-trust and high-black-market (measured 21/21 — the `social_trust`
+   low-trust and high-black-market (measured 21/21, the `social_trust`
    penalty is exactly recomputable: any tower point within 220 planar units
    of the settlement anchor), and deadholds carry a founding blight scar
    (7/7 above median). Choropleth `delver_flux` for the poverty-driven
-   traffic to the ruins — risk is a wage. River banks are now fords (×2.2)
+   traffic to the ruins: risk is a wage. River banks are now fords (×2.2)
    except at bridge towns (`has_bridge = 1`): bridge towns out-earn their
    bridgeless river peers in ~88% of worlds. Ruins, bridges, and the
-   maelstrom are blind geology — knob-stable; towers are sited on the
+   maelstrom are blind geology, knob-stable; towers are sited on the
    founding political map (state failure is a social fact, so the tower
    moves when the state does).
 21. **The G3 check (the double lottery):** the map now has TWO geographic
-   poles — the seat and the sea. Overlay the **coast** lines and **port**
+   poles: the seat and the sea. Overlay the **coast** lines and **port**
    points (⚓, `port_name`), choropleth `sea_access` (exp-decayed
-   cost-distance from the harbors over the same friction graph — the
+   cost-distance from the harbors over the same friction graph, the
    mountains block the way to the water too), and cross it with
    `range_shadow`: **open-and-coastal out-earns walled-and-inland in ~93% of
    worlds**. A region's fate is the sum of its lotteries, both drawn at the
    founding. Ports are sited on geology alone (flat, low coast, river-mouth
-   bonus) so in a share of worlds the harbor IS the poisoned mouth — it
+   bonus) so in a share of worlds the harbor IS the poisoned mouth: it
    drinks the river last and ships it first; check `is_port = 1 AND
    on_river = 1` against `downstream_blight`. `on_coast` is exactly
    recomputable: does the region's ring touch an exported `sea_sides` edge?
 22. **The G2 check (who drinks first):** overlay the **river** lines on a
-   `downstream_blight` choropleth — the poison accumulates down the chain, so
+   `downstream_blight` choropleth: the poison accumulates down the chain, so
    the mouth drinks what every town and works upstream let fall in
    (`river_pos` gives the drinking order; the max load sits in the lower
    half of ~100% of chains). The column is exactly recomputable:
    `blight_load − downstream_blight` is the pre-river field; re-run the
    carriage (30% shipped per region, ×0.75 decay per step) along
-   `river_pos`. Rivers are conductors — floodplain fertility plus ×0.6 barge
+   `river_pos`. Rivers are conductors: floodplain fertility plus ×0.6 barge
    edges pull the seat, the roads, and the money into the valleys (riverine
    regions out-earn dry ones in ~80% of worlds), which is exactly what makes
    the downstream seat at the mouth so bitter. Where a river cuts a ridge it
-   opens a **gorge** — pass-grade crossing the traffic also threads.
+   opens a **gorge**: pass-grade crossing the traffic also threads.
 23. **The G1 check (geography is destiny):** overlay the **ridge** lines and
    **pass** points on the wealth choropleth, then categorize regions on
-   `range_shadow` — same distance from the seat, different fate: at matched
+   `range_shadow`, same distance from the seat, different fate: at matched
    crow-flies distance the shadowed region is poorer in ~93% of pairs and cut
    out of the market in ~98% (the wall multiplies edge costs ×4.5 except at
    the passes, and every social outcome flows through that graph). Style
    roads by `traffic` and watch ~98% of wall-crossing flow thread the passes
-   — chokepoints you can point at (`is_pass = 1` regions). NOTE: the shadow
+   chokepoints you can point at (`is_pass = 1` regions). NOTE: the shadow
    is measured from the region ANCHOR (`anchor_x`/`anchor_y`, = its
    settlement point), which is NOT the polygon centroid on relocated
-   coastal ground — recompute from the anchor, not the centroid. `range_shadow` is
+   coastal ground: recompute from the anchor, not the centroid. `range_shadow` is
    exactly recomputable: does the straight line from the settlement anchor to
    the seat cross an exported ridge LineString? The mountains are drawn in
-   the blind-geology stage — sliders and capital moves never move them.
+   the blind-geology stage: sliders and capital moves never move them.
 24. **The E3 check (the world names itself):** categorize settlements on
-   `name_register` — the map has a linguistic geography, and it tracks the
+   `name_register`, the map has a linguistic geography, and it tracks the
    **ore, not the border**: frontier-register names (hard, clipped) sit on
    high founding endowment or rugged ground, lowland-register names (soft,
    agrarian) on the settled core, exactly recomputable from `endowment_t0`
    and `terrain_ruggedness`. Names are walked by an order-2 Markov chain
    over invented corpora, unique per world, and byte-stable across capital
-   moves, weight changes, and epoch settings of a seed — and since E6 the
+   moves, weight changes, and epoch settings of a seed, and since E6 the
    grammar goes further: the qualifying parts of a name are themselves
    geology (label a `-mouth` town and check it sits at a river's last
    region; find the `Delf`s and `hold`s on `endowment_t0` ≥ 50 or rugged
-   ground; `High —`/`Tor`/`Fell` on `elevation` ≥ 62). Label the
+   ground; `High`/`Tor`/`Fell` on `elevation` ≥ 62). Label the
    `sanctioned_site` layer with `site_name` for the shrines' liturgical
    dedications ("Shrine of " || "site_name" in the label expression).
    For the bynames, label settlements `name || coalesce(', ' || epithet, '')`
    and verify each epithet against the columns that earn it (the cascade in
-   the settlement table above) — the byname is DERIVED, never drawn.
+   the settlement table above): the byname is DERIVED, never drawn.
 25. **The D6 check (events cause events):** history is no longer a set of
-   independent dice — read `hinterland.events` as a causal chain. An
+   independent dice: read `hinterland.events` as a causal chain. An
    **`ore_strike`** whose epicenter is *contested* ground guarantees and
    accelerates the **`war`** (the rush arrives, then the armies; the war lands
    within two epochs of the strike). And the faith arrives where the suffering
    is: two epochs after the run's first wound (`blight_plague` or
-   `relic_calamity`), the Temple **consecrates** the ground —
+   `relic_calamity`), the Temple **consecrates** the ground:
    `event_type = 'consecration'`, a new `sanctioned_site` point appears,
    `temple_reach` hits 100 there, pilgrim routes re-aim, and `dominant_bloc`
    re-contests around the live shrine set. Filter the epoch series to the
@@ -1148,15 +1164,15 @@
    blight plume and orphans its trunk conduit (ghost infrastructure); a
    **blight plague** empties a poisoned town and hands it to the drain spiral;
    a **relic calamity** leaves a permanent scar in the blight field. Deep-past
-   `shock_legacy` is reconstruction; `event_*` is lived history — a region can
+   `shock_legacy` is reconstruction; `event_*` is lived history: a region can
    have both (a plagued refinery town whose works later close keeps its full
    story in the timeline, latest event in its columns). And capital doesn't
    die, it moves: two epochs after a collapse a **replacement refinery**
    (`refinery_founded`) opens where the money went, with a trunk hookup and a
-   fresh blight plume. Politics are live too — `dominant_bloc` re-contests
+   fresh blight plume. Politics are live too: `dominant_bloc` re-contests
    whenever the refinery set changes, and `bloc_changes` counts each region's
    actual changes of ruler during the run. D5 completes the repertoire:
-   **`ore_strike`** (a hidden lode — blind geology, always there, just unfound —
+   **`ore_strike`** (a hidden lode, blind geology, always there, just unfound,
    surfaces and a rush begins) and **`war`** (live politics chooses the
    battlefield: the most valuable *contested* region burns, its capacity is
    permanently wounded, and the Crown garrisons it *after* the blood).
@@ -1177,21 +1193,21 @@
    that died *during* the run, and `abandonment_index` is now true hysteresis
    (`peak_wealth − wealth`). The drain spiral is visible as
    `population − population_t0` flowing along the roads toward the lit core.
-   The founding geology is preserved in `endowment_t0` — identical across all
+   The founding geology is preserved in `endowment_t0`: identical across all
    epoch settings of the same seed, so the dynamics are auditable against a
    fixed world.
-29. **The W4 check (the uncounted):** choropleth `legibility_gap` — the census
+29. **The W4 check (the uncounted):** choropleth `legibility_gap`: the census
    undercounts exactly where need is greatest, so **every per-capita map you
    have made so far is optimistic**. Recompute any rate with
    `population + uncounted_population` in the field calculator and put the
    official and corrected maps side by side: the correction is largest in the
    places already worst off. Also worth a look: `social_trust` vs
-   `kinship_reliance` (near-perfect mirrors — where the state fails, kin
+   `kinship_reliance` (near-perfect mirrors, where the state fails, kin
    absorb it), `mobility_ceiling` (ore-only frontier: born labor, die labor),
    `segregation_index` (refinery enclaves standing apart from their
    surroundings), and `tenure_regime` (whose land the registry recognizes).
 30. **The W3 check (the past sits on the land):** choropleth
-   `abandonment_index` — the dark patches are old ore country
+   `abandonment_index`: the dark patches are old ore country
    (`exhausted_lode = 1`, real blind geology that feeds no income today) whose
    value left and whose people stayed. Categorize `founding_era` to see the
    settlement cohorts, `shock_legacy` for the scars (collapses at the dead
@@ -1199,35 +1215,35 @@
    `legacy_advantage` × `wealth` to watch head starts persist. Every column is
    exactly recomputable from the other exported fields.
 31. **The W2 check (the shadow is the state's negative image):** choropleth
-   `enforcement_gap` next to `force_projection` — the lawless hinterland is
+   `enforcement_gap` next to `force_projection`: the lawless hinterland is
    the exact complement of where the garrisons (`kind = 'garrison'`, G) can
    reach. Style `smuggling_intensity` and watch the contraband corridors
    thread between patrol umbrellas; `predation_risk` picks out the
    busy-but-unguarded roads; `black_market_index` is a per-capita reliance
    index (multiply by `population` in the field calculator for volume) and
-   correlates ≈ −0.9 with `arcane_service_index` — the shadow prices the
+   correlates ≈ −0.9 with `arcane_service_index`: the shadow prices the
    underservice. `security_status` gives the categorical version.
 32. **The W1 check (two networks, one lie):** style roads by `road_class`
    (width) or graduated on `traffic`, and overlay the conduit. **Every**
-   settlement is on the road network — connection is universal, because people
+   settlement is on the road network: connection is universal, because people
    walk. The conduit is what gets rationed. That side-by-side is the sharpest
    version of the underservice argument: the periphery isn't unreachable, it's
    *unserved*. Then choropleth `market_access` (Hansen gravity over road
-   costs) and `pilgrim_flux` (through-traffic to the sanctioned sites — the
+   costs) and `pilgrim_flux` (through-traffic to the sanctioned sites, the
    on-route economy the bypassed never see).
 33. **The Phase 6 check (who governs whom):** categorize regions on
    `dominant_bloc` (5 classes). The Crown holds the center, the magnates hold
    the refinery districts, the Temple holds its sanctioned sites (▲ points,
-   `kind = 'sanctioned_site'`) out on the ore and the margins — and between
+   `kind = 'sanctioned_site'`) out on the ore and the margins, and between
    them lie `contested` seams and `ungoverned` hinterland. Overlay
    `service_gap_idx` to ask the panel's question: *which bloc neglects most?*
    The reach fields behind the classification (`centrality_to_seat`,
    `temple_reach`, `magnate_reach`) are all exported, so the argmax is
    auditable.
-34. **The Phase 5 check (the payload — who gets sick, who gets care):**
-   choropleth `disease_burden_per_1k` (a rate — Jenks, 5 classes, sequential
+34. **The Phase 5 check (the payload, who gets sick, who gets care):**
+   choropleth `disease_burden_per_1k` (a rate, Jenks, 5 classes, sequential
    ramp) and overlay facility points filtered to `facility_type = 'healer'`.
-   The burden concentrates exactly where `healing_reach` collapses — the
+   The burden concentrates exactly where `healing_reach` collapses: the
    high-burden/low-care quadrant is the whole project's thesis in one map. The
    cause components (`burden_env_per_1k`, `burden_water_per_1k`,
    `burden_unmet_per_1k`) let you attribute each region's sickness to blight,
@@ -1237,20 +1253,20 @@
 35. **The Phase 4 check (environmental injustice):** choropleth `blight_load`
    and bivariate it against `wealth` (or just map the precomputed
    `injustice_idx`). Under the default dump bias the blight–wealth correlation
-   is strongly **negative** — the poison lands on the poor. Re-export at
+   is strongly **negative**: the poison lands on the poor. Re-export at
    dump bias 0 and the correlation **flips positive**: with no dumping policy
    the spoil stays at the refineries and the centers eat their own waste. That
    sign flip, side by side in a print layout, is the measured *policy share*
    of the injustice.
 36. **The Phase 3 check (off-grid darkness):** style regions by
    `arcane_service_index`, overlay the conduit lines, and categorize settlements
-   by `on_conduit` — the dark periphery is exactly where the grid's economics
+   by `on_conduit`: the dark periphery is exactly where the grid's economics
    said "not worth it" (`population × wealth` below the threshold), never a
    hand-picked list. Compute darkness as `100 - "conduit_access"` in the field
    calculator if you want the negative image. Sweep the grid-threshold slider
    (0 = everyone connected) and re-export to watch darkness spread.
 37. **The Phase 2 check (the resource curse):** scatter or bivariate
-   `aetherstone_endowment` × `wealth` — under default weights a visible share of
+   `aetherstone_endowment` × `wealth`, under default weights a visible share of
    high-endowment regions sits below median wealth: rich ground, poor people,
    and no layer was authored to produce it (ore is blind noise; the seat prefers
    farmland; refining follows centrality). Also worth a look: choropleth
@@ -1263,7 +1279,7 @@
    says nothing does (the official metric cannot see it) while
    `smuggling_intensity` pools at its quay; filter `stillair = 1` and
    confirm `is_skyport = 0` on every stilled region (and that the tract
-   is identical across two exports with different society knobs — it is
+   is identical across two exports with different society knobs: it is
    geology); at `has_sanctuary = 1` check `legibility` runs ~+15 over
    its own recomputed base and `nearest_healer_dist` relief spreads to
    the neighbors; at `has_camp = 1` recompute `predation_risk` yourself
@@ -1271,7 +1287,7 @@
 
 ## The long status narrative (moved from docs/attribute-model.md)
 
-> Status: authoritative design; **all six phases are implemented** — settlement
+> Status: authoritative design; **all six phases are implemented**: settlement
 > skeleton + population, blind geology (ore, terrain, fertility, elevation,
 > wind), agrarian-core seat, cost-distance centrality, refining, retention,
 > three-stream emergent wealth, the cost-gated conduit with off-grid darkness +
@@ -1279,40 +1295,40 @@
 > facilities/coverage/health with the emergent cause-split disease burden, and
 > the governance overlay (dominant_bloc from three competing reach fields).
 > The second wave is underway: **W1 (road network + flows)** and **W2
-> (security + the shadow economy)** are implemented — roads spanning every
+> (security + the shadow economy)** are implemented: roads spanning every
 > settlement with gravity traffic and classes, `market_access`, `pilgrim_flux`,
 > garrisons with `force_projection`, lumen-gated `wardline_strength`,
 > `security_status`, and the criminologist's set (`smuggling_intensity` routed
 > around patrols, `predation_risk`, `black_market_index`, `enforcement_gap`).
 > **The second wave is complete** (W1 roads/flows, W2 security/shadow economy,
-> W3 deep time, W4 social texture) — every cluster of the original panel model
+> W3 deep time, W4 social texture). Every cluster of the original panel model
 > is implemented. **The dynamic engine (D1) is live** through schema v12: an
 > epochs knob (neutral zero = the founding snapshot) runs the world forward
-> through coupled loops — ore depletes, wealth compounds, people migrate along
-> roads, the grid ratchets after the winners, the dumping re-targets the poor —
+> through coupled loops: ore depletes, wealth compounds, people migrate along
+> roads, the grid ratchets after the winners, the dumping re-targets the poor,
 > so the panel's feedback spirals (extraction, drain, agglomeration) now
 > actually RUN instead of being implied by correlations. **The temporal bridge
 > (D2)** exports the run as an epoch series for the QGIS Temporal Controller
-> and adds an in-browser epoch scrubber — the compounding is watchable.
+> and adds an in-browser epoch scrubber: the compounding is watchable.
 > **In-run events (D3)** add lived history with dates: refinery collapses as
 > the ore economy tires (orphaning trunk conduit as ghost infrastructure),
 > plagues at maximum contamination, and relic calamities that scar the blight
-> field permanently — recorded per region and as a provenance timeline.
-> **Dynamic institutions (D4)**: capital doesn't die, it moves — replacement
-> refineries founded mid-run where the money went — and the political map is
+> field permanently, recorded per region and as a provenance timeline.
+> **Dynamic institutions (D4)**: capital doesn't die, it moves. Replacement
+> refineries founded mid-run where the money went, and the political map is
 > live: blocs re-contest as magnate reach shifts, with `bloc_changes` counting
 > each region's lived changes of ruler. **Conflict and fortune (D5)**: hidden
 > lodes surface as in-run ore strikes, and wars burn the most valuable
-> contested ground — permanently wounding its capacity — with the Crown
+> contested ground, permanently wounding its capacity, with the Crown
 > garrisoning the battlefield only after the blood. **Causal chains + the faith
-> in motion (D6)**: events now cause events — an ore strike on contested ground
+> in motion (D6)**: events now cause events: an ore strike on contested ground
 > guarantees and accelerates the war (fortune turns the seam hot), and two
 > epochs after the run's first wound (plague or calamity) the Temple
 > consecrates the ground as a new sanctioned site, with temple reach, pilgrim
 > routing, and the political map all re-contesting around the live shrine set
 > (measured: consecration in ~72% of wounded worlds; every new shrine reaches
 > temple_reach 100; a pinned seed carries a war that would not exist without
-> the chain). **Markov toponymy (E3)**: the world names itself — order-2
+> the chain). **Markov toponymy (E3)**: the world names itself: order-2
 > character chains over three invented registers walk novel, per-world-unique
 > names from per-region substreams; the register is a blind-geology fact
 > (ore/rugged country speaks frontier, the settled core lowland, holy ground
@@ -1320,7 +1336,7 @@
 > rather than the border and the entire toponymy is byte-stable across
 > capital moves, weights, and epochs (measured: ~97% of names are novel
 > compositions, not corpus quotes). **The physical world (G4)**: geology
-> became a causal chain of shapes — elevation is a continuous surface
+> became a causal chain of shapes: elevation is a continuous surface
 > (tilt + tectonic uplift + shore), ruggedness its slope, the sea a flooded
 > polygon with a per-world level, climate real (temperature by latitude and
 > lapse; rainfall advected against the wind with orographic RAIN SHADOW),
@@ -1329,25 +1345,25 @@
 > ridge splits the rain in 12/20 worlds; 7/7 biomes across the sweep).
 > Honest physics fallout, measured first: the coherent tilt began pouring
 > plumes into the wealthy lowlands (hill term damped; λ floor −0.15) and
-> the old popΔ↔wealth drain legitimately decorrelated — reframed onto the
+> the old popΔ↔wealth drain legitimately decorrelated, reframed onto the
 > attractiveness composite the mechanic actually reads. **The two levers
 > (P2)**: institutions and isolation become dials. Responsiveness makes
 > the reform-or-reaction coin a policy (default 45 = the old dice,
 > byte-identical; 0 = the deaf seat, never a reform; 100 =
-> every wound buys a mercy) — and the same seeds run mean gini 0.058
+> every wound buys a mercy), and the same seeds run mean gini 0.058
 > lower under the listening seat: the granary hangs on the seat's ear.
 > Close-the-harbors seals the quays: no ports, no sea trade, no door for
-> the Dominion — measured price small (~0.6 coastal wealth; the realm's
+> the Dominion, measured price small (~0.6 coastal wealth; the realm's
 > wealth is mineral, not maritime): safety bought with poverty, cheaply.
 > **The surface
-> catches up (U2)**: the app shows what it computes — a region INSPECTOR
+> catches up (U2)**: the app shows what it computes: a region INSPECTOR
 > (one click: the land, the coin, the two rows, the state, the people,
 > what stands there, the gates on its road to the seat, its whole event
 > history), 13 new lenses (retention, tolls, tribute, climate, terrain,
 > trust, mobility, smuggling, sea access, wealth-since-founding) under
 > grouped headings, named swatches for categorical legends, the
 > counterfactual menu (lambda / full grid / both mercies), roads drawn
-> by computed traffic, and the occupation animated on the scrubber —
+> by computed traffic, and the occupation animated on the scrubber,
 > which exposed a second stage-3 purity leak (the occupied flag reset
 > after the founding snapshot), now fixed and byte-tested on the series
 > export as well. **The map is a
@@ -1357,11 +1373,11 @@
 > skerries; islands export as polygon holes); the sea level NEGOTIATES
 > down until every region keeps dry ground, and a town sunk in a noise
 > pit stands on a raised holm. Anchors relocated off wet centroids in two
-> passes (field, then traced polygon — the authoritative water); harbors
+> passes (field, then traced polygon, the authoritative water); harbors
 > stand at the waterfront, ruins/towers/shrines at their own dry sites;
 > mountains render as hachured mass with peaks. "No town in the water"
 > is now a permanent invariant on every stress config. **The
-> counterfactual (C1)**: the λ experiment moves onto the page — one
+> counterfactual (C1)**: the λ experiment moves onto the page: one
 > button re-runs the same world at λ=0 (same rock, wind, and dice) and
 > sets the two injustice maps side by side with the numbers; on the
 > default world the dumping alone adds 0.6× to the poorest fifth's
@@ -1373,25 +1389,25 @@
 > proven byte-for-byte. **The founding
 > centuries (Z1)**: the census is grown, not painted. The authored tier
 > bands are gone; every region starts a hamlet and the centuries before
-> year 1000 run the same physics as the recorded epochs, blind to wealth
-> — compound growth on land quality, road migration toward the bigger
+> year 1000 run the same physics as the recorded epochs, blind to wealth:
+> compound growth on land quality, road migration toward the bigger
 > market (size begets size, log-damped + preferential attachment;
 > distance shields the remote hamlet), a floor under the smallest, one
 > rescale to the familiar realm scale. The rank-size law is emergent:
 > full-system slope med 1.22 (Zipf ≈1), the big-town tail straight at
-> r² 0.91, primacy med 1.4 — and tiers are now labels for the outcome,
+> r² 0.91, primacy med 1.4, and tiers are now labels for the outcome,
 > exactly recomputable from the exported sizes. Honest fallout, measured
 > first: H1's within-region share med 58 → ≈37 (real city sizes weight
 > the between-place spread); the market shadow moved from matched pairs
 > to the distribution level (a big grown town behind the wall is its own
-> market — the pairs blur, the median still trails by ≈24). **The Dominion
+> market, the pairs blur, the median still trails by ≈24). **The Dominion
 > (X1)**: sovereignty is the last inequality. Every loop before X1 ran
-> inside the map; now the outside exists — an empire from beyond the sea
+> inside the map; now the outside exists: an empire from beyond the sea
 > lands at the realm's best quay in ~half of the worlds with time and a
 > clear harbor (the door the ports opened: G3's second lottery is also
 > the vulnerability; landlocked and storm-guarded coasts are shielded).
 > The occupied zone keeps the smallest share of its own value (retention
-> ×0.6), carries the best wires in the realm (force-wired to the quay —
+> ×0.6), carries the best wires in the realm (force-wired to the quay,
 > an enclave grid: the corridor connects the mine to the ship, not the
 > country to itself), and pays tribute whose incidence the Crown passes
 > to the politically weak (crown-bloc 1, others 2, occupied 3). The
@@ -1403,35 +1419,35 @@
 > its own value; growth gap med 3 points. **The skyway
 > (S1)**: geography is destiny only for those who can't afford to leave
 > it. Lift lanes are chartered at the founding by the same ledger logic
-> that rations the conduit — gain × value: an aerie goes where flight
+> that rations the conduit, gain × value: an aerie goes where flight
 > beats the ground by the most (the walled, far country) and where there
-> is cargo worth moving (wealth, ore, the works) — a lane to the easy
+> is cargo worth moving (wealth, ore, the works), a lane to the easy
 > lowland saves nothing. `sky_advantage` is exactly recomputable from the
 > two exported cost columns; the mean advantage behind the wall beats the
 > open country's in 27/29 worlds (median ~44–50%) while the MEDIAN region
-> gains nothing — the lanes serve the tail, which is the point. And the
+> gains nothing: the lanes serve the tail, which is the point. And the
 > boarding rule is class: aeries are owners' districts (the only loop
 > coupling is +0.6 elite share per epoch at the aerie; wealth, migration,
 > and every event history are byte-identical), so the twins finding
-> splits by row — the shadow twin's owners fly the wall its labor walks
+> splits by row: the shadow twin's owners fly the wall its labor walks
 > (twin_sky > 0 in 25/29 twin worlds). **The strata (H1)**:
 > class exists. Before H1 every region was one people with one number, so
-> every inequality the generator could speak of was BETWEEN places — the
+> every inequality the generator could speak of was BETWEEN places: the
 > magnate who owns the works and the hauler who coughs in them were the
 > same row of the table. Now each region splits into an owners' row and a
 > labor row: `elite_share` is founded on pure structure (the works, the
-> claimed seams, the court — company towns concentrate, smallholder
+> claimed seams, the court; company towns concentrate, smallholder
 > valleys spread) and then moved by the SAME history with no new dice
 > (rents concentrate it; bread, plagues, and won revolts level it; crushed
 > revolts expropriate under the garrison); `elite_pop_pct` and `class_gap`
 > are derived and exactly recomputable. The findings' two-level ledger
 > (population-weighted `gini_people` vs `gini_between_people`) measures
 > the thesis directly: median ≈37% under the grown census (58% before Z1) of person-level inequality is WITHIN
-> regions — invisible on any map of places — with ~5% of the people
+> regions, invisible on any map of places, with ~5% of the people
 > holding ~53% of the coin, ~24× apart from the labor they hire
-> (corr(refining, elite_share) 0.72 — ownership follows the works,
+> (corr(refining, elite_share) 0.72, ownership follows the works,
 > emergently). **Mountain ranges + passes (G1)**:
-> geography with SHAPE — 1–2 ridge polylines drawn blind per world raise the
+> geography with SHAPE: 1–2 ridge polylines drawn blind per world raise the
 > rock in a band and WALL the cost graph (×4.5 to cross, ×1.4 at the 1–2
 > passes), so centrality, the conduit, roads, markets, and migration all
 > react through the one graph they already run on. Measured: at matched
@@ -1442,20 +1458,20 @@
 > named in the frontier register and narrated by the chronicle. The drain
 > spiral is now measured per-side of the wall (geography legitimately
 > fragments the global correlation). **Rivers + downstream blight (G2)**: the
-> conductors — 1–2 rivers per world traced blind, gentlest-descent, from high
+> conductors: 1–2 rivers per world traced blind, gentlest-descent, from high
 > interior ground to the border; floodplains gain fertility (the seat is
 > drawn to the water, emergent), river edges cost ×0.6 (ridge crossings
 > become pass-grade gorges), and the blight CARRIES DOWNSTREAM inside
 > computeBlight (30% shipped, ×0.75 decay per step; `downstream_blight`
 > exactly recomputable from the exported chain order). Measured: the lower
 > river carries the heavier load in 23/23 chains; riverine regions out-earn
-> dry ones in 16/20 worlds — the river gives before it takes, and who drinks
+> dry ones in 16/20 worlds: the river gives before it takes, and who drinks
 > first was set by the land before anyone built anything. **The sea + ports
-> (G3)**: the edge of the world is a market — 1–2 adjacent box edges become
+> (G3)**: the edge of the world is a market: 1–2 adjacent box edges become
 > sea (blind), ports are sited on geology alone (flat, low coast, river-mouth
 > bonus: the town that drinks last often ships first), and `sea_access`
 > (exp-decayed cost-distance from the harbors over the same friction graph)
-> joins centrality inside the trade stream (0.65/0.35) — TWO geographic
+> joins centrality inside the trade stream (0.65/0.35): TWO geographic
 > poles. Measured: mean corr(sea_access, wealth) 0.29 beside centrality's
 > 0.81; the DOUBLE LOTTERY holds in 13/14 worlds (open-and-coastal out-earns
 > walled-and-inland); river-mouth harbors in 6/20 worlds. Two honest
@@ -1463,71 +1479,71 @@
 > is a blight-independent wealth pole; the policy gap is unchanged) and the
 > resource-curse ratio to 28% (the coast is an escape route from the curse;
 > it still holds inland). **The wild layer
-> (P1)**: anomalies — objects the ledger did not order. Relic ruins drawn
+> (P1)**: anomalies: objects the ledger did not order. Relic ruins drawn
 > blind in the deep past (a delve in the old workings, a tomb in the
 > barrens, sometimes a deadhold whose ground seeds a founding blight scar),
 > each with peril and yield; `delver_flux` routes the poor to them (risk is
 > a wage) and the shadow economy fences what they carry out (ruin hosts in
 > the high-predation/high-black-market quadrant ~70%). River banks become
-> fords (×2.2) except at 1–2 bridge towns per river — bridge towns out-earn
+> fords (×2.2) except at 1–2 bridge towns per river: bridge towns out-earn
 > their bridgeless river peers in ~88% of worlds. Apostate towers (0–2)
-> squat where governance and the grid both fail — sited on the founding
-> political map, NOT geology, because state failure is a social fact —
+> squat where governance and the grid both fail, sited on the founding
+> political map, NOT geology, because state failure is a social fact,
 > suppressing trust (exactly recomputable) and feeding the black market
 > (21/21 tower hosts low-trust/high-black-market). Half of worlds carry a
 > maelstrom that port siting shuns. **The faction turn (F1)**: the blocs
-> become agents. The chokepoint assets — bridges, passes, ports — are
+> become agents. The chokepoint assets (bridges, passes, ports) are
 > holdings (founding owner = the host's founding bloc); each epoch every
 > faction scores every gate it does not hold (live reach × a per-faction
-> taste — the magnates want quays and spans, the Crown wants passes — minus
+> taste; the magnates want quays and spans, the Crown wants passes; minus
 > the holder's reach and inertia) and the single strongest claim above the
 > bar seizes it. `toll_burden` walks each region's least-cost paths to the
 > seat and its port, drags wealth each epoch, and is banked by the gate
 > town (measured: seizures in 13/20 worlds, magnates the most acquisitive;
 > corr(toll_burden, wealth growth) ≈ −0.19). Apostate towers are raised
 > mid-run where governance keeps failing and burned when Crown or Temple
-> reach closes in (raise 12/20, burn 5/20 worlds) — and the burned region's
+> reach closes in (raise 12/20, burn 5/20 worlds), and the burned region's
 > shadow economy heals, because every column reads the final state.
-> **Escalation + the oligarchy loop (F2)**: money begets reach begets money —
+> **Escalation + the oligarchy loop (F2)**: money begets reach begets money:
 > every held gate pays its faction's treasury 3/epoch, the ledger lowers the
 > next seizure's bar (up to +15) and each taking debits it (12), so gates
 > fund the next gate (measured: the deepest ledger holds the most gates in
 > 11/14 acquisitive worlds). The three faction pairs accrue tension (+25 per
 > rival taking, +1.2 per epoch per contested region where the two claims
 > meet, 8%/epoch decay; exported in provenance) and a pair past a seeded bar
-> FIRES the war machinery within two epochs — the battlefield prefers
+> FIRES the war machinery within two epochs: the battlefield prefers
 > contested ground where that pair meets, every war event carries its two
 > factions, and the grievance is spent in blood (tension resets). Wars are
 > policy, not weather; the chronicle names the powers, not just the ground
-> (14/14 war worlds). **Peace terms (F3)**: defeat is an institution — the
+> (14/14 war worlds). **Peace terms (F3)**: defeat is an institution. The
 > winter after a war with room in the record, terms are set at the
 > battlefield: the winner (live reach at the ground + ledger depth) takes up
 > to two of the loser's gates nearest the field and half its treasury in
-> tribute, which then funds the winner's next seizure — victory compounds
+> tribute, which then funds the winner's next seizure: victory compounds
 > through the ledger (measured: treaties follow 14/14 eligible wars; gates
 > ceded in 9/14 treaty worlds; the chronicle names the terms' author in
-> every one). **Dynasties (E5)**: the powers have faces — three ruler lines
+> every one). **Dynasties (E5)**: the powers have faces: three ruler lines
 > (Sovereign/Hierarch/First Magnate) with blind-drawn reigns, named in each
 > power's register and unique against the whole world; successions are
-> courtly events (faction + ruler, no region), ~30% contested — a divided
+> courtly events (faction + ruler, no region), ~30% contested: a divided
 > court takes no gates that year and its rivals' tension rises (measured:
 > successions in 12/12 ep=10 worlds, crises in 11/12; every succession
 > narrated; the founding three byte-stable across the epoch knob; the
 > chronicle dated by the reigning Sovereign). **The argument surface (A1)**:
 > readers praised the fantasy and missed the point, so the app now SAYS what
-> it measures — a findings panel computed live from the exported columns
+> it measures: a findings panel computed live from the exported columns
 > (quintile blight ratio, the shadow earnings gap, darkness and its burden,
 > who drinks last, who pays the gates), echoed in provenance as
 > `hinterland.findings` (exactly recomputable, stress-tested), a TWIN
 > exhibit drawing the world's sharpest same-distance pair across the wall,
 > an injustice default view with question-labels, and a chronicle that
 > closes with a verdict: "no villain wrote it, and it happened anyway."
-> **Divergent histories (V1)**: the deepest critique — every loop amplified
-> inequality, so every world converged to one story — answered with real
+> **Divergent histories (V1)**: the deepest critique: every loop amplified
+> inequality, so every world converged to one story, answered with real
 > counter-currents: the leveling plague (survivors charge more), reform and
 > reaction (measures that mutate the loop's own parameters mid-run: dumping
 > eased/entrenched, grid charters, toll amnesties/crackdowns, retention
-> acts, and the Crown Granary — a bounded transfer toward the median), and
+> acts, and the Crown Granary, a bounded transfer toward the median), and
 > the revolt (once per run; won = a free town + softened tolls + possible
 > granary concession, crushed = a garrison after the hangings). Measured
 > across 24 worlds: 7 closed their gap, 9 entrenched, 8 held; revolts won
@@ -1536,12 +1552,12 @@
 > was the one that moved coin downhill. **The
 > chronicle
 > (E4)**: the world narrates
-> itself — a deterministic written history (downloadable markdown + on-page
+> itself: a deterministic written history (downloadable markdown + on-page
 > panel) composed from the founding, the dated event timeline with the causal
 > chains told as chains, and the closing state of the realm; every event is
 > narrated by settlement name and date, and the prose references only what
 > the export carries. **The naming of things (E6)**: the words are grown
-> from the world — a toponym grammar whose qualifying parts are selected by
+> from the world: a toponym grammar whose qualifying parts are selected by
 > GEOLOGY (a river-mouth town earns "-mouth", ore country its Delf, the
 > high country High/Tor/Fell, the fens their Fen; measured 53/22/25
 > plain/fused/spaced), so the toponymy stays byte-stable across every knob
@@ -1551,10 +1567,10 @@
 > the top three roads are named for their cargo; history files its events
 > under names that recompute exactly (Seam Wars, Peaces, Risings, Landings,
 > ground-matched plagues); and towns earn DERIVED bynames (the Yoked / the
-> Free / the Gilded / the Ashen…, 26% of towns, first match wins) — the
+> Free / the Gilded / the Ashen…, 26% of towns, first match wins): the
 > chronicle closes The Years with the byname roll. Society flavors the
 > byname and the event name, never the place name. **The places between
-> (L1)**: four location types that pull on the model — the FREEPORT (a
+> (L1)**: four location types that pull on the model: the FREEPORT (a
 > harbor beyond the writ on the farthest coast: a smuggler sink, a
 > founding retention offset, invisible to official sea access, open
 > under sealed quays, closed to the Dominion), the STILLAIR (a
@@ -1562,7 +1578,7 @@
 > grounds the skyway entirely), the HIGH SANCTUARY (an unchartered
 > healer and pilgrim draw that hides its people from the census:
 > legibility +15, measured ~96 at the refuge vs ~38 elsewhere), and
-> HUNTER CAMPS (predation −18/−8, mobility +4, black market +6 — risk
+> HUNTER CAMPS (predation −18/−8, mobility +4, black market +6, risk
 > as the poor's one wage). All named, drawn, inspected, chronicled,
 > exported. With time real,
 > `abandonment_index` became true hysteresis (peak wealth − present wealth) and

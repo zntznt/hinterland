@@ -1,28 +1,28 @@
 # A Chronicle of the Hinterland
 
-*The world called "fix-6", as set down at Halemook in the year 1250, in the reign of Cramhold.*
+*The world called "fix-6". Written down at Halemook in the year 1250, during the reign of Cramhold.*
 
-## The Founding — year 1000
+## The Founding, Year 1000
 
-In the beginning of this record the realm counted 12 settled regions, and Halemook held the capital. The wind stood out of the west, as it does in that country, and everything else followed from the ground: where the aetherstone lay, where the land would carry a road, and where it would not.
+This record covers a realm of 12 settled regions, with its capital at Halemook. The wind comes from the west. Most of what follows was set by the ground itself: where the aetherstone lies, where the land will carry a road, and where it won't.
 
-No charter drew the towns to size. The centuries did: good land compounded, the fairs drew the valleys in, and by year 1000 the largest town held 14,335 souls to the median town's 2,424 — a hierarchy grown, not granted, and steeper every century the compounding ran.
+No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held 14,335 people to the median town's 2,424. The bigger a town got, the faster it grew.
 
-The aetherworks at Halemook turned aetherstone to lumen, and the trunk lines ran from their yards to the capital. The Temple kept holy ground at Lowenne (by High Lorvasonne) — out where the sacred substance lies and the Crown's writ runs thin. Every settlement of the realm sat on the grid at the founding — a generosity of the ledgers the chronicle does not expect to last.
+The aetherworks at Halemook refine aetherstone into lumen, and the trunk lines run from them to the capital. The Temple holds sacred ground at Lowenne (by High Lorvasonne), out where the aetherstone lies and the Crown's authority is weak. Every settlement started on the grid. The ledgers rarely allow that, and never for long.
 
-In the founding charters too is the Quill Lane: lift-barges between High Lorvasonne and Halemook, above the walls, the fords, and every gate on the ground. The lanes go where the ground is worst and the cargo richest — a lane to the easy lowland saves nothing — and passage is sold at the aerie door, at a price that is the point. The road below is for everyone; the sky is not.
+There is also the Quill Lane: lift-barges running between High Lorvasonne and Halemook, over the walls, fords, and gates below. The lanes go where the ground is hardest and the cargo most valuable, and you pay to board at the aerie. The road is open to everyone; the sky isn't.
 
-The Skallorvek Teeth and Brazzek Teeth wall the country, and the roads over the rock go by Druk Stair. 5 of the realm's regions lie in the mountains' shadow, on the wrong side of the wall from Halemook — and the chronicle will show what that costs.
+The Skallorvek Teeth and Brazzek Teeth wall off the country, and the roads across them go through Druk Stair. 5 regions sit in the mountains' shadow, cut off from Halemook by the wall. That costs them, as the record will show.
 
-The Follwithere Beck comes down off the high ground by High Lorvasonne and runs through 2 regions to the border. The towns along it drink in order: High Lorvasonne drinks it clean, and Glare, at the mouth, drinks whatever every town and aetherworks upstream let fall into the water. The order was set by the land before anyone built anything, and no one who lives at the mouth chose it.
+The Follwithere Beck runs down from the high ground by High Lorvasonne through 2 regions to the border. The towns drink from it in order: High Lorvasonne gets it clean; Glare, at the mouth, gets whatever every town and aetherworks upstream have dumped in. Nobody at the mouth chose to be last. The land decided that.
 
-The sea lies to the east; the charts name it Crannock Sea. The realm's gate is Wexbraverby Harbor: whatever the mines raise and the aetherworks refine leaves the country there, and whoever holds the quay holds the tariff. Distance to the water is the realm's second lottery, drawn at the founding like the first. Sailors give a wide berth to the Sylvanth, where the sea turns on itself; no quay was ever raised in its reach.
+The sea lies to the east, and the charts call it Crannock Sea. The realm's gate is Wexbraverby Harbor: everything the mines raise and the aetherworks refine leaves through it, and whoever holds the quay collects the tariff. How far a town sits from the water was luck, decided at the founding like everything else. Sailors keep well clear of the Sylvanth, where the sea turns on itself; no quay was ever built within its reach.
 
-The old world is not gone: the delve called Molvark gapes in the old workings by High Lorvasonne, the tomb of Eline keeps its silence in the barrens by Zoltgard and the delve called Ferkul gapes in the old workings by Glare. Delvers walk the Glare road every season, because risk is a wage where nothing else pays one; not all of them walk back, and what they carry out is sold in no sanctioned market.
+The old world is still here: the delve called Molvark gapes in the old workings by High Lorvasonne, the tomb of Eline keeps its silence in the barrens by Zoltgard and the delve called Ferkul gapes in the old workings by Glare. Delvers work the Glare road every season, because it pays when nothing else does. Not all of them come back, and what they carry out is sold off the books.
 
-Beyond the last writ-stone, by Santhielle, the lawless keep a harbor of their own: Mere Quay. No charter names it, no gate charges it, and the assessors who visit do not go twice. What the realm will not carry on its books leaves the country there, and the ground around it keeps what the gates would have taken.
+Past the last boundary stone, by Santhielle, the lawless keep their own harbor: Mere Quay. No charter lists it, no gate taxes it, and assessors who visit don't come back a second time. Anything the realm won't carry on its books leaves through here, and the ground around it keeps what the gates would have taken.
 
-High above the roads, by Zoltgard, stands Haine Refuge — holy ground the Temple never consecrated and cannot forgive. It heals whoever climbs to it and asks no writ; the census does not climb at all, so the people it shelters are people the realm cannot count. Pilgrims walk to it beside the sanctioned roads, which the Temple is reminded of every festival.
+High above the roads, by Zoltgard, stands Haine Refuge, holy ground the Temple never sanctioned and can't forgive. It heals anyone who climbs to it and asks nothing. The census never climbs that far, so the people it shelters go uncounted. Pilgrims walk to it alongside the official roads, which the Temple is reminded of every festival.
 
 Where the beasts are worth a bounty and the constabularies never come, hunters keep Brak Camp by Wexbraverby. The stands thin the predation on their ground, the trophies are fenced where nothing is taxed, and for the poorest the bounty is the one rung of a ladder the realm never built.
 
@@ -30,100 +30,100 @@ The rivers are crossed at Glare Bridge and High Lorvasonne Bridge; everywhere el
 
 ## The Years
 
-The chronicle divides these years into ages, named for what the realm was living through: **the Age of the Gates** (1000–1000), when the gap held, **the Long Desolation** (1025–1125), when the gap widened, **the Quiet Years** (1150–1200), when the gap held and **the Age of Accumulation** (1225–1250), when the gap widened. The names are not decreed; they are read from the record — from where the wealth concentrated, the gates charged tariffs, the towns emptied or came back.
+These years split into ages, each named for what the realm was living through: **the Age of the Gates** (1000–1000), when the gap held, **the Long Desolation** (1025–1125), when the gap widened, **the Quiet Years** (1150–1200), when the gap held and **the Age of Accumulation** (1225–1250), when the gap widened. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
 
-**Year 1025.** Politics in a capital Wexbraverby had never seen closed the sea lanes to it. the Kestrel Powers's quarrel with the Metropole became Wexbraverby's ruin: the quays that had grown a second fortune on foreign trade stood idle, the cargoes did not come, and the coast that had rivalled the capital busted in a single year. The gap the trade had opened closed the hard way.
+**Year 1025.** Politics in a capital Wexbraverby had never seen closed the sea lanes to it. A quarrel between the Kestrel Powers and the Metropole became Wexbraverby's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
 
-**Year 1025.** Plague took Santhielle. The blight had sat heavy on that country for years, and when the sickness came it found a town already half-poisoned. A third of the people were carried off or fled. The roads named it the Ash Fever of 1025.
+**Year 1025.** Plague took Santhielle. The blight had sat heavy on that country for years, so the sickness arrived to a town already half-poisoned. A third of the people died or fled. The roads named it the Ash Fever of 1025.
 
-**Year 1050.** The rains failed over High Kellow, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1050.
+**Year 1050.** The rains failed over High Kellow, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1050.
 
-**Year 1050.** Plague took Evere. The blight had sat heavy on that country for years, and when the sickness came it found a town already half-poisoned. A third of the people were carried off or fled. The roads named it the Grey Breath of 1050.
+**Year 1050.** Plague took Evere. The blight had sat heavy on that country for years, so the sickness arrived to a town already half-poisoned. A third of the people died or fled. The roads named it the Grey Breath of 1050.
 
-**Year 1075.** War came to Halemook, as it comes to ground that great powers claim and none can hold. The powers that met there were the Crown and the magnates; the ground was merely where they met. When the fighting burned out, the capital was the poorer by a third of its people and a quarter of its wealth, and the mines and aetherworks were ruined ground. The Crown's constabulary arrived after the blood, and stayed. The scribes head the page: the War of 1075.
+**Year 1075.** War came to Halemook. It comes to ground that great powers claim and none can hold. The two powers fighting there were the Crown and the magnates. The town was just where they met. When the fighting stopped, the capital had lost a third of its people and a quarter of its wealth, and the mines and aetherworks were wrecked. The Crown's constabulary arrived after the blood, and stayed. The scribes titled the page the War of 1075.
 
-**Year 1075.** The old Hierarch died, and Ilmare took the censer without incident — which the chronicle records precisely because it is rare.
+**Year 1075.** The old Hierarch died, and Ilmare took the censer without incident. That is rare enough to be worth recording.
 
-**Year 1075.** The old First Magnate died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Gharruk took the chair, over objections not all of which were buried with their holders.
+**Year 1075.** The old First Magnate died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Gharruk took the chair. Some who objected were killed, and the objections did not stop.
 
-**Year 1075.** The rains failed over Halemook, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1075.
+**Year 1075.** The rains failed over Halemook, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1075.
 
-**Year 1075.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
+**Year 1075.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
 
-**Year 1075.** The Temple came to Santhielle, to the ground of its suffering, and consecrated it as Evalithe. Pilgrims walk that road now. Where the Crown's writ had failed and the magnates' ledgers saw nothing worth the ink, the faith planted its standard — after the harm, claiming the ground.
+**Year 1075.** The Temple came to Santhielle, to the ground of its suffering, and consecrated it as Evalithe. Pilgrims walk that road now. The Crown's writ had failed there and the magnates' ledgers had seen nothing worth the ink. The faith moved in after the harm was done, and claimed the ground.
 
-**Year 1100.** the Cindral Directorate did not send a fleet to Wexbraverby Harbor; it sent factors and a charter. The aetherworks were bought, the coast was wired to the sea within the season, and the coin came in to build — the town grew richer than it had ever been. The registers at the capital still bear the town's name; the registers that matter now are kept in another capital, and half of what the ground yields is entered there.
+**Year 1100.** the Cindral Directorate did not send a fleet to Wexbraverby Harbor. It sent factors and a charter. The aetherworks were bought, the coast was wired to the sea within the season, and money came in to build. The town grew richer than it had ever been. The registers at the capital still carry the town's name. The registers that matter now are kept in another capital, and half of what the ground yields is entered there.
 
-**Year 1100.** The old Sovereign died, and Crannock took the capital without incident — which the chronicle records precisely because it is rare.
+**Year 1100.** The old Sovereign died, and Crannock took the capital without incident. That is rare enough to be worth recording.
 
-**Year 1100.** In the winter after the fighting, terms were set at Halemook. The Crown wrote them: the magnates ceded nothing but its claim and kept its ledger, having little in it. The chronicle observes that the terms were written by the party with the deeper ledger, as terms usually are. The clerks copied it fair as the Peace of Halemook.
+**Year 1100.** In the winter after the fighting, terms were set at Halemook. The Crown wrote them: the magnates ceded nothing but its claim and kept its ledger, which held little. The side with the deeper ledger wrote the terms, which is how terms are usually written. The clerks filed the fair copy as the Peace of Halemook.
 
-**Year 1100.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
+**Year 1100.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
 
-**Year 1100.** The capital, chastened by the years behind it, decreed the Crown Granary: a levy on the fat years and bread in the lean ones — the first decree in the realm's history to move coin downhill. The chronicle notes that it took a wound to buy a mercy.
+**Year 1100.** The capital passed the Crown Granary. It taxes the fat years to buy bread for the lean ones. It is the first decree in the realm's history to move coin downhill. It had blocked reform for years, and only gave in once the damage was bad enough.
 
-**Year 1100.** High Kellow rose. The constabulary line broke before the mob — and the mob held. High Kellow keeps what it makes now, and its gates charge no one. And it flourished: the aetherworks the charter had throttled ran free, the artifice the tariffs had taxed to the bone found its feet, and people came to the free town from the tariffed country around it. Liberation released what oppression had suppressed. The people keep the date as the High Kellow Rising.
+**Year 1100.** High Kellow rose. The constabulary line broke and the mob held. High Kellow keeps what it makes now, and its gates charge no one. And it flourished. The aetherworks the charter had held back ran at full tilt, the crafts the tariffs had taxed to the bone found their feet, and people came to the free town from the tariffed country around it. Freedom released what the old order had held down. The people keep the date as the High Kellow Rising.
 
-**Year 1125.** In this year the aetherworks at Halemook closed its yards for good. What the ore had built, the ore's end unbuilt; the town kept its wires and lost its wages.
+**Year 1125.** The aetherworks at Halemook closed its yards for good. The ore that built the town ran out, and the town kept its wires but lost its wages.
 
-**Year 1125.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on how many it took.
+**Year 1125.** The river rose over Glare and took the low ground with it: the fields, the founding wharves, whatever stood in the way. The accounts call it the Glare Flood, and they do not agree on how many it took.
 
 **Year 1125.** A storm came off the water and stood over the coast for three days. Halemook took the worst of it, as the exposed shore always does; the Great Storm of 1125 is the name the survivors gave the year.
 
-**Year 1150.** The Dominion's sails stood off Wexbraverby Harbor at first light, and by winter its writ ran over 4 regions. There was no war to record: the fleet was the argument. The quays now levy for a power beyond the sea, the yield of the occupied country is assessed at the water, and the wires came with the constabulary — the first country in the realm to be wired entire, because its cargo is wanted elsewhere. The Dominion's own registers file it as the Landing at Wexbraverby.
+**Year 1150.** The Dominion's fleet stood off Wexbraverby Harbor at dawn, and by winter it held 4 regions. There was no fighting. Nobody could stop it. The quays now collect for a power across the sea, the yield of the occupied country is assessed at the water, and the wires arrived with the constabulary. It is the first country in the realm to be wired end to end, because its cargo is wanted elsewhere. The Dominion's own registers file it as the Landing at Wexbraverby.
 
-**Year 1150.** The old First Magnate died, and Voldrok took the chair without incident — which the chronicle records precisely because it is rare.
+**Year 1150.** The old First Magnate died, and Voldrok took the chair without incident. That is rare enough to be worth recording.
 
 **Year 1150.** A storm came off the water and stood over the coast for three days. Halemook took the worst of it, as the exposed shore always does; the Great Storm of 1150 is the name the survivors gave the year.
 
-**Year 1150.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
+**Year 1150.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
 
-**Year 1175.** New aetherworks fires were lit at Wexbraverby. The capital called it progress; the towns the new trunk line passed over called it something else.
+**Year 1175.** New aetherworks fires were lit at Wexbraverby. The capital called it progress. The towns the new trunk line skipped did not.
 
-**Year 1175.** The old Sovereign died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Cramhold took the capital, over objections not all of which were buried with their holders.
+**Year 1175.** The old Sovereign died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Cramhold took the capital. Some who objected were killed, and the objections did not stop.
 
-**Year 1175.** The rains failed over Halemook, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1175.
+**Year 1175.** The rains failed over Halemook, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1175.
 
-**Year 1200.** The old Hierarch died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Marielaine took the censer, over objections not all of which were buried with their holders.
+**Year 1200.** The old Hierarch died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Marielaine took the censer. Some who objected were killed, and the objections did not stop.
 
-**Year 1200.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on how many it took.
+**Year 1200.** The river rose over Glare and took the low ground with it: the fields, the founding wharves, whatever stood in the way. The accounts call it the Glare Flood, and they do not agree on how many it took.
 
 **Year 1200.** A storm came off the water and stood over the coast for three days. Halemook took the worst of it, as the exposed shore always does; the Great Storm of 1200 is the name the survivors gave the year.
 
-**Year 1225.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
+**Year 1225.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
 
-**Year 1250.** The old First Magnate died, and the succession was contested. While the court fought itself the gates went unwatched and the realm's rivals circled; in the end Dovrath took the chair, over objections not all of which were buried with their holders.
+**Year 1250.** The old First Magnate died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Dovrath took the chair. Some who objected were killed, and the objections did not stop.
 
-**Year 1250.** The rains failed over Halemook, and failed again. The wells that were shared were shared no longer; the country the water had barely reached went to dust first. The scribes head the dry page the Drought of 1250.
+**Year 1250.** The rains failed over Halemook, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1250.
 
-**Year 1250.** The river rose over Glare and took the low ground with it — the fields, the founding wharves, whatever the water wanted. the Glare Flood, the accounts call it, and they do not agree on how many it took.
+**Year 1250.** The river rose over Glare and took the low ground with it: the fields, the founding wharves, whatever stood in the way. The accounts call it the Glare Flood, and they do not agree on how many it took.
 
-**Year 1250.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying — the accounts differ, but the wagons do not. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
+**Year 1250.** Fortune turned at Wexbraverby: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Wexbraverby Find.
 
-The chronicle closes its count of the years with the names they left behind. The realm now speaks of Vorvek the Hollow, High Lorvasonne the Hollow, Bellok the Hollow, Glare the Yoked, High Kellow the Free, Santhielle the Yoked, Zoltgard the Hollow, Wexbraverby the Yoked, High Kornhak the Hollow, Dharrok the Hollow and Evere the Yoked — bynames no charter granted and no decree can take away, which is why they are the truest record in this document.
+The years leave names behind them. The realm now speaks of Vorvek the Hollow, High Lorvasonne the Hollow, Bellok the Hollow, Glare the Yoked, High Kellow the Free, Santhielle the Yoked, Zoltgard the Hollow, Wexbraverby the Yoked, High Kornhak the Hollow, Dharrok the Hollow and Evere the Yoked: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
 
-## The State of the Realm — year 1250
+## The State of the Realm, Year 1250
 
 Of the realm's 8 settled regions, 1 rose through the years, 1 held steady, 2 declined and 4 collapsed outright.
-4 holdings stand empty now — the deadholds, where a town was and is not. The maps still name Bellok, High Kellow, Zoltgard and Dharrok; the roads have stopped going.
-And 4 places have come back as something else — Vorvek, High Lorvasonne and Santhielle stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
-Glare is the emptiest of the ghost country: its best years are a memory the roads no longer visit.
-Wexbraverby rose furthest of any place in the record — which in this realm says as much about where it stood as what it did.
+4 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Bellok, High Kellow, Zoltgard and Dharrok, but the roads have stopped going there.
+And 4 places have come back as something else. Vorvek, High Lorvasonne and Santhielle stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
+Glare is the emptiest of the ghost country. Its best years are gone, and the roads no longer go there.
+Wexbraverby rose further than any other place in the record. In this realm, that says as much about where it stood as about anything it did.
 
 The Crown holds 6 regions, the Temple 4, the magnates 1; 0 are contested between them, and 1 answer to no one at all.
 
-Of the realm's 4 gates — the bridges, the passes, the quays — the Crown keeps 0, the Temple 2, and the magnates 0; 0 stand untolled. Every levy on the list is paid by people who did not choose the road.
+Of the realm's 4 gates, meaning the bridges, the passes, and the quays, the Crown keeps 0, the Temple 2, and the magnates 0. 0 stand untolled. Every levy on the list is paid by people who did not choose the road.
 
-The tariff ledgers run deepest with the Temple, and the ledger buys the next gate — money begets reach begets money. Between the powers, the chronicle records the Crown and the Temple standing nearest to blows.
+The tariff ledgers run deepest with the Temple, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the Temple stand nearest to blows.
 
-And in every town the record counts two peoples under one name: the owners' row and the labor it hires. Taken together, 4.9 in every hundred of the realm's people hold 41 of every hundred coins, and live 13.5 times better than those who work for them. Nowhere is the ledger sharper than at High Lorvasonne, where 51 coins in the hundred belong to the few; a map of regions, which knows towns but not rows, misses 56 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4.9 in every hundred of the realm's people hold 41 of every hundred coins, and live 13.5 times better than the people who work for them. The gap is sharpest at High Lorvasonne, where 51 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 56 parts in a hundred of the whole spread.
 
-And over all of it stands the Dominion, which holds 4 regions from its foothold at Wexbraverby and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns; the chronicle is required to note the difference between reigning and ruling.
+And over all of it stands the Dominion, which holds 4 regions from its foothold at Wexbraverby and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns. It no longer rules the occupied country, and the two are not the same thing.
 
-At the record's close the grid reaches every settlement of the realm. The chronicle notes it without comment, so that later readers may check whether it lasted.
+At the record's close, the grid reaches every settlement in the realm. That is written here plainly, so a later reader can check whether it lasted.
 
 ## What the Record Shows
 
-The chronicler is required to close with what the numbers say, and the numbers say this. This world entrenched: the spread of fortunes measured 0.30 at the founding and 0.41 at the close, and the turning point was the Crown Granary of 1100. The poorest fifth of the realm carries 3.2 times the blight of the richest fifth. Behind the Skallorvek wall, the median settlement earns 100 in the hundred less than the open country at the same remove. 0 regions sit off the grid because the ledgers said serving them would not pay. Glare drinks 1 points of other towns' poison for the crime of standing at the mouth. 7 regions pay tariffs at gates whose holders they never chose. And within every wall the shares were already set: 4.9 in a hundred hold 41 of every hundred coins, and stand 13.5 times apart from the rest. The skyway would abolish 54 parts in a hundred of the walled country's distance to the capital, and the walled country's labor may not board it. And the realm's own ledger is a column in someone else's: 4 regions occupied, the yield assessed at the quay, the free country keeping 1.4 times the share the occupied country keeps — sovereignty was the last inequality, and it ordered all the others. The empire mostly never came; it bought. 1 coast is a foreign concession — richer than the realm's median at 62 against 14, and owning barely half of it, 50 in the hundred of the yield entered in the Cindral Directorate's books, not the realm's. And Glare and Bellok stand the same distance from the capital, one in the open and one behind the wall; the record shows which one prospered, and the mountain is the whole of the explanation.
+The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.30 at the founding to 0.41 at the close. It turned on the Crown Granary in 1100. The poorest fifth of the realm carries 3.2 times the blight of the richest fifth. Behind the Skallorvek wall, the median settlement earns 100 in the hundred less than the open country at the same distance. 0 regions sit off the grid because the ledgers said serving them would not pay. Glare drinks 1 points of other towns' poison, only because it stands at the mouth. 7 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 4.9 in a hundred hold 41 of every hundred coins, and live 13.5 times better than the rest. The skyway would cut 54 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. And the whole realm's ledger is now one column in someone else's book: 4 regions occupied, the yield assessed at the quay, the free country keeping 1.4 times the share the occupied country keeps. The gap between who is sovereign and who is occupied is the largest one in the realm, and it shapes every other. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 62 against 14, and owning barely half of it: 50 in the hundred of the yield is entered in the Cindral Directorate's books, not the realm's. And Glare and Bellok stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

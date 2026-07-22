@@ -9321,7 +9321,40 @@
         rows: (s, row) => row("consecrated", "where the Temple planted its standard, often after the harm") },
       maelstrom: { get: () => model.maelstrom,
         name: (m) => m.name, sub: () => "the maelstrom · a turning of the sea", cap: "THE MAELSTROM",
-        rows: (m, row) => row("side", `the ${m.side} water`) + row("sailors", "they shun it, and ports keep clear of its reach") }
+        rows: (m, row) => row("side", `the ${m.side} water`) + row("sailors", "they shun it, and ports keep clear of its reach") },
+      freeport: { get: () => model.regions.find(r => r.id === model.freeport.regionId) || model.regions[0],
+        name: () => model.freeport.name, sub: () => "freeport · a harbor beyond any writ", cap: "THE FREE PORT",
+        rows: (r, row) => row("writ", "no crown charter, no temple toll — its trade enters no ledger") + row("sea reach", `${r.seaAccess}`) },
+      sanctuary: { get: () => model.regions.find(r => r.id === model.sanctuary.regionId) || model.regions[0],
+        name: () => model.sanctuary.name, sub: () => "high sanctuary · refuge above the sanctioned faith", cap: "THE SANCTUARY",
+        rows: (r, row) => row("heals", "without a charter — a healer the planner never rationed") + row("legibility", `hides ${r.legibility} from the census`) },
+      peak: { get: (id) => model.regions[id],
+        name: (r) => (model.settlements.find(s => s.regionId === r.id) || { name: r.placeName }).name + " summit", sub: (r) => `peak · spot height ${r.elevation}`, cap: "THE SUMMIT",
+        rows: (r, row) => row("elevation", `${r.elevation}`) + row("ruggedness", `${r.ruggedness}`) + row("biome", `${r.biome}`) },
+      skyport: { get: (id) => model.regions[id],
+        name: (r) => ((model.settlements.find(s => s.regionId === r.id) || {}).name || r.placeName) + " Aerie", sub: () => "skyport · an aerie of the skyway", cap: "THE AERIE",
+        rows: (r, row) => row("sky advantage", `${r.skyAdvantage}`) + row("capital by air", `${r.seatCostSky}`) },
+      camp: { get: (id) => model.regions[id],
+        name: (r) => (model.settlements.find(s => s.regionId === r.id) || { name: r.placeName }).name + " camp", sub: () => "hunter camp · where the beasts are worth a bounty", cap: "THE CAMP",
+        rows: (r, row) => row("predation", `−18 from camp ground`) + row("mobility", `+4 — risk is a wage`) },
+      refinery: { get: (id) => model.regions[id],
+        name: (r) => ((model.settlements.find(s => s.regionId === r.id) || {}).name || r.placeName) + " aetherworks", sub: () => "refinery · turns aetherstone into lumen", cap: "THE AETHERWORKS",
+        rows: (r, row) => row("capacity", `${r.refining}`) + row("blight", `spoil load ${r.blight}`) },
+      still: { get: (id) => model.regions[id],
+        name: () => model.stillName, sub: () => "stillair · ground where the lift-stones die", cap: "THE STILL",
+        rows: (r, row) => row("skyway", "no aerie can be chartered — a wall no money crosses") },
+      garrison: { get: (id) => model.regions[id],
+        name: (r) => ((model.settlements.find(s => s.regionId === r.id) || {}).name || r.placeName) + " post", sub: () => "constabulary post · the crown's force on the ground", cap: "THE POST",
+        rows: (r, row) => row("strength", `${r.wardline}`) + row("force projection", `${r.forceProjection}`) },
+      event: { get: (id) => model.regions[id],
+        name: (r) => r.eventType ? r.eventType.replace(/_/g, " ") : "event", sub: (r) => `event · ${1000 + 25 * (r.eventEpoch || 0)}`, cap: "THE EVENT",
+        rows: (r, row) => row("type", `${r.eventType}`) + row("severity", `${r.eventSeverity}`) + row("epoch", `${r.eventEpoch}`) },
+      conduit: { get: (i) => model.conduitEdges[i],
+        name: (e) => `grid line ${model.regions[e.a].id}–${model.regions[e.b].id}`, sub: (e) => `conduit · ${e.cls || "branch"} line`, cap: "THE CONDUIT",
+        rows: (e, row) => row("class", `${e.cls || "branch"}`) + row("from", (model.settlements.find(s => s.regionId === model.regions[e.a].id) || { name: model.regions[e.a].placeName }).name) + row("to", (model.settlements.find(s => s.regionId === model.regions[e.b].id) || { name: model.regions[e.b].placeName }).name) },
+      road: { get: (i) => model.roadEdges[i],
+        name: (e) => `${e.name || "road"} (${e.cls || "track"})`, sub: (e) => `road · traffic ${e.traffic || 0}`, cap: "THE ROAD",
+        rows: (e, row) => row("class", `${e.cls || "track"}`) + row("traffic", `${e.traffic || 0}`) + row("from", (model.settlements.find(s => s.regionId === model.regions[e.a].id) || {}).name || model.regions[e.a].placeName) + row("to", (model.settlements.find(s => s.regionId === model.regions[e.b].id) || {}).name || model.regions[e.b].placeName) },
     };
 
     function renderInspector() {
@@ -9474,6 +9507,82 @@
           evs.map(ev => `<div class="insp-ev"><b>${yr(ev.epoch)}</b>: ${ev.name && ev.name.startsWith("the ") ? ev.name : ev.type.replace(/_/g, " ")}${ev.outcome ? " (" + ev.outcome + ")" : ""}${ev.faction ? " (" + ev.faction + ")" : ""}</div>`).join("") +
           (reg.occupiedEpoch !== -1 && !reg.occupied ? `<div class="insp-ev"><b>freed</b>: threw the Dominion out</div>` : ""));
       }
+      // THE FULL LEDGER: every exported column, with a short description of
+      // what it measures and how. Collapsed by default — click to expand.
+      L.push(`<div class="insp-sec" onclick="
+        const t=this.nextElementSibling;t.style.display=t.style.display==='none'?'':'none';
+        this.textContent=t.style.display==='none'?'THE FULL LEDGER ▸':'THE FULL LEDGER ▾'
+      " style="cursor:pointer">THE FULL LEDGER ▸</div>`);
+      L.push(`<table style="display:none;font-size:13px;line-height:1.3;max-height:420px;overflow-y:auto">` +
+        row("region_id", `${reg.id} — stable id within the file`) +
+        row("wealth", `${reg.wealth} — emergent blend of extraction, artifice, and trade income`) +
+        row("is_capital_region", `${reg.isCapital ? 1 : 0} — region containing the metropolis`) +
+        row("population", `${reg.population} — settlement + rural population`) +
+        row("pop_density", `${reg.popDensity} — persons per 100×100 cell`) +
+        row("aetherstone_endowment", `${reg.endowment} — ore richness: blind geology`) +
+        row("artifice_index", `${reg.A} — command of magically-enabled productivity`) +
+        row("artifice_index_t0", `${reg.A0} — the works as founded`) +
+        row("terrain_ruggedness", `${reg.ruggedness} — blind geology; feeds travel friction`) +
+        row("fertility", `${reg.fertility} — derived from climate, water, elevation, biome`) +
+        row("elevation", `${reg.elevation} — blind geology; blight flows downhill`) +
+        row("biome", `${reg.biome} — ordered rules from elevation, rain, temp`) +
+        row("biome_habitability", `${reg.biomeHabitability} — per-biome land quality (grassland=80, alpine=10)`) +
+        row("biome_move_cost", `${reg.biomeMoveCost} — per-biome movement friction`) +
+        row("water_access", `${reg.waterAccess} — surface + aquifer; income precondition`) +
+        row("centrality_to_capital", `${reg.centrality} — inverted cost-distance from the capital`) +
+        row("aetherworks_capacity", `${reg.refining} — 0 except refinery regions`) +
+        row("value_retention", `${reg.retention} — share of value that stays local`) +
+        row("on_grid", `${reg.onConduit ? 1 : 0} — wired to the lumen grid`) +
+        row("grid_access", `${reg.conduitAccess} — 100 when wired; decays off-wire`) +
+        row("arcane_service_index", `${reg.arcaneServices} — metered magic; needs grid + wealth`) +
+        row("blight_load", `${reg.blight} — aetherworks plumes + disposal doctrine spoil`) +
+        row("injustice_idx", `${reg.injustice} — labeled composite (blight × poverty)`) +
+        row("healing_reach", `${reg.healingReach} — decay to nearest healer`) +
+        row("safe_water", `${reg.safeWater} — waterworks/grid/wealth minus blight`) +
+        row("vulnerability_idx", `${reg.vulnerability} — poverty + peripherality + tier`) +
+        row("disease_burden_per_1k", `${reg.burden} — total = env + water + unmet causes`) +
+        row("service_gap_idx", `${reg.serviceGap} — inverse reach + facility distance + off-grid`) +
+        row("dominant_bloc", `${reg.occupied ? "dominion" : reg.bloc} — argmax of crown/temple/magnate`) +
+        row("market_access", `${reg.marketAccess} — Hansen index over road-network costs`) +
+        row("pilgrim_flux", `${reg.pilgrimFlux} — pilgrim traffic to sanctioned sites`) +
+        row("force_projection", `${reg.forceProjection} — how far the state can throw force`) +
+        row("order_level", `${reg.orderLevel} — realm order + local police state`) +
+        row("constabulary_strength", `${reg.wardline} — strategic priority × lumen`) +
+        row("security_status", `${reg.security} — thresholded on force projection`) +
+        row("smuggling_intensity", `${reg.smuggling} — value routed around patrolled ground`) +
+        row("predation_risk", `${reg.predation} — traffic × absence of protection`) +
+        row("black_market_index", `${reg.blackMarket} — reliance on unsanctioned channels`) +
+        row("enforcement_gap", `${reg.enforceGap} — illicit pressure minus state capacity`) +
+        row("exhausted_lode", `${reg.exhausted ? 1 : 0} — ore mined out, no income today`) +
+        row("founding_era", `${reg.era} — when the land was first settled`) +
+        row("founding_age", `${reg.foundingAge}`) +
+        row("legacy_advantage", `${reg.legacy} — head starts from founding age × grid`) +
+        row("shock_legacy", `${reg.shock} — calamity that scarred this ground`) +
+        row("shock_severity", `${reg.shockSeverity}`) +
+        row("abandonment_index", `${reg.abandonment} — hysteresis: past value minus now`) +
+        row("tenure_churn", `${reg.tenureChurn} — how often the land changed hands`) +
+        row("segregation_index", `${reg.segregation} — wealth standing above neighbors`) +
+        row("mobility_ceiling", `${reg.mobility} — chain-role × services × market access`) +
+        row("social_trust", `${reg.socialTrust} — claiming the state vs routing around it`) +
+        row("kinship_reliance", `${reg.kinship} — designed mirror of social_trust`) +
+        row("cultural_distance", `${reg.culturalDistance} — distance from dominant culture`) +
+        row("tenure_regime", `${reg.tenure} — whose land the registry recognizes`) +
+        row("legibility_gap", `${reg.legibility} — how badly the census undercounts`) +
+        row("uncounted_population", `${reg.uncounted} — add to pop for corrected rates`) +
+        row("endowment_t0", `${reg.endowment0} — founding ore stock`) +
+        row("wealth_t0", `${reg.wealthT0} — founding wealth`) +
+        row("population_t0", `${Math.round(reg.popT0 * (1 + reg.rural))}`) +
+        row("peak_wealth", `${reg.peakWealth} — high-water mark`) +
+        row("ore_depleted", `${reg.oreDepleted ? 1 : 0} — mine died during the run`) +
+        row("boom_bust", `${reg.boomBust} — settlement trajectory`) +
+        row("won_arc", `${reg.wonArc || "null"} — what a won rising bought`) +
+        row("elite_share", `${reg.eliteShare} — owners' row share of coin`) +
+        row("elite_pop_pct", `${reg.elitePopPct} — owners' row headcount %`) +
+        row("class_gap", `${reg.classGap} — coin-per-owner ÷ coin-per-laborer`) +
+        row("tariff_burden", `${reg.tollBurden} — tariff at held gates`) +
+        row("river_flux", `${reg.riverFlux} — accumulated rainfall flow; navigable if ≥40`) +
+        row("downstream_blight", `${reg.downstreamBlight} — blight carried from upstream`) +
+        `</table>`);
       document.getElementById("inspBody").innerHTML = L.join("");
     }
 
@@ -10178,6 +10287,39 @@
         if (model.maelstrom) tryPt(model.maelstrom.x, model.maelstrom.y, "maelstrom", 0, PT);
       }
       if (atlas) model.passes.forEach((p, i) => { const R = model.ridges.find(r => r.id === p.ridgeId); if (R && R.maxElev < 60) return; tryPt(p.x, p.y, "pass", i, PT); });
+      // U4: additional clickable features — every drawn glyph gets a hit-test
+      if (poi) {
+        // freeport (hollow circle)
+        const fr = model.regions.find(r => r.id === model.freeport.regionId);
+        if (fr) tryPt((fr.shorePt || fr.c)[0], (fr.shorePt || fr.c)[1], "freeport", 0, PT);
+        // sanctuary (gold star)
+        if (model.sanctuary) tryPt(model.sanctuary.x, model.sanctuary.y, "sanctuary", 0, PT);
+        // peak spot heights (▲ at high-elev centroids)
+        model.regions.filter(r => r.elevation >= 70).forEach((r, i) => tryPt(r.c[0], r.c[1], "peak", r.id, PT));
+        // slot-based glyphs — approximate via region centroid
+        model.regions.forEach(reg => {
+          if (reg.isSkyport) tryPt(reg.c[0], reg.c[1], "skyport", reg.id, PT);
+          if (reg.hasCamp) tryPt(reg.c[0], reg.c[1], "camp", reg.id, PT);
+          if (reg.hasTower) tryPt(reg.c[0], reg.c[1], "tower", reg.id, PT);
+          if (reg.refining > 0) tryPt(reg.c[0], reg.c[1], "refinery", reg.id, PT);
+          if (reg.stillair) tryPt(reg.c[0], reg.c[1], "still", reg.id, PT);
+          // constabulary, facilities, structures, events — check if region has them
+          if (reg.garrison) tryPt(reg.c[0], reg.c[1], "garrison", reg.id, PT);
+          if (reg.eventType && reg.eventType !== "none") tryPt(reg.c[0], reg.c[1], "event", reg.id, PT);
+        });
+        // conduit edges
+        model.conduitEdges.forEach((e, i) => {
+          const A = model.regions[e.a], B = model.regions[e.b];
+          const d = nearPoly([[A.c[0], A.c[1]], [B.c[0], B.c[1]]]);
+          if (d < LN && d < bestD) { bestD = d; best = { kind: "conduit", id: i }; }
+        });
+        // road edges — heavier traffic wins ties
+        model.roadEdges.forEach((e, i) => {
+          const A = model.regions[e.a], B = model.regions[e.b];
+          const d = nearPoly([[A.c[0], A.c[1]], [B.c[0], B.c[1]]]);
+          if (d < LN && d < bestD) { bestD = d; best = { kind: "road", id: i }; }
+        });
+      }
       if (best) return best; // a point glyph was hit — it wins over lines
       // line features: nearest point on the polyline. Ridges are atlas ink;
       // rivers draw in both genres.

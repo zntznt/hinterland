@@ -23,6 +23,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 5,1125,refinery_collapse,5,,,,,,,,,,
 5,1125,flood,3,the Ramwill Reach Flood,,,,,,,,,
 5,1125,storm,5,the Great Storm of 1125,,,,,,,,,
+6,1150,settlement_founded,6,,,,,,,,,,
 6,1150,settlement_founded,11,,,,,,,,,,
 6,1150,annexation,8,the Landing at Thurgathurn,,,,,,,4,,
 6,1150,succession,,Vathrek,,magnate,,,,,,false,2

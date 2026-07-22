@@ -6,7 +6,7 @@
 
 This record covers a realm of 12 settled regions, with its capital at Asellby. The wind comes from the west. Most of what follows was set by the ground itself: where the aetherstone lies, where the land will carry a road, and where it won't.
 
-No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held 14,335 people to the median town's 2,424. The bigger a town got, the faster it grew.
+No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held 14,132 people to the median town's 2,433. The bigger a town got, the faster it grew.
 
 The aetherworks at Asellby refine aetherstone into lumen, and the trunk lines run from them to the capital. The Temple holds sacred ground at Delle (by Halle Crag), out where the aetherstone lies and the Crown's authority is weak. 5 settlements started off the grid: reachable by road, but with no power line, because the ledgers said wiring them wouldn't pay.
 
@@ -30,17 +30,17 @@ The rivers are crossed at Ramwill Reach Bridge and Halle Crag Bridge; everywhere
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Age of the Gates** (1000–1000), when the gap held, **the Emptying** (1025–1150), when the gap widened, **the Settled Years** (1175–1200), when the gap held and **the Gathering Years** (1225–1250), when the gap widened. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+These years split into ages, each named for what the realm was living through: **the Age of the Gates** (1000–1050), when the gap narrowed, **the Age of Tariffs** (1075–1100), when the gap widened, **the Still Years** (1125–1150), when the gap widened and **the Compounding Age** (1175–1250), when the gap widened. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
 
 **Year 1025.** Politics in a capital Hamwick had never seen closed the sea lanes to it. A quarrel between the Peregrine States and the Metropole became Hamwick's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
 
 **Year 1025.** Sickness came to Myreby. Anyone who had seen the blight-mark had expected it. Where there were healers, their registers do not agree on the death count. The roads out of town do. The roads named it the Long Cough of 1025.
 
-**Year 1025.** Plague took Calvermere. The blight had sat heavy on that country for years, so the sickness arrived to a town already half-poisoned. A third of the people died or fled. The roads named it the Long Cough of 1025.
-
 **Year 1050.** The rains failed over Glasholt Crag, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1050.
 
-**Year 1075.** War came to Asellby. It comes to ground that great powers claim and none can hold. The two powers fighting there were the Crown and the magnates. The town was just where they met. When the fighting stopped, the capital had lost a third of its people and a quarter of its wealth, and the mines and aetherworks were wrecked. The Crown's constabulary arrived after the blood, and stayed. The scribes titled the page the War of 1075.
+**Year 1050.** Plague took Calvermere. The blight had sat heavy on that country for years, so the sickness arrived to a town already half-poisoned. A third of the people died or fled. The roads named it the Ash Fever of 1050.
+
+**Year 1075.** War came to Asellby. It comes to ground that great powers claim and none can hold. The two powers fighting there were the Crown and the magnates. The town was just where they met. When the fighting stopped, the capital had lost a third of its people and a quarter of its wealth, and the mines and aetherworks were wrecked. The Crown's constabulary arrived after the blood, and stayed. The scribes titled the page the Asellby War.
 
 **Year 1075.** The old Hierarch died, and Thare took the censer without incident. That is rare enough to be worth recording.
 
@@ -50,7 +50,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1075.** Fortune turned at Hamwick: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Hamwick Find.
 
-**Year 1075.** Fever ran through Asellby. The blight had weakened the town for a generation, and the sick had nowhere clean to lie. The burial rolls ran longer than the tax rolls that year. The roads named it the Dust Fever of 1075.
+**Year 1075.** Fever ran through Asellby. The blight had weakened the town for a generation, and the sick had nowhere clean to lie. The burial rolls ran longer than the tax rolls that year. The roads named it the Ash Fever of 1075.
 
 **Year 1075.** The Temple came to Myreby, to the ground of its suffering, and consecrated it as Olenne. Pilgrims walk that road now. The Crown's writ had failed there and the magnates' ledgers had seen nothing worth the ink. The faith moved in after the harm was done, and claimed the ground.
 
@@ -84,7 +84,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1175.** The old Sovereign died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Lasellmoor took the capital. Some who objected were killed, and the objections did not stop.
 
-**Year 1175.** The rains failed over Asellby, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1175.
+**Year 1175.** The rains failed over Myreby, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1175.
 
 **Year 1200.** The old Hierarch died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Corisonne took the censer. Some who objected were killed, and the objections did not stop.
 
@@ -96,7 +96,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1250.** The old First Magnate died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Kravzeth took the chair. Some who objected were killed, and the objections did not stop.
 
-**Year 1250.** The rains failed over Asellby, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1250.
+**Year 1250.** The rains failed over Myreby, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1250.
 
 **Year 1250.** The river rose over Ramwill Reach and took the low ground with it: the fields, the founding wharves, whatever stood in the way. The accounts call it the Ramwill Reach Flood, and they do not agree on how many it took.
 
@@ -118,7 +118,7 @@ Of the realm's 4 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Temple, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the Temple stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4.7 in every hundred of the realm's people hold 40.3 of every hundred coins, and live 13.8 times better than the people who work for them. The gap is sharpest at Halle Crag, where 51 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 38 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4.6 in every hundred of the realm's people hold 41.3 of every hundred coins, and live 14.4 times better than the people who work for them. The gap is sharpest at Halle Crag, where 51 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 42 parts in a hundred of the whole spread.
 
 And over all of it stands the Dominion, which holds 4 regions from its foothold at Hamwick and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns. It no longer rules the occupied country, and the two are not the same thing.
 
@@ -126,6 +126,6 @@ And over all of it stands the Dominion, which holds 4 regions from its foothold 
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.30 at the founding to 0.45 at the close. It turned on the Crown Granary in 1100. The poorest fifth of the realm carries 3.1 times the blight of the richest fifth. Behind the Dhulzar wall, the median settlement earns 100 in the hundred less than the open country at the same distance. 5 regions sit off the grid because the ledgers said serving them would not pay. Ramwill Reach drinks 1 points of other towns' poison, only because it stands at the mouth. 7 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 4.7 in a hundred hold 40.3 of every hundred coins, and live 13.8 times better than the rest. The skyway would cut 54 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. And the whole realm's ledger is now one column in someone else's book: 4 regions occupied, the yield assessed at the quay, the free country keeping 1.5 times the share the occupied country keeps. The gap between who is sovereign and who is occupied is the largest one in the realm, and it shapes every other. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 64 against 12, and owning barely half of it: 50 in the hundred of the yield is entered in the Osmark Combine's books, not the realm's. And Ramwill Reach and Khekton stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.
+The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.29 at the founding to 0.44 at the close. It turned on the Crown Granary in 1100. The poorest fifth of the realm carries 3.1 times the blight of the richest fifth. Behind the Dhulzar wall, the median settlement earns 100 in the hundred less than the open country at the same distance. 5 regions sit off the grid because the ledgers said serving them would not pay. Ramwill Reach drinks 1 points of other towns' poison, only because it stands at the mouth. 7 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 4.6 in a hundred hold 41.3 of every hundred coins, and live 14.4 times better than the rest. The skyway would cut 54 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. And the whole realm's ledger is now one column in someone else's book: 4 regions occupied, the yield assessed at the quay, the free country keeping 1.5 times the share the occupied country keeps. The gap between who is sovereign and who is occupied is the largest one in the realm, and it shapes every other. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 64 against 13, and owning barely half of it: 50 in the hundred of the yield is entered in the Osmark Combine's books, not the realm's. And Ramwill Reach and Khekton stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

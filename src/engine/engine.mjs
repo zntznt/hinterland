@@ -978,6 +978,23 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         for (let gx = 0; gx <= GN; gx++) row.push(elevAt(gx * CSX, gy * CSY));
         nodeElev.push(row);
       }
+      // G4b: fractal noise on the elevation grid before the sea flood-fill.
+      // Perturbs the land/water boundary at the sub-cell level, creating
+      // organic headlands, bays, and coves instead of a straight cell-edge
+      // coastline. Deterministic per seed; only affects coastal cells (±5 units
+      // of noise vs the ±1.5 sea-level margin).
+      const rCoast = streams(params.seed)("coastNoise");
+      for (let gy = 0; gy <= GN; gy++) {
+        for (let gx = 0; gx <= GN; gx++) {
+          let n = 0, amp = 3.5, freq = 0.008;
+          const bx = gx * CSX, by = gy * CSY;
+          for (let o = 0; o < 3; o++) {
+            n += Math.sin(bx * freq + rCoast() * 6.28) * Math.cos(by * freq * 1.3 + rCoast() * 6.28) * amp;
+            amp *= 0.5; freq *= 2.2;
+          }
+          nodeElev[gy][gx] += n;
+        }
+      }
       const raisedHolm = new Set(); // grid nodes lifted for a town with no dry ground
       // opts.seed(floodSeed) chooses the flood origins (default: the sea sides);
       // opts.block is a Set of "gx:gy" nodes the flood may not enter (used to

@@ -605,48 +605,94 @@ const d3 = globalThis.d3;
         if (icons.length) parts.push(`<g class="relief">${icons.map(ic => ic.el).join("")}</g>`);
       }
       const seaClipPaths = []; // the roughened sea outlines, to punch holes in the land clip
-      model.seaShapes.forEach(S => {
-        // decimate lightly (heavy decimation is what made the coast blobby),
-        // then roughen: insert a displaced midpoint on each edge, pushed along
-        // the edge normal by a seam-free roughness profile so some stretches
-        // stay calm (bays) and others crag (headlands). Render-only; the
-        // exported S.outer polygon is untouched.
-        const dec = (rg) => rg.length > 320 ? rg.filter((_, i2) => i2 % 2 === 0) : rg;
-        const roughen = (rg) => {
-          const n = rg.length; if (n < 4) return rg;
-          const out = [];
-          for (let i2 = 0; i2 < n; i2++) {
-            const a = rg[i2], b = rg[(i2 + 1) % n];
-            out.push(a);
-            const t = i2 / n; // seam-free: profile is periodic in t
-            let rough = 0.5 + 0.5 * Math.cos(2 * Math.PI * (3 * t + 0.11)) * Math.cos(2 * Math.PI * (7 * t + 0.53));
-            rough = rough < 0.25 ? 0 : rough; // calm stretches stay smooth
-            const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
-            const nx = -dy / len, ny = dx / len; // edge normal
-            const disp = jit(a[0], a[1], i2 * 7 + 3) * Math.sqrt(len) * 1.3 * rough;
-            out.push([(a[0] + b[0]) / 2 + nx * disp, (a[1] + b[1]) / 2 + ny * disp]);
+
+      // Fractal coastline: multi-level recursive midpoint subdivision with a
+      // harmonic roughness profile (technique from Azgaar FMG). Replaces
+      // the old single-pass midpoint-displacement roughen().
+      const makeCoastProfile = (subSeed, harmonics, contrast) => {
+        const profRNG = streams(subSeed)("prof");
+        const profile = new Float64Array(256);
+        for (let k = 1; k <= harmonics; k++) {
+          const amp = profRNG(), phase = profRNG() * 2 * Math.PI;
+          for (let i = 0; i < 256; i++) {
+            profile[i] += amp * Math.cos((2 * Math.PI * k * i) / 256 + phase);
           }
-          return out;
-        };
-        const sub = (rg) => bsplineClosed(roughen(dec(rg)).map(pt => [pt[0], fy(pt[1])]));
-        const d = [S.outer, ...S.holes].map(sub).join(" ");
-        seaClipPaths.push(d); // remember the exact water outline for the land clip
-        // V2: the shore glows — one path in defs, three translucent ring
-        // strokes by reference, then the water itself (memory: 1 copy, not 4)
-        const sid = "seashape" + model.seaShapes.indexOf(S);
+        }
+        let min = Infinity, max = -Infinity;
+        for (let i = 0; i < 256; i++) { min = Math.min(min, profile[i]); max = Math.max(max, profile[i]); }
+        const range = max - min || 1;
+        for (let i = 0; i < 256; i++) profile[i] = Math.pow(clamp((profile[i] - min) / range, 0, 1), contrast);
+        return profile;
+      };
+      const sampleProfile = (profile, t) => {
+        const pos = (((t % 1) + 1) % 1) * 256;
+        const i2 = Math.floor(pos) % 256, f2 = pos - Math.floor(pos);
+        return profile[i2] * (1 - f2) + profile[(i2 + 1) % 256] * f2;
+      };
+      const midT = (t0, t1) => {
+        if (Math.abs(t1 - t0) <= 0.5) return t0 + (t1 - t0) / 2;
+        return ((t0 + (t1 - Math.sign(t1 - t0)) / 2) % 1 + 1) % 1;
+      };
+      const fractalize = (rg, featSeed, { depth = 4, amplitude = 1.5, decay = 0.9,
+        smoothThresh = 0.25, harmonics = 6, contrast = 1.5, minEdge = 1 }) => {
+        const n = rg.length; if (n < 4) return rg;
+        const profile = makeCoastProfile(featSeed, harmonics, contrast);
+        const s = streams(featSeed)("sub");
+        // perimeter t-parameter for each vertex
+        const tvals = new Float64Array(n), lens = new Float64Array(n); let total = 0;
+        for (let i3 = 0; i3 < n; i3++) {
+          const dx3 = rg[(i3 + 1) % n][0] - rg[i3][0], dy3 = rg[(i3 + 1) % n][1] - rg[i3][1];
+          total += (lens[i3] = Math.hypot(dx3, dy3));
+        }
+        let cum = 0; for (let i3 = 0; i3 < n; i3++) { tvals[i3] = cum / total; cum += lens[i3]; }
+        const onBorder = (p) => p[0] <= 0.5 || p[0] >= WX - 0.5 || p[1] <= 0.5 || p[1] >= WY - 0.5;
+        const result = [];
+        function subdivide(x0, y0, x1, y1, t0, t1, d, amp) {
+          const dx = x1 - x0, dy = y1 - y0;
+          const len = Math.hypot(dx, dy);
+          if (d <= 0 || len < minEdge) return;
+          const tm = midT(t0, t1);
+          const rough = sampleProfile(profile, tm);
+          if (rough < smoothThresh) return;
+          const nx = -dy / len, ny = dx / len;
+          const disp = (s() - 0.5) * Math.sqrt(len) * amp * rough;
+          const mx = (x0 + x1) / 2 + nx * disp, my = (y0 + y1) / 2 + ny * disp;
+          const nextAmp = amp * decay;
+          subdivide(x0, y0, mx, my, t0, tm, d - 1, nextAmp);
+          result.push([mx, my]);
+          subdivide(mx, my, x1, y1, tm, t1, d - 1, nextAmp);
+        }
+        for (let i3 = 0; i3 < n; i3++) {
+          result.push(rg[i3].slice());
+          const j3 = (i3 + 1) % n;
+          if (onBorder(rg[i3]) && onBorder(rg[j3])) continue;
+          subdivide(rg[i3][0], rg[i3][1], rg[j3][0], rg[j3][1], tvals[i3], tvals[j3], depth, amplitude);
+        }
+        return result;
+      };
+      model.seaShapes.forEach((S, si) => {
+        const dec = (rg) => rg.length > 320 ? rg.filter((_, i4) => i4 % 2 === 0) : rg;
+        const coastD = (rg) => catRom(fractalize(dec(rg).slice(),
+          params.seed + "_sea" + si,
+          { depth: 4, amplitude: 1.5, decay: 0.88, smoothThresh: 0.22,
+            harmonics: 5, contrast: 1.6, minEdge: 1 }
+        ).map(pt => [pt[0], fy(pt[1])]));
+        const d = [S.outer, ...S.holes].map(coastD).join(" ");
+        seaClipPaths.push(d);
+        const sid = "seashape" + si;
         parts.push(`<defs><path id="${sid}" d="${d}" fill="none"/></defs>`);
         parts.push(`<use href="#${sid}" stroke="#1f3846" stroke-width="2" opacity="0.3" transform="translate(1.4,2)"/>`);
-        for (const [rw, ro] of (atlas ? [[26, 0.10], [14, 0.13], [6, 0.16]] : [[6, 0.16]])) // data: one ring, not a glow
+        for (const [rw, ro] of (atlas ? [[26, 0.10], [14, 0.13], [6, 0.16]] : [[6, 0.16]]))
           parts.push(`<use href="#${sid}" stroke="#9dbdd9" stroke-width="${rw}" opacity="${ro}" stroke-linejoin="round"/>`);
         parts.push(`<path class="sea" d="${d}" fill-rule="evenodd" fill="#4a7fae" fill-opacity="0.55" stroke="#2b5f8a" stroke-width="1.4"/>`);
-        if (S.name && poi) { // E6: the chart takes its name at the water's centroid
+        if (S.name && poi) {
           let cx = 0, cy = 0, aa = 0;
           for (let k = 0; k + 1 < S.outer.length; k++) {
             const w2 = S.outer[k][0] * S.outer[k + 1][1] - S.outer[k + 1][0] * S.outer[k][1];
             aa += w2; cx += (S.outer[k][0] + S.outer[k + 1][0]) * w2; cy += (S.outer[k][1] + S.outer[k + 1][1]) * w2;
           }
           if (Math.abs(aa) > 1e-6) { cx /= 3 * aa; cy /= 3 * aa;
-            const arcId = "sealbl" + model.seaShapes.indexOf(S);
+            const arcId = "sealbl" + si;
             const spread = Math.min(190, 34 + S.name.length * 13);
             if (tryLabel(labelBox(cx, fy(cy), S.name, 15), 2)) {
               parts.push(`<defs><path id="${arcId}" d="M${(cx - spread).toFixed(1)},${(fy(cy) + 9).toFixed(1)} Q${cx.toFixed(1)},${(fy(cy) - 9).toFixed(1)} ${(cx + spread).toFixed(1)},${(fy(cy) + 9).toFixed(1)}"/></defs>`);
@@ -655,29 +701,16 @@ const d3 = globalThis.d3;
           }
         }
       });
-      // LAKES: inland water. Same roughened-outline treatment as the sea, a
-      // touch lighter, and added to the land clip so rivers stop at the shore.
+      // LAKES: inland water. Same fractal-coast treatment, gentler settings.
       (model.lakeShapes || []).forEach((S, li) => {
-        const dec = (rg) => rg.length > 320 ? rg.filter((_, i2) => i2 % 2 === 0) : rg;
-        const roughen = (rg) => {
-          const n = rg.length; if (n < 4) return rg;
-          const out = [];
-          for (let i2 = 0; i2 < n; i2++) {
-            const a = rg[i2], b = rg[(i2 + 1) % n];
-            out.push(a);
-            const t = i2 / n;
-            let rough = 0.5 + 0.5 * Math.cos(2 * Math.PI * (2 * t + 0.2)) * Math.cos(2 * Math.PI * (5 * t + 0.4));
-            rough = rough < 0.35 ? 0 : rough; // lakeshores are gentler than coasts
-            const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
-            const nx = -dy / len, ny = dx / len;
-            const disp = jit(a[0], a[1], i2 * 5 + 9) * Math.sqrt(len) * 0.9 * rough;
-            out.push([(a[0] + b[0]) / 2 + nx * disp, (a[1] + b[1]) / 2 + ny * disp]);
-          }
-          return out;
-        };
-        const sub = (rg) => bsplineClosed(roughen(dec(rg)).map(pt => [pt[0], fy(pt[1])]));
-        const d = [S.outer, ...S.holes].map(sub).join(" ");
-        seaClipPaths.push(d); // rivers stop at the lakeshore too
+        const dec = (rg) => rg.length > 320 ? rg.filter((_, i4) => i4 % 2 === 0) : rg;
+        const lakeD = (rg) => catRom(fractalize(dec(rg).slice(),
+          params.seed + "_lake" + li,
+          { depth: 3, amplitude: 1.0, decay: 0.88, smoothThresh: 0.40,
+            harmonics: 4, contrast: 1.4, minEdge: 1 }
+        ).map(pt => [pt[0], fy(pt[1])]));
+        const d = [S.outer, ...S.holes].map(lakeD).join(" ");
+        seaClipPaths.push(d);
         const lid = "lakeshape" + li;
         parts.push(`<defs><path id="${lid}" d="${d}" fill="none"/></defs>`);
         if (atlas) parts.push(`<use href="#${lid}" stroke="#9dbdd9" stroke-width="8" opacity="0.14" stroke-linejoin="round"/>`);

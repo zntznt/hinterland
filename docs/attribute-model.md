@@ -399,49 +399,53 @@ settlements must read as loud as the swollen capital.
 
 ## 7. Deferred & rejected
 
-> **Mostly shipped since.** Almost the entire "deferred second-wave" set below has
-> since landed and now rides the export (the security, deep-time, illicit, and
-> social-texture sets in particular: `force_projection`, `legibility_gap`,
-> `smuggling_intensity`, `mobility_ceiling`, `market_access`, migration flows, and
-> more). The list is kept as the original triage; treat it as history, not as a
-> to-do. The genuinely new state variables the pivot added are catalogued in §8.
+### Landed (deferred in early design, shipped since)
 
-**Deferred (valuable second-wave depth, not core; many need the network layer
-first):** `state_reach_index`, `public_goods_score`, `clientelism_index`,
-`voice_deficit`; the sacred set (`sanctity_index`, `pilgrim_flux`, `orthodoxy_gate`,
-`temple_welfare_share`, `divine_legitimacy`); the security set (`force_projection`,
-`constabulary_strength`, `security_status`, `conscription_burden`, `frontier_exposure`);
-the deep-time set (`founding_era`, `legacy_advantage`, `shock_legacy`,
-`abandonment_index`, `tenure_churn`); the illicit set (`smuggling_intensity`,
-`predation_risk`, `air_piracy_exposure`, `black_market_index`, `enforcement_gap`);
-and the social-texture set (`segregation_index`, `mobility_ceiling`, `social_trust`,
+The security set: `force_projection`, `constabulary_strength`, `security_status`.
+
+The deep-time set: `founding_era`, `legacy_advantage`, `shock_legacy`,
+`abandonment_index`, `tenure_churn`.
+
+The illicit set: `smuggling_intensity`, `predation_risk`, `black_market_index`,
+`enforcement_gap`.
+
+The social-texture set: `segregation_index`, `mobility_ceiling`, `social_trust`,
 `kinship_reliance`, `tenure_regime`, `cultural_distance`, `legibility_gap`,
-migration flows, `market_access`, `lumen_price`, `market_desert`,
-`supply_chain_fragility`, `venture_cluster`, `capital_access`, `gini_local`).
-These are not cut. They are the richness the emergent engine can support **once the
-spine exists.**
+`market_access`.
 
-**Merged / rejected (genuine redundancy):**
+Also landed: `pilgrim_flux`, migration flows (`emigrants_total`,
+`remittance_income`).
+
+### Still deferred
+
+`state_reach_index`, `public_goods_score`, `clientelism_index`, `voice_deficit`;
+`sanctity_index`, `orthodoxy_gate`, `temple_welfare_share`, `divine_legitimacy`;
+`conscription_burden`, `frontier_exposure`; `air_piracy_exposure`;
+`lumen_price`, `market_desert`, `supply_chain_fragility`, `venture_cluster`,
+`capital_access`, `gini_local`.
+
+These are not cut. They are the richness the emergent engine can support once the
+spine exists.
+
+### Merged / rejected (genuine redundancy)
+
 - `darkness` → derived view of `grid_access`, not its own variable.
 - Multiple per-attribute distance-decays → one shared `centrality_to_capital` basis.
 - `frontier_index` → a thresholded classifier over centrality, not an independent metric.
-- Per-service booleans → folded into one `arcane_service_index` (expose only
-  `wardline`/`healing` booleans if a later spatial join needs them).
+- Per-service booleans → folded into one `arcane_service_index`.
 
-**Open questions / tradeoffs (decide before Phase 2):**
-1. **Circularity: RESOLVED.** The canonical DAG in §4 settles it: one bounded,
+### Resolved questions
+
+1. **Circularity.** The canonical DAG in §4 settles it: one bounded,
    seeded forward pass in a pinned order. The two cycles the early design had introduced
    are broken structurally: aetherworks siting no longer reads `wealth` (centrality +
    terrain only), and `population` no longer reads `wealth`/`on_grid`/`blight`
-   (settlement skeleton draws from tier + carrying capacity). Revisit feedback only
-   if a later phase genuinely needs it, and then only as a small *fixed* number of
-   relaxation sweeps.
-2. **Time depth.** Migration, depletion, and path-dependence imply "ticks." For now,
-   prefer a **single snapshot** with at most a short scripted history pass; full
-   temporal simulation is out of scope.
-3. **Conduit before roads.** We deliberately ship a *simplified* conduit (MST + cost
-   gate) in Phase 3 so the biggest headline (off-grid darkness) doesn't wait on the
-   full road/river network. Reconcile with the real network layer when it lands.
+   (settlement skeleton draws from tier + carrying capacity).
+2. **Time depth.** The D1 epoch loop shipped: ore depletes, artifice learns, people
+   migrate, the grid expands, empires arrive — per-epoch dynamics with 25-year ticks
+   (`ep` parameter, 0 = founding snapshot, 1+ = dynamics run).
+3. **Conduit before roads.** Both landed: the conduit (trunk + greedy branch) and the
+   road network (MST + shortcuts, spanning every settlement) ride the export.
 4. **Where values live.** Network-native attributes (`pilgrim_flux`,
    `smuggling_intensity`, wardline) store canonically on the network and aggregate
    to regions with a clear suffix: one source of truth.

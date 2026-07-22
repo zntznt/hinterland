@@ -660,43 +660,30 @@ const d3 = globalThis.d3;
         const d = cl.segs.map(sg2 => `M${sg2[0][0].toFixed(1)},${fy(sg2[0][1]).toFixed(1)}L${sg2[1][0].toFixed(1)},${fy(sg2[1][1]).toFixed(1)}`).join("");
         parts.push(`<path class="contour" d="${d}" fill="none" stroke="#6d604c" stroke-width="1" opacity="0.3"/>`);
       });
-      // H1: relief icons — elevation and biome landmarks drawn above the
-      // terrain, below labels. Sorted by Y for back-to-front occlusion.
-      if (!atlas) {
-        const icons = [];
-        const s = streams(params.seed)("hsIcons"); // deterministic jitter per seed
+      // Peak spot heights: tiny black triangles at region centroids where
+      // elevation ≥ 70, following USGS/SwissTopo/OS convention — purely
+      // geometric position markers, not pictorial mountain icons. Labels
+      // carry the elevation number. Shown only on terrain lenses.
+      if (!atlas && LENS.group === "THE LAND" && lensId !== "terrace") {
         model.regions.forEach(reg => {
+          if (reg.elevation < 70) return;
           const cx = reg.c[0], cy = fy(reg.c[1]);
-          if (reg.elevation >= 70) {
-            // mountain ▲: sized by elevation, darkest at the peaks
-            const sz = 14 + (reg.elevation - 70) * 1.0;
-            const peak = clamp((reg.elevation - 70) / 30, 0, 1);
-            const c = `rgb(${Math.round(120-50*peak)},${Math.round(100-50*peak)},${Math.round(85-35*peak)})`;
-            const jx = cx + (s() - 0.5) * 14, jy = cy + (s() - 0.5) * 12;
-            icons.push({ y: jy, h: sz, el: `<path d="M${(jx).toFixed(1)},${(jy-sz*1.3).toFixed(1)} L${(jx-sz*0.85).toFixed(1)},${(jy+sz*0.5).toFixed(1)} L${(jx+sz*0.85).toFixed(1)},${(jy+sz*0.5).toFixed(1)} Z" fill="${c}" stroke="#4a3d2f" stroke-width="1.2" opacity="0.82"/>` });
-          } else if (reg.elevation >= 50 && reg.ruggedness >= 30) {
-            // hill △: on rugged mid-elevation ground
-            const sz = 6 + (reg.elevation - 50) * 0.4;
-            const jx = cx + (s() - 0.5) * 16, jy = cy + (s() - 0.5) * 14;
-            icons.push({ y: jy, h: sz, el: `<path d="M${(jx).toFixed(1)},${(jy-sz*1.2).toFixed(1)} L${(jx-sz*0.7).toFixed(1)},${(jy+sz*0.4).toFixed(1)} L${(jx+sz*0.7).toFixed(1)},${(jy+sz*0.4).toFixed(1)} Z" fill="#8a7a65" stroke="#6d5d4a" stroke-width="0.8" opacity="0.62"/>` });
-          } else if (reg.elevation < 65) {
-            // tree cluster ♣: biome-aware density so forests are thick,
-            // grasslands get a few scattered trees, steppe/moor fewer still
-            const biomeDensity = { forest: 1.3, grassland: 0.5, moor: 0.3, steppe: 0.2, marsh: 0.4, badland: 0.1, alpine: 0 };
-            const dMul = biomeDensity[reg.biome] || 0;
-            if (dMul <= 0) { /* skip — no trees in this biome */ }
-            else {
-              const n = Math.max(1, Math.round((2 + s() * 2) * dMul));
-              for (let t = 0; t < n; t++) {
-                const jx = cx + (s() - 0.5) * 22, jy = cy + (s() - 0.5) * 18;
-                const ts = 3.5 + s() * 2.5 * dMul;
-                icons.push({ y: jy, h: ts, el: `<circle cx="${jx.toFixed(1)}" cy="${(jy-ts).toFixed(1)}" r="${(ts*0.85).toFixed(1)}" fill="#3f6a3f" opacity="${(0.6*dMul).toFixed(2)}"/><circle cx="${jx.toFixed(1)}" cy="${(jy).toFixed(1)}" r="${ts.toFixed(1)}" fill="#2f552f" opacity="${(0.5*dMul).toFixed(2)}"/>` });
-              }
-            }
-          }
+          const sz = 5 + (reg.elevation - 70) * 0.12; // 5-8.6px; USGS-scale triangles
+          parts.push(`<path d="M${cx.toFixed(1)},${(cy-sz).toFixed(1)} L${(cx-sz*0.58).toFixed(1)},${(cy+sz*0.5).toFixed(1)} L${(cx+sz*0.58).toFixed(1)},${(cy+sz*0.5).toFixed(1)} Z" fill="#333" opacity="0.65"/>`);
+          parts.push(`<text x="${(cx+sz+3).toFixed(1)}" y="${cy.toFixed(1)}" font-size="${cz(8)}" fill="#555" opacity="0.7">${reg.elevation}</text>`);
         });
-        icons.sort((a, b) => a.y + a.h - (b.y + b.h));
-        if (icons.length) parts.push(`<g class="relief">${icons.map(ic => ic.el).join("")}</g>`);
+      }
+      // Forest tint: semi-transparent green overlay on forest-biome regions,
+      // drawn below choropleth data. Standard modern convention (USGS, Nat Geo,
+      // OSM Carto) — continuous fill, not individual tree icons.
+      if (!atlas && LENS.group === "THE LAND") {
+        const forestEls = [];
+        model.regions.forEach(reg => {
+          if (reg.biome !== "forest") return;
+          const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
+          forestEls.push(`<path d="${d}" fill="#4f8a4f" fill-opacity="0.16" stroke="none" pointer-events="none"/>`);
+        });
+        if (forestEls.length) parts.push(`<g class="forest-fill">${forestEls.join("")}</g>`);
       }
       const seaClipPaths = []; // the roughened sea outlines, to punch holes in the land clip
 

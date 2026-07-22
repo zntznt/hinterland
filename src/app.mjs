@@ -113,6 +113,11 @@ const d3 = globalThis.d3;
       const m = (a, b) => Math.round(a + (b - a) * t);
       return `rgb(${m(ramp.lo[0], ramp.hi[0])},${m(ramp.lo[1], ramp.hi[1])},${m(ramp.lo[2], ramp.hi[2])})`;
     }
+    // Multiply an rgb() colour by a brightness factor (0.5–1.0), keeping it in gamut
+    const shadeColor = (rgb, f) => {
+      const m = rgb.match(/\d+/g); if (!m) return rgb;
+      return `rgb(${Math.round(m[0] * f)},${Math.round(m[1] * f)},${Math.round(m[2] * f)})`;
+    };
 
     // ---- The lens registry ---------------------------------------------------
     // One entry per map lens, replacing the three parallel ternary chains that
@@ -154,6 +159,19 @@ const d3 = globalThis.d3;
       biome: { group: "THE LAND", q: "what the land is", cats: BIOME_COLORS, catLabel: "biome",
         value: r => r.biome.slice(0, 5), fill: r => BIOME_COLORS[r.biome] },
       elev: pctLens("THE LAND", "how high it stands", r => r.elevation),
+      terrace: { group: "THE LAND", q: "stepped relief",
+        cats: { water: "#4a7fae", lowland: "#8db580", upland: "#c4b87a", highland: "#b0855e", alpine: "#e8e6e1" },
+        catLabel: "elevation band",
+        value: r => (r.elevation >= 78 ? "alpine" : r.elevation >= 60 ? "highland" : r.elevation >= 40 ? "upland" : r.elevation >= 20 ? "lowland" : r.onCoast ? "water" : "lowland").slice(0, 6),
+        fill: r => {
+          const el = r.elevation;
+          if (r.onCoast && el < 25) return "#4a7fae";
+          if (el >= 78) return "#e8e6e1";
+          if (el >= 60) return "#b0855e";
+          if (el >= 40) return "#c4b87a";
+          return "#8db580";
+        }
+      },
       rug: pctLens("THE LAND", "how rough the going", r => r.ruggedness),
       temp: pctLens("THE LAND", "how warm the year", r => r.temperature),
       rain: pctLens("THE LAND", "where the rain falls", r => r.rainfall),
@@ -435,7 +453,32 @@ const d3 = globalThis.d3;
       const C = { live, snaps, RW, RE, RA, RB, RP, RG, SE, RO, TRIBV, dens, maxDensity, maxBurden };
       const cellT = (reg) => LENS.t ? LENS.t(reg, C) : 0;
       const cellValue = (reg) => LENS.value(reg, C);
-      const cellFill = (reg) => LENS.fill ? LENS.fill(reg, C) : rampColor(ramp, cellT(reg));
+      // Hillshade: crude slope-aspect lighting from neighbour heights. Northwest
+      // sun (FMG direction), clamped 0.70 (shadow) to 1.0 (full sun). Only
+      // applies to continuous choropleth lenses — categoricals keep flat colour.
+      const _hs = new Float64Array(model.regions.length);
+      if (!atlas) {
+        const sx = -0.55, sy = -0.55, sz = 0.85, sm = Math.hypot(sx, sy, sz);
+        const sxn = sx / sm, syn = sy / sm, szn = sz / sm;
+        model.regions.forEach(reg => {
+          let gx = 0, gy = 0;
+          for (const nid of reg.neighbors) {
+            const n = model.regions[nid]; if (!n) continue;
+            const dh = n.elevation - reg.elevation;
+            gx += (n.c[0] - reg.c[0]) * dh;
+            gy += (n.c[1] - reg.c[1]) * dh;
+          }
+          const m = Math.hypot(gx, gy, reg.neighbors.length || 1);
+          const dot = (gx / m) * sxn + (gy / m) * syn + ((reg.neighbors.length || 1) / m) * szn;
+          _hs[reg.id] = clamp(0.70 + 0.30 * dot, 0.68, 1.0);
+        });
+      }
+      const cellFill = (reg) => {
+        const fill = LENS.fill ? LENS.fill(reg, C) : rampColor(ramp, cellT(reg));
+        return (!atlas && !LENS.fill && _hs[reg.id])
+          ? shadeColor(fill, _hs[reg.id])
+          : fill;
+      };
 
       const parts = [`<svg id="map" viewBox="${camViewBox()}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">`];
       // A small filter library: a soft lift for the point marks so they sit
@@ -529,6 +572,38 @@ const d3 = globalThis.d3;
         const d = cl.segs.map(sg2 => `M${sg2[0][0].toFixed(1)},${fy(sg2[0][1]).toFixed(1)}L${sg2[1][0].toFixed(1)},${fy(sg2[1][1]).toFixed(1)}`).join("");
         parts.push(`<path class="contour" d="${d}" fill="none" stroke="#6d604c" stroke-width="1" opacity="0.3"/>`);
       });
+      // H1: relief icons — elevation and biome landmarks drawn above the
+      // terrain, below labels. Sorted by Y for back-to-front occlusion.
+      if (!atlas) {
+        const icons = [];
+        const s = streams(params.seed)("hsIcons"); // deterministic jitter per seed
+        model.regions.forEach(reg => {
+          const cx = reg.c[0], cy = fy(reg.c[1]);
+          if (reg.elevation >= 70) {
+            // mountain ▲: sized by elevation, darkest at the peaks
+            const sz = 9 + (reg.elevation - 70) * 0.7;
+            const peak = clamp((reg.elevation - 70) / 30, 0, 1);
+            const c = `rgb(${Math.round(130-60*peak)},${Math.round(110-60*peak)},${Math.round(95-45*peak)})`;
+            const jx = cx + (s() - 0.5) * 12, jy = cy + (s() - 0.5) * 10;
+            icons.push({ y: jy, h: sz, el: `<path d="M${(jx).toFixed(1)},${(jy-sz*1.3).toFixed(1)} L${(jx-sz*0.8).toFixed(1)},${(jy+sz*0.5).toFixed(1)} L${(jx+sz*0.8).toFixed(1)},${(jy+sz*0.5).toFixed(1)} Z" fill="${c}" stroke="#5c5045" stroke-width="0.8" opacity="0.75"/>` });
+          } else if (reg.elevation >= 50 && reg.ruggedness >= 35) {
+            // hill △: smaller, on rugged mid-elevation ground
+            const sz = 4.5 + (reg.elevation - 50) * 0.3;
+            const jx = cx + (s() - 0.5) * 14, jy = cy + (s() - 0.5) * 12;
+            icons.push({ y: jy, h: sz, el: `<path d="M${(jx).toFixed(1)},${(jy-sz*1.2).toFixed(1)} L${(jx-sz*0.7).toFixed(1)},${(jy+sz*0.4).toFixed(1)} L${(jx+sz*0.7).toFixed(1)},${(jy+sz*0.4).toFixed(1)} Z" fill="#8a7a65" stroke="#6d5d4a" stroke-width="0.6" opacity="0.65"/>` });
+          } else if (reg.biome === "forest" && reg.elevation < 65) {
+            // tree cluster ♣: a few tree glyphs on forested low ground
+            const n = 2 + Math.floor(s() * 2); // 2-3 trees per forest region
+            for (let t = 0; t < n; t++) {
+              const jx = cx + (s() - 0.5) * 20, jy = cy + (s() - 0.5) * 16;
+              const ts = 3.5 + s() * 2;
+              icons.push({ y: jy, h: ts, el: `<circle cx="${jx.toFixed(1)}" cy="${(jy-ts).toFixed(1)}" r="${(ts*0.85).toFixed(1)}" fill="#3f6a3f" opacity="0.55"/><circle cx="${jx.toFixed(1)}" cy="${(jy).toFixed(1)}" r="${ts.toFixed(1)}" fill="#2f552f" opacity="0.5"/>` });
+            }
+          }
+        });
+        icons.sort((a, b) => a.y + a.h - (b.y + b.h));
+        if (icons.length) parts.push(`<g class="relief">${icons.map(ic => ic.el).join("")}</g>`);
+      }
       const seaClipPaths = []; // the roughened sea outlines, to punch holes in the land clip
       model.seaShapes.forEach(S => {
         // decimate lightly (heavy decimation is what made the coast blobby),
@@ -710,6 +785,16 @@ const d3 = globalThis.d3;
       // corner-cutting pass (render-only; the exported trace keeps its points):
       // two rounds of 1/4-3/4 subdivision turn corridor corners into bends.
       // A river leans into its turns; it does not take them at right angles
+      const meander = (pts) => {
+        if (pts.length < 3) return pts;
+        return pts.map((p, i) => {
+          const dx = pts[Math.min(pts.length - 1, i + 1)][0] - pts[Math.max(0, i - 1)][0];
+          const dy = pts[Math.min(pts.length - 1, i + 1)][1] - pts[Math.max(0, i - 1)][1];
+          const len = Math.hypot(dx, dy) || 1;
+          const amp = (3.5 + i * 0.2) * (0.7 + 0.3 * Math.sin(i * 1.7 + pts.length * 0.4));
+          return [p[0] + (-dy / len) * amp, p[1] + (dx / len) * amp];
+        });
+      };
       const relaxBed = (P) => {
         for (let r = 0; r < 2; r++) {
           if (P.length < 3) return P;
@@ -725,7 +810,7 @@ const d3 = globalThis.d3;
         return P;
       };
       model.rivers.forEach(RV => {
-        const ctr = relaxBed((RV.trace || []).map(p => [p[0], fy(p[1])]));
+        const ctr = relaxBed(meander((RV.trace || []).map(p => [p[0], fy(p[1])])));
         if (ctr.length < 2) return;
         const left = [], right = [];
         const wMul = atlas ? 1 : 0.6; // #63: data mode thins the ribbon — context, not subject

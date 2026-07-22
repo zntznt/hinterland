@@ -1821,14 +1821,28 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
           B.ridgeMult.set(A.id, m);
         }
       });
-      // Discharge: a trunk carries its own length plus every tributary that
-      // joins it (chain joins and bed merges alike), so a trunk below a
-      // confluence reads broader than a headwater.
-      rivers.forEach(RV => { RV.flow = RV.chain.length; });
+      // Discharge: accumulated rainfall along each river chain (headwater→mouth),
+      // plus tributary contributions. Replaces the old chain-length-based flow
+      // with actual water volume from the climate model.
+      const FLUX_NAV = 40; // flux threshold for navigability
+      regions.forEach(reg => { reg.riverFlux = 0; reg.riverNavigable = 0; });
+      rivers.forEach(RV => {
+        let acc = 0;
+        for (const ridx of RV.chain) {
+          const reg = regions[ridx]; if (!reg) continue;
+          acc += reg.rainfall;
+          reg.riverFlux = Math.max(reg.riverFlux, Math.round(acc / 5));
+        }
+        RV.flow = Math.round(acc / 5);
+      });
       rivers.forEach(RV => {
         if (RV.confluenceInto === undefined || RV.confluenceInto < 0) return;
         const trunk = rivers.find(t => t.id === RV.confluenceInto);
-        if (trunk) trunk.flow += RV.chain.length; // one level of accumulation (tributaries feed trunks)
+        if (trunk) trunk.flow += RV.flow; // tributaries feed trunks
+      });
+      // Navigability: regions on a river whose accumulated flux clears the threshold
+      regions.forEach(reg => {
+        if (reg.riverFlux >= FLUX_NAV) reg.riverNavigable = 1;
       });
 
       // M1: every cell gets real PLACES. The waterfront: its lowest
@@ -1949,6 +1963,25 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
           0.56 * reg.rainfall + 0.3 * Math.max(0, 100 - 1.8 * Math.abs(reg.temperature - 55)) +
           0.10 * reg.waterAccess - (reg.elevation >= 78 ? 25 : 0)
         ), 0, 100);
+      });
+
+      // G4a: biome habitability and movement cost — per-biome data that feeds
+      // into the socioeconomic model (population carrying capacity, trade friction,
+      // settlement favouritability). Derived from the biome only; no additional
+      // randomisation or knob dependence.
+      const BIOME_DATA = {
+        alpine:   { habitability: 10, moveCost: 1.5 },
+        badland:  { habitability: 15, moveCost: 1.3 },
+        moor:     { habitability: 40, moveCost: 1.1 },
+        marsh:    { habitability: 25, moveCost: 1.4 },
+        forest:   { habitability: 65, moveCost: 1.2 },
+        steppe:   { habitability: 55, moveCost: 0.9 },
+        grassland:{ habitability: 80, moveCost: 0.8 },
+      };
+      regions.forEach(reg => {
+        const bd = BIOME_DATA[reg.biome] || { habitability: 50, moveCost: 1.0 };
+        reg.biomeHabitability = bd.habitability;
+        reg.biomeMoveCost = bd.moveCost;
       });
 
       // G4: contour lines for the map and the export (interpolated marching
@@ -4989,6 +5022,8 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
             on_river: reg.onRiver,
             river_id: reg.riverId,
             river_pos: reg.riverPos,
+            river_flux: reg.riverFlux,
+            river_navigable: reg.riverNavigable,
             downstream_blight: reg.downstreamBlight,
             on_coast: reg.onCoast,
             is_port: reg.isPort,
@@ -4996,6 +5031,8 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
             temperature: reg.temperature,
             rainfall: reg.rainfall,
             biome: reg.biome,
+            biome_habitability: reg.biomeHabitability,
+            biome_move_cost: reg.biomeMoveCost,
             delver_flux: reg.delverFlux,
             has_tower: reg.hasTower,
             has_bridge: reg.hasBridge,

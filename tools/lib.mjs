@@ -78,20 +78,24 @@ async function genEngine(hash) {
   if (query.seed !== undefined) S.seed = query.seed;
   if (query.fate !== undefined) S.fate = query.fate || "";
   if (query.world !== undefined) S.world = query.world;
-  if (query.regions !== undefined) S.regions = +query.regions;
-  if (query.relax !== undefined) S.relax = +query.relax;
-  if (query.bias !== undefined) S.bias = +query.bias;
-  if (query.we !== undefined) S.we = +query.we;
-  if (query.wf !== undefined) S.wf = +query.wf;
-  if (query.wt !== undefined) S.wt = +query.wt;
-  if (query.wg !== undefined) S.wg = +query.wg;
-  if (query.gt !== undefined) S.gt = +query.gt;
-  if (query.db !== undefined) S.db = +query.db;
-  if (query.iq !== undefined) S.iq = +query.iq;
-  if (query.order !== undefined) S.order = +query.order;
-  if (query.openness !== undefined) S.openness = +query.openness;
-  if (query.hb !== undefined) S.hb = +query.hb;
-  if (query.ep !== undefined) S.ep = +query.ep;
+  const n = (key, def) => {
+    const v = query[key];
+    return (v !== undefined && v.trim() !== "" && isFinite(+v)) ? +v : def;
+  };
+  S.regions = n("regions", S.regions);
+  S.relax = n("relax", S.relax);
+  S.bias = n("bias", S.bias);
+  S.we = n("we", S.we);
+  S.wf = n("wf", S.wf);
+  S.wt = n("wt", S.wt);
+  S.wg = n("wg", S.wg);
+  S.gt = n("gt", S.gt);
+  S.db = n("db", S.db);
+  S.iq = n("iq", S.iq);
+  S.order = n("order", S.order);
+  S.openness = n("openness", S.openness);
+  S.hb = n("hb", S.hb);
+  S.ep = n("ep", S.ep);
   if (query.capital !== undefined) {
     const parts = query.capital.split(",").map(Number);
     if (parts.length === 2 && parts.every(isFinite)) S.capital = parts;

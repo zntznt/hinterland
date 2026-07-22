@@ -96,6 +96,9 @@ async function genEngine(hash) {
   S.order = n("order", S.order, 0, 100);
   S.openness = n("openness", S.openness, 0, 100);
   S.hb = n("hb", S.hb, 0, 1);
+  // B10 forward-compat: hb retired into openness. If openness is absent from
+  // the hash but hb=0 appears, map it to openness=0 (the old "sealed quays" link).
+  if (!("openness" in query) && S.hb === 0) S.openness = 0;
   S.ep = n("ep", S.ep, 0, 99);
   if (query.capital !== undefined) {
     const parts = query.capital.split(",").map(Number);

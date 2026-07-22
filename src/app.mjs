@@ -556,6 +556,68 @@ const d3 = globalThis.d3;
           parts.push(`<rect x="${(rx - 8).toFixed(1)}" y="${(ry - 8).toFixed(1)}" width="16" height="16" fill="#111" stroke="#fff" stroke-width="2"/>`);
         }
       });
+      // H3: curved region labels via raycasting + SVG textPath. Cast rays
+      // from each settled region's centroid in 12 directions, pick the best
+      // opposite pair for a label path, and render the town name curved along
+      // the interior axis (technique from FMG). Skipped in atlas mode.
+      if (!atlas && poi) {
+        const ANGLE_COUNT = 12;
+        const rayScores = []; // { regionId, path, name, score }
+        model.regions.forEach(reg => {
+          if (!reg.settled) return;
+          const st = model.settlements.find(s => s.regionId === reg.id);
+          if (!st || !st.name) return;
+          const cx = reg.c[0], cy = fy(reg.c[1]);
+          // Cast rays in ANGLE_COUNT directions, measuring distance to polygon edge
+          const rays = [];
+          for (let a = 0; a < ANGLE_COUNT; a++) {
+            const angle = (a / ANGLE_COUNT) * 2 * Math.PI;
+            const dx = Math.cos(angle), dy = Math.sin(angle);
+            let x = reg.c[0], y = reg.c[1];
+            let dist = 0;
+            const step = 4;
+            for (let s = 0; s < 300; s++) {
+              x += dx * step; y += dy * step; dist += step;
+              if (!pointInRing(x, y, reg.ring)) break;
+            }
+            rays.push({ angle, dist });
+          }
+          // Score each opposite pair: prefer horizontal, long, symmetric
+          let bestScore = -Infinity, bestPair = null;
+          for (let a = 0; a < ANGLE_COUNT / 2; a++) {
+            const b = a + ANGLE_COUNT / 2;
+            const ra = rays[a], rb = rays[b];
+            const horizScore = 1 - Math.abs(Math.sin(ra.angle)) * 0.8;
+            const lenScore = Math.min(ra.dist, rb.dist) / 80;
+            const symScore = 1 - Math.abs(ra.dist - rb.dist) / Math.max(1, ra.dist + rb.dist);
+            const score = horizScore * 1.2 + lenScore * 0.6 + symScore * 0.4;
+            if (score > bestScore) { bestScore = score; bestPair = { ra, rb }; }
+          }
+          if (!bestPair || bestPair.ra.dist < 24 || bestPair.rb.dist < 24) return;
+          // Build quadratic bezier path through both rays
+          const ax = reg.c[0] + Math.cos(bestPair.ra.angle) * bestPair.ra.dist * 0.85;
+          const ay = reg.c[1] + Math.sin(bestPair.ra.angle) * bestPair.ra.dist * 0.85;
+          const bx = reg.c[0] + Math.cos(bestPair.rb.angle) * bestPair.rb.dist * 0.85;
+          const by = reg.c[1] + Math.sin(bestPair.rb.angle) * bestPair.rb.dist * 0.85;
+          const pathD = `M${ax.toFixed(1)},${fy(ay).toFixed(1)} Q${cx.toFixed(1)},${cy.toFixed(1)} ${bx.toFixed(1)},${fy(by).toFixed(1)}`;
+          rayScores.push({ regionId: reg.id, path: pathD, name: st.name, score: bestScore });
+        });
+        // Sort by score desc, greedily declutter
+        rayScores.sort((a, b) => b.score - a.score);
+        rayScores.forEach(rs => {
+          const st = model.settlements.find(s => s.regionId === rs.regionId);
+          if (!st) return;
+          const fs = 10 + Math.min(12, Math.sqrt(Math.max(0, st.population)) / 3);
+          // Estimate bounding box from path endpoints and centroid
+          const reg = model.regions[rs.regionId];
+          const box = labelBox(reg.c[0], fy(reg.c[1]), rs.name, fs);
+          if (tryLabel(box, 3)) {
+            const lblId = "rglbl" + rs.regionId;
+            parts.push(`<defs><path id="${lblId}" d="${rs.path}" fill="none"/></defs>`);
+            parts.push(`<text font-size="${cz(fs)}" font-style="italic" fill="#2a221a" opacity="0.72"><textPath href="#${lblId}" startOffset="50%" text-anchor="middle">${esc(rs.name)}</textPath></text>`);
+          }
+        });
+      }
       // Paper grain, atlas only: a dark fibrous texture laid OVER the land (not
       // under it, where the opaque region fills would hide it) so the parchment
       // reads as grained, not flat. Blends by multiply so it darkens the land.

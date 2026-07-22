@@ -1888,6 +1888,27 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
 
       // coastal = the cell touches the water (recomputable from the exports)
       const rRing4 = (ring) => ring.map(pt => [round2(pt[0]), round2(pt[1])]);
+      // Pre-build contour segment set for fast distance queries
+      const contourSegs = [];
+      seaShapes.forEach(S => {
+        for (let i = 0; i + 1 < S.outer.length; i++)
+          contourSegs.push([S.outer[i], S.outer[i + 1]]);
+        contourSegs.push([S.outer[S.outer.length - 1], S.outer[0]]);
+      });
+      const distToContour = (x, y) => {
+        let best = Infinity;
+        for (const [a, b] of contourSegs) {
+          const dx = b[0] - a[0], dy = b[1] - a[1];
+          const len2 = dx * dx + dy * dy;
+          if (len2 < 1e-12) { const d = Math.hypot(x - a[0], y - a[1]); if (d < best) best = d; continue; }
+          let t = clamp(((x - a[0]) * dx + (y - a[1]) * dy) / len2, 0, 1);
+          const d = Math.hypot(x - (a[0] + t * dx), y - (a[1] + t * dy));
+          if (d < best) best = d;
+        }
+        return best;
+      };
+      // A region touches the coast if any ring vertex is inside the sea shape
+      // (classic test) OR if any vertex lies within ~1.5 cells of the contour.
       const coastTouch = (ring) => {
         for (const S of seaShapes) {
           for (const v of ring)
@@ -1897,7 +1918,9 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
             for (let b2 = 0; b2 + 1 < S.outer.length; b2++)
               if (segInt(ring[a2], ring[a2 + 1], S.outer[b2], S.outer[b2 + 1])) return true;
         }
-        return false;
+        // Contour proximity: a near-miss on the smooth contour still counts
+        const prox = Math.min(...ring.map(v => distToContour(v[0], v[1])));
+        return prox < CSX * 1.5;
       };
       regions.forEach(reg => { reg.onCoast = coastTouch(rRing4(reg.ring)) ? 1 : 0; });
 
@@ -1963,29 +1986,8 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       });
 
       // G4: BIOME (ordered rules — exactly recomputable from the exports) and
-      // FERTILITY, now DERIVED: rain + warmth + water access − altitude.
-      regions.forEach(reg => {
-        reg.biome =
-          reg.elevation >= 78 ? "alpine" :
-          reg.rainfall < 25 ? "badland" :
-          reg.temperature < 32 ? "moor" :
-          (reg.onRiver === 1 && reg.elevation < 35) ? "marsh" :
-          reg.rainfall >= 68 ? "forest" :
-          reg.rainfall < 42 ? "steppe" : "grassland";
-        // rain is still the dominant term (the farms follow the rain); water
-        // access is a SECONDARY input worth ~10 points at full access, so a
-        // floodplain or a well lifts dry ground without decoupling fertility
-        // from the climate that the rain-shadow story turns on.
-        reg.fertility = clamp(Math.round(
-          0.56 * reg.rainfall + 0.3 * Math.max(0, 100 - 1.8 * Math.abs(reg.temperature - 55)) +
-          0.10 * reg.waterAccess - (reg.elevation >= 78 ? 25 : 0)
-        ), 0, 100);
-      });
-
-      // G4a: biome habitability and movement cost — per-biome data that feeds
-      // into the socioeconomic model (population carrying capacity, trade friction,
-      // settlement favouritability). Derived from the biome only; no additional
-      // randomisation or knob dependence.
+      // FERTILITY, now DERIVED: rain + warmth + water access − altitude, with
+      // a biome-habitability term so the land's character feeds its yield.
       const BIOME_DATA = {
         alpine:   { habitability: 10, moveCost: 1.5 },
         badland:  { habitability: 15, moveCost: 1.3 },
@@ -1996,9 +1998,26 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         grassland:{ habitability: 80, moveCost: 0.8 },
       };
       regions.forEach(reg => {
+        reg.biome =
+          reg.elevation >= 78 ? "alpine" :
+          reg.rainfall < 25 ? "badland" :
+          reg.temperature < 32 ? "moor" :
+          (reg.onRiver === 1 && reg.elevation < 35) ? "marsh" :
+          reg.rainfall >= 68 ? "forest" :
+          reg.rainfall < 42 ? "steppe" : "grassland";
         const bd = BIOME_DATA[reg.biome] || { habitability: 50, moveCost: 1.0 };
         reg.biomeHabitability = bd.habitability;
         reg.biomeMoveCost = bd.moveCost;
+        // rain is still the dominant term (the farms follow the rain); water
+        // access is a SECONDARY input worth ~10 points at full access, so a
+        // floodplain or a well lifts dry ground without decoupling fertility
+        // from the climate that the rain-shadow story turns on. The biome
+        // habitability term captures what the climate terms miss — marsh vs.
+        // moor vs. badland — at similar rainfall levels.
+        reg.fertility = clamp(Math.round(
+          0.48 * reg.rainfall + 0.26 * Math.max(0, 100 - 1.8 * Math.abs(reg.temperature - 55)) +
+          0.08 * reg.waterAccess + 0.12 * reg.biomeHabitability - (reg.elevation >= 78 ? 25 : 0)
+        ), 0, 100);
       });
 
       // G4: contour lines for the map and the export (interpolated marching
@@ -2877,11 +2896,12 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
           if (reg.eventLegacy === undefined) reg.eventLegacy = 0;
           const wa = (reg.effWaterAccess !== undefined ? reg.effWaterAccess : reg.waterAccess) || 0;
           const base =
-            0.34 * reg.fertility +
-            0.30 * wa +
+            0.28 * reg.fertility +
+            0.26 * wa +
             0.18 * (100 - reg.ruggedness) +
             0.10 * Math.max(0, 100 - 1.8 * Math.abs(reg.temperature - 55)) +
-            0.08 * (reg.elevation >= 78 ? 0 : 100);       // alpine is uninhabitable ground
+            0.08 * (reg.elevation >= 78 ? 0 : 100) +
+            0.10 * reg.biomeHabitability;                   // grassland ~80 lifts, alpine ~10 drags
           const degradation =
             0.55 * reg.blight +
             (reg.exhausted ? 14 : 0);                     // a dead lode is a town's lost reason

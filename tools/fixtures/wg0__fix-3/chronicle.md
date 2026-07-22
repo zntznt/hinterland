@@ -6,7 +6,7 @@
 
 This record covers a realm of 12 settled regions, with its capital at Comfre. The wind comes from the northeast. Most of what follows was set by the ground itself: where the aetherstone lies, where the land will carry a road, and where it won't.
 
-No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held 13,396 people to the median town's 2,794. The bigger a town got, the faster it grew.
+No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held 12,838 people to the median town's 3,047. The bigger a town got, the faster it grew.
 
 The aetherworks at Comfre refine aetherstone into lumen, and the trunk lines run from them to the capital. The Temple holds sacred ground at Velle (by Skavurnok Delf), out where the aetherstone lies and the Crown's authority is weak. 6 settlements started off the grid: reachable by road, but with no power line, because the ledgers said wiring them wouldn't pay.
 
@@ -80,13 +80,13 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1225.** A storm came off the water and stood over the coast for three days. Comfre took the worst of it, as the exposed shore always does; the Great Storm of 1225 is the name the survivors gave the year.
 
-The years leave names behind them. The realm now speaks of Comfre the Open, Quillton the Steadfast, Skavurnok Delf the Ashen, Drennath the Hollow, Osterewick the Shadowed, Wordmere the Open, Surzethrak the Ashen, Khekby the Hollow, Dreggok the Hollow and Tarrewood the Shadowed: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
+The years leave names behind them. The realm now speaks of Comfre the Open, Gruggath the Open, Quillton the Steadfast, Skavurnok Delf the Ashen, Drennath the Hollow, Osterewick the Shadowed, Wordmere the Open, Surzethrak the Ashen, Khekby the Hollow and Tarrewood the Shadowed: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
 
 ## The State of the Realm, Year 1250
 
-Of the realm's 9 settled regions, 6 held steady, 1 declined and 2 collapsed outright.
+Of the realm's 9 settled regions, 7 held steady, 1 declined and 1 collapsed outright.
 3 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Skavurnok Delf, Drennath and Surzethrak, but the roads have stopped going there.
-And 2 places have come back as something else. Khekby and Dreggok stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
+And 1 place has come back as something else. Khekby stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
 Gruggath is the emptiest of the ghost country. Its best years are gone, and the roads no longer go there.
 
 The Crown holds 9 regions, the Temple 1, the magnates 0; 1 are contested between them, and 1 answer to no one at all.
@@ -95,12 +95,12 @@ Of the realm's 5 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the magnates stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4.1 in every hundred of the realm's people hold 38.8 of every hundred coins, and live 14.9 times better than the people who work for them. The gap is sharpest at Comfre, where 55 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 29 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4 in every hundred of the realm's people hold 38.6 of every hundred coins, and live 15.2 times better than the people who work for them. The gap is sharpest at Comfre, where 55 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 28 parts in a hundred of the whole spread.
 
-4 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
+3 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.42. It turned on the rising at Skavurnok Delf in 1125, which was put down. The poorest fifth of the realm carries 4.3 times the blight of the richest fifth. Behind the Vrathul wall, the median settlement earns 87 in the hundred less than the open country at the same distance. 4 regions sit off the grid because the ledgers said serving them would not pay, and sickness runs 1.2 times heavier there than in the lit core. Quillton drinks 5 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 4.1 in a hundred hold 38.8 of every hundred coins, and live 14.9 times better than the rest. The skyway would cut 38.7 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
+The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.41. It turned on the rising at Skavurnok Delf in 1125, which was put down. The poorest fifth of the realm carries 4.8 times the blight of the richest fifth. Behind the Vrathul wall, the median settlement earns 87 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Quillton drinks 4 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 4 in a hundred hold 38.6 of every hundred coins, and live 15.2 times better than the rest. The skyway would cut 38.7 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

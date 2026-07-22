@@ -6,7 +6,7 @@
 
 This record covers a realm of 12 settled regions, with its capital at Comfre. The wind comes from the northeast. Most of what follows was set by the ground itself: where the aetherstone lies, where the land will carry a road, and where it won't.
 
-No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held 13,396 people to the median town's 2,794. The bigger a town got, the faster it grew.
+No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held 12,838 people to the median town's 3,047. The bigger a town got, the faster it grew.
 
 The aetherworks at Comfre refine aetherstone into lumen, and the trunk lines run from them to the capital. The Temple holds sacred ground at Velle (by Skavurnok Delf), out where the aetherstone lies and the Crown's authority is weak. Every settlement started on the grid. The ledgers rarely allow that, and never for long.
 
@@ -94,12 +94,12 @@ Of the realm's 5 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the magnates stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.9 in every hundred of the realm's people hold 39.1 of every hundred coins, and live 15.6 times better than the people who work for them. The gap is sharpest at Comfre, where 56 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 26 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4 in every hundred of the realm's people hold 39.5 of every hundred coins, and live 15.7 times better than the people who work for them. The gap is sharpest at Comfre, where 56 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 28 parts in a hundred of the whole spread.
 
 At the record's close, the grid reaches every settlement in the realm. That is written here plainly, so a later reader can check whether it lasted.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.42. It turned on the rising at Skavurnok Delf in 1125, which was put down. The poorest fifth of the realm carries 5 times the blight of the richest fifth. Behind the Vrathul wall, the median settlement earns 83 in the hundred less than the open country at the same distance. 0 regions sit off the grid because the ledgers said serving them would not pay. Quillton drinks 4 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.9 in a hundred hold 39.1 of every hundred coins, and live 15.6 times better than the rest. The skyway would cut 38.7 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
+The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.42. It turned on the rising at Skavurnok Delf in 1125, which was put down. The poorest fifth of the realm carries 5 times the blight of the richest fifth. Behind the Vrathul wall, the median settlement earns 83 in the hundred less than the open country at the same distance. 0 regions sit off the grid because the ledgers said serving them would not pay. Quillton drinks 4 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 4 in a hundred hold 39.5 of every hundred coins, and live 15.7 times better than the rest. The skyway would cut 38.7 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
 
 None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.

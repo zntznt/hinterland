@@ -8562,17 +8562,54 @@
           parts.push(`<text x="${(cx+sz+3).toFixed(1)}" y="${cy.toFixed(1)}" font-size="${cz(8)}" fill="#555" opacity="0.7">${reg.elevation}</text>`);
         });
       }
-      // Forest tint: semi-transparent green overlay on forest-biome regions,
-      // drawn below choropleth data. Standard modern convention (USGS, Nat Geo,
-      // OSM Carto) — continuous fill, not individual tree icons.
-      if (!atlas && LENS.group === "THE LAND") {
-        const forestEls = [];
+      // Forest tint: warm olive-green overlay on forest-biome regions.
+      // Data mode: translucent fill only (NatGeo reference-map convention).
+      // Atlas mode: fill + Poisson-disc-scattered small abstract tree symbols
+      // (Ordnance Survey / IGN France convention at detail scale).
+      const FOREST_FILL = atlas ? "#8a9a6e" : "#7a8a5e";
+      const FOREST_OPACITY = atlas ? 0.35 : 0.25;
+      const forestEls = [];
+      model.regions.forEach(reg => {
+        if (reg.biome !== "forest") return;
+        const dF = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
+        forestEls.push(`<path d="${dF}" fill="${FOREST_FILL}" fill-opacity="${FOREST_OPACITY.toFixed(2)}" stroke="none" pointer-events="none"/>`);
+      });
+      if (forestEls.length) parts.push(`<g class="forest-fill">${forestEls.join("")}</g>`);
+
+      // Atlas-mode tree scatter: small abstract tree shapes (OSM broadleaved
+      // style: rounded canopy + thin trunk, 4x8 px) placed within forest
+      // polygons via rejection sampling. Reads as organic texture, not icons.
+      if (atlas) {
+        const treeSvgs = [];
+        const TREE_SPACING = 20;
+        const TREE_SHAPE = "M 2,0 C 0.9,0 0,1.1 0,2.4 C 0,3.6 0.8,4.6 1.8,4.7 L 1.8,8 L 2.2,8 L 2.2,4.7 C 3.2,4.6 4,3.6 4,2.4 C 4,1.1 3.1,0 2,0 Z";
         model.regions.forEach(reg => {
           if (reg.biome !== "forest") return;
-          const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
-          forestEls.push(`<path d="${d}" fill="#4f8a4f" fill-opacity="0.16" stroke="none" pointer-events="none"/>`);
+          // Bounding box of the region ring
+          let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+          for (const p of reg.ring) { xMin = Math.min(xMin, p[0]); xMax = Math.max(xMax, p[0]); yMin = Math.min(yMin, p[1]); yMax = Math.max(yMax, p[1]); }
+          const w = xMax - xMin, h = yMax - yMin, area = w * h;
+          const budget = Math.max(3, Math.min(40, Math.round(area / 1800)));
+          const placed = [];
+          const s = streams(params.seed)("tree" + reg.id);
+          for (let t = 0; t < budget; t++) {
+            let bestX = 0, bestY = 0, ok = false;
+            for (let attempt = 0; attempt < 25; attempt++) {
+              const tx = xMin + s() * w, ty = yMin + s() * h;
+              if (!pointInRing(tx, ty, reg.ring)) continue;
+              let tooClose = false;
+              for (const pp of placed) {
+                if (Math.hypot(tx - pp[0], ty - pp[1]) < TREE_SPACING) { tooClose = true; break; }
+              }
+              if (tooClose) continue;
+              bestX = tx; bestY = ty; ok = true; break;
+            }
+            if (!ok) continue;
+            placed.push([bestX, bestY]);
+            treeSvgs.push(`<path d="${TREE_SHAPE}" transform="translate(${bestX.toFixed(1)},${fy(bestY).toFixed(1)})" fill="#6b8552" opacity="0.55"/>`);
+          }
         });
-        if (forestEls.length) parts.push(`<g class="forest-fill">${forestEls.join("")}</g>`);
+        if (treeSvgs.length) parts.push(`<g class="forest-trees">${treeSvgs.join("")}</g>`);
       }
       const seaClipPaths = []; // the roughened sea outlines, to punch holes in the land clip
 

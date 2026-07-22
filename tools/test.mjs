@@ -1677,7 +1677,9 @@ console.log("# The surface catches up U2: inspector, lenses, legends, menus, flo
   // an eventful one from the export instead of pinning a bare region number.
   const evCounts = {};
   for (const ev of (gj.hinterland.events || [])) if (ev.region_id !== undefined) evCounts[ev.region_id] = (evCounts[ev.region_id] || 0) + 1;
-  const inspId = Object.keys(evCounts).sort((a, b) => evCounts[b] - evCounts[a])[0] ?? 20;
+  const settled = Object.keys(evCounts).filter(id =>
+    gj.features.some(f => f.properties.kind === "settlement" && f.properties.region_id === +id));
+  const inspId = settled.sort((a, b) => evCounts[b] - evCounts[a])[0] ?? 20;
   doc.querySelector(`#stage svg path[data-region="${inspId}"]`).dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
   const insp = doc.getElementById("inspector");
   if (insp.style.display === "block" && doc.querySelectorAll("#stage svg path.sel").length === 1)

@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hinterland generator</title>
+<!--
+  Hinterland — procedural region-scale map generator.
+  Client-side, static, no build step. Open directly from disk or host on Pages.
+
+  THE HONEST ARTIFACT (v37): the evidence ships with the claim.
+    - d3-delaunay is VENDORED INLINE: one file, open from disk, no
+      network, no CDN — the README's oldest promise is literally true.
+    - The verification suite, the structural-stress runner, and the
+      80-world atlas sweep now live in tools/ — every measured number
+      in the docs has a producer in the repo.
+    - New region columns anchor_x / anchor_y export the anchor that
+      range_shadow and every seat-distance is measured from (NOT the
+      polygon centroid on relocated coastal ground).
+    - within_pct reconciled to the current measured median (39%).
+
+  THE PLACES BETWEEN (L1): four location types that pull on the model.
+    - THE FREEPORT: a harbor beyond the writ, founded by the lawless on
+      the farthest workable coast from the seat. Its trade enters no
+      ledger (official sea_access cannot see the shadow gate), but the
+      smugglers ROUTE to its quay (it joins the smuggler sinks), its
+      ground keeps what the gates would have taken (retention +10 at
+      the founding, before the income streams run), and the black
+      market prices accordingly. Sealed quays do not close it — a
+      decree is not a reef — and it refuses the Dominion's charter.
+    - THE STILLAIR: a tract where the lift-stones die. Pure geology
+      (ruggedness + elevation + its own substream — byte-stable across
+      every knob and capital move). No aerie can be chartered on
+      stilled ground; if the SEAT itself sits in the still, no skyway
+      flies at all. The sky inequality gains a wall no money crosses.
+    - THE HIGH SANCTUARY: a refuge above the sanctioned faith, on high
+      remote ground. It heals without a charter (a healer source the
+      planner never rationed), draws its own pilgrims (joins the
+      pilgrim destinations), and hides people from the census
+      (legibility +15 where has_sanctuary — exactly recomputable).
+    - HUNTER CAMPS: where the beasts are worth a bounty and the
+      garrisons never come. Predation -18 on camp ground, -8 next door
+      (exactly recomputable from has_camp), mobility +4 (risk is a
+      wage), black market +6 (trophies are fenced, not taxed).
+    - All four are named in their own registers, drawn on the map,
+      shown in the inspector, told by the chronicle, and exported
+      (region columns stillair / is_freeport / has_sanctuary /
+      has_camp; point features freeport / sanctuary / camp).
+      Schema v36.
+
+  THE NAMING OF THINGS (E6): the words are grown from the world.
+    - THE TOPONYM GRAMMAR: settlement names are no longer single markov
+      words. Each region's GEOLOGY selects its qualifying parts — a
+      river-mouth town earns "-mouth", ore country its "Delf", the high
+      country "High —"/"Tor"/"Fell", the fens their "Fen", forest its
+      "holt", rugged ground its "hold"; roughly half keep the plain base
+      word (measured 53% plain / 22% fused / 25% spaced). The grammar is
+      GEOLOGY-BLIND to society: the same seed names the same towns under
+      every knob, weight, and capital move (tested). A suffix guard
+      rejects double-suffix fusions (no Astermereford).
+    - THE LAND'S KINDS: ridges are Teeth/Crest/Spine/Range/Wall/Ridge/Hills
+      by measured height and span; rivers are Rill/Beck/Brook/River/Water by
+      length; passes are Stair/Steps/Pass/Saddle/Gap by crossing height
+      (each still recomputes from measured terrain); seas are named by
+      area — "X Sea" / "Gulf of X" / "X Deep". The top three roads take
+      names from what they carry: the seat's road, the Ore Road, the
+      Salt Road.
+    - HISTORY TAKES NAMES: a war within two epochs of an ore strike is
+      "the War of the <town> Seam"; treaties are "the Peace of <town>";
+      annexations "the Landing at <town>"; revolts "the <town> Rising";
+      plagues are named by the ground they struck (Fen-Ague in the
+      marshes, Water-Rot downstream, Grey Breath elsewhere). The
+      chronicle files each event under its given name.
+    - EPITHETS: towns earn DERIVED bynames — the Yoked / the Unyoked /
+      the Free / the Famished / the Gilded / the Ashen / the Hollow / the Mourning /
+      the Rising — first match wins, most towns never earn one (26%
+      do). Exactly recomputable from the exported columns and events;
+      the chronicle closes The Years with the byname roll. Society
+      flavors the BYNAME and the EVENT, never the place name.
+    - Exports: settlement epithet, sea_name, pass_name + pass_elev,
+      road_name, ridge_kind + max_elev, river_kind, events[].name.
+      Schema v35.
+
+  THE TWO LEVERS (P2): institutions and isolation become dials.
+    - THE SEAT'S EAR (responsiveness, default 45): the reform-or-reaction
+      coin was hidden dice — 45% reform, 30% reaction, 25% silence, fixed
+      forever. Now it is a POLICY: P(reform) = iq/100, P(reaction) the
+      next 30 points. At the default the dice are BYTE-IDENTICAL to
+      every world ever rolled; at 0 the seat answers wounds only with
+      fists or silence; at 100 every wound buys a mercy. Institutional
+      quality is a lever, and the granary — the only measure that ever
+      closes a gap — hangs on it.
+    - THE SEALED QUAYS (close the harbors, default open): isolation as a
+      policy with a price. Closed: no ports are chartered — no sea
+      trade (sea_access 0, the trade stream loses its second pole), no
+      port tolls, and NO DOOR FOR THE DOMINION (the fleet needs a quay).
+      The geology is untouched: the sea is still there; the realm just
+      refuses it. The same door that lets the empire in is the door the
+      coin comes through — sealing it is safety bought with poverty.
+    - Both knobs ride the hash, the share link, and the provenance
+      (responsiveness, harbors_closed). Schema v34.
+
+  THE SURFACE CATCHES UP (U2): the app finally shows what it computes.
+    - THE INSPECTOR: click any region for its full ledger — the land, the
+      coin, the class split, the state's reach, the people, every event
+      that struck it, what stands there by name, and the gates it pays on
+      the road to the seat. ~60 columns were export-only; now one click.
+      (Pinning the capital moved to an explicit arm-then-click button.)
+    - LENSES, GROUPED: 13 new views for columns that were computed but
+      invisible — elevation, ruggedness, temperature, rainfall, fertility,
+      RETENTION (who keeps what it makes), TOLLS, TRIBUTE, sea access,
+      wealth-since-founding, smuggling, trust, mobility — organized under
+      THE LAND / THE COIN / THE STATE / THE PEOPLE.
+    - Categorical legends show SWATCHES (bloc/biome/trajectory named).
+    - THE COUNTERFACTUAL MENU: C1's machinery generalized — lambda=0, the
+      full grid (threshold 0), or both mercies at once.
+    - Roads draw by TRAFFIC (the flow was always computed); the scrubber
+      now animates the occupation on the bloc view (the flag goes up in
+      the year it went up).
+
+  THE COUNTERFACTUAL (C1): the lambda experiment moves into the page.
+    - The strongest claim this generator makes — the dumping is a POLICY,
+      not a law of nature — lived only in the test suite's lambda sweep.
+      Now it is an exhibit: one button re-runs THIS world with lambda=0
+      (same rock, same wind, same dice; only the spoil routing differs)
+      and shows the two injustice maps side by side with the numbers:
+      the poorest fifth's blight burden, the plague count, the gini —
+      as rolled vs physics-only. The gap between the maps is the policy.
+    - STAGE-3 PURITY FIX (real bug, latent since the dynamic engine): the
+      loop wrote ore depletion back into reg.endowment, so any society-
+      knob change after an ep>0 render silently recomputed the world on
+      MINED-OUT ground — the screen and its own share link disagreed.
+      applyAttributes now restores the geology as founded on entry;
+      stage 3 is a pure function of (geology, knobs), proven by a new
+      in-page-equals-fresh-boot byte test (shipped: tools/test.mjs). The counterfactual is built
+      on that purity: it runs the alternate world and restores the real
+      one, and the export is byte-identical before and after.
+
+  THE FOUNDING CENTURIES (Z1): population is GROWN, not painted.
+    - Before Z1 settlement sizes were AUTHORED: a tier ladder drawn from
+      jittered centrality, then a population dealt from that tier's band.
+      The urban hierarchy was a costume. Now every region starts as a
+      hamlet (60-180 souls) and the centuries before year 1000 run the
+      SAME physics as the recorded epochs, blind to wealth (which does
+      not exist yet): compound growth on land quality (fertility, the
+      seat's pull, river, coast), migration along the ROADS toward the
+      bigger market (log-damped agglomeration: size begets size), a
+      floor under the smallest hamlet (Gabaix's condition), 26 rounds,
+      then one rescale to the realm's familiar size so every downstream
+      rate (plague bar, burdens per 1k) keeps its meaning.
+    - THE RANK-SIZE LAW EMERGES: log(pop) on log(rank) is a straight
+      line no one drew (findings.zipf: alpha, r2, primacy — exactly
+      recomputable from the exported settlement populations).
+    - TIERS ARE NOW LABELS FOR THE OUTCOME, not its cause: the seat is
+      prime by office; everyone else ranks by what they GREW to (top 20%
+      hub, next 40% outpost, rest holdfast) — the same rule the post-loop
+      re-rank always used, now true at the founding too. POP_BANDS is
+      gone; the exact-recompute battery now derives every tier from the
+      exported populations. Schema v32.
+
+  THE DOMINION (X1): sovereignty is the last inequality — the whole realm
+  can be someone else's hinterland.
+    - Every loop so far ran INSIDE the map. X1 adds the outside: the
+      Dominion, the power beyond the sea, whose fleet arrives (a seeded
+      coin, epoch 2-6) at the realm's best quay. The door is the wound:
+      the same ports that made the realm rich (G3's second lottery) are
+      how an empire walks in — landlocked worlds and coasts inside the
+      maelstrom's reach are shielded, a geographic lottery at the scale
+      of the whole world.
+    - THE OCCUPIED ZONE: a cost-ball (OCC_R) around the foothold. At
+      arrival: retention x0.6 (the yield leaves the realm), every gate in
+      the zone re-tolls for the Dominion (held_by "dominion" — gates that
+      can never be seized back, banked by no one in the realm), and the
+      whole zone is FORCE-WIRED to the quay: the extractive corridor. The
+      conduit reaches you when someone else wants what you have.
+    - THE TRIBUTE: each epoch after arrival the occupied pay 3 at the
+      quay; the free realm pays the Crown's assessment — and the Crown
+      assesses its own bloc gently (crown-bloc 1, everyone else 2).
+      Sovereignty inequality reproduces the domestic hierarchy.
+    - THE COMPRADOR BARGAIN (H1 tie-in): occupation does not replace the
+      owners' row, it hires it — occupied elite_share +4 at arrival.
+    - LIBERATION (V1 tie-in): occupation stacks +18 on the revolt score
+      and +25 on the state's strength (the imperial garrison). A rising
+      that WINS on occupied ground throws the Dominion out of that region.
+    - The domestic machinery keeps its own lanes: no faction can seize a
+      garrisoned gate, no war burns occupied ground (the imperial peace),
+      no apostate tower rises under the garrison.
+    - Exported: occupied / occupied_epoch / tribute_burden columns,
+      dominant_bloc = "dominion" on occupied ground, hinterland.dominion
+      provenance, annexation event, findings.sovereignty (retention gap,
+      the corridor, the growth gap, the comprador ratio — all exactly
+      recomputable). Schema v31.
+
+  THE SKYWAY (S1): geography is destiny only for those who can't afford
+  to leave it.
+    - The ground network prices everyone the same walls: ridge x4.5, ford
+      x2.2, pass tolls, held gates. S1 charters lift lanes between the
+      seat and the realm's richest hubs at the founding: flight costs
+      FLY_BOARD + FLY_COST x distance and ignores every multiplier the
+      ground ever had. The road below is for everyone; the sky is not.
+    - COLUMNS: capital_cost_ground (the walk to the seat over the friction
+      graph), capital_cost_sky (walk to the nearest aerie, then fly), and
+      sky_advantage = the share of your distance the lanes abolish IF you
+      may board — exactly recomputable from the two cost columns. The
+      catch is the boarding rule, and the boarding rule is CLASS.
+    - CLASS-CONDITIONAL GEOGRAPHY (findings.sky): the lanes are worth most
+      exactly where the ground is worst — the walled country's median
+      sky_advantage beats the open country's — so the mountain-shadow
+      finding splits by row: the owners' row of the shadow twin measures
+      the wall at twin_sky% less; its labor still walks the pass.
+    - THE LOOP: the skyway touches ONLY the class ledger (aeries accrue
+      +0.6 elite_share per epoch — absentee owners cluster at the lanes;
+      elite_pop_pct counts the aerie district) — wealth, migration, and
+      every event history are byte-identical to v29. Schema v30.
+
+  THE STRATA (H1): class exists — within the walls, not only between them.
+    - Before H1 every region was one people with one number: all the
+      inequality this generator could speak of was BETWEEN places. But the
+      magnate who owns the works and the hauler who coughs in them live in
+      the same region, and the model could not tell them apart. H1 splits
+      every region into two rows: the owners and the labor.
+    - elite_share (simulated, like wealth): the owners' slice of the
+      region's coin. Founded on pure structure — the works, the claimed
+      seams, the court (company towns concentrate; smallholder valleys
+      spread) — then moved by the SAME history as everything else, with
+      NO NEW DICE (every seeded world is unchanged): gate rents and the
+      works' profits accrue to the owners' row; the granary's bread lands
+      on labor's; the plague makes labor scarce and dear (-8); a won
+      revolt burns the charters (-25), a crushed one expropriates under
+      the garrison (+10); war spares property more than people (+5); the
+      company arriving/quitting moves its owners in/out (+12/-10); a
+      seized gate installs the holder's men (+3).
+    - elite_pop_pct and class_gap: DERIVED columns, exactly recomputable
+      from the exported file alone (tier + works + harbor; owners' coin
+      per owner over labor's coin per laborer).
+    - THE TWO-LEVEL GINI (findings): gini_people = population-weighted
+      gini over the 2N class rows; gini_between_people collapses each
+      region to one people. within_pct = the share of the realm's
+      inequality a region map CANNOT SEE. owners = who owns the realm
+      (pop_pct of the people hold coin_pct of the coin, class_gap x
+      apart), and the sharpest company town is named. All exactly
+      recomputable from exported columns. Schema v29.
+
+  THE PHYSICAL WORLD (G4): geology as a causal chain of shapes.
+    - Before G4 the geology was three cheats on noise: a ridge was a line
+      with a toll, the sea was a box edge, and elevation/fertility/rugged
+      were three INDEPENDENT noise fields. Now it is one chain:
+      tectonics -> elevation -> climate -> biome -> fertility -> society.
+    - ELEVATION is a continuous surface: continental tilt rising off the
+      sea, tectonic UPLIFT along the ridge axes, noise texture, a shelving
+      shore. Contours are exported and drawn. Ruggedness = the SLOPE of
+      that surface plus grain, not its own random layer.
+    - THE SEA is a shape: a seeded sea level floods the low ground
+      connected to the ocean side (flood-fill + marching squares) — an
+      irregular coastline with bays and headlands, exported as polygons;
+      on_coast = the cell touches the water (exactly recomputable).
+    - CLIMATE: temperature = latitude minus mountain lapse; rainfall =
+      moisture marched in against the wind, drying with distance and
+      raining out on the windward slopes — the RAIN SHADOW: the mountain
+      that cuts you off from trade also decides whether you get rain.
+    - BIOMES (alpine/badland/moor/marsh/forest/steppe/grassland) classify
+      from temperature x rainfall x elevation x water — exported, mapped,
+      EXACTLY recomputable. Fertility is now DERIVED (rain + warmth +
+      floodplain − altitude), also exactly recomputable: any farm traces
+      back to a rainfall pattern, a mountain, a plate. Schema v28.
+
+  DIVERGENT HISTORIES (V1): the counter-currents — no two rolls, one story.
+    - The critique was fair: every loop we built amplified inequality, so
+      every world converged to the same ending with different scenery. V1
+      adds the forces that push BACK, and lets each history decide which
+      side wins.
+    - THE LEVELING PLAGUE: survivors charge more. A plagued region gains
+      +15 permanent value retention — the same shock that scars can also
+      compress, as it did in the world we live in.
+    - REFORM AND REACTION: two epochs after the run's first wound, the
+      seat RESPONDS (45% reform / 30% reaction / 25% nothing): a Dumping
+      Reform eases the spoil bias, a Grid Charter lowers the connection
+      bar, a Toll Amnesty caps the gates — or the reaction entrenches the
+      dumping and raises the tolls. The measure is chosen by what ails
+      the realm most. These change the LOOP'S OWN PARAMETERS mid-run:
+      identical geographies genuinely fork.
+    - THE REVOLT: the periphery gets agency. Once per run, the region
+      where injustice, tolls, and darkness stack highest can rise; its
+      strength against the seat's decides — CRUSHED (deeper scar, a
+      garrison after) or WON: a free town that keeps what it makes and
+      tolls no one.
+    - THE TRAJECTORY IS THE FINDING: gini at founding and at close are
+      exported (exactly recomputable from wealth_t0 / wealth); the panel
+      and the verdict LEAD with the direction and its turning point. The
+      acceptance test is the criticism inverted: across the sweep, both
+      gap-closing and gap-entrenching worlds must exist, revolts must win
+      somewhere and die somewhere, and twenty panels must not open with
+      the same sentence. Schema v27.
+
+  THE ARGUMENT SURFACE (A1): the app finally SAYS what it measures.
+    - Readers praised the fantasy map and missed the point: the argument
+      lived in columns, tests, and docs while the surface showed scenery.
+      A1 makes the thesis the first thing on screen.
+    - THE FINDINGS PANEL: computed live per world from the SAME exported
+      columns (and echoed in provenance as hinterland.findings, exactly
+      recomputable from the file): the poorest fifth's blight against the
+      richest fifth's, the mountain-shadow earnings gap, the darkness
+      count and its burden ratio, who drinks the river last, who pays
+      the gates. The map is the evidence; the panel is the argument.
+    - THE TWIN EXHIBIT: the world's sharpest matched pair — two towns at
+      the same crow-flies distance from the seat, one behind the wall —
+      drawn as a line on the map with a side-by-side card. Same distance,
+      different fate, no genre to hide in.
+    - First contact reframed: the page states its mission, the default
+      view boots into injustice, and the view labels became questions
+      (who breathes the poison, who was left in the dark, who pays the
+      toll). The chronicle now CONCLUDES: a final section, "What the
+      Record Shows," states the world's structural findings in the
+      chronicler's voice. Schema v26.
+
+  DYNASTIES (E5): the powers have faces now.
+    - Three ruler lines — the Sovereign (Crown), the Hierarch (Temple),
+      the First Magnate (consortium) — with reigns of 3-7 epochs drawn
+      blind before time runs. Rulers are named post-loop in each power's
+      register (lowland / liturgical / frontier), keyed streams, unique
+      against every name in the world; the founding three are byte-stable
+      across epoch settings of a seed.
+    - SUCCESSIONS are courtly events: they carry a faction and a ruler,
+      not a region — power changes hands in a room, not on a map. ~30%
+      are CONTESTED: the faction takes no gates that year (a court
+      fighting itself watches nothing else) and tension with both rivals
+      rises 12 — the realm's neighbors circle a divided house.
+    - provenance carries the full lines (hinterland.rulers); the chronicle
+      is dated by the reigning Sovereign and narrates every succession.
+      Schema v25.
+
+  PEACE TERMS (F3): defeat is an institution, not just a scar.
+    - The winter after a war, TERMS are set at the battlefield. The winner
+      is whichever of the two powers brings more to the table there — live
+      reach at the ground plus the depth of its ledger (up to 40): wars
+      are decided the way they are started, by money and presence.
+    - The treaty REDRAWS the map: the loser cedes up to two of its held
+      gates nearest the battlefield to the winner, and pays half its
+      treasury in tribute — which the winner's ledger then spends on the
+      next seizure. Victory compounds: the oligarchy loop runs through
+      war as well as commerce.
+    - New event type "treaty" (epoch = war + 1, carries factions, winner,
+      ceded count, tribute). No treaty if the war burns in the record's
+      last year — history continues beyond the page. The chronicle notes
+      that the terms were written by the party with the deeper ledger,
+      as terms usually are. Schema v24.
+
+  ESCALATION + THE OLIGARCHY LOOP (F2): money begets reach begets money.
+    - TREASURIES: each faction's held gates pay into a toll ledger every
+      epoch (3 per gate). The ledger BUYS: a fat treasury lowers the
+      seizure bar (up to +15 on the claim score) and each taking debits
+      it (12). Gates fund the next gate — the full oligarchy loop, and it
+      is measurable: the top treasury ends holding the most gates.
+    - TENSIONS: the three faction pairs accrue grievance — +25 when one
+      seizes from the other, +1.2 per epoch for every contested region
+      where the two are the top claims — and decay by 8% per epoch (old
+      grudges fade if not fed). Exported in provenance.
+    - WARS BECOME POLICY: when a pair's tension clears a seeded bar, the
+      war machinery fires within two epochs, and the battlefield PREFERS
+      contested ground where THAT pair meets. Every war event now carries
+      its two factions — the chronicle names the powers, not just the
+      ground. Tension resets when the war triggers: the grievance is
+      spent in blood. Schema v23.
+
+  THE FACTION TURN (F1): the blocs become agents.
+    - HOLDINGS: the chokepoint assets — bridges, passes, ports — are now
+      OWNED. At the founding each belongs to its host region's dominant
+      bloc (or to no one, where the ground is contested/ungoverned).
+    - SEIZURES: each epoch, every faction scores every asset it does not
+      hold (its live reach at the host, a per-faction preference — the
+      magnates want quays and spans, the Crown wants passes — minus the
+      holder's reach and an inertia term). The single best case above
+      threshold acts: the asset changes hands, a "seizure" event with a
+      faction lands in the timeline, and the map's ownership history
+      becomes real. bloc_changes was a statistic; held_by is a deed.
+    - TOLLS: every region's least-cost paths to the seat and to its port
+      are walked; each HELD chokepoint on the way levies. tariff_burden is
+      exported, and each epoch it drags wealth — connection itself is
+      taxed, and the tax is set by whoever seized the road.
+    - THE TOWER LIFECYCLE: when Crown force or Temple reach at an apostate
+      tower climbs high enough, the stronger of the two BURNS it (the
+      healer the darkness had is gone, and nothing replaced it); and
+      where governance keeps failing, apostates RAISE new towers mid-run.
+      tower_burned / tower_raised events; exports carry the final state.
+    - New event types: seizure, tower_burned, tower_raised (with a faction
+      field in the timeline). Schema v22.
+
+  THE WILD LAYER (P1): anomalies — objects the ledger did not order.
+    - Everything on the map so far was infrastructure obeying some ledger
+      (the planner's, the Crown's, the Temple's, the magnates'). P1 adds
+      the objects that DON'T serve the economy but warp it.
+    - BRIDGES & FORDS: rivers finally become barriers ACROSS as well as
+      conductors along — adjacency edges crossing a river polyline (between
+      two non-riverine regions) pay a x2.2 ford penalty, except at 1-2
+      bridges per river (sited blind at the flattest crossings). Bridge
+      towns are chokepoints exactly like pass towns.
+    - RELIC RUINS: the old world's structures, drawn blind in the deep
+      past — a DELVE in the old ore workings, a TOMB in the barrens, and
+      sometimes a DEADHOLD: a city killed in the old cataclysm whose ground
+      still poisons (it seeds a founding blight scar). Each has peril and
+      yield. The poor walk to them: delver_flux routes every settlement's
+      delvers to the nearest ruin (poverty-weighted — risk is a wage), and
+      ruins feed the shadow: black markets fence the yield, predation rises
+      in the peril's reach.
+    - APOSTATE TOWERS: 0-2 rogue arcanists squatting where governance and
+      the grid both fail (sited on the founding political map, NOT geology —
+      the tower is a symptom). Nearby trust falls (exactly recomputable:
+      euclidean 220 of the exported tower point), black markets rise.
+    - THE MAELSTROM: half of worlds carry a turning of the sea on one
+      coast; port siting shuns its reach.
+    - All exported as point layers with names; the chronicle tells the wild
+      map. Schema v21.
+
+  THE SEA + PORTS (G3): the edge of the world is a market.
+    - Each world's geology chooses 1-2 adjacent box edges as SEA (blind).
+      Regions whose cells touch that water are coastal (on_coast — exactly
+      recomputable from the ring + the exported sea_sides). Ports are sited
+      on geology alone: flat, low coast, with a heavy bonus for a river
+      mouth — so the town that drinks last often ships first: the poisoned
+      mouth becomes the harbor.
+    - sea_access = exp-decayed cost-distance from the ports over the SAME
+      friction graph (mountains block the way to the water too). The trade
+      income stream becomes 0.65 centrality + 0.35 sea_access: the realm now
+      has TWO geographic poles — the seat and the sea — and a region's fate
+      is the sum of its lotteries. The composite acceptance test is the
+      DOUBLE LOTTERY: behind the wall AND far from the water is the poorest
+      country on the map.
+    - Coast LineStrings, port Points (named), region columns on_coast /
+      is_port / sea_access; ports and sea sides are knob-stable (geology
+      anchors). The chronicle knows where the sea lies. Schema v20.
+
+  RIVERS + DOWNSTREAM BLIGHT (G2): the conductors.
+    - Ranges are barriers; rivers are the opposite — connected paths that
+      make movement CHEAPER along them. Each world traces 1-2 rivers in the
+      blind-geology stage: a strictly-downhill walk on the region adjacency
+      graph from high ground (usually the ridge flanks) toward the border.
+      The chain order IS the downstream order.
+    - Three effects, all through existing machinery: river valleys gain
+      fertility (so the seat is drawn to the water — emergent, never
+      authored), consecutive river edges cost x0.6 (barge transport: roads
+      and centrality hug the valley), and — the payload — the blight
+      CARRIES DOWNSTREAM: inside computeBlight, after the plume/spoil field
+      settles, every riverine region ships 30% of its load down the chain
+      with 0.75 decay per step. Who drinks first is who stays clean; the
+      mouth drinks what every town and works upstream let fall in.
+    - Regions export on_river / river_id / river_pos / downstream_blight
+      (exactly recomputable: blight_load minus downstream_blight is the
+      pre-river field; re-run the carriage from the exported chain order).
+      Rivers export as named LineStrings (lowland register) through the
+      settlement anchors. The chronicle knows who drinks last. Schema v19.
+
+  MOUNTAIN RANGES + PASSES (G1): geography with SHAPE.
+    - The old geology made gradients (smooth noise fields); real geography
+      makes STRUCTURES. Each world now draws 1-2 mountain ranges in the
+      blind-geology stage: connected ridge polylines that raise ruggedness
+      and elevation in a band, and — the part that matters — act as WALLS
+      in the cost graph. Adjacency edges crossing a ridge pay a x4.5
+      friction wall, EXCEPT within a pass (1-2 low gaps per ridge, x1.4).
+    - Everything downstream reacts for free, because every social outcome
+      already flows through cost-distance: centrality collapses behind the
+      wall, the conduit skips the shadow, roads thread the passes, traffic
+      concentrates at the chokepoints, darkness pools where the seat cannot
+      cheaply reach. "Put a mountain between a capital and a town and the
+      town becomes despondent" — now measurably true, and the acceptance
+      test is exactly that comparison at matched crow-flies distance.
+    - Regions export range_shadow (straight line to the seat crosses a
+      ridge — exactly recomputable from the exported geometry) and is_pass.
+      Ridges export as named LineStrings (frontier register), passes as
+      Points named after their towns. Schema v18.
+
+  MARKOV TOPONYMY (E3): the world names itself.
+    - Order-2 character chains learn three invented registers and walk novel
+      names from per-region substreams: the settled core speaks LOWLAND, ore
+      and rugged country speak FRONTIER, and sanctioned sites are dedicated
+      in the Temple's LITURGICAL register (site_name on the shrine points).
+    - The register is read from blind geology (founding endowment,
+      ruggedness), never politics — so the linguistic frontier tracks the
+      ore, not the border, and the whole toponymy is byte-stable across
+      capital moves, weight changes, and epoch settings of a seed.
+    - Settlements export name_register; all names unique per world.
+      Schema v17.
+
+  CAUSAL CHAINS + THE FAITH IN MOTION (D6): events cause events.
+    - Fortune on disputed ground turns it hot: an ore strike whose epicenter
+      is CONTESTED guarantees a war and pulls it forward (~2 epochs after the
+      rush) — and the war-target value function naturally aims the fighting
+      at the struck ground. The most classic loop: fortune causes conflict.
+    - The faith arrives where the suffering is: two epochs after the run's
+      first plague or relic calamity, the Temple CONSECRATES a new sanctioned
+      site at the wound. Temple reach surges (computeBlocs now recomputes
+      temple distance from the LIVE site set), the political map re-contests,
+      and post-loop the pilgrims reroute toward the new shrine. Conditional
+      charity, arriving in character: after the harm, claiming the ground.
+    - New event type "consecration" (seventh). Schema v16.
+
+  CONFLICT AND FORTUNE (D5): the last two actors take the stage.
+    - ore_strike: a HIDDEN lode — drawn blind in the geology stage, the ore
+      was always there — surfaces at a seeded epoch. Extraction income jumps,
+      migration turns around, a rush town is born (and, per the mobility
+      model, born as a labor camp).
+    - war: at a seeded epoch, the most valuable CURRENTLY CONTESTED region
+      (live politics chooses the battlefield) erupts — ~30% of its people
+      gone, a quarter of its wealth, a permanent hysteresis scar. The Crown
+      responds in character: the war region is garrisoned AFTER the blood.
+      Security arrives late, where the harm already happened. Schema v15.
+
+  DYNAMIC INSTITUTIONS (D4): the state as a lagging, chasing actor.
+    - refinery_founded: capital doesn't die, it moves. Two epochs after a
+      collapse, the magnates open a replacement refinery at the best CURRENT
+      site (wealth + centrality + flat terrain — reading the social layer is
+      legitimate mid-run: capital chases returns). It gets a trunk hookup,
+      emits blight, projects magnate reach.
+    - LIVE POLITICS: dominant_bloc is recomputed whenever the refinery set
+      changes (magnate reach recedes on collapse, surges at a founding).
+      bloc_changes counts each region's ACTUAL changes of ruler during the
+      run, and tenure_churn is now built on lived flips rather than pure
+      reconstruction. Schema v14.
+
+  IN-RUN EVENTS (D3): history with dates.
+    - Events FIRE during the run and change the trajectory afterward:
+        refinery_collapse — when the world's remaining ore falls below a
+          seeded threshold, the weakest refinery dies. Its income vanishes,
+          its blight emission stops, its wardstation closes, the magnates'
+          reach recedes — and its trunk conduit remains as ghost
+          infrastructure. Industry consolidates as the fields tire.
+        blight_plague — a region at maximum contamination with real
+          population loses ~35% of its people, once. The drain spiral takes
+          over from there.
+        relic_calamity — at a seeded epoch, the unexplained erupts at a
+          sanctioned site: a PERMANENT contamination scar enters the blight
+          field. Most worlds, not all.
+    - Recorded as region columns (event_type / event_epoch / event_severity)
+      AND as a timeline in the provenance member (hinterland.events) — the
+      epoch series shows the aftermath frame by frame. Deep-past shocks
+      (shock_legacy) remain the reconstructed pre-run history; events are
+      LIVED history. Schema v13.
+
+  THE TEMPORAL BRIDGE (D2): watch it happen.
+    - Per-epoch SNAPSHOTS captured during the run (wealth, population, ore
+      stock, blight, grid membership, conduit growth).
+    - An EPOCH SCRUBBER in the preview: drag through history and watch the
+      stocks move — wealth compound, ore die, blight re-target, the grid
+      crawl outward, settlements swell and hollow.
+    - A second export, "Download epoch series": one GeoJSON where regions and
+      settlements repeat per epoch with epoch + epoch_date fields (one epoch =
+      25 fictional years), and conduit edges carry the epoch they were built.
+      Load in QGIS, enable the Temporal Controller (single field with
+      date/time, accumulate for the conduit), press play: the inequality
+      compounds as an ANIMATION. The strongest artifact the tool produces.
+
+  THE DYNAMIC ENGINE (D1): time. The static model shows correlations; the
+  panel's key findings were all FEEDBACK LOOPS, and loops need epochs.
+    - An EPOCHS slider (neutral zero: 0 = the founding snapshot, byte-identical
+      to the static model). Each epoch runs coupled update rules:
+        depletion  — mined ore shrinks ~22%/epoch; dead lodes EMERGE in-run
+        wealth     — accumulates (0.6 x carried + 0.4 x fresh income): head
+                     starts compound for real (agglomeration runaway)
+        migration  — people flow along roads toward wealth, light, and clean
+                     land, capped per epoch (the drain spiral)
+        conduit    — re-evaluated each epoch with new population x wealth;
+                     infrastructure ratchets up, chasing the winners
+        blight     — dump-targeting recomputed from CURRENT wealth: the
+                     poison follows the poor wherever they end up
+    - Downstream layers (services, health, security, governance, texture)
+      read the FINAL state. Tiers re-rank by final population: a hub can
+      hollow to a holdfast; an outpost can boom.
+    - Trajectory columns: endowment_t0, wealth_t0, population_t0, peak_wealth,
+      ore_depleted, boom_bust (boom / stable / decline / collapse) — QGIS maps
+      not just who is poor but who was MADE poor, and when. abandonment_index
+      is now true hysteresis: peak wealth minus present wealth. Schema v12.
+
+  SECOND WAVE, W4 (retained): social texture — who the map
+  serves, who routes around it, and who it cannot even see.
+    - segregation_index: the enclave signature — wealth standing above its
+      neighbors, refinery company districts, high tiers. Same place, two worlds.
+    - mobility_ceiling: chain-role value x services x market access. In a
+      refinery town you may rise; in an ore-only outpost you are born labor.
+    - social_trust (claiming the state) vs kinship_reliance (routing around
+      it): designed mirrors — bonding capital absorbs what institutions fail.
+    - cultural_distance, tenure_regime (titled / mixed / customary /
+      contested — magnates read customary ore country as empty title).
+    - legibility_gap + uncounted_population: the meta-attribute. The census
+      undercounts exactly where need is greatest, so every per-capita rate is
+      optimistic — QGIS can recompute corrected (worse) rates with
+      population + uncounted_population. The hinterland the Crown cannot see
+      is the hinterland it need not serve. Schema v11.
+
+  SECOND WAVE, W3 (retained): deep time / path dependence.
+    - EXHAUSTED LODES: blind geology — ore fields mined out long ago, feeding
+      NO income today. Where they fall on poor ground, abandonment is
+      genuinely emergent: old ore country, now hollow.
+    - founding_era (relic_era / first_settlement / conduit_boom /
+      recent_frontier) + founding_age: settlement cohorts read off geology and
+      infrastructure — ore country was settled first, then the farmland, then
+      the trunk towns, and the frontier last.
+    - shock_legacy (refinery_collapse / blight_plague / relic_disaster / war /
+      none) + severity: the scars stamped where the world would have produced
+      them. legacy_advantage: head starts compound (age x conduit x
+      centrality). abandonment_index = past value minus present wealth (the
+      hysteresis gap). tenure_churn: bloc frontiers changed hands often.
+    - All formulas recomputable from exported columns. Schema v10.
+
+  SECOND WAVE, W2 (retained): security + the shadow economy.
+    - GARRISONS at the seat and the busiest corridors near the core (score:
+      road throughput + centrality) — protection follows the center's
+      arteries, not the frontier. force_projection decays from them over
+      cost-distance; constabulary_strength needs BOTH priority and lumen (off-grid
+      is near-defenseless); security_status classifies secured / patrolled /
+      contested / ungoverned space.
+    - The shadow economy is the NEGATIVE IMAGE of the state: smugglers move
+      unretained ore value to the big markets along roads but pay a premium to
+      cross patrolled ground (they route AROUND force_projection);
+      predation_risk peaks where traffic and pilgrims are worth robbing and
+      nobody guards them; black_market_index prices the underservice;
+      enforcement_gap = illicit pressure minus state capacity — the lawless
+      hinterland column. Garrisons export as Points. Schema v9.
+
+  SECOND WAVE, W1 (retained): the road network + flows.
+    - ROADS: a travel network over the region adjacency graph — friction-cost
+      MST (so EVERY settlement is connected: people walk; the contrast with
+      the rationed conduit is the point) plus detour-justified shortcuts.
+    - TRAFFIC: gravity flows (pop x pop / cost^2) between all settlement pairs,
+      routed over least-cost road paths and accumulated per edge; road_class
+      (highway / road / track) by traffic rank. Busy edges are chokepoints.
+    - market_access: Hansen gravity index over road-network costs.
+    - pilgrim_flux: every settlement's pilgrims routed to the nearest
+      sanctioned site; through-traffic accumulated per region — on-route
+      places harvest the pilgrim economy, bypassed places don't.
+    - Roads export as LineString features (kind="road"). Schema v8.
+
+  PHASE 6 (retained): the governance
+  overlay — who actually rules each region.
+    - Three independent reach fields: CROWN = centrality_to_capital (admin decays
+      with cost-distance from the seat); TEMPLE = decay from sanctioned sites
+      (the Temple plants them on remote ore and deep periphery — where the
+      sacred substance lies and where the Crown's writ is thin); MAGNATE =
+      decay from the refineries (capital guards its assets).
+    - dominant_bloc = argmax of the three: a close top-two is CONTESTED; all
+      three below the floor is UNGOVERNED — the open hinterland. Emergent: no
+      region is assigned a ruler; rulers reach or they don't.
+    - Sanctioned sites export as Point features (kind="sanctioned_site");
+      regions gain temple_reach, magnate_reach, dominant_bloc. Categorical
+      bloc preview. Export schema v7.
+
+  PHASE 5 (retained): facilities, coverage, health — the payload phase.
+    - FACILITIES (healer / waterworks / wardstation) rationed by the planner's
+      rule: prime always; hubs only when on-conduit. Wardstations additionally
+      guard refinery regions (assets get protection whether people do or not).
+      Facilities export as Point features (kind="facility").
+    - healing_reach decays over COST-distance to the nearest healer; safe_water
+      from waterworks/conduit/wealth minus a blight penalty; vulnerability_idx
+      from poverty + peripherality + tier.
+    - disease_burden_per_1k: EMERGENT, never painted — environmental (blight),
+      waterborne (unsafe water), and unmet (vulnerability) cause components,
+      each averted by healing reach, plus seeded jitter. Components export
+      separately so QGIS can attribute burden to cause.
+    - service_gap_idx: precomputed coverage gap (inverse reach + facility
+      distance + off-grid), paint-ready for the headline map. Schema v6.
+
+  PHASE 4 (retained): exported blight.
+    - Geology gains a blind ELEVATION field and a seeded prevailing WIND.
+    - blight_load: refinery plumes spread by PHYSICS (distance kernel, elongated
+      downwind, pulled downhill) PLUS spoil placed by the DISPOSAL DOCTRINE (B4,
+      #126): the `db` knob selects disperse (by geography, near the works),
+      concentrate (a fixed sacrifice zone, poison ramping in as the works mature),
+      or treat (cleaned where coin and `A` allow). corr(blight, wealth) now spans
+      both signs across the sweep — the poison is no longer aimed only at the poor.
+    - injustice_idx = normalize(blight) x normalize(poverty) — presentation
+      column only; the argument rests on the raw fields. Export schema v5.
+
+  PHASE 3 (retained): off-grid darkness.
+    - Cost-gated conduit: trunk least-cost paths wire each refinery to the seat
+      (pass-through regions get tapped); then greedy expansion connects the best
+      benefit/cost settlement while (population x wealth) / build-cost clears the
+      grid-threshold knob. Thin, poor, far places stay OFF-GRID.
+    - grid_access: 100 when wired, decaying with cost-distance off the wire
+      (canister trade); arcane_service_index needs the grid AND the wealth to
+      pay the meter — NEED is deliberately not an input.
+    - Conduit LineString features in the export (a third QGIS layer), a
+      grid-threshold slider with a neutral zero (0 = the conduit reaches
+      everyone), off-grid settlements drawn dark. Export schema v4.
+
+  PHASE 2 (retained): make wealth emergent.
+    - Geology gains two more BLIND fields: terrain_ruggedness and fertility
+      (independent smooth noise; seed + topology only).
+    - Seat placement: the default (unpinned) capital is no longer a random
+      point — it settles in the agrarian core (high fertility, low ruggedness).
+      Because ore is blind noise and the seat prefers farmland, the ore-rich
+      frontier EMERGES from two individually innocent choices.
+    - centrality_to_capital: cost-distance over the region adjacency graph
+      (Dijkstra; edge cost = centroid distance x ruggedness friction).
+    - aetherworks_capacity: few refineries sited by centrality + flat terrain —
+      deliberately reading NO social layer (keeps the DAG acyclic).
+    - value_retention: share of locally-generated value that stays local.
+    - wealth = weighted blend of THREE income streams (retained extraction,
+      refining value-add, trade/centrality) + a legacy capital-gradient term.
+      All four weights are sliders; gradient weight 0 => fully emergent wealth;
+      gradient 100 with the rest 0 reproduces the old explicit diagram.
+    - Export schema v3: new region columns (terrain_ruggedness, fertility,
+      centrality_to_capital, aetherworks_capacity, value_retention), weights in
+      provenance.
+
+  Recompute pipeline is THREE stages: topology (seed/regions/relax) -> geology
+  (endowment/ruggedness/fertility; seed + topology only) -> society (seat,
+  centrality, refining, retention, wealth, tiers, population, conduit, arcane
+  services). Moving the capital or any slider never reshuffles geology.
+
+  CRS (spec §5 option 1): FLAT PLANE, x in [0,1600], y in [0,1000], y-up in data/GeoJSON;
+  the SVG preview flips y so it matches QGIS orientation.
+
+  Dependency: d3-delaunay via CDN (needs internet even when opened from disk).
+-->
+<style>
+  :root {
+    --paper:#efe9dd; --card:#fbf8f1; --ink:#221d16; --muted:#5b544a; --line:#d8cfbe;
+    --dark:#26221c; --dark2:#332d24; --gold:#d9b96c; --oxblood:#7a1f1f; --blue:#2b5f8a;
+    /* the cartographer's ink — a MIRROR of the hardcoded palette inside render()
+       (SVG presentation attributes cannot var(), and the test suite asserts literal
+       fill hexes, so the map keeps its own copies; change one home, change both) */
+    --ink-parchment:#f4ecd8; --ink-contour:#6d604c; --ink-hachure:#5b4a33;
+    --ink-ridge:#4a3421; --ink-road:#6b5844; --ink-neatline:#8a7a5c;
+    --ink-sea:#4a7fae; --ink-sea-deep:#2b5f8a; --ink-river:#3d7ab5;
+    --ink-shore:#9dbdd9; --ink-capital:#d62728; --ink-select:#c2670a;
+    --serif: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+    --sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --shadow: 0 1px 2px rgba(34,29,22,.08), 0 4px 14px rgba(34,29,22,.07);
+    --rule: 1px solid var(--line);
+    --focus: 2px solid var(--gold);
+    --z-hud:10; --z-drawer:40; --z-toast:60;
+    /* paper grain as a pre-rasterized repeating tile (a live feTurbulence filter
+       over a scrolling page would repaint on the CPU); stitchTiles keeps it seamless */
+    --tex-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.30 0 0 0 0 0.23 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23g)'/%3E%3C/svg%3E");
+    --tex-vignette: radial-gradient(ellipse at 50% 48%, transparent 62%, rgba(42,32,24,.16) 100%);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin:0; font:14px/1.45 var(--sans); color:var(--ink); background:var(--tex-paper), var(--paper); }
+  :focus-visible { outline: var(--focus); outline-offset: 1px; }
+
+  /* ---- the plate language: type roles ---- */
+  .t-display { font:700 clamp(28px,4vw,44px)/1.12 var(--serif); letter-spacing:-0.01em; }
+  .t-standfirst { font:clamp(16px,1.6vw,19px)/1.6 var(--serif); }
+  .t-body { font:15px/1.75 var(--serif); }
+  .t-caption { font:11.5px/1.4 var(--sans); color:var(--muted); }
+  /* the magazine eyebrow — one voice for every section label */
+  .t-eyebrow, .eyebrow, .findings-title, .sec-title, .lens-cap, .insp-sec, .cf-cap, .fig-cap {
+    font:700 11px/1 var(--sans); letter-spacing:.2em; text-transform:uppercase; color:var(--muted);
+  }
+
+  /* ---- masthead: thin and sticky — the plate owns the viewport ---- */
+  :root { --mast-h: 52px; }
+  .masthead { position:sticky; top:0; z-index:50; height:var(--mast-h); background:var(--dark); color:#f0ead9; border-bottom:2px solid var(--gold); }
+  .masthead-inner { height:100%; padding:0 18px; display:flex; gap:18px; align-items:center; justify-content:space-between; }
+  .brand-line { display:flex; align-items:baseline; gap:14px; min-width:0; }
+  .eyebrow { color:var(--gold); }
+  .brand-line h1 { font:700 17px/1 var(--serif); margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mast-tag { color:#8d8471; display:none; }
+  @media (min-width:960px) { .mast-tag { display:inline; } }
+  .mast-actions { display:flex; align-items:center; gap:14px; flex:none; }
+  .mast-link { color:var(--gold); font:600 12px var(--sans); letter-spacing:.06em; text-decoration:none; white-space:nowrap; }
+  .mast-link:hover { text-decoration:underline; }
+
+  /* ---- the plate: a viewport-height map, letterboxed square stage ----
+     The letterbox is the FRAME, never the SVG: click-to-region math needs the
+     SVG's CSS box square. The gutters are the mat the drawers slide over. */
+  #plate { position:relative; height:calc(100dvh - var(--mast-h)); display:flex; align-items:center; justify-content:center;
+    padding:14px 48px; background:var(--tex-paper), var(--paper); transition:padding .2s ease; }
+  /* an open drawer claims its gutter so it never covers the square */
+  body.controls-open #plate { padding-left:356px; }
+  body.inspect-open #plate { padding-right:356px; }
+  @media (prefers-reduced-motion:reduce) { #plate { transition:none; } }
+  #plate::after { content:""; position:absolute; inset:0; pointer-events:none; background:var(--tex-vignette); }
+  .plate-square { position:relative; width:min(100%, calc(100dvh - var(--mast-h) - 28px)); aspect-ratio:1/1;
+    border:var(--rule); outline:3px double var(--ink-neatline); outline-offset:3px; background:#f6f2e8; z-index:1; }
+  #plateHud { position:absolute; inset:0; pointer-events:none; z-index:var(--z-hud); font:11px var(--sans); }
+  .hud { position:absolute; display:flex; align-items:center; gap:10px; pointer-events:auto;
+    background:rgba(251,248,241,.9); border:var(--rule); padding:5px 9px; }
+  .hud-tl { top:10px; left:10px; }
+  .hud-br { bottom:10px; right:10px; flex-direction:column; align-items:flex-end; gap:4px; max-width:220px; }
+  .hud-br #legendLabel { text-align:right; }
+  .hud-bc { bottom:10px; left:50%; transform:translateX(-50%); width:min(280px,34%); }
+  /* the scale bar floats bare on the map so its 20% width stays an honest 20 leagues */
+  .hud-bl { bottom:10px; left:10px; width:20%; background:none; border:none; padding:0; flex-direction:column; align-items:flex-start; gap:2px; }
+  #scaleBar { width:100%; }
+  .scale-rule { width:100%; height:6px; border-bottom:2px solid var(--ink-ridge); position:relative; }
+  .scale-rule::before, .scale-rule::after { content:""; position:absolute; bottom:0; width:2px; height:6px; background:var(--ink-ridge); }
+  .scale-rule::before { left:0; } .scale-rule::after { right:0; }
+  .scale-cap { font:10px var(--sans); color:var(--ink); letter-spacing:.08em; text-shadow:0 0 3px #f6f2e8, 0 0 3px #f6f2e8; }
+  /* the camera's zoom furniture: screen-fixed chrome, left mat, vertically centred */
+  .hud-zoom { top:50%; left:10px; transform:translateY(-50%); flex-direction:column; gap:4px; padding:4px; background:rgba(251,248,241,.9); }
+  .hud-zoom button { width:30px; height:30px; padding:0; margin:0; font:700 17px/1 var(--sans); color:var(--ink); border:1px solid var(--ink-neatline); background:var(--card); }
+  .hud-zoom button:hover { background:#f1ecdf; }
+  #camFit { font-size:15px; }
+  #scrubRow { display:flex; flex-direction:column; width:100%; }
+  #scrubRow label { font-weight:600; display:flex; justify-content:space-between; gap:10px; }
+  #ageLabel { font-weight:400; font-style:italic; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* the timeline: age bands + gini spark + event ticks, with the native range
+     laid transparently over them so drag and arrow keys come free */
+  .tl-wrap { position:relative; width:100%; margin-top:4px; }
+  #timeline { width:100%; height:34px; }
+  #timeline svg { display:block; width:100%; height:100%; background:rgba(244,236,216,.6); border:1px solid var(--line); }
+  .tl-wrap input[type=range] { position:absolute; inset:0; width:100%; height:100%; margin:0; background:transparent; }
+  .tl-wrap input[type=range]::-webkit-slider-thumb { width:5px; height:32px; border-radius:1px; background:var(--gold); border:1px solid #241d10; }
+  .tl-wrap input[type=range]::-moz-range-thumb { width:5px; height:32px; border-radius:1px; background:var(--gold); border:1px solid #241d10; }
+  .edge-tab { position:absolute; top:50%; transform:translateY(-50%); z-index:calc(var(--z-drawer) - 2);
+    writing-mode:vertical-rl; letter-spacing:.22em; font:700 11px var(--sans); color:var(--ink);
+    padding:16px 7px; background:var(--card); border:1px solid var(--ink-neatline); box-shadow:var(--shadow); }
+  .edge-tab:hover { background:#f1ecdf; }
+  .edge-left { left:0; border-left:none; }
+  .edge-right { right:0; border-right:none; }
+
+  /* ---- drawers: overlay the mat, never push the plate ---- */
+  .drawer { position:fixed; top:var(--mast-h); bottom:0; width:min(340px,92vw); overflow-y:auto;
+    background:var(--tex-paper), var(--card); box-shadow:var(--shadow); z-index:var(--z-drawer);
+    transition:transform .2s ease; border-top:3px double var(--ink-neatline); }
+  .drawer-left { left:0; border-right:var(--rule); transform:translateX(-103%); }
+  .drawer-right { right:0; border-left:var(--rule); transform:translateX(103%); }
+  .drawer.open { transform:none; }
+  /* the drawers are the PLATE's furniture: when the reader scrolls into the
+     report the plate leaves, and its drawers retreat with it (state kept) */
+  body.plate-away .drawer-left { transform:translateX(-103%); }
+  body.plate-away .drawer-right { transform:translateX(103%); }
+  @media (prefers-reduced-motion:reduce) { .drawer { transition:none; } }
+  .drawer::-webkit-scrollbar { width:8px; } .drawer::-webkit-scrollbar-thumb { background:var(--line); border-radius:4px; }
+  .drawer-head { display:flex; justify-content:space-between; align-items:center; padding:10px 14px 8px; border-bottom:var(--rule); }
+  .drawer-title { font:700 11px/1 var(--sans); letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
+  .drawer-close { border:none; background:none; font:700 14px var(--sans); color:var(--muted); cursor:pointer; padding:2px 6px; }
+  .drawer-note { padding:12px 14px; color:var(--muted); font-size:12px; }
+  #drawerInspect .sidecard { border:none; }
+
+  /* ---- control stack (lives inside the compose drawer) ---- */
+  .controls { padding:0 14px 14px; font-size:13px; }
+  .sec { border-top:1px solid var(--line); padding-top:10px; margin-top:12px; }
+  .sec:first-child { border-top:none; margin-top:8px; }
+  .sec-title { margin-bottom:10px; }
+  .controls .row { margin-bottom:11px; }
+  .controls label { display:block; font-weight:600; margin-bottom:4px; }
+  .controls label.mini { font-weight:400; margin:7px 0 2px; color:#4d463c; }
+  .controls .val { font-weight:600; color:var(--blue); float:right; }
+  .controls input[type=text] { width:100%; padding:7px 9px; font:inherit; border:var(--rule); border-radius:0; background:#fff; }
+  .controls input[type=text]:focus { outline:2px solid var(--gold); outline-offset:-1px; }
+  .controls .inline { display:flex; gap:6px; }
+  .hint { color:#93887a; font-size:11.5px; margin-top:4px; line-height:1.4; }
+  input[type=range] { width:100%; height:4px; -webkit-appearance:none; appearance:none; background:var(--line); border-radius:2px; margin:8px 0 2px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--dark); border:2px solid var(--gold); cursor:pointer; }
+  input[type=range]::-moz-range-thumb { width:11px; height:11px; border-radius:50%; background:var(--dark); border:2px solid var(--gold); cursor:pointer; }
+
+  button { font:600 12.5px var(--sans); padding:8px 12px; cursor:pointer; color:var(--ink);
+    border:1px solid var(--ink-neatline); background:var(--card); border-radius:0; transition:background .12s, transform .06s; }
+  button:hover { background:#f1ecdf; } button:active { transform:translateY(1px); }
+  button.primary { background:var(--gold); color:#241d10; border-color:#b3924a; }
+  button.primary:hover { background:#e2c67f; }
+  button.ghost { background:transparent; color:#e9e1cd; border-color:#5a5142; }
+  button.ghost:hover { background:#3a342a; }
+  button.wide { width:100%; }
+
+  /* ---- plate furniture: legend, stage, the lens dock ---- */
+  #legendLabel { font:600 12px var(--sans); color:var(--muted); max-width:260px; }
+  .legend-wrap .bar { height:10px; width:170px; border:var(--rule); border-radius:0; }
+  .legend-wrap .bar.cats { height:auto; width:auto; border:none; border-radius:0; }
+  .legend-wrap.no-ends .ends { display:none; }
+  .legend-wrap { width:170px; }
+  .legend-wrap .ends { display:flex; justify-content:space-between; color:var(--muted); font-size:10.5px; margin-top:2px; }
+  #stage { position:absolute; inset:0; }
+  #stage svg { display:block; width:100%; height:auto; cursor:crosshair; }
+  /* map labels take the display serif, not the browser default */
+  #stage svg text { font-family: var(--serif); }
+  /* ---- the index of plates: the lens browser over the plate's left mat ---- */
+  .hud-tc { top:10px; right:10px; max-width:52%; padding:0; border:none; background:none; box-shadow:none; }
+  #lensChip { display:flex; align-items:baseline; gap:8px; font:600 12.5px var(--sans); padding:6px 12px; max-width:52vw;
+    background:rgba(251,248,241,.94); border:1px solid var(--ink-neatline); box-shadow:var(--shadow); cursor:pointer; white-space:nowrap; }
+  #lensChip:hover { background:#f1ecdf; }
+  .lens-chip-cap { font:700 10px/1 var(--sans); letter-spacing:.18em; color:var(--muted); }
+  #lensChipQ { overflow:hidden; text-overflow:ellipsis; }
+  #lensPanel { position:fixed; top:var(--mast-h); bottom:0; left:0; width:min(380px,94vw); z-index:calc(var(--z-drawer) + 2);
+    background:var(--tex-paper), var(--card); border-right:var(--rule); border-top:3px double var(--ink-neatline);
+    box-shadow:var(--shadow); transform:translateX(-103%); transition:transform .2s ease; display:flex; flex-direction:column; }
+  #lensPanel.open { transform:none; }
+  @media (prefers-reduced-motion:reduce) { #lensPanel { transition:none; } }
+  .lens-head { display:flex; justify-content:space-between; align-items:center; padding:10px 14px 8px; border-bottom:var(--rule); flex:none; }
+  #lensFilter { margin:10px 14px 4px; padding:7px 9px; font:inherit; border:var(--rule); background:#fff; flex:none; }
+  #lensList { overflow-y:auto; padding:4px 14px 10px; flex:1; }
+  #lensList .lens-cap { margin:12px 0 4px; }
+  .plate-row { display:flex; align-items:center; gap:9px; width:100%; padding:5px 7px; cursor:pointer; text-align:left;
+    border:1px solid transparent; background:none; box-shadow:none; font:12.5px var(--sans); color:#4d463c; position:relative; }
+  .plate-row:hover { background:#f1ecdf; }
+  .plate-row:has(input:checked) { background:var(--dark); color:#f0ead9; border-color:var(--gold); }
+  .plate-row:has(input:focus-visible) { outline:var(--focus); }
+  .plate-row input { position:absolute; opacity:0; pointer-events:none; }
+  .lens-mini { flex:none; width:26px; height:10px; border:1px solid rgba(0,0,0,.25); }
+  .lens-mini.cats { display:inline-flex; gap:1px; border:none; }
+  .lens-mini.cats i { width:8px; height:10px; display:inline-block; border:1px solid rgba(0,0,0,.25); }
+  #lensPanel .glyphkey { margin:0; padding:8px 14px 12px; border-top:1px dashed var(--line); flex:none; }
+  /* ---- lenses + legends + inspector (U2) ---- */
+  /* every overlay is click-transparent: clicks land on the region below */
+  #stage svg text, #stage svg line, #stage svg polyline, #stage svg rect, #stage svg circle,
+  #stage svg path:not([data-region]) { pointer-events: none; }
+  #stage svg path[data-region] { cursor: pointer; }
+  /* hover: the region under the cursor lifts a gold outline so it is clearly clickable */
+  #stage svg path[data-region]:hover { stroke: #d9b96c; stroke-width: 3; }
+  .modectl { display:inline-flex; border:1px solid var(--ink-neatline); overflow:hidden; }
+  .modectl button { font:600 11px var(--sans); padding:4px 11px; margin:0; border:none; border-radius:0; background:transparent; color:var(--muted); cursor:pointer; }
+  .modectl button.on { background:var(--gold); color:#241d10; }
+  .poictl { display:inline-flex; align-items:center; gap:5px; font:600 11px var(--sans); color:var(--muted); cursor:pointer; white-space:nowrap; }
+  #keyCard { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:calc(var(--z-toast) - 1);
+    background:var(--tex-paper), var(--card); border:var(--rule); border-top:3px double var(--ink-neatline);
+    box-shadow:var(--shadow); padding:14px 20px 16px; min-width:250px; }
+  #keyCard td { padding:2.5px 0; font:12.5px var(--sans); }
+  #keyCard td:first-child { color:var(--muted); padding-right:16px; font-weight:700; white-space:nowrap; }
+  #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--dark); color: #f5efe4;
+    font: 600 12.5px var(--sans); padding: 7px 14px; border: 1px solid var(--gold); box-shadow: var(--shadow);
+    opacity: 0; pointer-events: none; transition: opacity .25s; z-index: var(--z-toast); }
+  #toast.show { opacity: 0.93; }
+  .lens-cap { margin:8px 0 3px; }
+  .swatches { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .swatch { display:inline-flex; align-items:center; gap:4px; font:11px var(--sans); color:var(--muted); }
+  .swatch i { width:12px; height:12px; border-radius:3px; display:inline-block; border:1px solid rgba(0,0,0,.25); }
+  #pinCap { margin-top:6px; width:100%; padding:6px 8px; font:600 12px var(--sans); color:var(--ink);
+    background:var(--card); border:1px solid var(--ink-neatline); border-radius:0; cursor:pointer; }
+  #pinCap.armed { border-color:var(--oxblood); color:var(--oxblood); }
+  #inspector { display:none; }
+  #inspector .insp-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  #inspector .insp-name { font:700 17px var(--serif); }
+  #inspector .insp-sub { font:11px var(--sans); color:var(--muted); }
+  #inspector .insp-sec { margin:9px 0 2px; }
+  #inspector table { width:100%; border-collapse:collapse; font:12px var(--sans); }
+  #inspector td { padding:1.5px 0; vertical-align:top; }
+  #inspector td:first-child { color:var(--muted); padding-right:8px; white-space:nowrap; }
+  #inspector .insp-ev { font:12px var(--sans); margin:2px 0; }
+  #inspClose { border:none; background:none; font:700 14px var(--sans); color:var(--muted); cursor:pointer; }
+  /* ---- the counterfactual (C1) ---- */
+  #cfBtn, #cfBtnGrid, #cfBtnBoth { margin-top:10px; width:100%; padding:8px 10px; font:600 13px var(--sans);
+    color:var(--ink); background:var(--card); border:1px solid var(--ink-neatline); border-radius:0;
+    cursor:pointer; }
+  #cfBtnGrid, #cfBtnBoth { margin-top:6px; }
+  #cfBtn:hover, #cfBtnGrid:hover, #cfBtnBoth:hover { border-color:var(--gold); }
+  #cfBox { max-width:1200px; margin:18px auto 0; padding:0 20px; scroll-margin-top:calc(var(--mast-h) + 10px); }
+  .cf-inner { background:var(--tex-paper), var(--card); border:var(--rule); border-top:3px double var(--ink-neatline);
+    padding:16px 18px; }
+  .cf-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px; }
+  .cf-cap { margin-bottom:6px; }
+  .cf-pane svg { width:100%; height:auto; border:var(--rule); border-radius:0; display:block; }
+  #cfStats { margin-top:12px; font:14px/1.55 var(--sans); }
+  #cfStats table { border-collapse:collapse; margin-top:6px; }
+  #cfStats td, #cfStats th { padding:3px 14px 3px 0; text-align:left; font-weight:400; }
+  #cfStats th { color:var(--muted); font:600 12px var(--sans); letter-spacing:.04em; }
+  @media (max-width: 760px) { .cf-grid { grid-template-columns:1fr; } }
+  label.radio { display:flex; align-items:center; gap:7px; font-size:12.5px; padding:6px 9px; border:1px solid transparent;
+    border-radius:0; cursor:pointer; color:#4d463c; }
+  label.radio:hover { background:#f1ecdf; }
+  label.radio:has(input:checked) { background:var(--dark); color:#f0ead9; border-color:var(--gold); }
+  label.radio input { accent-color:var(--gold); margin:0; flex:none; }
+  .glyphkey { color:#93887a; font-size:11.5px; margin-top:9px; line-height:1.5; }
+
+  /* ---- the report: standfirst, chronicle body, sidebar, colophon ---- */
+  #report { padding-bottom:34px; }
+  #findingsBox { border-top:3px double var(--ink-neatline); }
+  .findings-inner { max-width:920px; margin:0 auto; padding:26px 24px 6px; }
+  .findings-title { color:var(--oxblood); margin-bottom:14px; }
+  #findingsText { font:clamp(15px,1.5vw,17.5px)/1.65 var(--serif); }
+  #findingsText b { color:var(--oxblood); font-weight:700; }
+  .manifesto { color:var(--muted); font-size:13px; line-height:1.55; max-width:76ch; margin:18px 0 0; padding-top:12px; border-top:1px dashed var(--line); }
+  .manifesto b { color:var(--ink); }
+  .sidecard { background:var(--tex-paper), var(--card); border:var(--rule); border-top:3px double var(--ink-neatline); padding:12px 14px; font-size:12.5px; }
+  .sidecard table { border-collapse:collapse; width:100%; }
+  .sidecard td { padding:4px 6px 4px 0; border-bottom:1px solid #e7e0d0; vertical-align:top; }
+  .sidecard tr:last-child td { border-bottom:none; }
+  .sidecard td:first-child { color:var(--muted); white-space:nowrap; padding-right:10px; }
+  #powersPanel { margin-bottom:16px; }
+  .pw-bar { display:inline-block; width:84px; height:9px; background:var(--line); vertical-align:middle; }
+  .pw-bar i { display:block; height:100%; }
+  /* the tension track shades the 55–75 band where a war can catch */
+  .pw-bar.pw-tension { background:linear-gradient(to right, var(--line) 0 55%, rgba(122,31,31,.28) 55% 75%, var(--line) 75% 100%); }
+  .pw-bar.pw-tension i { background:var(--oxblood); }
+  #powersPanel .insp-ev { font:12px var(--sans); margin:2px 0; }
+  .spark { width:74px; height:16px; vertical-align:middle; margin-right:4px; background:rgba(244,236,216,.5); border-bottom:1px solid var(--line); }
+  .report-grid { max-width:1200px; margin:22px auto 0; padding:0 24px; display:grid;
+    grid-template-columns:minmax(0,1fr) 300px; gap:22px; align-items:start; }
+  #chronBox .sec-title { margin-bottom:10px; }
+  #chronText { font:14.5px/1.7 var(--serif); max-width:74ch; padding:20px 34px 28px; background:var(--tex-paper), var(--card);
+    border:var(--rule); border-top:3px double var(--ink-neatline); }
+  /* the chronicle as an article: acts, drop caps, pull quotes, the timeline echo */
+  #chronText .chron-tl { margin:0 0 14px; }
+  #chronText .chron-tl svg { display:block; width:100%; height:26px; border:1px solid var(--line); background:rgba(244,236,216,.6); }
+  #chronText h2.chron-title { font:700 26px/1.2 var(--serif); margin:4px 0 6px; }
+  #chronText h3.chron-act { font:700 11px/1 var(--sans); letter-spacing:.2em; text-transform:uppercase; color:var(--oxblood);
+    margin:26px 0 8px; padding-top:14px; border-top:1px solid var(--line); }
+  #chronText p { margin:8px 0; }
+  #chronText p.lede::first-letter { font-size:3.1em; float:left; line-height:.85; padding:2px 6px 0 0; color:var(--oxblood); font-family:var(--serif); }
+  .pullquote { float:right; width:200px; margin:6px 0 10px 18px; padding:10px 0 12px;
+    border-top:3px double var(--ink-neatline); border-bottom:1px solid var(--line); font:italic 17px/1.45 var(--serif); }
+  .pullquote b { color:var(--oxblood); font-style:normal; }
+  #instPanel { margin-bottom:16px; }
+  #instPanel .insp-ev { font:12px var(--sans); margin:6px 0 2px; }
+  #colophon { max-width:1200px; margin:28px auto 0; padding:16px 24px 0; border-top:1px solid var(--line); color:var(--muted); font-size:12px; }
+  .colophon-btns { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 14px; }
+  .colophon-links { display:flex; gap:16px; flex-wrap:wrap; align-items:baseline; }
+  #colophon a { color:var(--blue); text-decoration:none; } #colophon a:hover { text-decoration:underline; }
+
+  /* ---- small screens (full responsive pass is scheduled work) ---- */
+  @media (max-width:900px) { .report-grid { grid-template-columns:1fr; } }
+  @media (max-width:760px) {
+    #plate { height:auto; padding:10px 10px 52px; }
+    /* the gutter-claiming shift is a wide-screen behavior; sheets overlay */
+    body.controls-open #plate { padding-left:10px; }
+    body.inspect-open #plate { padding-right:10px; }
+    .plate-square { width:min(100%, calc(100dvh - var(--mast-h) - 20px)); margin:0 auto; }
+    .lens-chip-cap { display:none; }
+    .brand-line h1 { font-size:15px; }
+    .hud-bc { width:56%; }
+    /* drawers become bottom sheets; the edge tabs become a bottom bar */
+    .drawer { top:auto; bottom:0; left:0; right:0; width:auto; max-height:72dvh;
+      border:var(--rule); border-top:3px double var(--ink-neatline); }
+    .drawer-left, .drawer-right { transform:translateY(103%); }
+    .drawer.open { transform:none; }
+    body.plate-away .drawer-left, body.plate-away .drawer-right { transform:translateY(103%); }
+    .edge-tab { position:fixed; top:auto; bottom:0; transform:none; writing-mode:horizontal-tb;
+      width:50%; padding:12px 0; text-align:center; box-shadow:none; border-bottom:none; }
+    .edge-left { left:0; border-left:none; }
+    .edge-right { right:0; border-right:none; border-left:var(--rule); }
+    #lensPanel { width:100%; }
+  }
+  @media (max-width:480px) {
+    .hud-bl { display:none; }
+    .hud-tl .poictl { display:none; }
+  }
+  .err { color:var(--oxblood); font-weight:600; }
+  code { background:#e6dfd0; padding:1px 5px; border-radius:4px; font-size:12px; }
+</style>
+</head>
+<body>
+  <header class="masthead" id="masthead">
+    <div class="masthead-inner">
+      <div class="brand-line">
+        <span class="eyebrow">HINTERLAND</span>
+        <h1>A generator of unequal worlds</h1>
+        <span class="eyebrow mast-tag">A PROCEDURAL ATLAS OF WHO PAYS</span>
+      </div>
+      <nav class="mast-actions">
+        <button id="share" class="ghost">&#128279; Copy share link</button>
+        <a class="mast-link" href="#report">The report &#8595;</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+  <!-- The plate: the map fills the view; furniture overlays it; the drawers
+       slide over the letterbox mat. #stage's CSS box MUST stay square — the
+       click-to-region math is a linear map of getBoundingClientRect. -->
+  <section id="plate">
+    <button id="tabControls" class="edge-tab edge-left" aria-expanded="false" aria-controls="drawerControls">COMPOSE</button>
+    <div class="plate-square">
+      <div id="stage"></div>
+      <div id="plateHud">
+        <div class="hud hud-tl">
+          <span class="modectl" id="mapModeCtl">
+            <button type="button" id="modeAtlas">atlas</button>
+            <button type="button" id="modeData" class="on">data</button>
+          </span>
+          <label class="poictl"><input type="checkbox" id="showPoiCk" checked /> points of interest</label>
+        </div>
+        <div class="hud hud-tc">
+          <button id="lensChip" aria-haspopup="dialog" aria-expanded="false" aria-controls="lensPanel">
+            <span class="lens-chip-cap">THE QUESTION</span> <span id="lensChipQ">who holds the coin</span> &#9662;
+          </button>
+        </div>
+        <div class="hud hud-bl">
+          <div id="scaleBar"><div class="scale-rule"></div><span class="scale-cap">20 leagues</span></div>
+        </div>
+        <div class="hud hud-zoom">
+          <button type="button" id="camZoomIn" title="Zoom in (+)" aria-label="Zoom in">+</button>
+          <button type="button" id="camZoomOut" title="Zoom out (−)" aria-label="Zoom out">&#8722;</button>
+          <button type="button" id="camFit" title="Fit width" aria-label="Fit the whole plate">&#9974;</button>
+        </div>
+        <div class="hud hud-br">
+          <span id="legendLabel"></span>
+          <div class="legend-wrap">
+            <div class="bar" id="legendBar"></div>
+            <div class="ends"><span>low</span><span>high</span></div>
+          </div>
+        </div>
+        <div class="hud hud-bc">
+          <div id="scrubRow" style="display:none">
+            <label for="scrub">View epoch <span class="val" id="scrubVal"></span><span id="ageLabel"></span></label>
+            <div class="tl-wrap">
+              <div id="timeline"></div>
+              <input type="range" id="scrub" min="0" max="24" step="1" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button id="tabInspect" class="edge-tab edge-right" aria-expanded="false" aria-controls="drawerInspect">LEDGER</button>
+  </section>
+
+  <!-- Compose drawer: every generation knob, over the plate's left mat -->
+  <aside id="drawerControls" class="drawer drawer-left" role="complementary" aria-label="Compose the world">
+    <div class="drawer-head"><span class="drawer-title" tabindex="-1">COMPOSE THE WORLD</span><button class="drawer-close" id="ctrlClose" title="close">&#10005;</button></div>
+    <div class="controls">
+      <div class="sec">
+        <div class="sec-title">THE WORLD</div>
+        <div class="row">
+          <label for="seed">Seed</label>
+          <div class="inline">
+            <input type="text" id="seed" inputmode="text" />
+            <button id="diceSeed" title="Random seed">&#127922;</button>
+          </div>
+          <div class="hint">Any text or number. Drives the whole world.</div>
+        </div>
+        <div class="row">
+          <label for="fate">Fate</label>
+          <div class="inline">
+            <input type="text" id="fate" inputmode="text" placeholder="(same as the seed)" />
+            <button id="diceFate" title="Reroll the luck">&#127922;</button>
+          </div>
+          <div class="hint">Same rock, different luck. Leave it blank to use the seed's own fate. A reroll changes only the politics. Geology, names, and the founding stay fixed.</div>
+        </div>
+        <div class="row">
+          <label for="world">World</label>
+          <div class="inline">
+            <input type="text" id="world" inputmode="text" placeholder="concordat-settlement" />
+            <button id="diceWorld" title="Roll a different world history">&#127922;</button>
+          </div>
+          <div class="hint">The world outside: prices, empires, distant wars. The default is the shared Concordat era. A different world can rescue a doomed region or ruin a thriving one. It never touches the rock.</div>
+        </div>
+        <div class="row">
+          <label>Regions <span class="val" id="regionsVal"></span></label>
+          <input type="range" id="regions" min="5" max="64" step="1" />
+        </div>
+        <div class="row">
+          <label>Relaxation <span class="val" id="relaxVal"></span></label>
+          <input type="range" id="relax" min="0" max="8" step="1" />
+          <div class="hint">Lloyd passes: 0 = organic, 8 = even.</div>
+        </div>
+        <div class="row">
+          <label>Capital</label>
+          <button id="diceCapital" class="wide" title="Random capital region">&#127922; random capital</button>
+          <button id="pinCap" type="button" title="Arm, then click the map">&#128204; pin the capital by click</button>
+          <div class="hint">Unpinned, the capital settles in fertile lowland. Clicking the map INSPECTS a region; arm the pin to move the capital instead.</div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">THE ECONOMY</div>
+        <div class="row">
+          <label>Income mix (wealth weights)</label>
+          <label class="mini">retained extraction <span class="val" id="weVal"></span></label>
+          <input type="range" id="we" min="0" max="100" step="1" />
+          <label class="mini">refining value-add <span class="val" id="wfVal"></span></label>
+          <input type="range" id="wf" min="0" max="100" step="1" />
+          <label class="mini">trade / connectivity (capital + sea) <span class="val" id="wtVal"></span></label>
+          <input type="range" id="wt" min="0" max="100" step="1" />
+          <label class="mini">legacy capital gradient <span class="val" id="wgVal"></span></label>
+          <input type="range" id="wg" min="0" max="100" step="1" />
+          <div class="hint">Gradient 0 = fully emergent wealth. Gradient 100 with the rest at 0 = the old explicit diagram.</div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">POLICY</div>
+        <div class="row">
+          <label>Grid threshold <span class="val" id="gtVal"></span></label>
+          <input type="range" id="gt" min="0" max="100" step="1" />
+          <div class="hint">The benefit a settlement must promise before the grid reaches it. 0 = everyone connected.</div>
+        </div>
+        <div class="row">
+          <label>Disposal doctrine <span class="val" id="dbVal"></span></label>
+          <input type="range" id="db" min="0" max="100" step="1" />
+          <div class="hint">What the realm does with aetherworks spoil. 0&ndash;33 <b>disperse</b> (spread thin by wind and terrain); 34&ndash;66 <b>concentrate</b> (all of it onto one sacrifice zone); 67&ndash;100 <b>treat</b> (clean it up where coin and works allow).</div>
+          <button id="cfBtn" type="button">&#8644; the counterfactual: this world DISPERSED (the spoil spread, no hand aiming it)</button>
+          <button id="cfBtnGrid" type="button">&#8644; the counterfactual: the FULL GRID (threshold 0)</button>
+          <button id="cfBtnBoth" type="button">&#8644; both mercies at once</button>
+          <div class="hint">Same rock, same wind, same dice. Only the policy differs. The gap is the policy.</div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">THE SEAT</div>
+        <div class="row">
+          <label>Responsiveness <span class="val" id="iqVal"></span></label>
+          <input type="range" id="iq" min="0" max="100" step="1" />
+          <div class="hint">How likely the capital is to meet the realm's first crisis with relief instead of force. The dice still roll; this only weights them. 45 = the old world.</div>
+        </div>
+        <div class="row">
+          <label>Order <span class="val" id="orderVal"></span></label>
+          <input type="range" id="order" min="0" max="100" step="1" />
+          <div class="hint">The order axis, from open ground to police state. High order holds down predation, smuggling, and revolt. It also holds down mobility, new entry, and the appetite to risk capital. Safety and stagnation come from the same place. 50 = the old world.</div>
+        </div>
+        <div class="row">
+          <label>Openness <span class="val" id="opennessVal"></span></label>
+          <input type="range" id="openness" min="0" max="100" step="1" />
+          <div class="hint">Foreign trade and diplomacy exposure, from sealed quays to open coast. It scales the sea leg of trade, so a trade world grows a second pole at the coast. At 0 it seals the harbors entirely: no ports, no Dominion. 100 = open (the old world).</div>
+          <div class="hint">Seal the quays and you lose sea trade, port tariffs, and the door the Dominion comes through. Isolation is a policy, and it costs something.</div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-title">TIME</div>
+        <div class="row">
+          <label>Epochs <span class="val" id="epVal"></span></label>
+          <input type="range" id="ep" min="0" max="24" step="1" />
+          <div class="hint">Run the world forward: ore depletes, wealth compounds, people migrate, the grid chases the winners, the capital decrees, towns rise. 0 = the founding snapshot.</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- The index of plates: every lens, grouped and searchable. The rows are
+       REAL name=view radios (built at boot from the LENSES registry), so
+       selection keeps native radio-group semantics: arrows preview live. -->
+  <aside id="lensPanel" role="dialog" aria-label="The index of plates">
+    <div class="lens-head">
+      <span class="drawer-title">THE INDEX OF PLATES</span>
+      <button class="drawer-close" id="lensClose" title="close">&#10005;</button>
+    </div>
+    <input type="text" id="lensFilter" placeholder="filter the plates&hellip;" autocomplete="off" />
+    <div id="lensList"></div>
+    <div class="glyphkey">Preview only. The export always carries every column. &#9632; aetherworks &middot; gold lines grid (dashed = off-grid) &middot; H/W/D healer/waterworks/wardstation &middot; &#9650; shrine &middot; G constabulary &middot; &#9875; port &middot; &#9670; ruin &middot; &#9820; tower &middot; &#9552; bridge &middot; &#8745; pass &middot; &#9673; maelstrom &middot; &#9055; aerie (violet dashes = the skyway) &middot; &#9873; the Dominion's foothold &middot; red dashes join the twins.
+      The institutions (on parchment and the institution plates): &#164; counting house &middot; &#8224; temple &middot; &#9814; keep &middot; &#10002; library &middot; &#9874; guildhall &middot; &#9671; market.</div>
+  </aside>
+  </main>
+
+  <!-- Ledger drawer: the inspector, over the plate's right mat -->
+  <aside id="drawerInspect" class="drawer drawer-right" role="complementary" aria-label="The ledger">
+    <div class="drawer-head"><span class="drawer-title" tabindex="-1">THE LEDGER</span></div>
+    <div class="sidecard" id="inspector">
+      <div class="insp-head">
+        <div><span class="insp-name" id="inspName"></span> <span class="insp-sub" id="inspSub"></span></div>
+        <button id="inspClose" title="close">&#10005;</button>
+      </div>
+      <div id="inspBody"></div>
+    </div>
+    <div class="drawer-note">click any region on the plate to open its ledger here</div>
+  </aside>
+
+  <!-- The report: the same world, argued and narrated -->
+  <article id="report">
+    <section id="findingsBox">
+      <div class="findings-inner">
+        <div class="findings-title">WHAT THIS WORLD SHOWS, ALL COMPUTED FROM ITS OWN EXPORTED COLUMNS</div>
+        <div id="findingsText"></div>
+        <p class="manifesto">
+          Every map this makes is an <b>argument about inequality</b>: who gets served and who sits in
+          darkness, who breathes the poison and who ships it downstream, who holds the gates and who pays
+          the tariff. None of it is painted. It is all <b>emergent</b> from blind geology, a cost-gated grid,
+          and factions that seize, tax, and go to war. The fantasy is only the presentation. The real content
+          is the attribute table. Seeded, reproducible, QGIS-ready.
+        </p>
+      </div>
+    </section>
+
+  <!-- The counterfactual (C1): the lambda experiment, on the page -->
+  <section id="cfBox" style="display:none">
+    <div class="cf-inner">
+      <div class="sec-title">THE COUNTERFACTUAL: SAME ROCK, SAME WIND, SAME DICE; ONLY THE POLICY DIFFERS</div>
+      <div id="cfNote"></div>
+      <div class="cf-grid" id="cfGrid">
+        <div class="cf-pane"><div class="cf-cap" id="cfCapL"></div><div id="cfLeft"></div></div>
+        <div class="cf-pane"><div class="cf-cap" id="cfCapR2">DISPERSED (spoil spread, none aimed): injustice</div><div id="cfRight"></div></div>
+      </div>
+      <div id="cfStats"></div>
+    </div>
+  </section>
+
+    <!-- The chronicle, promoted: the main body text of the report -->
+    <div class="report-grid">
+      <section id="chronBox">
+        <div class="sec-title">THE CHRONICLE: THE WORLD NARRATING ITSELF</div>
+        <div id="chronText"></div>
+      </section>
+      <aside id="worldPanel">
+        <div class="sidecard" id="powersPanel"></div>
+        <div class="sidecard" id="instPanel"></div>
+        <div class="sidecard">
+          <div class="sec-title">THIS WORLD</div>
+          <table id="info"></table>
+        </div>
+      </aside>
+    </div>
+
+    <footer id="colophon">
+      <div class="sec-title">PLATES &amp; DATA</div>
+      <div class="colophon-btns">
+        <button id="download" class="primary">&#8681; Download GeoJSON</button>
+        <button id="dlSeries">&#8681; Epoch series (QGIS temporal)</button>
+        <button id="dlChron">&#8681; The chronicle (.md)</button>
+        <button id="dlTables">&#8681; Download tables (CSV)</button>
+      </div>
+      <div class="colophon-links">
+        <span>Hinterland. Every number on this page recomputes from the exported columns.</span>
+        <a href="docs/atlas.md">The Atlas: 80 worlds, measured</a>
+        <a href="docs/field-guide.md">The Field Guide: how to read the inequalities</a>
+        <a href="docs/attribute-model.md">The attribute model</a>
+        <a href="https://github.com/zntznt/hinterland">Source</a>
+      </div>
+    </footer>
+  </article>
+
+  <!-- the keys: a small card listing the keyboard grammar -->
+  <div id="keyCard" role="dialog" aria-label="Keyboard shortcuts" style="display:none">
+    <div class="sec-title">THE KEYS</div>
+    <table>
+      <tr><td>l&nbsp;or&nbsp;/</td><td>open the index of plates</td></tr>
+      <tr><td>&larr; &rarr;</td><td>scrub the epochs</td></tr>
+      <tr><td>+ &nbsp;&minus;</td><td>zoom the camera in / out</td></tr>
+      <tr><td>Shift&nbsp;+&nbsp;&larr;&uarr;&darr;&rarr;</td><td>pan the camera</td></tr>
+      <tr><td>m</td><td>atlas / data</td></tr>
+      <tr><td>p</td><td>points of interest</td></tr>
+      <tr><td>c</td><td>compose drawer</td></tr>
+      <tr><td>i</td><td>ledger drawer</td></tr>
+      <tr><td>Esc</td><td>close, one layer at a time</td></tr>
+      <tr><td>?</td><td>this card</td></tr>
+    </table>
+  </div>
+
+  <!-- the one toast: fixed, floats above everything, announced to AT -->
+  <div id="toast" role="status" aria-live="polite"></div>
+
+
+  <script src="./vendor/d3-delaunay.min.js"></script>
+  <script type="module" src="./app.mjs"></script>
+</body>
+</html>

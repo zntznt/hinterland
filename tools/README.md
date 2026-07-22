@@ -3,11 +3,17 @@
 Every "observed across N worlds" number and every "the test suite does"
 sentence in the docs has a producer here. These are internal consistency
 checks on the generator's own output, not validation against anything real
-(see ../docs/provenance.md). The suite runs the REAL page
-(jsdom executes `../index.html` and clicks its own export buttons), so
-what is tested is what ships.
+(see ../docs/provenance.md). The suite imports the engine module directly
+(`../src/engine/engine.mjs`) for fast data-only tests via `genEngine()`. A
+handful of UI tests still boot the page in JSDOM via `gen()`.
 
 ```sh
+npm install
+node --max-old-space-size=4096 test.mjs       # full suite (~10 min)
+node --max-old-space-size=4096 stress.mjs     # structural stress (120 configs)
+node --max-old-space-size=4096 sweep.mjs      # diagnosis sweep
+node --max-old-space-size=4096 atlas.mjs      # 80-world calibration
+```
 cd tools
 npm install                                   # jsdom + d3-delaunay
 node --max-old-space-size=14000 test.mjs      # the main suite (~241 checks + the fixture pin)

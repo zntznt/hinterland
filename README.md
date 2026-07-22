@@ -5,11 +5,12 @@ mechanisms** into the worlds it generates, and exports **GeoJSON** for analysis
 in QGIS. It is an **instrument, not an argument**: the same inequality lens is
 how you *look*, but the verdict is the world's, not the code's. A realm can
 close its gap or widen it, lift its floor or drop it, boom or collapse.
-Client-side, one file, no build step, no backend.
+Client-side, no backend.
 
-- **Run it:** open `index.html` directly from disk. It is one file, fully
-  self-contained (d3-delaunay is vendored inline; no network, ever), or
-  host it on GitHub Pages.
+- **Run it:** host on GitHub Pages (source folder: `src/`). For local
+  development, serve `src/` with any HTTP server (`npx serve src/`,
+  `python3 -m http.server -d src/`). The engine is a pure ES module
+  (`src/engine/engine.mjs`), imported directly by Node test tools.
 - **Design docs:** [`docs/attribute-model.md`](docs/attribute-model.md): the
   attribute model, the causal/emergence map, the double-edged mechanisms, and
   the build phasing.

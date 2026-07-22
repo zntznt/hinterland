@@ -10,6 +10,8 @@ import { createPool } from "./pool.mjs";
 import { JSDOM } from "jsdom";
 import * as d3d from "d3-delaunay";
 import { readFileSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const pool = createPool();
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");

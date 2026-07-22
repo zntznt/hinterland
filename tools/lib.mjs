@@ -75,27 +75,28 @@ async function genEngine(hash) {
 
   const S = { ...eng.DEFAULTS };
 
-  if (query.seed !== undefined) S.seed = query.seed;
+  if (query.seed !== undefined && query.seed.trim() !== "") S.seed = query.seed;
   if (query.fate !== undefined) S.fate = query.fate || "";
   if (query.world !== undefined) S.world = query.world;
-  const n = (key, def) => {
+  const n = (key, def, lo, hi) => {
     const v = query[key];
-    return (v !== undefined && v.trim() !== "" && isFinite(+v)) ? +v : def;
+    const val = (v !== undefined && v.trim() !== "" && isFinite(+v)) ? +v : def;
+    return (lo !== undefined && hi !== undefined) ? Math.max(lo, Math.min(hi, val)) : val;
   };
-  S.regions = n("regions", S.regions);
-  S.relax = n("relax", S.relax);
+  S.regions = n("regions", S.regions, 5, 64);
+  S.relax = n("relax", S.relax, 0, 20);
   S.bias = n("bias", S.bias);
-  S.we = n("we", S.we);
-  S.wf = n("wf", S.wf);
-  S.wt = n("wt", S.wt);
-  S.wg = n("wg", S.wg);
-  S.gt = n("gt", S.gt);
-  S.db = n("db", S.db);
-  S.iq = n("iq", S.iq);
-  S.order = n("order", S.order);
-  S.openness = n("openness", S.openness);
-  S.hb = n("hb", S.hb);
-  S.ep = n("ep", S.ep);
+  S.we = n("we", S.we, 0, 100);
+  S.wf = n("wf", S.wf, 0, 100);
+  S.wt = n("wt", S.wt, 0, 100);
+  S.wg = n("wg", S.wg, 0, 100);
+  S.gt = n("gt", S.gt, 0, 100);
+  S.db = n("db", S.db, 0, 100);
+  S.iq = n("iq", S.iq, 0, 100);
+  S.order = n("order", S.order, 0, 100);
+  S.openness = n("openness", S.openness, 0, 100);
+  S.hb = n("hb", S.hb, 0, 1);
+  S.ep = n("ep", S.ep, 0, 99);
   if (query.capital !== undefined) {
     const parts = query.capital.split(",").map(Number);
     if (parts.length === 2 && parts.every(isFinite)) S.capital = parts;

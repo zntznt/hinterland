@@ -470,7 +470,7 @@ const d3 = globalThis.d3;
           }
           const m = Math.hypot(gx, gy, reg.neighbors.length || 1);
           const dot = (gx / m) * sxn + (gy / m) * syn + ((reg.neighbors.length || 1) / m) * szn;
-          _hs[reg.id] = clamp(0.70 + 0.30 * dot, 0.68, 1.0);
+          _hs[reg.id] = clamp(0.55 + 0.45 * dot, 0.50, 1.0);
         });
       }
       const cellFill = (reg) => {
@@ -581,23 +581,23 @@ const d3 = globalThis.d3;
           const cx = reg.c[0], cy = fy(reg.c[1]);
           if (reg.elevation >= 70) {
             // mountain ▲: sized by elevation, darkest at the peaks
-            const sz = 9 + (reg.elevation - 70) * 0.7;
+            const sz = 14 + (reg.elevation - 70) * 1.0;
             const peak = clamp((reg.elevation - 70) / 30, 0, 1);
-            const c = `rgb(${Math.round(130-60*peak)},${Math.round(110-60*peak)},${Math.round(95-45*peak)})`;
-            const jx = cx + (s() - 0.5) * 12, jy = cy + (s() - 0.5) * 10;
-            icons.push({ y: jy, h: sz, el: `<path d="M${(jx).toFixed(1)},${(jy-sz*1.3).toFixed(1)} L${(jx-sz*0.8).toFixed(1)},${(jy+sz*0.5).toFixed(1)} L${(jx+sz*0.8).toFixed(1)},${(jy+sz*0.5).toFixed(1)} Z" fill="${c}" stroke="#5c5045" stroke-width="0.8" opacity="0.75"/>` });
-          } else if (reg.elevation >= 50 && reg.ruggedness >= 35) {
-            // hill △: smaller, on rugged mid-elevation ground
-            const sz = 4.5 + (reg.elevation - 50) * 0.3;
+            const c = `rgb(${Math.round(120-50*peak)},${Math.round(100-50*peak)},${Math.round(85-35*peak)})`;
             const jx = cx + (s() - 0.5) * 14, jy = cy + (s() - 0.5) * 12;
-            icons.push({ y: jy, h: sz, el: `<path d="M${(jx).toFixed(1)},${(jy-sz*1.2).toFixed(1)} L${(jx-sz*0.7).toFixed(1)},${(jy+sz*0.4).toFixed(1)} L${(jx+sz*0.7).toFixed(1)},${(jy+sz*0.4).toFixed(1)} Z" fill="#8a7a65" stroke="#6d5d4a" stroke-width="0.6" opacity="0.65"/>` });
+            icons.push({ y: jy, h: sz, el: `<path d="M${(jx).toFixed(1)},${(jy-sz*1.3).toFixed(1)} L${(jx-sz*0.85).toFixed(1)},${(jy+sz*0.5).toFixed(1)} L${(jx+sz*0.85).toFixed(1)},${(jy+sz*0.5).toFixed(1)} Z" fill="${c}" stroke="#4a3d2f" stroke-width="1.2" opacity="0.82"/>` });
+          } else if (reg.elevation >= 50 && reg.ruggedness >= 30) {
+            // hill △: on rugged mid-elevation ground
+            const sz = 6 + (reg.elevation - 50) * 0.4;
+            const jx = cx + (s() - 0.5) * 16, jy = cy + (s() - 0.5) * 14;
+            icons.push({ y: jy, h: sz, el: `<path d="M${(jx).toFixed(1)},${(jy-sz*1.2).toFixed(1)} L${(jx-sz*0.7).toFixed(1)},${(jy+sz*0.4).toFixed(1)} L${(jx+sz*0.7).toFixed(1)},${(jy+sz*0.4).toFixed(1)} Z" fill="#8a7a65" stroke="#6d5d4a" stroke-width="0.8" opacity="0.62"/>` });
           } else if (reg.biome === "forest" && reg.elevation < 65) {
             // tree cluster ♣: a few tree glyphs on forested low ground
             const n = 2 + Math.floor(s() * 2); // 2-3 trees per forest region
             for (let t = 0; t < n; t++) {
               const jx = cx + (s() - 0.5) * 20, jy = cy + (s() - 0.5) * 16;
-              const ts = 3.5 + s() * 2;
-              icons.push({ y: jy, h: ts, el: `<circle cx="${jx.toFixed(1)}" cy="${(jy-ts).toFixed(1)}" r="${(ts*0.85).toFixed(1)}" fill="#3f6a3f" opacity="0.55"/><circle cx="${jx.toFixed(1)}" cy="${(jy).toFixed(1)}" r="${ts.toFixed(1)}" fill="#2f552f" opacity="0.5"/>` });
+              const ts = 4 + s() * 2.5;
+              icons.push({ y: jy, h: ts, el: `<circle cx="${jx.toFixed(1)}" cy="${(jy-ts).toFixed(1)}" r="${(ts*0.85).toFixed(1)}" fill="#3f6a3f" opacity="0.6"/><circle cx="${jx.toFixed(1)}" cy="${(jy).toFixed(1)}" r="${ts.toFixed(1)}" fill="#2f552f" opacity="0.55"/>` });
             }
           }
         });
@@ -791,7 +791,7 @@ const d3 = globalThis.d3;
           const dx = pts[Math.min(pts.length - 1, i + 1)][0] - pts[Math.max(0, i - 1)][0];
           const dy = pts[Math.min(pts.length - 1, i + 1)][1] - pts[Math.max(0, i - 1)][1];
           const len = Math.hypot(dx, dy) || 1;
-          const amp = (3.5 + i * 0.2) * (0.7 + 0.3 * Math.sin(i * 1.7 + pts.length * 0.4));
+          const amp = (6 + i * 0.35) * (0.6 + 0.4 * Math.sin(i * 1.7 + pts.length * 0.4));
           return [p[0] + (-dy / len) * amp, p[1] + (dx / len) * amp];
         });
       };

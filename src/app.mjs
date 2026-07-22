@@ -1818,15 +1818,18 @@ const d3 = globalThis.d3;
     const AGE_COLORS = { accumulation: "#5a4a7a", gates: "#7a1f1f", desolation: "#4a4038", restoration: "#2f7a4a", quiet: "#cfc4a8" };
     // per-epoch between-place gini over settled wealth — the same formula the
     // findings use, kept UI-side so the exported findings blob never changes
+    const giniOf = (xs) => {
+      const t = xs.slice().sort((a, b) => a - b);
+      const m = t.reduce((a, b) => a + b, 0) / t.length;
+      if (m === 0) return 0;
+      let g = 0;
+      for (let i = 0; i < t.length; i++) g += (2 * (i + 1) - t.length - 1) * t[i];
+      return Math.round(g / (t.length * t.length * m) * 100) / 100;
+    };
     function perEpochGini(snaps) {
       return snaps.map(S => {
-        const xs = S.wealth.filter((_, i) => S.pop[i] > 0).slice().sort((a, b) => a - b);
-        if (!xs.length) return 0;
-        const m = xs.reduce((a, b) => a + b, 0) / xs.length;
-        if (m === 0) return 0;
-        let g = 0;
-        for (let i = 0; i < xs.length; i++) g += (2 * (i + 1) - xs.length - 1) * xs[i];
-        return Math.round(g / (xs.length * xs.length * m) * 100) / 100;
+        const xs = S.wealth.filter((_, i) => S.pop[i] > 0);
+        return giniOf(xs);
       });
     }
     function ageAt(ages, e) {

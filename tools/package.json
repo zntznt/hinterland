@@ -3,6 +3,13 @@
   "private": true,
   "type": "module",
   "description": "The evidence: verification suite, structural stress, and the atlas sweep for ../index.html",
+  "scripts": {
+    "test": "node --max-old-space-size=4096 test.mjs",
+    "stress": "node --max-old-space-size=4096 stress.mjs",
+    "sweep": "node --max-old-space-size=4096 sweep.mjs",
+    "atlas": "node --max-old-space-size=4096 atlas.mjs",
+    "bundle": "node bundle.mjs"
+  },
   "dependencies": {
     "jsdom": "^24.0.0",
     "d3-delaunay": "^6.0.4"

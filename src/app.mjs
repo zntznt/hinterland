@@ -2384,6 +2384,7 @@ const d3 = globalThis.d3;
       const z = cam ? (WX / cam.w) : 1;
       const PT = 20 / z, LN = 14 / z; // points are forgiving, lines tighter
       const d2 = (x, y) => Math.hypot(x - wx, y - wy);
+      const nearPoly = (pts) => { let m = Infinity; for (const p of pts) { const d = d2(p[0], p[1]); if (d < m) m = d; } return m; };
       let best = null, bestD = Infinity;
       const tryPt = (x, y, kind, id, r) => { const d = d2(x, y); if (d < r && d < bestD) { bestD = d; best = { kind, id }; } };
       // point features (checked first, ties broken by proximity). The wild layer
@@ -2401,8 +2402,10 @@ const d3 = globalThis.d3;
       // U4: additional clickable features — every drawn glyph gets a hit-test
       if (poi) {
         // freeport (hollow circle)
-        const fr = model.regions.find(r => r.id === model.freeport.regionId);
-        if (fr) tryPt((fr.shorePt || fr.c)[0], (fr.shorePt || fr.c)[1], "freeport", 0, PT);
+        if (model.freeport) {
+          const fr = model.regions.find(r => r.id === model.freeport.regionId);
+          if (fr) tryPt((fr.shorePt || fr.c)[0], (fr.shorePt || fr.c)[1], "freeport", 0, PT);
+        }
         // sanctuary (gold star)
         if (model.sanctuary) tryPt(model.sanctuary.x, model.sanctuary.y, "sanctuary", 0, PT);
         // peak spot heights (▲ at high-elev centroids)
@@ -2411,13 +2414,14 @@ const d3 = globalThis.d3;
         model.regions.forEach(reg => {
           if (reg.isSkyport) tryPt(reg.c[0], reg.c[1], "skyport", reg.id, PT);
           if (reg.hasCamp) tryPt(reg.c[0], reg.c[1], "camp", reg.id, PT);
-          if (reg.hasTower) tryPt(reg.c[0], reg.c[1], "tower", reg.id, PT);
           if (reg.refining > 0) tryPt(reg.c[0], reg.c[1], "refinery", reg.id, PT);
           if (reg.stillair) tryPt(reg.c[0], reg.c[1], "still", reg.id, PT);
-          // constabulary, facilities, structures, events — check if region has them
-          if (reg.garrison) tryPt(reg.c[0], reg.c[1], "garrison", reg.id, PT);
           if (reg.eventType && reg.eventType !== "none") tryPt(reg.c[0], reg.c[1], "event", reg.id, PT);
         });
+        // constabulary posts (model.garrisons list)
+        (model.garrisons || []).forEach(g =>
+          tryPt(model.regions.find(r => r.id === g.regionId)?.c[0] ?? 0, 
+                model.regions.find(r => r.id === g.regionId)?.c[1] ?? 0, "garrison", g.regionId, PT));
         // conduit edges
         model.conduitEdges.forEach((e, i) => {
           const A = model.regions[e.a], B = model.regions[e.b];
@@ -2434,7 +2438,6 @@ const d3 = globalThis.d3;
       if (best) return best; // a point glyph was hit — it wins over lines
       // line features: nearest point on the polyline. Ridges are atlas ink;
       // rivers draw in both genres.
-      const nearPoly = (pts) => { let m = Infinity; for (const p of pts) { const d = d2(p[0], p[1]); if (d < m) m = d; } return m; };
       if (atlas) model.ridges.forEach(R => { const d = nearPoly(R.pts); if (d < LN && d < bestD) { bestD = d; best = { kind: "ridge", id: R.id }; } });
       model.rivers.forEach(RV => { const d = nearPoly(RV.trace || []); if (d < LN && d < bestD) { bestD = d; best = { kind: "river", id: RV.id }; } });
       return best;

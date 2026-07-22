@@ -8298,7 +8298,7 @@
       // and the declutter below re-runs at zc so MORE names win deeper in. zc is
       // EXACTLY 1 at fit/contain, so the default plate is unchanged.
       const zc = labelZoom();
-      const cz = (base, dp) => zc === 1 ? base : +(base * zc).toFixed(dp == null ? 2 : dp);
+      const cz = (base, dp) => { const v = zc === 1 ? base : +(base * zc).toFixed(dp == null ? 2 : dp); return Math.max(6, v); };
       // #60 G1: preview-only water guard — ink whose anchor floats is a lie
       const inSea = (x, y) => model.seaShapes.some(S =>
         pointInRing(x, y, S.outer) && !S.holes.some(h => pointInRing(x, y, h)));
@@ -8388,7 +8388,7 @@
         // boxes shrink with zoom (zc<1): the on-screen text holds size while its
         // world footprint contracts, so the greedy declutter admits more names deeper in.
         const efs = fsize * zc;
-        const w = String(text).length * efs * 0.55, h = efs;
+        const w = String(text).length * efs * 0.62, h = efs;
         return [x - w / 2, y - h, x + w / 2, y]; // text-anchor=middle, baseline at y
       };
       const tryLabel = (box, rank) => {
@@ -8406,7 +8406,19 @@
         let fs = 12 + 11 * Math.sqrt(RP(sreg) / maxPop0);
         fs = s.tier === "metropolis" ? Math.max(fs, 20) : Math.min(fs, 18);
         const r = 3 + 13 * Math.sqrt(RP(sreg) / maxPop0);
-        placedLabels.push([labelBox(s.x, fy(s.y) - r - 5, s.name, fs), 4]);
+        const gap = Math.max(5, r * 0.3);
+        placedLabels.push([labelBox(s.x, fy(s.y) - r - gap, s.name, fs), 4]);
+      });
+      // pre-reserve works-town + frontier-post boxes at rank 3 so curved
+      // region labels (also rank 3) don't suppress settlement names
+      model.settlements.forEach(s => {
+        if (s.tier !== "works-town" && s.tier !== "frontier-post") return;
+        if (zc >= 1) return; // only at deeper zoom where these labels appear
+        const sreg = model.regions[s.regionId];
+        const fs = 10 + 8 * Math.sqrt(RP(sreg) / maxPop0);
+        const r = 3 + 13 * Math.sqrt(RP(sreg) / maxPop0);
+        const gap2 = Math.max(5, r * 0.3);
+        placedLabels.push([labelBox(s.x, fy(s.y) - r - gap2, s.name, fs), 3]);
       });
       model.regions.forEach(reg => {
         const d = "M" + reg.ring.map(p => `${p[0].toFixed(1)},${fy(p[1]).toFixed(1)}`).join("L") + "Z";
@@ -8438,7 +8450,7 @@
           }
           const ink = lum < 120 ? "#fff" : "#1a1611";
           const halo = lum < 120 ? "#00000055" : "#ffffff";
-          parts.push(`<text x="${reg.c[0].toFixed(1)}" y="${(fy(reg.c[1]) + cz(26)).toFixed(1)}" font-size="${cz(15)}" font-weight="600" text-anchor="middle" fill="${ink}" paint-order="stroke" stroke="${halo}" stroke-width="${cz(3)}">${cellValue(reg)}</text>`);
+          parts.push(`<text x="${reg.c[0].toFixed(1)}" y="${(fy(reg.c[1]) + cz(26)).toFixed(1)}" font-size="${cz(12)}" font-weight="400" opacity="0.85" text-anchor="middle" fill="${ink}" paint-order="stroke" stroke="${halo}" stroke-width="${cz(3)}">${cellValue(reg)}</text>`);
         }
         if (reg.refining > 0) { // refinery glyph, a slotted 16x16 square (#61)
           const [rx, ry] = slotAt(reg, 2); // prefer E
@@ -8483,6 +8495,11 @@
             if (score > bestScore) { bestScore = score; bestPair = { ra, rb }; }
           }
           if (!bestPair || bestPair.ra.dist < 24 || bestPair.rb.dist < 24) return;
+          // Ensure left-to-right path so textPath renders upright:
+          // swap rays if ra leads to the right of rb.
+          if (Math.cos(bestPair.ra.angle) > Math.cos(bestPair.rb.angle)) {
+            const tmp = bestPair.ra; bestPair.ra = bestPair.rb; bestPair.rb = tmp;
+          }
           // Build quadratic bezier path through both rays
           const ax = reg.c[0] + Math.cos(bestPair.ra.angle) * bestPair.ra.dist * 0.85;
           const ay = reg.c[1] + Math.sin(bestPair.ra.angle) * bestPair.ra.dist * 0.85;
@@ -8503,7 +8520,7 @@
           if (tryLabel(box, 3)) {
             const lblId = "rglbl" + rs.regionId;
             parts.push(`<defs><path id="${lblId}" d="${rs.path}" fill="none"/></defs>`);
-            parts.push(`<text font-size="${cz(fs)}" font-style="italic" fill="#2a221a" opacity="0.72"><textPath href="#${lblId}" startOffset="50%" text-anchor="middle">${esc(rs.name)}</textPath></text>`);
+            parts.push(`<text font-size="${cz(fs)}" fill="#2a221a" opacity="0.72"><textPath href="#${lblId}" startOffset="50%" text-anchor="middle">${esc(rs.name)}</textPath></text>`);
           }
         });
       }
@@ -8668,7 +8685,7 @@
             const spread = Math.min(190, 34 + S.name.length * 13);
             if (tryLabel(labelBox(cx, fy(cy), S.name, 15), 2)) {
               parts.push(`<defs><path id="${arcId}" d="M${(cx - spread).toFixed(1)},${(fy(cy) + 9).toFixed(1)} Q${cx.toFixed(1)},${(fy(cy) - 9).toFixed(1)} ${(cx + spread).toFixed(1)},${(fy(cy) + 9).toFixed(1)}"/></defs>`);
-              parts.push(`<text font-size="${cz(15)}" font-style="italic" letter-spacing="${Math.min(6, 2 + spread / 60).toFixed(1)}" fill="#1d4f7a" opacity="0.78"><textPath href="#${arcId}" startOffset="50%" text-anchor="middle">${esc(S.name)}</textPath></text>`);
+              parts.push(`<text font-size="${cz(15)}" font-style="italic" letter-spacing="${Math.min(6, 2 + spread / 60).toFixed(1)}" fill="#1d4f7a" opacity="0.78" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}"><textPath href="#${arcId}" startOffset="50%" text-anchor="middle">${esc(S.name)}</textPath></text>`);
             }
           }
         }
@@ -8881,7 +8898,7 @@
           const mc = RV.trace[Math.floor(RV.trace.length / 2)]; // the name sits on the bed
           const rlbl = RV.kind === "River" ? "the " + RV.name : RV.name + " " + RV.kind;
           if (tryLabel(labelBox(mc[0], fy(mc[1]) + 18, rlbl, 12), 1)) {
-            parts.push(`<text x="${mc[0].toFixed(1)}" y="${(fy(mc[1]) + 18).toFixed(1)}" font-size="${cz(12)}" font-style="italic" text-anchor="middle" fill="#3d7ab5" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">${RV.kind === "River" ? "the " + esc(RV.name) : esc(RV.name) + " " + esc(RV.kind)}</text>`);
+            parts.push(`<text x="${mc[0].toFixed(1)}" y="${(fy(mc[1]) + 18).toFixed(1)}" font-size="${cz(12)}" font-style="italic" text-anchor="middle" fill="${atlas ? "#1a3a5c" : "#3d7ab5"}" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">${RV.kind === "River" ? "the " + esc(RV.name) : esc(RV.name) + " " + esc(RV.kind)}</text>`);
           }
         }
       });
@@ -8906,7 +8923,7 @@
         if (poi) {
           const mid = R.pts[Math.floor(R.pts.length / 2)];
           if (tryLabel(labelBox(mid[0], fy(mid[1]) - 10, R.name + " " + R.kind, 13), 1)) {
-            parts.push(`<text x="${mid[0].toFixed(1)}" y="${(fy(mid[1]) - 10).toFixed(1)}" font-size="${cz(13)}" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">${esc(R.name)} ${esc(R.kind)}</text>`);
+            parts.push(`<text x="${mid[0].toFixed(1)}" y="${(fy(mid[1]) - 10).toFixed(1)}" font-size="${cz(13)}" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">${esc(R.name)} ${esc(R.kind)}</text>`);
           }
         }
       });
@@ -8958,7 +8975,7 @@
         const pdec = p.condition !== undefined && p.condition < 0.7;
         if (pdec) parts.push(`<circle cx="${p.x.toFixed(1)}" cy="${fy(p.y).toFixed(1)}" r="9" fill="none" stroke="#b0432e" stroke-width="1.8" stroke-dasharray="3 3" opacity="0.9"/>`);
         parts.push(`<text class="pass${pdec ? " decayed" : ""}" x="${p.x.toFixed(1)}" y="${(fy(p.y) + 6).toFixed(1)}" font-size="${cz(17)}" font-weight="700" text-anchor="middle" fill="${pdec ? "#b0432e" : "#4a3421"}" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">∩</text>`);
-        if (poi) parts.push(`<text x="${p.x.toFixed(1)}" y="${(fy(p.y) + 20).toFixed(1)}" font-size="${cz(10)}" font-style="italic" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="${cz(2.5)}" opacity="0.85">${esc(p.name)}</text>`);
+        if (poi) parts.push(`<text x="${p.x.toFixed(1)}" y="${(fy(p.y) + 20).toFixed(1)}" font-size="${cz(10)}" text-anchor="middle" fill="#4a3421" paint-order="stroke" stroke="#fff" stroke-width="${cz(2.5)}" opacity="0.85">${esc(p.name)}</text>`);
       });
 
       // Sanctioned sites (Temple): a violet cross — ▲ belongs to the peaks alone
@@ -9018,12 +9035,12 @@
       if (poi && model.freeport) {
         const reg = model.regions.find(r => r.id === model.freeport.regionId);
         const P = reg.shorePt || reg.c;
-        parts.push(`<text x="${P[0].toFixed(1)}" y="${(fy(P[1]) + 6).toFixed(1)}" font-size="${cz(18)}" text-anchor="middle" fill="#1a1a1a" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">⚓</text>`);
-        parts.push(`<text x="${P[0].toFixed(1)}" y="${(fy(P[1]) + 21).toFixed(1)}" font-size="${cz(10)}" font-style="italic" text-anchor="middle" fill="#1a1a1a" paint-order="stroke" stroke="#fff" stroke-width="${cz(2.5)}">${esc(model.freeport.name)}</text>`);
+        parts.push(`<circle cx="${P[0].toFixed(1)}" cy="${(fy(P[1]) + 6).toFixed(1)}" r="8" fill="none" stroke="#1a1a1a" stroke-width="2" opacity="0.8"/>`);
+        parts.push(`<text x="${P[0].toFixed(1)}" y="${(fy(P[1]) + 21).toFixed(1)}" font-size="${cz(10)}" text-anchor="middle" fill="#1a1a1a" paint-order="stroke" stroke="#fff" stroke-width="${cz(2.5)}">${esc(model.freeport.name)}</text>`);
       }
       if (poi && model.sanctuary) {
         parts.push(`<text x="${model.sanctuary.x.toFixed(1)}" y="${(fy(model.sanctuary.y) - 16).toFixed(1)}" font-size="${cz(16)}" text-anchor="middle" fill="#8a6d00" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">✦</text>`);
-        parts.push(`<text x="${model.sanctuary.x.toFixed(1)}" y="${(fy(model.sanctuary.y) - 30).toFixed(1)}" font-size="${cz(10)}" font-style="italic" text-anchor="middle" fill="#8a6d00" paint-order="stroke" stroke="#fff" stroke-width="${cz(2.5)}">${esc(model.sanctuary.name)}</text>`);
+        parts.push(`<text x="${model.sanctuary.x.toFixed(1)}" y="${(fy(model.sanctuary.y) - 30).toFixed(1)}" font-size="${cz(10)}" text-anchor="middle" fill="#8a6d00" paint-order="stroke" stroke="#fff" stroke-width="${cz(2.5)}">${esc(model.sanctuary.name)}</text>`);
       }
       if (poi) model.camps.forEach(cp => {
         const reg = model.regions.find(r => r.id === cp.regionId);
@@ -9039,7 +9056,7 @@
         if (still.length && model.stillName) {
           const cx2 = still.reduce((s2, r) => s2 + r.c[0], 0) / still.length;
           const cy2 = still.reduce((s2, r) => s2 + r.c[1], 0) / still.length;
-          parts.push(`<text x="${cx2.toFixed(1)}" y="${(fy(cy2) - 44).toFixed(1)}" font-size="${cz(12)}" font-style="italic" letter-spacing="2" text-anchor="middle" fill="#556" opacity="0.85" paint-order="stroke" stroke="#fff" stroke-width="${cz(2.5)}">${esc(model.stillName)}</text>`);
+          parts.push(`<text x="${cx2.toFixed(1)}" y="${(fy(cy2) - 44).toFixed(1)}" font-size="${cz(12)}" letter-spacing="2" text-anchor="middle" fill="#556" opacity="0.85" paint-order="stroke" stroke="#fff" stroke-width="${cz(2.5)}">${esc(model.stillName)}</text>`);
         }
       }
 
@@ -9054,23 +9071,24 @@
         const sreg = model.regions[s.regionId];
         const cx = s.x, cy = fy(s.y), isPrime = s.tier === "metropolis";
         const r = 3 + 13 * Math.sqrt(RP(sreg) / maxPop);
+        const gap = Math.max(5, r * 0.3);
         const off = !RG(sreg);
-        const fill = off ? "#8a8a8a" : (isPrime ? "#d62728" : (s.tier === "city" ? "#fff" : "#ccc"));
+        const fill = off ? "#8a8a8a" : (isPrime ? "#d62728" : (s.tier === "city" ? "#fff" : (s.tier === "frontier-post" ? "#e0d8cc" : "#ccc")));
         const dash = off ? ` stroke-dasharray="4 3"` : "";
         parts.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${fill}" stroke="#000" stroke-width="${isPrime ? 2 : 1.2}"${dash} filter="url(#softShadow)"/>`);
         if (isPrime || s.tier === "city") {
           // label size tracks population (like the dot), not a two-value tier,
           // so a big hub reads louder than a small one; the seat keeps a floor.
           let fsize = 12 + 11 * Math.sqrt(RP(sreg) / maxPop);
-          fsize = isPrime ? Math.max(fsize, 20) : Math.min(fsize, 18);
+          fsize = isPrime ? Math.min(Math.max(fsize, 20), 28) : Math.min(fsize, 18);
           const dfs = zc === 1 ? fsize.toFixed(1) : (fsize * zc).toFixed(1);
-          parts.push(`<text class="placename" x="${cx.toFixed(1)}" y="${(cy - r - 5).toFixed(1)}" font-size="${dfs}" text-anchor="middle" fill="#000" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="${cz(4)}">${esc(s.name)}</text>`);
+          parts.push(`<text class="placename" x="${cx.toFixed(1)}" y="${(cy - r - gap).toFixed(1)}" font-size="${dfs}" text-anchor="middle" fill="#000" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="${cz(4)}">${esc(s.name)}</text>`);
         } else if (zc < 1 && (s.tier === "works-town" || s.tier === "frontier-post")) {
           // deeper zoom earns the smaller seats their names — decluttered like the
           // rest (rank 3: yields to prime/hub, outranks the decorative water/ridge).
           const rawfs = 10 + 8 * Math.sqrt(RP(sreg) / maxPop);
-          if (tryLabel(labelBox(cx, cy - r - 5, s.name, rawfs), 3)) {
-            parts.push(`<text class="placename" x="${cx.toFixed(1)}" y="${(cy - r - 5).toFixed(1)}" font-size="${(rawfs * zc).toFixed(1)}" text-anchor="middle" fill="#111" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">${esc(s.name)}</text>`);
+          if (tryLabel(labelBox(cx, cy - r - gap, s.name, rawfs), 3)) {
+            parts.push(`<text class="placename" x="${cx.toFixed(1)}" y="${(cy - r - gap).toFixed(1)}" font-size="${(rawfs * zc).toFixed(1)}" text-anchor="middle" fill="#111" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">${esc(s.name)}</text>`);
           }
         }
       });
@@ -9084,7 +9102,7 @@
         const px = -dy, py = dx;            // perpendicular
         parts.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#000" stroke-width="4" opacity="0.65"/>`);
         parts.push(`<polygon points="${x2.toFixed(1)},${y2.toFixed(1)} ${(x2 + hx + px * 8).toFixed(1)},${(y2 + hy + py * 8).toFixed(1)} ${(x2 + hx - px * 8).toFixed(1)},${(y2 + hy - py * 8).toFixed(1)}" fill="#000" opacity="0.65"/>`);
-        parts.push(`<text x="${cx0}" y="${cy0 + 58}" font-size="16" text-anchor="middle" fill="#000" opacity="0.6" paint-order="stroke" stroke="#fff" stroke-width="3">wind</text>`);
+        parts.push(`<text x="${cx0}" y="${cy0 + 58}" font-size="${cz(14)}" text-anchor="middle" fill="#000" opacity="0.6" paint-order="stroke" stroke="#fff" stroke-width="3">wind</text>`);
       }
       // Compass (bottom-right): north is screen-up (world is y-up, display flips
       // y). Placed clear of the wind arrow (top-left) and epoch label (top-right)
@@ -9093,11 +9111,11 @@
         const nx = WX - 52, ny = WY - 66;
         parts.push(`<line x1="${nx}" y1="${ny}" x2="${nx}" y2="${ny + 40}" stroke="#000" stroke-width="3" opacity="0.6"/>`);
         parts.push(`<polygon points="${nx},${ny - 8} ${nx - 6},${ny + 6} ${nx + 6},${ny + 6}" fill="#000" opacity="0.6"/>`);
-        parts.push(`<text x="${nx}" y="${ny - 12}" font-size="15" font-weight="700" text-anchor="middle" fill="#000" opacity="0.7" paint-order="stroke" stroke="#fff" stroke-width="3">N</text>`);
+        parts.push(`<text x="${nx}" y="${ny - 12}" font-size="${cz(13)}" font-weight="700" text-anchor="middle" fill="#000" opacity="0.7" paint-order="stroke" stroke="#fff" stroke-width="3">N</text>`);
       }
       if (params.ep > 0) {
         const ageName = ageAt(getFindings(model).ages, Math.min(scrubEpoch, snaps.length - 1));
-        parts.push(`<text x="${WX - 40}" y="46" font-size="26" text-anchor="end" fill="#000" opacity="0.65" paint-order="stroke" stroke="#fff" stroke-width="4">epoch ${Math.min(scrubEpoch, snaps.length - 1)}/${params.ep}${ageName ? " · " + ageName : ""}</text>`);
+        parts.push(`<text x="${WX - 40}" y="46" font-size="${cz(16)}" text-anchor="end" fill="#000" opacity="0.65" paint-order="stroke" stroke="#fff" stroke-width="4">epoch ${Math.min(scrubEpoch, snaps.length - 1)}/${params.ep}${ageName ? " · " + ageName : ""}</text>`);
       }
       if (inspectId >= 0 && inspectId < model.regions.length) {
         const reg = model.regions[inspectId];
@@ -9134,7 +9152,7 @@
           <line x1="0" y1="-7" x2="0" y2="7" stroke="#5c5045" stroke-width="1.5"/>
           <line x1="${sbW.toFixed(0)}" y1="-7" x2="${sbW.toFixed(0)}" y2="7" stroke="#5c5045" stroke-width="1.5"/>
           <line x1="${(sbW/2).toFixed(0)}" y1="-4" x2="${(sbW/2).toFixed(0)}" y2="4" stroke="#5c5045" stroke-width="1"/>
-          <text x="${(sbW/2).toFixed(0)}" y="-10" text-anchor="middle" font-size="10" fill="#5c5045" opacity="0.8">140</text>
+          <text x="${(sbW/2).toFixed(0)}" y="-10" text-anchor="middle" font-size="${cz(10)}" fill="#5c5045" opacity="0.8">140</text>
         </g>`);
       }
       parts.push(`</svg>`);

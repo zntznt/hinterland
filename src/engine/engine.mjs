@@ -2003,7 +2003,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
           reg.rainfall < 25 ? "badland" :
           reg.temperature < 32 ? "moor" :
           (reg.onRiver === 1 && reg.elevation < 35) ? "marsh" :
-          reg.rainfall >= 68 ? "forest" :
+          reg.rainfall >= 48 ? "forest" :
           reg.rainfall < 42 ? "steppe" : "grassland";
         const bd = BIOME_DATA[reg.biome] || { habitability: 50, moveCost: 1.0 };
         reg.biomeHabitability = bd.habitability;

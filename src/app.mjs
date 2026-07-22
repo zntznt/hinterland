@@ -618,6 +618,32 @@ const d3 = globalThis.d3;
           }
         });
       }
+      // H4: bloc borders — short segments between adjacent regions with different
+      // dominant blocs, coloured to match the bloc on each side. Drawn above fills,
+      // below POI markers.
+      if (!atlas && lensId !== "bloc") {
+        const blocGroups = {};
+        model.regions.forEach((A, i) => {
+          const bA = A.occupied ? "dominion" : A.bloc;
+          for (const j of A.neighbors) {
+            if (j <= i) continue;
+            const B = model.regions[j];
+            const bB = B.occupied ? "dominion" : B.bloc;
+            if (bA === bB) continue;
+            const mx = (A.c[0] + B.c[0]) / 2, my = (A.c[1] + B.c[1]) / 2;
+            const dx = B.c[0] - A.c[0], dy = B.c[1] - A.c[1];
+            const len = Math.hypot(dx, dy) || 1;
+            const nx = -dy / len * 9, ny = dx / len * 9;
+            const seg = `M${(mx+nx).toFixed(1)},${(fy(my)+ny).toFixed(1)}L${(mx-nx).toFixed(1)},${(fy(my)-ny).toFixed(1)}`;
+            if (!blocGroups[bA]) blocGroups[bA] = [];
+            blocGroups[bA].push(seg);
+          }
+        });
+        for (const [bloc, segs] of Object.entries(blocGroups)) {
+          const c = BLOC_COLORS[bloc] || "#999";
+          parts.push(`<path d="${segs.join("")}" fill="none" stroke="${c}" stroke-width="2.5" stroke-linecap="round" opacity="0.55"/>`);
+        }
+      }
       // Paper grain, atlas only: a dark fibrous texture laid OVER the land (not
       // under it, where the opaque region fills would hide it) so the parchment
       // reads as grained, not flat. Blends by multiply so it darkens the land.
@@ -653,13 +679,19 @@ const d3 = globalThis.d3;
             const sz = 6 + (reg.elevation - 50) * 0.4;
             const jx = cx + (s() - 0.5) * 16, jy = cy + (s() - 0.5) * 14;
             icons.push({ y: jy, h: sz, el: `<path d="M${(jx).toFixed(1)},${(jy-sz*1.2).toFixed(1)} L${(jx-sz*0.7).toFixed(1)},${(jy+sz*0.4).toFixed(1)} L${(jx+sz*0.7).toFixed(1)},${(jy+sz*0.4).toFixed(1)} Z" fill="#8a7a65" stroke="#6d5d4a" stroke-width="0.8" opacity="0.62"/>` });
-          } else if (reg.biome === "forest" && reg.elevation < 65) {
-            // tree cluster ♣: a few tree glyphs on forested low ground
-            const n = 2 + Math.floor(s() * 2); // 2-3 trees per forest region
-            for (let t = 0; t < n; t++) {
-              const jx = cx + (s() - 0.5) * 20, jy = cy + (s() - 0.5) * 16;
-              const ts = 4 + s() * 2.5;
-              icons.push({ y: jy, h: ts, el: `<circle cx="${jx.toFixed(1)}" cy="${(jy-ts).toFixed(1)}" r="${(ts*0.85).toFixed(1)}" fill="#3f6a3f" opacity="0.6"/><circle cx="${jx.toFixed(1)}" cy="${(jy).toFixed(1)}" r="${ts.toFixed(1)}" fill="#2f552f" opacity="0.55"/>` });
+          } else if (reg.elevation < 65) {
+            // tree cluster ♣: biome-aware density so forests are thick,
+            // grasslands get a few scattered trees, steppe/moor fewer still
+            const biomeDensity = { forest: 1.3, grassland: 0.5, moor: 0.3, steppe: 0.2, marsh: 0.4, badland: 0.1, alpine: 0 };
+            const dMul = biomeDensity[reg.biome] || 0;
+            if (dMul <= 0) { /* skip — no trees in this biome */ }
+            else {
+              const n = Math.max(1, Math.round((2 + s() * 2) * dMul));
+              for (let t = 0; t < n; t++) {
+                const jx = cx + (s() - 0.5) * 22, jy = cy + (s() - 0.5) * 18;
+                const ts = 3.5 + s() * 2.5 * dMul;
+                icons.push({ y: jy, h: ts, el: `<circle cx="${jx.toFixed(1)}" cy="${(jy-ts).toFixed(1)}" r="${(ts*0.85).toFixed(1)}" fill="#3f6a3f" opacity="${(0.6*dMul).toFixed(2)}"/><circle cx="${jx.toFixed(1)}" cy="${(jy).toFixed(1)}" r="${ts.toFixed(1)}" fill="#2f552f" opacity="${(0.5*dMul).toFixed(2)}"/>` });
+              }
             }
           }
         });
@@ -747,6 +779,20 @@ const d3 = globalThis.d3;
         for (const [rw, ro] of (atlas ? [[26, 0.10], [14, 0.13], [6, 0.16]] : [[6, 0.16]]))
           parts.push(`<use href="#${sid}" stroke="#9dbdd9" stroke-width="${rw}" opacity="${ro}" stroke-linejoin="round"/>`);
         parts.push(`<path class="sea" d="${d}" fill-rule="evenodd" fill="#4a7fae" fill-opacity="0.55" stroke="#2b5f8a" stroke-width="1.4"/>`);
+        // Bathymetry: inset depth bands with progressive opacity and lighter
+        // blue, creating a stepped depth illusion from the coastline inward.
+        [3, 7, 14, 24, 38].forEach((dp, di) => {
+          const bw = di === 0 ? 0.8 : 1.1 + di * 0.3;
+          const bo = 0.10 - di * 0.018;
+          const insetD = (rg) => catRom(rg.map((pt, pi) => {
+            const prev = rg[(pi + rg.length - 1) % rg.length], next = rg[(pi + 1) % rg.length];
+            const dx = next[0] - prev[0], dy = next[1] - prev[1];
+            const len = Math.hypot(dx, dy) || 1;
+            return [pt[0] + (-dy/len) * dp * 0.6, pt[1] + (dx/len) * dp * 0.6];
+          }));
+          const bd = [S.outer, ...S.holes].map(rg => insetD(dec(rg).map(pt => [pt[0], fy(pt[1])]))).join(" ");
+          parts.push(`<path d="${bd}" fill="none" fill-rule="evenodd" stroke="#5a8fbe" stroke-width="${bw.toFixed(1)}" opacity="${bo.toFixed(3)}" stroke-linejoin="round"/>`);
+        });
         if (S.name && poi) {
           let cx = 0, cy = 0, aa = 0;
           for (let k = 0; k + 1 < S.outer.length; k++) {
@@ -1173,6 +1219,17 @@ const d3 = globalThis.d3;
       parts.push(`<path d="M0,0H${WX}V${WY}H0Z" fill="url(#vignette)" pointer-events="none"/>`);
       parts.push(`<path d="M6,6H${WX - 6}V${WY - 6}H6Z" fill="none" stroke="#8a7a5c" stroke-width="1" opacity="0.6" pointer-events="none"/>`);
       parts.push(`<path d="M10,10H${WX - 10}V${WY - 10}H10Z" fill="none" stroke="#8a7a5c" stroke-width="0.5" opacity="0.4" pointer-events="none"/>`);
+      // Scale bar: width adapts to zoom, shows a fixed world distance
+      if (!atlas) {
+        const sbW = clamp(140 / cam.w * WX, 60, 300), sbX = 18, sbY = WY - 22;
+        parts.push(`<g class="scalebar" transform="translate(${sbX.toFixed(0)},${sbY.toFixed(0)})">
+          <line x1="0" y1="0" x2="${sbW.toFixed(0)}" y2="0" stroke="#5c5045" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="0" y1="-7" x2="0" y2="7" stroke="#5c5045" stroke-width="1.5"/>
+          <line x1="${sbW.toFixed(0)}" y1="-7" x2="${sbW.toFixed(0)}" y2="7" stroke="#5c5045" stroke-width="1.5"/>
+          <line x1="${(sbW/2).toFixed(0)}" y1="-4" x2="${(sbW/2).toFixed(0)}" y2="4" stroke="#5c5045" stroke-width="1"/>
+          <text x="${(sbW/2).toFixed(0)}" y="-10" text-anchor="middle" font-size="10" fill="#5c5045" opacity="0.8">140</text>
+        </g>`);
+      }
       parts.push(`</svg>`);
       const stage = document.getElementById("stage");
       stage.innerHTML = parts.join("");

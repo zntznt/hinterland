@@ -1,45 +1,14 @@
 // Calibration sweep: measure many worlds, find the archetypal extremes,
 // and write docs/atlas.md with share-links and each world's own words.
-import { readFileSync, writeFileSync } from "node:fs";
-import { JSDOM } from "jsdom";
-import * as d3d from "d3-delaunay";
-
-const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-function gen(hash) {
-  let cap = null;
-  const dom = new JSDOM(html, { runScripts: "dangerously", url: "https://h.test/" + hash,
-    beforeParse(w) { w.d3 = { Delaunay: d3d.Delaunay, Voronoi: d3d.Voronoi };
-      const RB = w.Blob; w.Blob = class extends RB { constructor(p, o) { super(p, o); cap = p.join(""); } };
-      w.URL.createObjectURL = () => "blob:x"; w.URL.revokeObjectURL = () => {};
-      w.HTMLAnchorElement.prototype.click = function () {}; } });
-  const doc = dom.window.document;
-  doc.getElementById("download").click(); const gj = JSON.parse(cap);
-  doc.getElementById("dlChron").click();
-  const chron = cap;
-  dom.window.close();
-  return { gj, chron };
-}
-const gini = (xs) => {
-  const s = xs.slice().sort((a, b) => a - b); const n = s.length;
-  const mean = s.reduce((a, b) => a + b, 0) / n;
-  if (mean === 0) return 0;
-  let g = 0;
-  for (let i = 0; i < n; i++) g += (2 * (i + 1) - n - 1) * s[i];
-  return g / (n * n * mean);
-};
-const pearson = (xs, ys) => {
-  const n = xs.length, mx = xs.reduce((a, b) => a + b, 0) / n, my = ys.reduce((a, b) => a + b, 0) / n;
-  let a = 0, b = 0, c = 0;
-  for (let i = 0; i < n; i++) { a += (xs[i] - mx) * (ys[i] - my); b += (xs[i] - mx) ** 2; c += (ys[i] - my) ** 2; }
-  const d = Math.sqrt(b * c); return d < 1e-12 ? 0 : a / c ** 0 / d * c ** 0;
-};
+import { writeFileSync } from "node:fs";
+import { genEngine, giniOf, pearson } from "./lib.mjs";
 
 const worlds = [];
 const N = 80;
 for (let i = 0; i < N; i++) {
   const seed = "atlas-" + i;
   const hash = `#seed=${seed}&regions=24&ep=10`;
-  const { gj, chron } = gen(hash);
+  const { gj, chron } = await genEngine(hash);
   const R = gj.features.filter(f => f.properties.kind === "region").map(f => f.properties);
   const evs = gj.hinterland.events || [];
   const held = { crown: 0, temple: 0, magnate: 0, none: 0 };
@@ -50,7 +19,7 @@ for (let i = 0; i < N; i++) {
   const F = gj.hinterland.findings;
   worlds.push({
     seed, hash, capName, reign, chron,
-    gini: gini(R.map(r => r.wealth)),
+    gini: giniOf(R.map(r => r.wealth)),
     dGini: F.gini - F.gini_t0,
     withinPct: F.within_pct ?? 0,
     ownersCoin: F.owners ? F.owners.coin_pct : 0,

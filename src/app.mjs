@@ -1096,7 +1096,7 @@ const d3 = globalThis.d3;
         L.push(`<div class="insp-sec">THE RANGE</div><table>` +
           row("grade", `${R.kind} · peak elevation ${R.maxElev}`) +
           row("form", `${R.pts.length}-node crest${R.isSpur ? " (a spur off a main range)" : ""}`) +
-          row("passes", myPasses.length ? myPasses.map(p => p.name || "an unnamed pass").join(" · ") : "no pass crosses it, a full wall") +
+          row("passes", myPasses.length ? myPasses.map(p => esc(p.name || "an unnamed pass")).join(" · ") : "no pass crosses it, a full wall") +
           `</table>`);
         if (spurs && !R.isSpur) L.push(`<div class="insp-ev">the realm's ranges throw ${spurs} spur${spurs === 1 ? "" : "s"} between them</div>`);
       } else if (selFeat.kind === "river") {
@@ -1108,7 +1108,7 @@ const d3 = globalThis.d3;
         sub = `watercourse · ${RV.kind.toLowerCase()} #${RV.id}`;
         L.push(`<div class="insp-sec">THE WATER</div><table>` +
           row("grade", `${RV.kind} · ${chainLen} region${chainLen === 1 ? "" : "s"} on its course`) +
-          row("joins", into ? `flows into the ${into}` : "runs its own course to the sea or a lake") +
+          row("joins", into ? `flows into the ${esc(into)}` : "runs its own course to the sea or a lake") +
           (mouthReg ? row("mouth", `reaches ${mouthReg.onCoast === 1 ? "the coast" : "still water"} at ${townAt(RV.chain[RV.chain.length - 1])}`) : "") +
           `</table>`);
       } else if (selFeat.kind === "pass") {
@@ -2312,7 +2312,12 @@ const d3 = globalThis.d3;
       applyHashView();
       syncControls();
       wire();
-      regenerateTopology();
+      try { regenerateTopology(); }
+      catch (e) {
+        document.getElementById("stage").innerHTML =
+          `<p class="err" style="padding:16px;max-width:60ch">Failed to generate the world.
+           ${e.message || "Unknown error"}. Try changing the seed or reloading.</p>`;
+      }
     }
 
     if (typeof document !== "undefined") boot();

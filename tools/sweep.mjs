@@ -11,6 +11,7 @@
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import * as d3d from "d3-delaunay";
+import { regionsOf, col, mean, r1 } from "./lib.mjs";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 
@@ -33,10 +34,6 @@ function gen(hash) {
   dom.window.close();
   return { gj, lead, chron };
 }
-const regionsOf = (g) => g.features.filter(f => f.properties.kind === "region");
-const col = (g, name) => regionsOf(g).map(f => f.properties[name]);
-const mean = (xs) => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
-const r1 = (v) => Math.round(v * 10) / 10;
 
 const BASE = "regions=20&ep=10";
 const SEED = "sweep";

@@ -1,105 +1,14 @@
-import { readFileSync } from "node:fs";
-import { JSDOM } from "jsdom";
-import * as d3d from "d3-delaunay";
+import { gen, genEngine, setupEngine,
+  regionsOf, ridgesOf, riversOf, coastsOf, portsOf, ruinsOf, bridgesOf, towersOf,
+  maelOf, passesOf, settlesOf, conduitOf, facilitiesOf, sanctOf, roadsOf, garrisonsOf,
+  rings, col, geology,
+  pointInRing, segInt,
+  mean, med, r1, cen, median, pearson, giniOf, wgini,
+} from "./lib.mjs";
 
-const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-// NOTE: the suite generates ~450 full JSDOM worlds. gen() takes one
-// event-loop breath per world — V8 pins every WeakRef target (jsdom
-// holds one per node) until a microtask checkpoint, so a synchronous
-// run would retain every closed window and die at the heap cap. With
-// the breath the peak stays low; a generous cap still never hurts:
-//   node --max-old-space-size=13500 test.mjs
 let failures = 0;
 const fail = (m) => { console.error("FAIL: " + m); failures++; };
 const ok = (m) => console.log("ok  : " + m);
-
-async function gen(hash, keepDom = false) {
-  let captured = null;
-  const dom = new JSDOM(html, {
-    runScripts: "dangerously",
-    url: "https://h.test/" + (hash || ""),
-    beforeParse(window) {
-      window.d3 = { Delaunay: d3d.Delaunay, Voronoi: d3d.Voronoi };
-      const RB = window.Blob;
-      window.Blob = class extends RB { constructor(p, o) { super(p, o); captured = p.join(""); } };
-      window.URL.createObjectURL = () => "blob:x";
-      window.URL.revokeObjectURL = () => {};
-      window.HTMLAnchorElement.prototype.click = function () {};
-    },
-  });
-  const doc = dom.window.document;
-  doc.getElementById("download").click();
-  const gj = JSON.parse(captured);
-  doc.getElementById("dlSeries").click();
-  const series = JSON.parse(captured);
-  doc.getElementById("dlChron").click();
-  const chron = captured;
-  if (!keepDom) dom.window.close();
-  // one event-loop breath per world: V8 keeps every WeakRef target (jsdom
-  // holds one per node) in the kept-objects set until a microtask
-  // checkpoint, and finalizers only run between turns — a fully
-  // synchronous run would retain every closed window and die at the heap
-  // cap. The breath lets the ordinary GC actually reclaim the worlds.
-  await new Promise((r) => setImmediate(r));
-  if (!keepDom) return { gj, series, chron, doc: null, window: null };
-  return { gj, series, chron, doc, window: dom.window };
-}
-
-const regionsOf = (gj) => gj.features.filter(f => f.properties.kind === "region");
-const ridgesOf = (gj) => gj.features.filter(f => f.properties.kind === "ridge");
-const riversOf = (gj) => gj.features.filter(f => f.properties.kind === "river");
-const coastsOf = (gj) => gj.features.filter(f => f.properties.kind === "coast");
-const portsOf = (gj) => gj.features.filter(f => f.properties.kind === "port");
-const ruinsOf = (gj) => gj.features.filter(f => f.properties.kind === "ruin");
-const bridgesOf = (gj) => gj.features.filter(f => f.properties.kind === "bridge");
-const towersOf = (gj) => gj.features.filter(f => f.properties.kind === "tower");
-const maelOf = (gj) => gj.features.filter(f => f.properties.kind === "maelstrom");
-const passesOf = (gj) => gj.features.filter(f => f.properties.kind === "pass");
-// same predicate as the app: range_shadow must be exactly recomputable
-function pointInRing(x, y, ring) {
-  let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
-    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
-}
-function segInt(p, q, a, b) {
-  const d1x = q[0] - p[0], d1y = q[1] - p[1], d2x = b[0] - a[0], d2y = b[1] - a[1];
-  const den = d1x * d2y - d1y * d2x;
-  if (den === 0) return null;
-  const t = ((a[0] - p[0]) * d2y - (a[1] - p[1]) * d2x) / den;
-  const u = ((a[0] - p[0]) * d1y - (a[1] - p[1]) * d1x) / den;
-  if (t < 0 || t > 1 || u < 0 || u > 1) return null;
-  return [p[0] + t * d1x, p[1] + t * d1y];
-}
-const settlesOf = (gj) => gj.features.filter(f => f.properties.kind === "settlement");
-const conduitOf = (gj) => gj.features.filter(f => f.properties.kind === "grid");
-const facilitiesOf = (gj) => gj.features.filter(f => f.properties.kind === "facility");
-const sanctOf = (gj) => gj.features.filter(f => f.properties.kind === "sanctioned_site");
-const roadsOf = (gj) => gj.features.filter(f => f.properties.kind === "road");
-const garrisonsOf = (gj) => gj.features.filter(f => f.properties.kind === "constabulary");
-const rings = (gj) => regionsOf(gj).map(f => JSON.stringify(f.geometry.coordinates));
-const col = (gj, name) => regionsOf(gj).map(f => f.properties[name]);
-const geology = (gj) => JSON.stringify(regionsOf(gj).map(f => [
-  f.properties.aetherstone_endowment, f.properties.terrain_ruggedness, f.properties.fertility]));
-
-function pearson(xs, ys) {
-  const n = xs.length, mx = xs.reduce((s, v) => s + v, 0) / n, my = ys.reduce((s, v) => s + v, 0) / n;
-  let sxy = 0, sxx = 0, syy = 0;
-  for (let i = 0; i < n; i++) { sxy += (xs[i] - mx) * (ys[i] - my); sxx += (xs[i] - mx) ** 2; syy += (ys[i] - my) ** 2; }
-  const d = Math.sqrt(sxx * syy);
-  return d < 1e-12 ? 0 : sxy / d;
-}
-const cen = (ring) => {
-  let A = 0, cx = 0, cy = 0;
-  for (let k = 0; k < ring.length - 1; k++) {
-    const f = ring[k][0] * ring[k + 1][1] - ring[k + 1][0] * ring[k][1];
-    A += f; cx += (ring[k][0] + ring[k + 1][0]) * f; cy += (ring[k][1] + ring[k + 1][1]) * f;
-  }
-  A *= 0.5; return [cx / (6 * A), cy / (6 * A)];
-};
-const median = (xs) => { const s = [...xs].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
 
 // ---- Structural validity ---------------------------------------------------
 function validate(gj, tag) {

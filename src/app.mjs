@@ -1198,7 +1198,10 @@ const d3 = globalThis.d3;
           // deeper zoom earns the smaller seats their names — decluttered like the
           // rest (rank 3: yields to prime/hub, outranks the decorative water/ridge).
           const rawfs = 10 + 8 * Math.sqrt(RP(sreg) / maxPop);
-          if (tryLabel(labelBox(cx, cy - r - gap, s.name, rawfs), 3)) {
+          const lb = labelBox(cx, cy - r - gap, s.name, rawfs);
+          const pi = placedLabels.findIndex(([b]) => b[0] === lb[0] && b[1] === lb[1]);
+          if (pi !== -1) placedLabels.splice(pi, 1);
+          if (tryLabel(lb, 3)) {
             parts.push(`<text class="placename" x="${cx.toFixed(1)}" y="${(cy - r - gap).toFixed(1)}" font-size="${(rawfs * zc).toFixed(1)}" text-anchor="middle" fill="#111" font-weight="600" paint-order="stroke" stroke="#fff" stroke-width="${cz(3)}">${esc(s.name)}</text>`);
           }
         }

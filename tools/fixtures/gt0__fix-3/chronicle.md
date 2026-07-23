@@ -6,7 +6,7 @@
 
 This record covers a realm of 12 settled regions, with its capital at Comfre. The wind comes from the northeast. Most of what follows was set by the ground itself: where the aetherstone lies, where the land will carry a road, and where it won't.
 
-No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held 12,838 people to the median town's 3,047. The bigger a town got, the faster it grew.
+No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held 12,856 people to the median town's 3,050. The bigger a town got, the faster it grew.
 
 The aetherworks at Comfre refine aetherstone into lumen, and the trunk lines run from them to the capital. The Temple holds sacred ground at Velle (by Skavurnok Delf), out where the aetherstone lies and the Crown's authority is weak. Every settlement started on the grid. The ledgers rarely allow that, and never for long.
 

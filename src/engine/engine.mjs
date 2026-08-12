@@ -6585,6 +6585,54 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       return L.join("\n").replace(/\n{3,}/g, "\n\n") + "\n";
     }
 
+    // ---- URL hash parameters (#172) ------------------------------------------
+    // ONE parser, shared by the app and the tooling. A hash is a shareable link,
+    // so the APP's reading is canonical: whatever a URL produces in the browser
+    // is what the tools must reproduce. This used to be hand-rolled twice
+    // (src/app.mjs readHash + tools/lib.mjs genEngine) and the copies drifted:
+    // different clamps (relax 8 vs 20, ep 24 vs 99), no rounding on the tooling
+    // side (regions=12.7 stayed fractional), an unclamped bias, and a manual
+    // split() that never URL-decoded a value. Change the hash schema HERE.
+    function parseHash(hash) {
+      const h = String(hash == null ? "" : hash).replace(/^#/, "");
+      if (!h) return { ...DEFAULTS };
+      const p = new URLSearchParams(h);
+      // Empty/whitespace values fall back to the default (not the clamp minimum).
+      const num = (key, def) => { const v = p.get(key); return (v != null && v.trim() !== "" && isFinite(+v)) ? +v : def; };
+      const w = (key, def) => clamp(Math.round(num(key, def)), 0, 100);
+      // B10 (#132): `hb` retired into `openness`. An explicit openness wins; else an
+      // old hb=0 link maps forward to openness=0 (sealed); else the default (open).
+      const openness = p.has("openness") ? w("openness", DEFAULTS.openness) : (p.get("hb") === "0" ? 0 : DEFAULTS.openness);
+      const out = {
+        ...DEFAULTS,
+        seed: p.get("seed") || DEFAULTS.seed,
+        fate: (p.get("fate") || DEFAULTS.fate).trim(),
+        world: (p.get("world") || DEFAULTS.world).trim() || DEFAULTS.world,
+        regions: clamp(Math.round(num("regions", DEFAULTS.regions)), 5, 64),
+        relax: clamp(Math.round(num("relax", DEFAULTS.relax)), 0, 8),
+        bias: w("bias", DEFAULTS.bias),
+        we: w("we", DEFAULTS.we), wf: w("wf", DEFAULTS.wf),
+        wt: w("wt", DEFAULTS.wt), wg: w("wg", DEFAULTS.wg),
+        gt: w("gt", DEFAULTS.gt),
+        db: w("db", DEFAULTS.db),
+        iq: w("iq", DEFAULTS.iq),
+        order: w("order", DEFAULTS.order),
+        openness,
+        hb: openness === 0 ? 0 : 1, // derived: the sealed end of openness IS the old closed harbor
+        ep: clamp(Math.round(num("ep", DEFAULTS.ep)), 0, 24),
+        capital: null
+      };
+      // `capital=x,y` is the tooling's form; cx/cy is the app's and wins if both appear.
+      if (p.has("capital")) {
+        const parts = (p.get("capital") || "").split(",").map(Number);
+        if (parts.length === 2 && parts.every(isFinite))
+          out.capital = [clamp(parts[0], 0, WX), clamp(parts[1], 0, WY)];
+      }
+      if (p.has("cx") && p.has("cy") && isFinite(+p.get("cx")) && isFinite(+p.get("cy")))
+        out.capital = [clamp(+p.get("cx"), 0, WX), clamp(+p.get("cy"), 0, WY)];
+      return out;
+    }
+
 // ---- Public API ----------------------------------------------------------
 export {
   WX, WY, WDIAG, SCHEMA_VERSION,
@@ -6603,4 +6651,5 @@ export {
   edgeCost, costDistances,
   toGeoJSON, toEpochSeries, toCsvTables, epochDate,
   computeFindings, getFindings, composeChronicle,
+  parseHash,
 };

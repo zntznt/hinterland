@@ -66,49 +66,10 @@ async function gen(hash, keepDom = false) {
 // as gen() but without doc/window.
 async function genEngine(hash) {
   const eng = await setupEngine();
-  const raw = (hash || "").replace(/^#/, "");
-  const query = {};
-  raw.split("&").forEach(p => {
-    const [k, v] = p.split("=");
-    if (k) query[k] = v;
-  });
-
-  const S = { ...eng.DEFAULTS };
-
-  if (query.seed !== undefined && query.seed.trim() !== "") S.seed = query.seed;
-  if (query.fate !== undefined) S.fate = query.fate || "";
-  if (query.world !== undefined) S.world = query.world;
-  const n = (key, def, lo, hi) => {
-    const v = query[key];
-    const val = (v !== undefined && v.trim() !== "" && isFinite(+v)) ? +v : def;
-    return (lo !== undefined && hi !== undefined) ? Math.max(lo, Math.min(hi, val)) : val;
-  };
-  S.regions = n("regions", S.regions, 5, 64);
-  S.relax = n("relax", S.relax, 0, 20);
-  S.bias = n("bias", S.bias);
-  S.we = n("we", S.we, 0, 100);
-  S.wf = n("wf", S.wf, 0, 100);
-  S.wt = n("wt", S.wt, 0, 100);
-  S.wg = n("wg", S.wg, 0, 100);
-  S.gt = n("gt", S.gt, 0, 100);
-  S.db = n("db", S.db, 0, 100);
-  S.iq = n("iq", S.iq, 0, 100);
-  S.order = n("order", S.order, 0, 100);
-  S.openness = n("openness", S.openness, 0, 100);
-  S.hb = n("hb", S.hb, 0, 1);
-  // B10 forward-compat: hb retired into openness. If openness is absent from
-  // the hash but hb=0 appears, map it to openness=0 (the old "sealed quays" link).
-  // Reverse: if openness=0 was set directly, also set hb=0 so harbors_closed reads true.
-  if (!("openness" in query) && S.hb === 0) S.openness = 0;
-  if (S.openness === 0) S.hb = 0;
-  S.ep = n("ep", S.ep, 0, 99);
-  if (query.capital !== undefined) {
-    const parts = query.capital.split(",").map(Number);
-    if (parts.length === 2 && parts.every(isFinite)) S.capital = parts;
-  }
-  if (query.cx !== undefined && query.cy !== undefined) {
-    S.capital = [+query.cx, +query.cy];
-  }
+  // #172: one parser, shared with the app (engine.parseHash). The tooling used to
+  // hand-roll its own and the two drifted; now a hash means the same thing here as
+  // it does in the browser, by construction.
+  const S = eng.parseHash(hash);
 
   const regions = eng.buildTopology(S);
   const geo = eng.buildGeology(regions, S);

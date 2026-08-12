@@ -4796,6 +4796,62 @@ console.log("# The world outside (#121, B0): a third seed — the region is ruin
   else fail("world= never changed any event timeline across the scan");
 }
 
+console.log("# The build seam (#172, #173): one hash parser, and a bundle that matches its source");
+{
+  // #173: Pages deploys src/, but this suite reads the bundled index.html. If the
+  // bundle goes stale the tests pass against code the live site does not run (and
+  // the offline double-click file rots). Rebuild in memory and hold it against the
+  // committed artifact. buildBundle() also throws if a slice marker is missing or
+  // duplicated, or if the assembled script does not parse, so importing it here
+  // exercises those guards on every run.
+  let built = null;
+  try {
+    built = (await import("./bundle.mjs")).buildBundle().bundle;
+  } catch (e) {
+    fail(`the bundler refused to build from src/: ${e.message}`);
+  }
+  if (built !== null) {
+    if (built === html)
+      ok(`the committed index.html is a faithful bundle of src/ (${(built.length / 1024).toFixed(0)} KB, markers unique, script parses)`);
+    else
+      fail(`index.html is STALE: it differs from a fresh bundle of src/ (committed ${html.length} bytes vs rebuilt ${built.length}). Run: node tools/bundle.mjs`);
+  }
+
+  // #172: the hash parser was hand-rolled twice (app readHash + tooling genEngine)
+  // and drifted. Every hash below is a case where the two copies PARSED differently.
+  // Three of them were world-visible with the old code and are the real regression
+  // pins: the ep cap (24 vs 30 epochs is a different history), fractional regions
+  // (14.7 rounded to 15 in the app, stayed fractional in the tooling), and the
+  // percent-encoded seed (the tooling never decoded, so it seeded off a different
+  // string). The others converge to the same world today and simply hold the line.
+  // App path renders the bundled index.html in JSDOM; tooling calls the engine.
+  const HASHES = [
+    ["baseline",              "#seed=hp-a&regions=14&ep=6"],
+    ["relax past the app cap","#seed=hp-b&regions=14&ep=6&relax=12"],   // app clamped 8, tooling took 12 (Lloyd has converged by 8, so same world)
+    ["ep past the app cap",   "#seed=hp-c&regions=14&ep=30"],           // app clamped 24, tooling took 30
+    ["fractional regions",    "#seed=hp-d&regions=14.7&ep=6"],          // app rounded, tooling did not
+    ["bias out of range",     "#seed=hp-e&regions=14&ep=6&bias=500"],   // app clamped 100, tooling left 500
+    ["percent-encoded seed",  "#seed=hp%20f&regions=14&ep=6"],          // tooling never decoded it
+    ["legacy hb=0 link",      "#seed=hp-g&regions=14&ep=6&hb=0"],       // openness forward-map
+    ["explicit openness=0",   "#seed=hp-h&regions=14&ep=6&openness=0"],
+  ];
+  let agree = 0, mismatch = null;
+  for (const [label, hash] of HASHES) {
+    const [viaApp, viaEngine] = [await gen(hash), await genEngine(hash)];
+    const a = JSON.stringify(viaApp.gj), b = JSON.stringify(viaEngine.gj);
+    if (a === b) agree++;
+    else if (!mismatch) {
+      const at = [...a].findIndex((c, i) => c !== b[i]);
+      mismatch = `${label} (${hash}): app and tooling disagree at char ${at}: app …${a.slice(Math.max(0, at - 60), at + 60)}… vs tooling …${b.slice(Math.max(0, at - 60), at + 60)}…`;
+    }
+    await new Promise((r) => setImmediate(r));
+    if (typeof global !== "undefined" && global.gc) global.gc();
+  }
+  if (agree === HASHES.length)
+    ok(`one parser: the app and the tooling build the same world from the same URL (${agree}/${HASHES.length} hashes, including every case the two copies used to disagree on)`);
+  else fail(`hash parser drift is back: ${agree}/${HASHES.length} agree — ${mismatch}`);
+}
+
 console.log("# The golden fixtures (#118, A1): every export byte-pinned; a moved world must be a declared act");
 {
   // Re-derive the seed×knob matrix live and hold it against the frozen bytes in

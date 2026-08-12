@@ -14,6 +14,7 @@ import {
   edgeCost, costDistances,
   toGeoJSON, toEpochSeries, toCsvTables, epochDate,
   computeFindings, getFindings, composeChronicle,
+  parseHash,
 } from './engine/engine.mjs';
 
 const d3 = globalThis.d3;
@@ -2095,37 +2096,10 @@ const d3 = globalThis.d3;
       cam = null;
       syncLensChip();
     }
+    // #172: the parser lives in the engine now, so the app and the tooling read a
+    // hash the same way by construction. Change the schema in engine.mjs.
     function readHash() {
-      const h = location.hash.replace(/^#/, "");
-      if (!h) return { ...DEFAULTS };
-      const p = new URLSearchParams(h);
-      // Empty/whitespace values fall back to the default (not the clamp minimum).
-      const num = (key, def) => { const v = p.get(key); return (v != null && v.trim() !== "" && isFinite(+v)) ? +v : def; };
-      const w = (key, def) => clamp(Math.round(num(key, def)), 0, 100);
-      // B10 (#132): `hb` retired into `openness`. An explicit openness wins; else an
-      // old hb=0 link maps forward to openness=0 (sealed); else the default (open).
-      const openness = p.has("openness") ? w("openness", DEFAULTS.openness) : (p.get("hb") === "0" ? 0 : DEFAULTS.openness);
-      const out = {
-        seed: p.get("seed") || DEFAULTS.seed,
-        fate: (p.get("fate") || DEFAULTS.fate).trim(),
-        world: (p.get("world") || DEFAULTS.world).trim() || DEFAULTS.world,
-        regions: clamp(Math.round(num("regions", DEFAULTS.regions)), 5, 64),
-        relax: clamp(Math.round(num("relax", DEFAULTS.relax)), 0, 8),
-        bias: w("bias", DEFAULTS.bias),
-        we: w("we", DEFAULTS.we), wf: w("wf", DEFAULTS.wf),
-        wt: w("wt", DEFAULTS.wt), wg: w("wg", DEFAULTS.wg),
-        gt: w("gt", DEFAULTS.gt),
-        db: w("db", DEFAULTS.db),
-        iq: w("iq", DEFAULTS.iq),
-        order: w("order", DEFAULTS.order),
-        openness,
-        hb: openness === 0 ? 0 : 1, // derived: the sealed end of openness IS the old closed harbor
-        ep: clamp(Math.round(num("ep", DEFAULTS.ep)), 0, 24),
-        capital: null
-      };
-      if (p.has("cx") && p.has("cy") && isFinite(+p.get("cx")) && isFinite(+p.get("cy")))
-        out.capital = [clamp(+p.get("cx"), 0, WX), clamp(+p.get("cy"), 0, WY)];
-      return out;
+      return parseHash(location.hash);
     }
 
     // ---- UI sync ------------------------------------------------------------

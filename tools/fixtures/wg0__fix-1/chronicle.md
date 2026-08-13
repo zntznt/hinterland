@@ -28,7 +28,7 @@ The rivers are crossed at Serrok Bridge alone; everywhere else the banks are mar
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Age of the Gates** (1000–1000), when the gap held, **the Emptying** (1025–1075), when the gap widened and **the Long Desolation** (1100–1250), when the gap narrowed. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+These years split into ages, each named for what the realm was living through: **the Age of the Gates** (1000–1000), when the gap held, **the Emptying** (1025–1075), when the gap widened, **the Long Desolation** (1100–1150), when the gap narrowed and **the Settled Years** (1175–1250), when the gap narrowed. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
 
 **Year 1025.** the Aurean League did not send a fleet to Drakby Harbor. It sent factors and a charter. The aetherworks were bought, the coast was wired to the sea within the season, and money came in to build. The town grew richer than it had ever been. The registers at the capital still carry the town's name. The registers that matter now are kept in another capital, and half of what the ground yields is entered there.
 
@@ -88,10 +88,11 @@ The years leave names behind them. The realm now speaks of Drakby the Hollow, Um
 
 ## The State of the Realm, Year 1250
 
-Of the realm's 8 settled regions, 1 held steady and 7 collapsed outright.
+Of the realm's 8 settled regions, 1 declined and 7 collapsed outright.
 4 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Drakby, Umbereton, Brokford and Umberthold, but the roads have stopped going there.
 And 7 places have come back as something else. Nockhold, Serrok and Dhozzurn stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
-Dhozzurn rose further than any other place in the record. In this realm, that says as much about where it stood as about anything it did.
+Brathby is the emptiest of the ghost country. Its best years are gone, and the roads no longer go there.
+Brathby rose further than any other place in the record. In this realm, that says as much about where it stood as about anything it did.
 
 The Crown holds 6 regions, the Temple 2, the magnates 1; 0 are contested between them, and 3 answer to no one at all.
 
@@ -99,12 +100,12 @@ Of the realm's 4 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the Temple stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 5.8 in every hundred of the realm's people hold 45.1 of every hundred coins, and live 13.3 times better than the people who work for them. The gap is sharpest at Brook, where 46 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 95 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 5.6 in every hundred of the realm's people hold 36 of every hundred coins, and live 9.4 times better than the people who work for them. The gap is sharpest at Brook, where 40 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 91 parts in a hundred of the whole spread.
 
 5 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world closed some of its gap. The wealth gap went from 0.34 at the founding to 0.20 at the close. It turned on the Crown Granary in 1075. The poorest fifth of the realm carries 3 times the blight of the richest fifth. 5 regions sit off the grid because the ledgers said serving them would not pay, and sickness runs 1.6 times heavier there than in the lit core. Serrok drinks 2 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 5.8 in a hundred hold 45.1 of every hundred coins, and live 13.3 times better than the rest. The skyway would cut 29.1 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 0 against 15, and owning barely half of it: 50 in the hundred of the yield is entered in the Aurean League's books, not the realm's. The Zolzek divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Brathby and Nockhold stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.
+The record closes with what the numbers say. This world closed some of its gap. The wealth gap went from 0.34 at the founding to 0.20 at the close. It turned on the Crown Granary in 1075. The poorest fifth of the realm carries 6.5 times the blight of the richest fifth. 5 regions sit off the grid because the ledgers said serving them would not pay, and sickness runs 1.6 times heavier there than in the lit core. Serrok drinks 2 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 5.6 in a hundred hold 36 of every hundred coins, and live 9.4 times better than the rest. The skyway would cut 29.1 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 0 against 19, and owning barely half of it: 50 in the hundred of the yield is entered in the Aurean League's books, not the realm's. The Zolzek divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Brathby and Nockhold stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

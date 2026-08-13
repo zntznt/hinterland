@@ -6,6 +6,7 @@ import { gen, genEngine, setupEngine,
   mean, med, r1, cen, median, pearson, giniOf, wgini,
 } from "./lib.mjs";
 import { cells, captureCell, geojsonDiff, csvDiff, chronicleDiff } from "./fixtures.matrix.mjs";
+import { alphaRange } from "./targets.mjs";
 import { createPool } from "./pool.mjs";
 import { JSDOM } from "jsdom";
 import * as d3d from "d3-delaunay";
@@ -1924,14 +1925,14 @@ console.log("# The founding centuries Z1 acceptance: the census is grown, not pa
   // (max 3.6), mean settlement pop med ~3650 (the old scale kept), plagues
   // still fire (med 4/world), seat size-rank med ~5
   const N = 20;
-  const A = [], TR = [], PR = [], seatRk = [];
+  const A = [], TA = [], TR = [], PR = [], seatRk = [];
   let plagueWorlds = 0, epWorlds = 0;
   const _h = Array.from({length: N}, (_, i) => `#seed=z1-${i}&regions=${16 + (i % 34)}&ep=${i % 11}&gt=${(i * 13) % 101}`);
   const _r = await batch(_h);
   for (let i = 0; i < N; i++) {
     const R = _r[i];
     const F = R.gj.hinterland.findings;
-    if (F.zipf) { A.push(F.zipf.alpha); TR.push(F.zipf.tail_r2); PR.push(F.zipf.primacy); }
+    if (F.zipf) { A.push(F.zipf.alpha); TA.push(F.zipf.tail_alpha); TR.push(F.zipf.tail_r2); PR.push(F.zipf.primacy); }
     const S = settlesOf(R.gj).map(f => f.properties);
     const capId = regionsOf(R.gj).find(f => f.properties.is_capital_region === 1).properties.region_id;
     seatRk.push(1 + S.slice().sort((a, b) => b.population - a.population).findIndex(s => s.region_id === capId));
@@ -1940,14 +1941,17 @@ console.log("# The founding centuries Z1 acceptance: the census is grown, not pa
       if ((R.gj.hinterland.events || []).some(ev => ev.type === "blight_plague")) plagueWorlds++;
     }
   }
-  // B0.5 re-pin: on the 1600×1000 rectangle the hierarchy steepens from Zipf-like
-  // (α≈1.2 on the old square) to PRIMATE (α median ≈1.8, range ~1.0–2.8) — a wider
-  // realm gives the capital a larger hinterland to dominate. The Zipf calc is
-  // coordinate-free and centrality is scale-invariant, so this is a real geographic
-  // consequence of the mandated world shape, not a bug (owner-approved re-pin).
-  if (median(A) >= 1.2 && median(A) <= 2.5 && Math.min(...A) >= 0.6)
-    ok(`A PRIMATE HIERARCHY EMERGES: rank-size slope α median ${median(A)} across the sweep (range ${Math.min(...A)}-${Math.max(...A)}) — steeper than Zipf's 1, the capital's dominance over the wider realm, decreed by no one`);
-  else fail(`no rank-size law: α med ${median(A)}`);
+  // R4 (#167): judged against the PRE-REGISTERED band in tools/targets.mjs, on the
+  // metric that file names: the sweep median of the UPPER-HALF fit. The findings
+  // carry two exponents and both are called α in casual use, which is how the
+  // apparent miss arose. The whole-system fit runs steeper (median ~2.3) because it
+  // includes the hamlets that deviate from the tail; the upper-half fit is the one
+  // Gabaix/Eeckhout's α refers to. The band is literature-declared and must NOT be
+  // widened to fit output: a genuine miss belongs in docs/grounding.md.
+  const alphaMed = median(TA);
+  if (alphaMed >= alphaRange[0] && alphaMed <= alphaRange[1] && Math.min(...A) >= 0.6)
+    ok(`THE HIERARCHY LANDS IN THE PRE-REGISTERED BAND: upper-half rank-size slope α median ${alphaMed} across the sweep, inside the declared [${alphaRange[0]}, ${alphaRange[1]}] (Gabaix 1999, Eeckhout 2004; whole-system fit runs steeper at ${median(A)}, and per-world spread is wide, so the claim is about the sweep's centre)`);
+  else fail(`rank-size α out of the pre-registered band: upper-half median ${alphaMed}, band [${alphaRange[0]}, ${alphaRange[1]}] (whole-system median ${median(A)})`);
   if (median(TR) >= 0.8)
     ok(`the big-town tail is a LINE: log-log fit median ${median(TR)} over the upper half — hamlets deviate, cities obey, as in the world we live in`);
   else fail(`crooked tail: ${median(TR)}`);
@@ -1967,7 +1971,9 @@ console.log("# The founding centuries Z1 acceptance: the census is grown, not pa
   else fail(`scale broke: plagues in ${plagueWorlds}/${epWorlds}`);
   // the surface
   const panel = A1.doc.getElementById("findingsText").textContent;
-  if (/rank-size law no one decreed/.test(panel)) ok("the findings panel argues the grown census");
+  // R4/R7: the panel now concedes that the size law itself is built in (Gibrat by
+  // construction) and claims only the STEEPNESS as the finding.
+  if (/regularity itself is built in/.test(panel) && /steepness is the finding/.test(panel)) ok("the findings panel argues the grown census without claiming the law was undecreed");
   else fail("panel silent on rank-size");
   if (/rank-size/.test(A1.doc.getElementById("info").textContent)) ok("THIS WORLD reads out the rank-size fit");
   else fail("readout silent on rank-size");
@@ -2170,8 +2176,10 @@ console.log("# The argument surface A1 acceptance: the app says what it measures
   setLens("wealth");
   // the chronicle concludes
   const R = RA10;
-  if (R.chron.includes("What the Record Shows") && R.chron.includes("no villain wrote it"))
-    ok("the chronicle closes with a verdict: What the Record Shows");
+  // R7: the close now concedes the rules were authored, and claims only that this
+  // world's particular outcome was unsteered.
+  if (R.chron.includes("What the Record Shows") && R.chron.includes("no villain in the record") && R.chron.includes("rules an author chose"))
+    ok("the chronicle closes with a verdict that owns its authorship: What the Record Shows");
   else fail("the chronicle does not conclude");
   // the twins named in the panel match the exported finding
   if (F.twins) {

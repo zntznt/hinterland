@@ -6576,7 +6576,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
           V.push(`And ${town(F.twins.open).name} and ${town(F.twins.shadow).name} stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.`);
         L.push(`The record closes with what the numbers say. ` + V.join(` `));
         L.push(``);
-        L.push(`None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.`);
+        L.push(`No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.`);
       }
       if (params.ep === 0) {
         L.push(``);

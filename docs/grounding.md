@@ -154,11 +154,10 @@ what is tested.
 
 ## 5. Migration, the frontier, and remittances
 
-**The mechanism (as planned; current form is an ad-hoc attractiveness sum).**
-People flow along roads toward higher *expected income*, destination wealth ×
-an opportunity factor, moderated by amenities (grid access, low blight), with
-an outward frontier channel, off-map emigration under metropole pull, and
-remittances home.
+**The mechanism (landed).** People flow along roads toward higher *expected
+income*, destination wealth × an opportunity factor, moderated by amenities
+(grid access, low blight), with an outward frontier channel, off-map emigration
+under metropole pull, and remittances home.
 
 **The literature.** Expected-income migration is Harris–Todaro *(Harris &
 Todaro 1970)*; distance-decay and step-wise flows go back to *(Ravenstein
@@ -172,10 +171,18 @@ density), not an employment probability estimated from anything. The √
 remittance curve is an authored shape gesturing at Yang's findings, not derived
 from them. Emigration/remittance coefficients are authored.
 
-**Disposition.** Code fix planned, tracked as [#165](https://github.com/zntznt/hinterland/issues/165):
-replace the current ad-hoc attractiveness sum with the expected-income ×
-amenities form. Frontier and remittance channels keep authored constants,
-labeled.
+**Disposition.** Landed, [#165](https://github.com/zntznt/hinterland/issues/165).
+The ad-hoc attractiveness sum (`0.5·wealth + 25·grid + 0.25·(100−blight)`) was
+replaced with expected income (wage × employment probability, the latter proxied
+by artifice per head) plus a separate Roback amenity term. Frontier and
+remittance channels keep their authored constants, labeled.
+
+One clarification that matters for section 8: the amenity term makes blight a
+dis-amenity **uniformly**. Every region values clean ground identically, so this
+is avoidance, not sorting, and it supplies no income-differentiated channel. That
+is why R2 left `corr(blight_load, wealth)` unmoved at +0.25, and why the
+"coming to the nuisance" channel had to be scoped separately as
+[#178](https://github.com/zntznt/hinterland/issues/178).
 
 ## 6. Elite share: the ratchet and the leveler
 
@@ -383,7 +390,46 @@ says anything about the world outside the generator.
 
 ## Misses and open divergences
 
-Recorded per the pre-registration discipline (tools/targets.mjs): none yet.
+Recorded per the pre-registration discipline (tools/targets.mjs):
+
+**MISS: `blight_wealth_corr` mode "negative".** The declared mode is not met, and it was
+not met before any R5 work began. On the default sweep at the shipped `^6` siting
+exponent, the per-world correlation over settled regions has a **median of +0.46, with
+only 3 of 24 worlds negative**. This is recorded first and separately so the later
+numbers are interpretable: the miss is a property of the model as it stood, not a
+consequence of the changes that follow it.
+
+Three things belong on the record.
+
+*The metric was ambiguous, and the ambiguity decided the sign.* "Across the default
+sweep" never said which regions. The same worlds read **−0.12 over all regions** and
+**+0.46 over settled regions only**, and `tools/atlas.mjs` was publishing the former
+while every acceptance check used the latter. The metric string has been made precise
+(settled-only) as an amendment of precision under the #167 precedent. It is worth being
+explicit that this made the target **harder, not easier**: under the all-regions reading
+the target already passes. Adopting that reading instead would have been re-aiming by
+choice of definition, and the precedent only licenses making a metric more exact.
+
+*The negative correlation the model does show is manufactured by the parameter that
+issue [#168](https://github.com/zntznt/hinterland/issues/168) objects to.* Measured:
+lowering the siting exponent from `^6` toward the defensible `^1.5` moves the median
+**away** from the target (+0.46 to +0.70), and only `^6` with the population multiplier
+removed reaches a negative median at all (−0.08). So "the blight falls on the poor" in
+this engine has been an artifact of a poverty-targeting exponent far beyond the EJ
+literature, rather than a result that survives a defensible siting rule.
+
+*The blocker is upstream of the response, and no sorting mechanism can clear it.* The
+settled blight field is crushed by the max-normalisation to roughly **p10 2 / median 6 /
+p90 12**, while the sacrifice zone reaches 100 and is then **abandoned in 12 of 16
+worlds**: the worst poison ends up on ground where nobody lives. Against a field that
+flat, a response-side mechanism would need household relocation rates above 100% per
+epoch to drag the median negative. Tracked as
+[#178](https://github.com/zntznt/hinterland/issues/178).
+
+`findings.blight_ratio` carries the identical all-regions defect (its "poorest fifth" is
+89-100% uninhabited) and is scheduled separately, since it is byte-pinned in all 30
+fixtures and quoted in every chronicle.
+
 The code changes themselves are deferred and tracked as issues
 [#164](https://github.com/zntznt/hinterland/issues/164)–[#169](https://github.com/zntznt/hinterland/issues/169);
 this section must be updated with any target those tuning runs fail to reach.

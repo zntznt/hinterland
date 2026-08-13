@@ -33,11 +33,25 @@ export const TARGETS = {
   // channel-dependent, not a law, so both signs must stay reachable across the
   // doctrine knob (the B4 design goal, kept).
   blight_wealth_corr: {
-    metric: "per-world corr(blight_load, wealth) across the default sweep",
+    // AMENDMENT OF PRECISION, 2026-08 (issue #178), not an amendment of aim. The
+    // original string said only "across the default sweep" and never named the
+    // sample, and the two readings disagree in SIGN: the same worlds give -0.12
+    // over all regions and +0.46 over settled regions only. tools/atlas.mjs was
+    // publishing the former while every live acceptance check used the latter.
+    // Settled-only is adopted because environmental-justice exposure is about
+    // people breathing something: roughly a quarter of regions are uninhabited
+    // cells that export wealth exactly 0 while carrying plume blight, and
+    // correlating poison against the "wealth" of empty ground measures nothing.
+    // Note this is the HARDER reading and the one the engine currently FAILS.
+    // Under the all-regions reading the target would already pass, which is
+    // precisely why it was not adopted: choosing the favourable definition after
+    // the fact is re-aiming, and the R4 precedent (#167) only licenses making a
+    // metric MORE precise, never making it easier.
+    metric: "per-world Pearson corr(blight_load, wealth) over is_settled regions; sweep = 24 seeds x regions=24 x ep=10 at default knobs (db=60)",
     mode: "negative",
     both_signs_reachable: true,
     cite: ["ucc1987", "bullard1990", "banzhaf2019"],
-    note: "No numeric band: the literature supports a sign tendency, not a coefficient.",
+    note: "No numeric band: the literature supports a sign tendency, not a coefficient. MISSED as of 2026-08, see docs/grounding.md section 8.",
   },
 
   // R3, elite share dynamics. Absent shocks, concentration drifts upward where

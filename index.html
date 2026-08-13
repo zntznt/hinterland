@@ -4797,7 +4797,26 @@
         const rentPush = clamp((meanElite - 58) / 14, 0, 1); // only higher-rent realms push labor out; the ordinary world still drifts toward its winners
         const isConcentrate = disposalOverride ? disposalOverride === "concentrate" : (params.db >= 34 && params.db < 67);
         const attract = regions.map((reg, i) => {
-          const base = 0.5 * reg.wealth + 25 * (onGrid[i] ? 1 : 0) + 0.25 * (100 - reg.blight);
+          // R2 (#165): HARRIS-TODARO expected income, replacing an ad-hoc weighted
+          // sum. People do not move toward the highest wage, they move toward the
+          // highest wage TIMES the chance of actually getting work (Harris & Todaro
+          // 1970). Employment probability is proxied by artifice per head: the works
+          // and trades a place carries (A), divided by the labour already queuing for
+          // them, so a rich town with no jobs left to give pulls less than its wage
+          // suggests, and a modest town still hiring pulls more.
+          const jobsPerHead = reg.A / (1 + reg.settlementPop / 900);
+          const opportunity = clamp(jobsPerHead / 100, 0, 1);
+          const expectedIncome = reg.wealth * opportunity;
+          // ROBACK 1982 compensating differentials: wages are not the whole story.
+          // The grid and clean ground are amenities people will trade income for, so
+          // they enter as a separate term rather than being folded into the wage.
+          // NOTE: this is uniform avoidance of blight, NOT the income-sorting channel
+          // ("coming to the nuisance") that R5 (#168) needs. This model has no
+          // household-level income heterogeneity, so poor and rich value the
+          // dis-amenity identically here. See the R5 discussion before assuming this
+          // supplies the EJ negative mode.
+          const amenity = 25 * (onGrid[i] ? 1 : 0) + 0.25 * (100 - reg.blight);
+          const base = expectedIncome + amenity;
           const rentDrag = 0.4 * Math.max(0, reg.eliteShare - 62);     // the squeezed leave the dear core
           const frontier = 26 * rentPush
             * clamp((52 - reg.wealth) / 52, 0, 1)             // the land is still cheap

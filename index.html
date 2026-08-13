@@ -7898,7 +7898,7 @@
           V.push(`And ${town(F.twins.open).name} and ${town(F.twins.shadow).name} stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.`);
         L.push(`The record closes with what the numbers say. ` + V.join(` `));
         L.push(``);
-        L.push(`None of it was decreed. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. That is the finding: no villain wrote it, and it happened anyway.`);
+        L.push(`No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.`);
       }
       if (params.ep === 0) {
         L.push(``);
@@ -8259,7 +8259,7 @@
       }
       L.push(`The poorest fifth of this realm carries <b>${F.blight_ratio}×</b> the blight of the richest fifth.`);
       if (F.moran && F.moran_blight)
-        L.push(`The clustering is measured, not guessed. Global Moran's I puts wealth at <b>${F.moran.I.toFixed(3)}</b> and blight at <b>${F.moran_blight.I.toFixed(3)}</b>, against ${F.moran.expected.toFixed(3)} expected under no structure (p ${F.moran.p.toFixed(3)} / ${F.moran_blight.p.toFixed(3)}, ${F.moran.n_perm} permutations over the region adjacency).`);
+        L.push(`The clustering is computed from this world's own map. Global Moran's I puts wealth at <b>${F.moran.I.toFixed(3)}</b> and blight at <b>${F.moran_blight.I.toFixed(3)}</b>, against ${F.moran.expected.toFixed(3)} expected under no structure (p ${F.moran.p.toFixed(3)} / ${F.moran_blight.p.toFixed(3)}, ${F.moran.n_perm} permutations over the region adjacency). Read it as a statement about this generated map's internal structure, not about the world outside: the terrain is laid down with smoothing kernels, so neighbouring cells resemble each other by construction, and some spatial correlation is guaranteed before any economy runs.`);
       if (F.shadow_gap_pct !== null && F.shadow_gap_pct > 0 && model.ridges.length)
         L.push(`Behind the ${esc(model.ridges[0].name)} wall, the median settlement earns <b>${F.shadow_gap_pct}% less</b> than the open country at the same distance from the capital.`);
       L.push(`<b>${F.dark_n}</b> of ${model.regions.length} regions sit off the grid because serving them would not pay` +
@@ -8278,7 +8278,7 @@
           `<b>The difference is the mountain.</b> The red line on the map joins them.`);
       }
       if (F.zipf)
-        L.push(`The towns obey a <b>rank-size law no one decreed</b>: slope α ${F.zipf.alpha.toFixed(2)} across the whole system (Zipf's constant is ≈1), the big-town tail on a straight line (fit ${F.zipf.tail_r2.toFixed(2)}), the largest holding ${F.zipf.primacy}× the second. Sizes were GROWN. The same compounding that writes the wealth map wrote the census first.`);
+        L.push(`The towns fall into a <b>rank-size hierarchy</b>, and the regularity itself is built in: the founding centuries grow every town by proportional random increments, which is Gibrat's rule, and that rule produces a size law on its own. What is <b>not</b> decided in advance is how STEEP it comes out. Here the big-town tail runs at slope α ${F.zipf.tail_alpha.toFixed(2)} (α ${F.zipf.alpha.toFixed(2)} fitted across the whole system), straight to a fit of ${F.zipf.tail_r2.toFixed(2)}, with the largest town holding ${F.zipf.primacy}× the second. The steepness is the finding, not the law.`);
       if (F.sovereignty) {
         L.push(`<span style="color:#8a7a68">THE DOMINION:</span> <b>${F.sovereignty.occupied_n}</b> regions are occupied ground, and every levy in them is paid to a power no one here can petition. ` +
           `The free country keeps <b>${F.sovereignty.retent_ratio}×</b> the share of its own value that the occupied country keeps. Yet the occupied zone is the realm's best-wired country (${F.sovereignty.corridor_wired}/${F.sovereignty.occupied_n} on the grid): <b>the grid reaches you when someone else wants what you have</b>.` +

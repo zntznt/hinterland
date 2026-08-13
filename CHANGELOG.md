@@ -1,6 +1,32 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the rank-size claim comes clean** (issues #167 R4 and #169 R7, no schema change):
+  the app used to announce "a rank-size law **no one decreed**", which was false on
+  its own terms. The founding centuries grow every town by proportional random
+  increments, which is Gibrat's rule, and that rule produces a size law by
+  construction. The panel now says so, and claims only what is actually contingent:
+  **the steepness**, reported as the upper-half slope with the whole-system slope
+  beside it. **R4 needed no retune, because the miss was a metric mismatch.**
+  `tools/targets.mjs` pre-registered its metric precisely, the sweep median of the
+  **upper-half fit**, band [1.2, 1.8]; the number everyone was quoting (median 2.31)
+  was the **whole-system fit**, which includes the hamlets that deviate from the tail
+  and therefore runs steeper. On the declared metric the engine already lands inside
+  the declared band (1.44 over 60 worlds, 1.65 over 120, 1.60 over the atlas sweep).
+  Retuning the growth-shock variance would have been tuning the model to fix a
+  reading error, so the band was left exactly as declared, nothing was re-aimed, and
+  the resolution is written up in `docs/grounding.md` §4 with both exponents
+  tabulated. The suite now tests the pre-registered metric against
+  `targets.mjs` directly rather than a hand-set window, and the atlas prints both
+  fits so they cannot be confused again. Two more honesty fixes ship with it: the
+  chronicle close conceded authorship (**"no villain in the record"** under **"rules
+  an author chose"**, replacing "no villain wrote it" after "None of it was
+  decreed"), and the Moran paragraph now states that the terrain is laid down with
+  smoothing kernels, so neighbouring cells resemble each other **by construction**
+  and some spatial correlation is guaranteed before any economy runs. **Declared
+  fixture regeneration**, chronicle only: all 30 `chronicle.md` cells moved and
+  **0 `world.geojson` / 0 `events.csv`**, confirming prose-only change with no model
+  drift. `schema_version` stays 54.
 - **the stress suite comes back** (issue #175, no schema change): `tools/stress.mjs`
   had been failing on `main` and nobody could see it, because CI ran only `npm test`
   and never the stress sweep. Every failure was the test's **recompute mirror going

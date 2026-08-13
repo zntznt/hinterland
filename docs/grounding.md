@@ -109,18 +109,48 @@ are lognormal with a power tail only at the truncated top *(Eeckhout 2004)*;
 size-attraction is preferential attachment *(Simon 1955; Barabási & Albert
 1999)*.
 
-**Divergences, to fix.** The UI announces "a rank-size law no one decreed
-(Zipf's constant is ≈1)" while the sweep's observed slope has a median of
-2.31, the law IS decreed (the growth rule is Gibrat by construction, as the
-design docs concede) and the constant is not ≈1. Both ends are to be fixed,
-tracked as [#167](https://github.com/zntznt/hinterland/issues/167) and
-[#169](https://github.com/zntznt/hinterland/issues/169): retune the
-growth-shock variance toward the pre-registered band α ∈ [1.2, 1.8]
-(`tools/targets.mjs`, declared before tuning; α = 1 is not a small-system
-prediction), and restate the UI/chronicle text honestly: a built-in Gibrat
-regularity whose steepness is the finding.
+**Divergences found.** The UI announced "a rank-size law no one decreed
+(Zipf's constant is ≈1)" when the law IS decreed: the founding growth rule is
+Gibrat by construction, as the design docs concede. That claim was false on its
+own terms and is now rewritten.
 
-**Disposition.** Code fix planned, tracked as [#167](https://github.com/zntznt/hinterland/issues/167) (retune) and [#169](https://github.com/zntznt/hinterland/issues/169) (claim rewrite).
+**The measured miss was a metric mismatch, not a model defect.** The
+pre-registered target in `tools/targets.mjs` names its metric precisely: the
+*sweep median of per-world rank-size slope α (**upper-half fit**)*, band
+[1.2, 1.8]. The findings block computes **two** exponents from every world and
+both get called α in casual use:
+
+| exponent | fitted over | sweep median (120 worlds, `regions=24&ep=10`) | in band |
+|---|---|---|---|
+| `alpha` | the whole system, hamlets included | **2.26** | no |
+| `tail_alpha` | the upper half, the tail Gabaix/Eeckhout describe | **1.65** | **yes** |
+
+The "observed slope median of 2.31" recorded above was the whole-system fit,
+compared against a band declared for the upper-half fit. On the metric the
+pre-registration actually names, the engine already lands inside the band
+(1.44 over a 60-world sample, 1.65 over 120), which is the expected direction:
+including the hamlets that deviate from the tail steepens the fit, and Eeckhout
+2004 is explicit that the full distribution is lognormal with a power tail only
+at the truncated top.
+
+**So no retune was performed.** Changing the growth-shock variance to move a
+number that was never the declared metric would have been tuning the model to
+fix a measurement error. The band was NOT widened and the target was NOT
+re-aimed: both remain exactly as declared.
+
+**What was fixed instead:** the UI, atlas, and acceptance suite now report and
+test the upper-half fit against `targets.mjs`, with the whole-system fit shown
+beside it so the two are never confused again.
+
+**One caveat stated plainly.** The band is a claim about the sweep's centre, not
+about every world. Per-world dispersion is wide (upper-half q25 1.01, q75 2.34,
+range 0.32 to 3.76 over 120 worlds), and only about a fifth of individual worlds
+sit inside [1.2, 1.8]. The pre-registered metric is the median, and the median is
+what is tested.
+
+**Disposition.** Resolved: claim rewritten and metric corrected in
+[#167](https://github.com/zntznt/hinterland/issues/167) /
+[#169](https://github.com/zntznt/hinterland/issues/169). No engine retune.
 
 ## 5. Migration, the frontier, and remittances
 

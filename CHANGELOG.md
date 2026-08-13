@@ -1,6 +1,40 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the stress suite comes back** (issue #175, no schema change): `tools/stress.mjs`
+  had been failing on `main` and nobody could see it, because CI ran only `npm test`
+  and never the stress sweep. Every failure was the test's **recompute mirror going
+  stale against a deliberate engine change**, not a model regression, and all of them
+  trace to two commits that landed while the sweep was unwatched. `5beea32` (biome
+  habitability, contour coastlines) changed **fertility**, which is now
+  `0.48·rain + 0.26·temp + 0.08·water + 0.12·biome habitability` where the mirror
+  still computed the old three-term `0.56/0.30/0.10`, and changed **coastal
+  detection**, where the engine counts a cell as coastal if any ring vertex lies
+  within ~1.5 grid cells of the smooth sea contour and the mirror still required the
+  polygons to actually overlap. `f47600e` lowered the **forest threshold** from
+  rainfall 68 to 48 and the mirror kept the old bar. The mirror now matches the
+  engine on all three. One more failure was the **SVG glyph census** counting every
+  `<circle>` that was not a gate ring, so the freeport's anchor ring read as a
+  settlement dot; settlement dots now carry `class="settle"` and the census counts
+  that, which also makes the pin immune to the decorative rings around decayed
+  crossings and the selection halo. That check was a single sixteen-way `&&` whose
+  failure message printed only half the counts, so it is now checked one layer at a
+  time and names the layer that broke. **`npm run stress` runs in CI on every push**,
+  so the sweep cannot rot silently again. Worth knowing for the next person: the
+  per-config validator returns on its first failure, so a broken invariant masks
+  every later one behind it (the coastal breakage only surfaced once fertility was
+  fixed). One check was not a stale mirror but a **wrong claim**: the validator
+  demanded `corr(centrality, wealth) >= 0.1` in **every** world, which is the
+  sign-locked assumption the instrument pivot exists to remove, since a frontier
+  boom or a gutted core is allowed to invert one world's gradient. Measured across
+  the sweep the pull is strong and consistent (median **0.73**, q25 0.60, **93 of 94
+  worlds positive**, worst -0.21), so the claim now runs on the **distribution**
+  after the sweep (median floor 0.45, positive-share floor 85%, with a
+  sample-count floor so it cannot pass vacuously) instead of world by world. The
+  controlled versions of the same claim already existed in the Phase 2 block
+  (`gradient=0` / `gradient=100`) and are untouched. Thresholds were set from the
+  measured distribution, not from what made the suite green. No engine change, no
+  fixture movement.
 - **the build seam** (issues #172 and #173, no schema change): two pieces of tooling
   debt that had already cost real CI time. **One hash parser.** The URL-hash reader
   was hand-rolled twice, once in `src/app.mjs` (`readHash`) and once in

@@ -12,3 +12,11 @@ jobs:
         working-directory: tools
       - run: npm test
         working-directory: tools
+      # #175: the structural stress sweep (120 generation configs) used to run
+      # nowhere, so it sat red on main for weeks while the acceptance suite stayed
+      # green. It is the only check that sweeps the generator this broadly, so it
+      # runs on every push now. `if: always()` so a failure here is still reported
+      # when the suite above has already failed.
+      - run: npm run stress
+        working-directory: tools
+        if: always()

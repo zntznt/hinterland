@@ -9123,7 +9123,11 @@
         const off = !RG(sreg);
         const fill = off ? "#8a8a8a" : (isPrime ? "#d62728" : (s.tier === "city" ? "#fff" : (s.tier === "frontier-post" ? "#e0d8cc" : "#ccc")));
         const dash = off ? ` stroke-dasharray="4 3"` : "";
-        parts.push(`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${fill}" stroke="#000" stroke-width="${isPrime ? 2 : 1.2}"${dash} filter="url(#softShadow)"/>`);
+        // class="settle" marks the settlement dot itself. The map also draws
+        // decorative rings (gate ownership, the freeport anchor, decayed
+        // crossings, the selection halo), so "every circle" is not "every town";
+        // the stress pin counts this class rather than subtracting the others.
+        parts.push(`<circle class="settle" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${fill}" stroke="#000" stroke-width="${isPrime ? 2 : 1.2}"${dash} filter="url(#softShadow)"/>`);
         if (isPrime || s.tier === "city") {
           // label size tracks population (like the dot), not a two-value tier,
           // so a big hub reads louder than a small one; the seat keeps a floor.

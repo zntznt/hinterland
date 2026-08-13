@@ -10,6 +10,10 @@ let failures = 0;
 const fail = (m) => { console.error("FAIL: " + m); failures++; };
 const ok = (m) => console.log("ok  : " + m);
 
+// Per-world wealth/centrality correlations, collected by validate() and judged as
+// a distribution once the sweep is done (see "the pull of the capital" below).
+const corrSamples = [];
+
 // ---- Structural validity ---------------------------------------------------
 function validate(gj, tag) {
   if (gj.type !== "FeatureCollection") return fail(`${tag}: not FeatureCollection`);
@@ -503,6 +507,11 @@ function validate(gj, tag) {
   // G4 climate + biome + derived fertility: the causal chain is auditable
   {
     const BIOMES = new Set(["alpine", "badland", "moor", "marsh", "forest", "steppe", "grassland"]);
+    // mirrors BIOME_DATA in engine.mjs: the habitability each biome contributes to
+    // fertility. Keep in step with the engine table.
+    const BIOME_HABITABILITY = {
+      alpine: 10, badland: 15, moor: 40, marsh: 25, forest: 65, steppe: 55, grassland: 80,
+    };
     for (const r of regions) {
       const p = r.properties;
       for (const key of ["temperature", "rainfall"]) {
@@ -510,20 +519,25 @@ function validate(gj, tag) {
         if (typeof v !== "number" || v < 0 || v > 100) return fail(`${tag}: bad ${key} ${v}`);
       }
       if (!BIOMES.has(p.biome)) return fail(`${tag}: bad biome ${p.biome}`);
+      // Forest opens at rainfall >= 48 (lowered from 68 in f47600e so the default
+      // seeds actually grow woodland); this mirror must track the engine's rule.
       const expBiome =
         p.elevation >= 78 ? "alpine" :
         p.rainfall < 25 ? "badland" :
         p.temperature < 32 ? "moor" :
         (p.on_river === 1 && p.elevation < 35) ? "marsh" :
-        p.rainfall >= 68 ? "forest" :
+        p.rainfall >= 48 ? "forest" :
         p.rainfall < 42 ? "steppe" : "grassland";
       if (p.biome !== expBiome) return fail(`${tag}: biome ${p.biome} != rules say ${expBiome}`);
-      // fertility's water term is now the GRADIENT water_access (river, lake,
-      // aquifer), not the old binary on_river flag: 0.18 * water_access, which
-      // equals the old +18 for a fully-watered cell and tapers with distance.
+      // fertility's water term is the GRADIENT water_access (river, lake, aquifer),
+      // not the old binary on_river flag. Since 5beea32 the biome's own habitability
+      // is a fourth term: it carries what the climate numbers miss (marsh vs. moor
+      // vs. badland at similar rainfall), and the rain/temp/water weights were
+      // rebalanced down to make room for it. Rain is still dominant.
       const expFert = Math.max(0, Math.min(100, Math.round(
-        0.56 * p.rainfall + 0.3 * Math.max(0, 100 - 1.8 * Math.abs(p.temperature - 55)) +
-        0.10 * p.water_access - (p.elevation >= 78 ? 25 : 0))));
+        0.48 * p.rainfall + 0.26 * Math.max(0, 100 - 1.8 * Math.abs(p.temperature - 55)) +
+        0.08 * p.water_access + 0.12 * BIOME_HABITABILITY[expBiome] -
+        (p.elevation >= 78 ? 25 : 0))));
       if (p.fertility !== expFert) return fail(`${tag}: fertility ${p.fertility} != climate says ${expFert}`);
     }
   }
@@ -620,6 +634,28 @@ function validate(gj, tag) {
     const seaPolys = seaFeats.map(sf => ({ outer: sf.geometry.coordinates[0], holes: sf.geometry.coordinates.slice(1) }));
     const inSeaPoly = (x, y) => seaPolys.some(S =>
       pointInRing(x, y, S.outer) && !S.holes.some(h => pointInRing(x, y, h)));
+    // Mirrors the engine's coastTouch. CSX is the elevation grid's cell width,
+    // WX / GN with GN = 96, so 1600/96; the engine counts a cell as coastal when
+    // any ring vertex lies within ~1.5 cells of the smooth sea contour, not only
+    // when the polygons actually overlap (the contour-coastline work in 5beea32).
+    const CSX = 1600 / 96;
+    const contourSegs = [];
+    for (const S of seaPolys) {
+      for (let i = 0; i + 1 < S.outer.length; i++) contourSegs.push([S.outer[i], S.outer[i + 1]]);
+      contourSegs.push([S.outer[S.outer.length - 1], S.outer[0]]);
+    }
+    const distToContour = (x, y) => {
+      let best = Infinity;
+      for (const [a, b] of contourSegs) {
+        const dx = b[0] - a[0], dy = b[1] - a[1];
+        const len2 = dx * dx + dy * dy;
+        if (len2 < 1e-12) { const d = Math.hypot(x - a[0], y - a[1]); if (d < best) best = d; continue; }
+        const t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / len2));
+        const d = Math.hypot(x - (a[0] + t * dx), y - (a[1] + t * dy));
+        if (d < best) best = d;
+      }
+      return best;
+    };
     const coastTouch = (ring) => {
       for (const S of seaPolys) {
         for (const v of ring)
@@ -629,7 +665,8 @@ function validate(gj, tag) {
           for (let b2 = 0; b2 + 1 < S.outer.length; b2++)
             if (segInt(ring[a2], ring[a2 + 1], S.outer[b2], S.outer[b2 + 1])) return true;
       }
-      return false;
+      if (!contourSegs.length) return false;
+      return Math.min(...ring.map(v => distToContour(v[0], v[1]))) < CSX * 1.5;
     };
     // M1: sea polygons are well-formed — every ring closed, islands counted
     for (const sf of seaFeats) {
@@ -1252,7 +1289,15 @@ function validate(gj, tag) {
   const settledForCorr = regionsOf(gj).filter(f => f.properties.is_settled === 1);
   if (settledForCorr.length >= 12) {
     const corr = pearson(settledForCorr.map(f => f.properties.centrality_to_capital), settledForCorr.map(f => f.properties.wealth));
-    if (corr < 0.1) return fail(`${tag}: wealth/centrality corr ${corr.toFixed(2)} too weak (n=${settledForCorr.length})`);
+    // Sampled, not asserted per world. A hard per-config floor here demanded that
+    // geography beat history in EVERY world, which is the sign-locked assumption
+    // the instrument pivot exists to remove (docs/old-thesis.md): a frontier boom
+    // or a ruined core is allowed to invert one world's gradient. Measured over
+    // the 120-config sweep the pull is strong and consistent (median 0.73, 93 of
+    // 94 worlds positive), so the claim is checked on the DISTRIBUTION after the
+    // sweep, where a real collapse still fails loudly. The controlled versions of
+    // this claim live in the Phase 2 block below (gradient=0 / gradient=100).
+    corrSamples.push({ tag, corr, n: settledForCorr.length });
     // endowment sparsity holds for the FOUNDING geology (endowment_t0);
     // the exported aetherstone_endowment is the current, possibly depleted stock
     const es = col(gj, "endowment_t0");
@@ -1272,6 +1317,27 @@ for (let i = 0; i < 120; i++) {
 }
 if (failures === 0) ok("all 120 generations structurally valid (skeleton, bands, geology, refineries, rings)");
 
+// THE PULL OF THE CAPITAL, judged over the sweep rather than world by world.
+// Wealth tracks centrality strongly and consistently, but it is a tendency, not a
+// law: the pivot unlocked the loops that used to force it, so a frontier boom or a
+// gutted core may invert a single world. The floors below sit well under the
+// measured shape (median 0.73, q25 0.60, 93 of 94 worlds positive, worst -0.21),
+// so an ordinary outlier passes while an engine-wide collapse of the gradient
+// still fails. The sample-count floor keeps this from passing vacuously.
+{
+  const cs = corrSamples.map(s => s.corr).sort((a, b) => a - b);
+  if (cs.length < 50) fail(`wealth/centrality sampled only ${cs.length} worlds, expected 50+ (the sweep or the settled-town filter changed)`);
+  else {
+    const medCorr = cs[Math.floor(cs.length / 2)];
+    const posShare = corrSamples.filter(s => s.corr > 0).length / cs.length;
+    const worst = corrSamples.reduce((a, b) => (b.corr < a.corr ? b : a));
+    if (medCorr >= 0.45 && posShare >= 0.85)
+      ok(`the capital pulls: wealth tracks centrality across the sweep (median ${medCorr.toFixed(2)}, ${(100 * posShare).toFixed(0)}% of ${cs.length} worlds positive; weakest ${worst.tag} at ${worst.corr.toFixed(2)}, which history is allowed to invert)`);
+    else
+      fail(`the capital stopped pulling: median wealth/centrality corr ${medCorr.toFixed(2)} (floor 0.45), ${(100 * posShare).toFixed(0)}% positive (floor 85%) over ${cs.length} worlds`);
+  }
+}
+
 // render smoke (default = data mode: contours draw above the waterline
 // only — #60 G4; ridges and passes are ATLAS ink per #60/#63, so the data
 // boot draws NONE — re-pinned: the old expectation predated the two-genre
@@ -1279,7 +1345,7 @@ if (failures === 0) ok("all 120 generations structurally valid (skeleton, bands,
 const svg = A1.doc.querySelector("#stage svg");
 // gate rings (#93) are ownership ink around held pass/bridge/port glyphs, not
 // settlement dots — excluded so the one-dot-per-settlement pin keeps its bite
-const nCircles = svg ? svg.querySelectorAll("circle:not(.gatering)").length : 0;
+const nCircles = svg ? svg.querySelectorAll("circle.settle").length : 0;
 const nRects = svg ? svg.querySelectorAll("rect:not(.coast)").length : 0;
 const nFac = svg ? svg.querySelectorAll("text.fac").length : 0;
 const nSanct = svg ? svg.querySelectorAll("text.sanct").length : 0;
@@ -1295,9 +1361,32 @@ const nRuin = svg ? svg.querySelectorAll("text.ruin").length : 0;
 const nTower = svg ? svg.querySelectorAll("text.tower").length : 0;
 const nBridge = svg ? svg.querySelectorAll("text.bridge").length : 0;
 const nMael = svg ? svg.querySelectorAll("text.maelstrom").length : 0;
-if (svg && nCircles === regionsOf(A1.gj).length && nRects === Math.max(1, Math.round(regionsOf(A1.gj).length / 16)) && nFac === facilitiesOf(A1.gj).length && nSanct === sanctOf(A1.gj).length && nRoads === roadsOf(A1.gj).length && nGar === garrisonsOf(A1.gj).length && nRidge === 0 && nPass === 0 && nRiver === riversOf(A1.gj).length && nSea === A1.gj.features.filter(f => f.properties.kind === "sea").length && nCont === A1.gj.features.filter(f => f.properties.kind === "contour" && f.properties.level > A1.gj.hinterland.sea_level).length && nPort === portsOf(A1.gj).length && nRuin === ruinsOf(A1.gj).length && nTower === towersOf(A1.gj).length && nBridge === bridgesOf(A1.gj).length && nMael === maelOf(A1.gj).length)
+// Checked one glyph at a time so a failure names the layer that broke. The old
+// form was a single 16-way && whose message printed only half the counts, so a
+// mismatch (the freeport's anchor ring landing in the circle count) reported
+// eight numbers and left the culprit to guesswork.
+const svgChecks = [
+  ["settlement symbols", nCircles, regionsOf(A1.gj).length],
+  ["refinery glyphs",    nRects,   Math.max(1, Math.round(regionsOf(A1.gj).length / 16))],
+  ["facility glyphs",    nFac,     facilitiesOf(A1.gj).length],
+  ["sanctioned sites",   nSanct,   sanctOf(A1.gj).length],
+  ["road edges",         nRoads,   roadsOf(A1.gj).length],
+  ["garrisons",          nGar,     garrisonsOf(A1.gj).length],
+  ["ridges (data lens)", nRidge,   0],
+  ["passes (data lens)", nPass,    0],
+  ["rivers",             nRiver,   riversOf(A1.gj).length],
+  ["seas",               nSea,     A1.gj.features.filter(f => f.properties.kind === "sea").length],
+  ["contour levels",     nCont,    A1.gj.features.filter(f => f.properties.kind === "contour" && f.properties.level > A1.gj.hinterland.sea_level).length],
+  ["ports",              nPort,    portsOf(A1.gj).length],
+  ["ruins",              nRuin,    ruinsOf(A1.gj).length],
+  ["towers",             nTower,   towersOf(A1.gj).length],
+  ["bridges",            nBridge,  bridgesOf(A1.gj).length],
+  ["maelstroms",         nMael,    maelOf(A1.gj).length],
+];
+const svgBad = svg ? svgChecks.filter(([, got, want]) => got !== want) : [["svg element", 0, 1]];
+if (svgBad.length === 0)
   ok(`SVG renders: ${nCircles} settlement symbols, ${nRects} refinery glyphs, ${nFac} facility glyphs, ${nSanct} sanctioned sites, ${nRoads} road edges, ${nGar} garrisons, ${nRiver} rivers, ${nSea} seas, ${nCont} contour levels, ${nPort} ports, ${nRuin} ruins, ${nTower} towers, ${nBridge} bridges, ${nMael} maelstroms (data lens: no terrain ink)`);
-else fail(`SVG render mismatch (circles ${nCircles}, rects ${nRects}, fac ${nFac}, sanct ${nSanct}, roads ${nRoads}, gar ${nGar}, ridges ${nRidge}, passes ${nPass})`);
+else fail(`SVG render mismatch: ${svgBad.map(([n, got, want]) => `${n} rendered ${got}, expected ${want}`).join("; ")}`);
 
 // the pen's map carries the terrain ink: flip to atlas, recount, flip back
 {

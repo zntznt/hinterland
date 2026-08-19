@@ -87,6 +87,7 @@ The years leave names behind them. The realm now speaks of Comfre the Open, Grug
 Of the realm's 9 settled regions, 1 rose through the years, 7 held steady and 1 collapsed outright.
 3 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Skavurnok Delf, Drennath and Surzethrak, but the roads have stopped going there.
 And 1 place has come back as something else. Khekby stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
+Gruggath is the emptiest of the ghost country. Its best years are gone, and the roads no longer go there.
 
 The Crown holds 9 regions, the Temple 1, the magnates 0; 1 are contested between them, and 1 answer to no one at all.
 

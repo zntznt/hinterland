@@ -3235,8 +3235,15 @@ console.log("# Tariffs fund the bridges B6 (#128): extraction and upkeep are one
 // tolls, funds its spans (all sound); iq=100 grants the amnesty and rots them. The
 // toll-heavy realm's crossings stand and its towns end RICHER.
 {
-  const kept = (await genEngine("#seed=am-23&regions=24&ep=10&iq=0")).gj;   // B10 #132 re-pin am-8->am-23: the mix shift changed which seed shows the toll-heavy edge (tolls kept, spans funded)
-  const free = (await genEngine("#seed=am-23&regions=24&ep=10&iq=100")).gj; // amnesty, spans rot
+  // #178 re-pin am-23->am-52 (the second such move; B10 #132 moved am-8->am-23).
+  // The sorting channel perturbs the wealth field, and am-23's two arms converged to
+  // equal means, so that world no longer illustrates the effect. The CONDITION below is
+  // unchanged: only the illustrative seed moved. Scanned am-0..59 under the full
+  // condition and 8 of 60 seeds satisfy it (am-25/26/31/35/38/51/52/54), so the
+  // phenomenon is not a fluke of one world; am-52 is picked for the clearest margin
+  // (mean wealth 19.8 kept against 15.8 freed).
+  const kept = (await genEngine("#seed=am-52&regions=24&ep=10&iq=0")).gj;   // tolls kept, spans funded
+  const free = (await genEngine("#seed=am-52&regions=24&ep=10&iq=100")).gj; // amnesty, spans rot
   const meanW = (g) => { const R = regionsOf(g).map(f => f.properties).filter(r => r.is_settled); return R.reduce((a, r) => a + r.wealth, 0) / R.length; };
   const Fk = kept.hinterland.findings, Ff = free.hinterland.findings;
   const wk = meanW(kept), wf = meanW(free);

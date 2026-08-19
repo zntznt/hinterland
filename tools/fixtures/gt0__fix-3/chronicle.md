@@ -46,7 +46,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1100.** The old First Magnate died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Dhordruk took the chair. Some who objected were killed, and the objections did not stop.
 
-**Year 1100.** The rains failed over Tarkfiere, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1100.
+**Year 1100.** The rains failed over Khekby, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1100.
 
 **Year 1125.** The capital chartered aetherworks at Comfre. The wires reached it fast, because someone had already decided the ore was worth the copper.
 

@@ -30,7 +30,7 @@ The rivers are crossed at Varrgak Bridge alone; everywhere else the banks are ma
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Age of the Gates** (1000–1075), when the gap held, **the Quiet Years** (1100–1200), when the gap held and **the Emptying** (1225–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+These years split into ages, each named for what the realm was living through: **the Age of the Gates** (1000–1075), when the gap held, **the Quiet Years** (1100–1200), when the gap widened and **the Emptying** (1225–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
 
 **Year 1025.** Politics in a capital Pellness had never seen closed the sea lanes to it. A quarrel between the Solvent States and the Metropole became Pellness's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
 

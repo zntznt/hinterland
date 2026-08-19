@@ -50,17 +50,23 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     // would simply be the poverty exponent this mechanism exists to retire, wearing a
     // new costume.
     //
-    // 0.05 is NOT the value that maximises the environmental-justice effect. It is the
-    // largest rate that does not break an invariant this model already claimed. The
-    // water-access check ("water access tracks prosperity", an income precondition)
-    // passes 13 of 20 worlds on a floor of 12, so it carries ONE world of headroom;
-    // this channel redistributes wealth along blight gradients, which is orthogonal to
-    // water, and every rate at or above 0.10 tips it. Measured, seeds wa-0..19:
-    //   churn 0 (baseline) 13 pass | 0.05 -> 12 pass | 0.10 -> 11 fail | 0.30 -> 10 fail
-    // The rate was chosen against that constraint rather than against the correlation
-    // it exists to move, because loosening a structural claim to make a new mechanism
-    // look better is how a suite stops meaning anything. Full curve: grounding.md 8.
-    const SORT_CHURN = 0.05;
+    // 0.03 is NOT the value that maximises the environmental-justice effect. It is the
+    // largest rate that breaks nothing this model already claimed, and the gap between
+    // those two things is the finding. This channel redistributes wealth along blight
+    // gradients, an axis orthogonal to the ones other claims measure, so every increment
+    // of it erodes them. Two bind, measured:
+    //   water access tracks prosperity (floor 12/20): base 13 | .03 12 | .05 12 | .10 11
+    //   the toll wounds the taxed road (floor -0.03): base -.095 | .03 -.041 | .05 -.019
+    // The toll check binds first, so 0.03 is the ceiling. At 0.03 the mechanism is close
+    // to inert on the target it exists to move (blight-wealth median +0.458 to +0.432,
+    // negative worlds 3/24, unchanged from baseline), and that is reported rather than
+    // dressed up: a response-side channel cannot outrun the upstream problem, which is a
+    // blight field the max-normalisation flattens to p10 2 / median 6 / p90 12 with its
+    // worst cell abandoned. See #178 and grounding.md section 8.
+    // The alternative was to re-pin the toll floor so a stronger rate fit. That is the
+    // one move this repo's discipline forbids, since a pin set by observing output can
+    // never fail. If -0.03 is the wrong floor, that is a separate argument.
+    const SORT_CHURN = 0.03;
     const RIDGE_WALL = 4.5;  // edge-cost multiplier for crossing a ridge off-pass
     const PASS_MULT = 1.4;   // crossing at a pass: a climb, not a wall
     const PASS_R = 90;       // how close a crossing must be to a pass to count as one (B0.5: a LOCAL crossing tolerance, not a reach — unscaled)

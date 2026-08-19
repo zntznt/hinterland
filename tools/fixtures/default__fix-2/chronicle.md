@@ -22,11 +22,13 @@ The old world is still here: the delve called Skavdurk gapes in the old workings
 
 Past the last boundary stone, by Raven, the lawless keep their own harbor: Ulvere Quay. No charter lists it, no gate taxes it, and assessors who visit don't come back a second time. Anything the realm won't carry on its books leaves through here, and the ground around it keeps what the gates would have taken.
 
+Where the beasts are worth a bounty and the constabularies never come, hunters keep Belkrag Camp by Varrgak. The stands thin the predation on their ground, the trophies are fenced where nothing is taxed, and for the poorest the bounty is the one rung of a ladder the realm never built.
+
 The rivers are crossed at Varrgak Bridge alone; everywhere else the banks are marsh and the water must be forded, and the fords are where the wagons drown. Whoever holds a bridge holds a queue of people who cannot go around.
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Age of the Gates** (1000–1000), when the gap held, **the Emptying** (1025–1125), when the gap widened, **the Ordinary Age** (1150–1200), when the gap narrowed and **the Emptying** (1225–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+These years split into ages, each named for what the realm was living through: **the Age of the Gates** (1000–1000), when the gap held, **the Emptying** (1025–1075), when the gap narrowed, **the Quiet Years** (1100–1125), when the gap held, **the Long Ascent** (1150–1200), when the gap held and **the Emptying** (1225–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
 
 **Year 1025.** Politics in a capital Pellness had never seen closed the sea lanes to it. A quarrel between the Solvent States and the Metropole became Pellness's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
 
@@ -44,7 +46,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1075.** The old Sovereign died, and Ulverfolt took the capital without incident. That is rare enough to be worth recording.
 
-**Year 1075.** The capital passed a Retention Act. It set a floor under the ore price, fixed at the capital, so the bottom half of the realm keeps more of what its own ground produces. It had blocked reform for years, and only gave in once the damage was bad enough.
+**Year 1075.** The capital passed a Tariff Amnesty. The gates still stand, but the fees are capped by decree. It had blocked reform for years, and only gave in once the damage was bad enough.
 
 **Year 1075.** The Temple came to Calyane, to the ground of its suffering, and consecrated it as Santhe. Pilgrims walk that road now. The Crown's writ had failed there and the magnates' ledgers had seen nothing worth the ink. The faith moved in after the harm was done, and claimed the ground.
 
@@ -102,14 +104,14 @@ Of the realm's 5 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the Temple stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4 in every hundred of the realm's people hold 35.4 of every hundred coins, and live 13.2 times better than the people who work for them. The gap is sharpest at Kemerby, where 59 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 68 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4.1 in every hundred of the realm's people hold 37.8 of every hundred coins, and live 14.4 times better than the people who work for them. The gap is sharpest at Kemerby, where 59 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 77 parts in a hundred of the whole spread.
 
 And over all of it stands the Dominion, which holds 7 regions from its foothold at Pellness and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns. It no longer rules the occupied country, and the two are not the same thing.
 
-3 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
+4 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world closed some of its gap. The wealth gap went from 0.19 at the founding to 0.15 at the close. It turned on the Retention Act in 1075. The poorest fifth of the realm carries 7.7 times the blight of the richest fifth. Behind the Volkruk wall, the median settlement earns 100 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Comfremouth drinks 4 points of other towns' poison, only because it stands at the mouth. 6 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 4 in a hundred hold 35.4 of every hundred coins, and live 13.2 times better than the rest. The skyway would cut 67 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. And the whole realm's ledger is now one column in someone else's book: 7 regions occupied, the yield assessed at the quay, the free country keeping 1.5 times the share the occupied country keeps. The gap between who is sovereign and who is occupied is the largest one in the realm, and it shapes every other. The Volkruk divides even the weather: the rain falls at 38 on one side and 2 in its lee, and no one on the dry side chose the wind.
+The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.19. It turned on the Tariff Amnesty in 1075. The poorest fifth of the realm carries 1.6 times the blight of the richest fifth. Behind the Volkruk wall, the median settlement earns 100 in the hundred less than the open country at the same distance. 4 regions sit off the grid because the ledgers said serving them would not pay. Comfremouth drinks 3 points of other towns' poison, only because it stands at the mouth. 6 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 4.1 in a hundred hold 37.8 of every hundred coins, and live 14.4 times better than the rest. The skyway would cut 67 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. And the whole realm's ledger is now one column in someone else's book: 7 regions occupied, the yield assessed at the quay, the free country keeping 1.5 times the share the occupied country keeps. The gap between who is sovereign and who is occupied is the largest one in the realm, and it shapes every other. The Volkruk divides even the weather: the rain falls at 38 on one side and 2 in its lee, and no one on the dry side chose the wind.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

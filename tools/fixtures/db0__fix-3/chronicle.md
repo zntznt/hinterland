@@ -28,7 +28,7 @@ The rivers are crossed at Quillton Bridge alone; everywhere else the banks are m
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1050), when the gap narrowed and **the Age of Tariffs** (1075–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1050), when the gap narrowed and **the Age of Tariffs** (1075–1250), when the gap widened. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
 
 **Year 1025.** Politics in a capital Comfre had never seen closed the sea lanes to it. A quarrel between the Vantreth Imperium and the Metropole became Comfre's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
 
@@ -46,7 +46,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1100.** The old First Magnate died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Dhordruk took the chair. Some who objected were killed, and the objections did not stop.
 
-**Year 1100.** The rains failed over Tarkfiere, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1100.
+**Year 1100.** The rains failed over Khekby, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1100.
 
 **Year 1125.** The capital chartered aetherworks at Comfre. The wires reached it fast, because someone had already decided the ore was worth the copper.
 
@@ -87,7 +87,6 @@ The years leave names behind them. The realm now speaks of Comfre the Open, Grug
 Of the realm's 9 settled regions, 1 rose through the years, 7 held steady and 1 collapsed outright.
 3 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Skavurnok Delf, Drennath and Surzethrak, but the roads have stopped going there.
 And 1 place has come back as something else. Khekby stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
-Gruggath is the emptiest of the ghost country. Its best years are gone, and the roads no longer go there.
 
 The Crown holds 9 regions, the Temple 1, the magnates 0; 1 are contested between them, and 1 answer to no one at all.
 
@@ -95,12 +94,12 @@ Of the realm's 5 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the magnates stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.8 in every hundred of the realm's people hold 37.1 of every hundred coins, and live 14.9 times better than the people who work for them. The gap is sharpest at Comfre, where 55 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 29 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.8 in every hundred of the realm's people hold 38.4 of every hundred coins, and live 15.7 times better than the people who work for them. The gap is sharpest at Comfre, where 56 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 28 parts in a hundred of the whole spread.
 
 3 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world closed some of its gap. The wealth gap went from 0.43 at the founding to 0.33 at the close. It turned on the rising at Skavurnok Delf in 1125, which was put down. The poorest fifth of the realm carries 1.7 times the blight of the richest fifth. Behind the Vrathul wall, the median settlement earns 73 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Quillton drinks 5 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.8 in a hundred hold 37.1 of every hundred coins, and live 14.9 times better than the rest. The skyway would cut 38.7 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
+The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.40. It turned on the rising at Skavurnok Delf in 1125, which was put down. The poorest fifth of the realm carries 1.7 times the blight of the richest fifth. Behind the Vrathul wall, the median settlement earns 72 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Quillton drinks 5 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.8 in a hundred hold 38.4 of every hundred coins, and live 15.7 times better than the rest. The skyway would cut 38.7 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

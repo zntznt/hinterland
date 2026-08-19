@@ -1,6 +1,36 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the differential exit** (issue #178, no schema change): the environmental-justice
+  mechanism that was missing under R5. Post-siting sorting, "coming to the nuisance"
+  (Banzhaf and Walsh 2008; Banzhaf, Ma and Timmins 2019): along the road edges migration
+  already walks, and against the previous epoch's blight field, the propertied stratum of
+  the dirtier end relocates toward the cleaner end at 1.73 times labour's rate, and the
+  coin walks with them. A blighted town keeps its heads and loses its money, so its mean
+  income falls by an accounting identity rather than by a hand aiming spoil at the poor.
+  The one-epoch lag is the correctness condition, not an oversight: sorting answers poison
+  already on the ground. It is built not to be a dial, the two relocation rates are derived
+  so their head-weighted mean is exactly `SORT_CHURN * gap`, meaning the realm gains **no
+  net aversion to blight**, only a split in who acts on it; set the willingness-to-pay
+  ratio to 1 and the block is a no-op by construction. It never reads the doctrine knob, so
+  under *disperse* the spoil lands around the rich works and the identical code drains
+  **their** coin, and a town whose blight falls receives coin and gentrifies.
+  **The rate was set by what it must not break, not by what it moves.** The suite already
+  claimed "water access tracks prosperity" at 13 of 20 worlds against a floor of 12, one
+  world of headroom; this channel redistributes wealth along blight gradients, which is
+  orthogonal to water, and every rate at or above 0.10 tips it (0.05 keeps 12, 0.10 gives
+  11, 0.30 gives 10). 0.05 is therefore the largest defensible rate, not the most effective
+  one, because loosening a structural claim to flatter a new mechanism is how a suite stops
+  meaning anything. Measured at 0.05: `corr(blight, wealth)` median +0.458 to +0.435 with
+  negative worlds **3 of 24 to 6 of 24**, the both-signs gate passing with margin (lo -0.36,
+  neg 4), realm median `elite_share` 25 to 23 (a rejected variant that wrote `elite_share`
+  directly ratcheted it to 50 through the B2 investment loop), and byte-identical replay.
+  **R5's exponent change did not land, and the measurement is why.** Dropping the siting
+  weight to `^1.5` breaks the water claim on its own (11 of 20 at zero churn, before this
+  mechanism exists) and needs churn at or above 0.10 to hold the both-signs gate, which
+  breaks water further to 10. No configuration satisfies both, so the `^6` exponent stays
+  and #168 remains open with the evidence attached. `schema_version` stays 54. **Declared
+  fixture regeneration**, 71 of 90 files across 30 cells, because the model moved.
 - **the rank-size claim comes clean** (issues #167 R4 and #169 R7, no schema change):
   the app used to announce "a rank-size law **no one decreed**", which was false on
   its own terms. The founding centuries grow every town by proportional random

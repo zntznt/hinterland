@@ -48,8 +48,19 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     // structural ceiling: a maximal gradient fully re-sorting the mobile stratum inside
     // one epoch. Above that the claim is incoherent, and a large enough value here
     // would simply be the poverty exponent this mechanism exists to retire, wearing a
-    // new costume. Measured response curve and its limits: docs/grounding.md section 8.
-    const SORT_CHURN = 0.30;
+    // new costume.
+    //
+    // 0.05 is NOT the value that maximises the environmental-justice effect. It is the
+    // largest rate that does not break an invariant this model already claimed. The
+    // water-access check ("water access tracks prosperity", an income precondition)
+    // passes 13 of 20 worlds on a floor of 12, so it carries ONE world of headroom;
+    // this channel redistributes wealth along blight gradients, which is orthogonal to
+    // water, and every rate at or above 0.10 tips it. Measured, seeds wa-0..19:
+    //   churn 0 (baseline) 13 pass | 0.05 -> 12 pass | 0.10 -> 11 fail | 0.30 -> 10 fail
+    // The rate was chosen against that constraint rather than against the correlation
+    // it exists to move, because loosening a structural claim to make a new mechanism
+    // look better is how a suite stops meaning anything. Full curve: grounding.md 8.
+    const SORT_CHURN = 0.05;
     const RIDGE_WALL = 4.5;  // edge-cost multiplier for crossing a ridge off-pass
     const PASS_MULT = 1.4;   // crossing at a pass: a climb, not a wall
     const PASS_R = 90;       // how close a crossing must be to a pass to count as one (B0.5: a LOCAL crossing tolerance, not a reach — unscaled)

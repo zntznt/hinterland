@@ -87,8 +87,6 @@ The years leave names behind them. The realm now speaks of Comfre the Open, Grug
 Of the realm's 9 settled regions, 1 rose through the years, 7 held steady and 1 collapsed outright.
 3 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Skavurnok Delf, Drennath and Surzethrak, but the roads have stopped going there.
 And 1 place has come back as something else. Khekby stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
-Gruggath is the emptiest of the ghost country. Its best years are gone, and the roads no longer go there.
-Khekby rose further than any other place in the record. In this realm, that says as much about where it stood as about anything it did.
 
 The Crown holds 9 regions, the Temple 1, the magnates 0; 1 are contested between them, and 1 answer to no one at all.
 
@@ -96,12 +94,12 @@ Of the realm's 5 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the magnates stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.9 in every hundred of the realm's people hold 36 of every hundred coins, and live 14 times better than the people who work for them. The gap is sharpest at Comfre, where 56 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 25 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.9 in every hundred of the realm's people hold 37.9 of every hundred coins, and live 15.2 times better than the people who work for them. The gap is sharpest at Comfre, where 55 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 27 parts in a hundred of the whole spread.
 
 3 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world closed some of its gap. The wealth gap went from 0.43 at the founding to 0.34 at the close. It turned on the rising at Skavurnok Delf in 1125, which was put down. The poorest fifth of the realm carries 10 times the blight of the richest fifth. Behind the Vrathul wall, the median settlement earns 60 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Quillton drinks 4 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.9 in a hundred hold 36 of every hundred coins, and live 14 times better than the rest. The skyway would cut 38.7 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
+The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.39. It turned on the rising at Skavurnok Delf in 1125, which was put down. The poorest fifth of the realm carries 4.8 times the blight of the richest fifth. Behind the Vrathul wall, the median settlement earns 67 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Quillton drinks 4 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.9 in a hundred hold 37.9 of every hundred coins, and live 15.2 times better than the rest. The skyway would cut 38.7 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

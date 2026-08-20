@@ -374,7 +374,7 @@ function validate(gj, tag) {
       const towerNear = gj.features.some(f => f.properties.kind === "tower" &&
         Math.hypot(f.geometry.coordinates[0] - anchorP[0], f.geometry.coordinates[1] - anchorP[1]) < 220);
       const expTrust = Math.max(0, Math.min(100, Math.round(
-        20 + 0.4 * p.centrality_to_capital + (p.on_grid ? 12 : 0) - 0.2 * p.blight_load +
+        20 + 0.4 * p.centrality_to_capital + (p.on_grid ? 12 : 0) - 0.042 * p.blight_load + // #180: was 0.2 against the max-normalised blight field
         0.1 * p.force_projection + (p.dominant_bloc === "crown" ? 8 : p.dominant_bloc === "ungoverned" ? -8 : 0) -
         (towerNear ? 12 : 0))));
       if (p.social_trust !== expTrust) return fail(`${tag}: trust ${p.social_trust} != ${expTrust}`);

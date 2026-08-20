@@ -44,6 +44,18 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     const R3_DRIFT_K = 0.6;
     const R3_R_BASE = 0.05;    // return on the owners' holdings per 25-year epoch at reference intensity
     const R3_YIELD_REF = 2.0;  // the holdings intensity that counts as reference (a gate plus a works)
+    // #180: blight is an ABSOLUTE load now, not a share of the worst cell. It used to
+    // be normalised to each world's own maximum, which made the scale's anchor a cell
+    // that is uninhabited in 15 of 16 worlds (the sacrifice zone, poisoned until it
+    // empties), and squeezed every inhabited place into p10 2 / median 5 / p90 13 on an
+    // integer field. BLIGHT_FULL is the raw spoil load that reads as 100: land ruined.
+    // One works produces SPOIL = 5*C raw units per epoch, so 1.0 is a fifth of one
+    // fully-running works' output landing on a single region. Measured against the
+    // engine's own output, inhabited ground then spans p10 8 / median 25 / p90 56 and
+    // about 2% saturates, while the sacrifice zone (median 4.8 raw) saturates as it
+    // should, because it IS ruined. This is a choice of UNIT, not of target: it fixes
+    // what 100 means and gives the inhabited range about 4x the resolution.
+    const BLIGHT_FULL = 1.0;
     const RIVER_CARRY = 0.3;  // share of a riverine region's blight shipped downstream
     const RIVER_DECAY = 0.75; // per-step decay of the carried load
     // #178: THE DIFFERENTIAL EXIT. Post-siting sorting, "coming to the nuisance"
@@ -2909,9 +2921,11 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
             if (wsum > 0) regions.forEach((_, i) => { blightRaw[i] += SPOIL * (wts[i] / wsum); });
           }
         });
-        let maxB = 0;
-        const rawB = blightRaw.map(v => { if (v > maxB) maxB = v; return v; });
-        const pre = regions.map((_, i) => maxB > 0 ? Math.round(100 * (rawB[i] / maxB)) : 0);
+        // #180: fixed ceiling, not the per-world maximum. A clean world now reads clean
+        // instead of being stretched to fill the scale, and a cell at 100 is ruined
+        // rather than merely worst-in-show.
+        const rawB = blightRaw.slice();
+        const pre = regions.map((_, i) => clamp(Math.round(100 * (rawB[i] / BLIGHT_FULL)), 0, 100));
         // TREAT: the realm cleans up its spoil, but only where it can afford the
         // coin AND fields the works. Cleanup scales with wealth (the coin) × A (the
         // works) — a rich, developed core clears nearly all of its load; a poor or
@@ -2970,8 +2984,15 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
             0.10 * Math.max(0, 100 - 1.8 * Math.abs(reg.temperature - 55)) +
             0.08 * (reg.elevation >= 78 ? 0 : 100) +
             0.10 * reg.biomeHabitability;                   // grassland ~80 lifts, alpine ~10 drags
+          // #180: convex, because a flat coefficient cannot say both true things at once.
+          // The old max-normalised field was effectively bimodal: ordinary towns sat at
+          // 2-13 and barely felt it, while the sacrifice zone sat at 100 and was
+          // annihilated (0.55 * 100 = 55 livability, certain abandonment). On an absolute
+          // scale the same two facts need two regimes, or ruined land keeps its town.
+          // Below the ruin knee the load is a nuisance priced like the old field at
+          // median load; above it, habitability collapses, which is what "ruined" means.
           const degradation =
-            0.55 * reg.blight +
+            0.115 * reg.blight + 0.9 * Math.max(0, reg.blight - 60) +
             (reg.exhausted ? 14 : 0);                     // a dead lode is a town's lost reason
           const draw =
             0.16 * reg.centrality +
@@ -3601,7 +3622,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
           // household-level income heterogeneity, so poor and rich value the
           // dis-amenity identically here. See the R5 discussion before assuming this
           // supplies the EJ negative mode.
-          const amenity = 25 * (onGrid[i] ? 1 : 0) + 0.25 * (100 - reg.blight);
+          const amenity = 25 * (onGrid[i] ? 1 : 0) + (25 - 0.052 * reg.blight); // #180: was 0.25*(100-blight); 0.25/4.8 keeps the same pull at median load
           const base = expectedIncome + amenity;
           const rentDrag = 0.4 * Math.max(0, reg.eliteShare - 62);     // the squeezed leave the dear core
           const frontier = 26 * rentPush
@@ -3615,7 +3636,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
           // empty. Whether the rush wins the race with the poison is the contingency:
           // some worlds fill and are ruined, others never fill and stay contained.
           const rush = (i === sacrificeZone && isConcentrate)
-            ? 26 * clamp(1 - reg.blight / 55, 0, 1) * (onGrid[i] ? 1 : 0.5)
+            ? 26 * clamp(1 - reg.blight / 100, 0, 1) * (onGrid[i] ? 1 : 0.5) // #180: was /55 in max-normalised units
             : 0;
           return base - rentDrag + frontier + rush;
         });
@@ -3663,7 +3684,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
           roadEdges.forEach(edge => {
             const A = regions[edge.a], B = regions[edge.b];
             if (!A.settled || !B.settled) return;
-            const g = Math.abs(A.blight - B.blight) / 100;
+            const g = Math.abs(A.blight - B.blight) / 480; // #180: /4.8 keeps the rate #178 pinned at 0.03
             if (g === 0) return; // deterministic no-op on ties
             const di = A.blight > B.blight ? edge.a : edge.b; // the dirtier end
             const ci = di === edge.a ? edge.b : edge.a;
@@ -4468,9 +4489,9 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         }
         const wwHere = reg.tier === "metropolis" || (reg.tier === "city" && reg.onConduit);
         reg.safeWater = clamp(Math.round(
-          (wwHere ? 85 : (reg.onConduit ? 45 : 15)) + 0.25 * reg.wealth - 0.35 * reg.blight
+          (wwHere ? 85 : (reg.onConduit ? 45 : 15)) + 0.25 * reg.wealth - 0.073 * reg.blight // #180: was 0.35, /4.8
           // G2: the river gives water — unless upstream already fouled it
-          + (reg.onRiver ? Math.max(0, 12 - 0.25 * reg.downstreamBlight) : 0)
+          + (reg.onRiver ? Math.max(0, 12 - 0.052 * reg.downstreamBlight) : 0) // #180: was 0.25, /4.8
         ), 0, 100);
         const tierF = { metropolis: 0, city: 30, "works-town": 60, "frontier-post": 85 }[reg.tier];
         reg.vulnerability = clamp(Math.round(
@@ -4478,7 +4499,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         ), 0, 100);
         const care = 1 - 0.55 * reg.healingReach / 100; // reach averts burden
         const jit = 0.94 + sx("health#" + reg.id)() * 0.12;
-        reg.burdenEnv = r1(0.55 * reg.blight * care * jit);
+        reg.burdenEnv = r1(0.115 * reg.blight * care * jit); // #180: was 0.55, /4.8
         reg.burdenWater = r1(0.45 * (100 - reg.safeWater) * care * jit);
         reg.burdenUnmet = r1(0.35 * reg.vulnerability * care * jit);
         reg.burden = r1(reg.burdenEnv + reg.burdenWater + reg.burdenUnmet);
@@ -4764,7 +4785,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         // civic bonus does not survive the Crown's abdication
         const effBloc = reg.occupied ? "dominion" : reg.bloc;
         reg.socialTrust = clamp(Math.round(
-          20 + 0.4 * reg.centrality + (reg.onConduit ? 12 : 0) - 0.2 * reg.blight +
+          20 + 0.4 * reg.centrality + (reg.onConduit ? 12 : 0) - 0.042 * reg.blight + // #180: was 0.2, /4.8
           0.1 * reg.forceProjection + (effBloc === "crown" ? 8 : effBloc === "ungoverned" ? -8 : 0) -
           (reg.towerNear === 1 ? 12 : 0) // fear lives near the apostate's walls
         ), 0, 100);

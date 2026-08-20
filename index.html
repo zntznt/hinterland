@@ -1355,6 +1355,40 @@
     const RIVER_EDGE = 0.6;   // barge transport: river edges are cheap
     const RIVER_CARRY = 0.3;  // share of a riverine region's blight shipped downstream
     const RIVER_DECAY = 0.75; // per-step decay of the carried load
+    // #178: THE DIFFERENTIAL EXIT. Post-siting sorting, "coming to the nuisance"
+    // (Banzhaf & Walsh 2008; Banzhaf, Ma & Timmins 2019): once a nuisance is on the
+    // ground, the households who can afford to leave do, and the ones who cannot
+    // stay, so a blighted place gets poorer without anyone aiming poverty at it.
+    // SORT_WTP is how much readier the propertied are to move than labour. Willingness
+    // to pay for environmental quality is income-elastic at 0.3 to 0.6 (Kristrom &
+    // Riera 1996; Hokby & Soderqvist 2003); with a coarse two-way income ratio of 3,
+    // 3^0.5 = 1.73. The income ratio is an authored gesture under this file's standing
+    // caveat, not an estimate.
+    const SORT_WTP = 1.73;
+    // The only rate. Fraction of a town's households that relocate per epoch (25 years)
+    // per unit of normalised blight gap to a road-adjacent alternative. 1.0 is the
+    // structural ceiling: a maximal gradient fully re-sorting the mobile stratum inside
+    // one epoch. Above that the claim is incoherent, and a large enough value here
+    // would simply be the poverty exponent this mechanism exists to retire, wearing a
+    // new costume.
+    //
+    // 0.03 is NOT the value that maximises the environmental-justice effect. It is the
+    // largest rate that breaks nothing this model already claimed, and the gap between
+    // those two things is the finding. This channel redistributes wealth along blight
+    // gradients, an axis orthogonal to the ones other claims measure, so every increment
+    // of it erodes them. Two bind, measured:
+    //   water access tracks prosperity (floor 12/20): base 13 | .03 12 | .05 12 | .10 11
+    //   the toll wounds the taxed road (floor -0.03): base -.095 | .03 -.041 | .05 -.019
+    // The toll check binds first, so 0.03 is the ceiling. At 0.03 the mechanism is close
+    // to inert on the target it exists to move (blight-wealth median +0.458 to +0.432,
+    // negative worlds 3/24, unchanged from baseline), and that is reported rather than
+    // dressed up: a response-side channel cannot outrun the upstream problem, which is a
+    // blight field the max-normalisation flattens to p10 2 / median 6 / p90 12 with its
+    // worst cell abandoned. See #178 and grounding.md section 8.
+    // The alternative was to re-pin the toll floor so a stronger rate fit. That is the
+    // one move this repo's discipline forbids, since a pin set by observing output can
+    // never fail. If -0.03 is the wrong floor, that is a separate argument.
+    const SORT_CHURN = 0.03;
     const RIDGE_WALL = 4.5;  // edge-cost multiplier for crossing a ridge off-pass
     const PASS_MULT = 1.4;   // crossing at a pass: a climb, not a wall
     const PASS_R = 90;       // how close a crossing must be to a pass to count as one (B0.5: a LOCAL crossing tolerance, not a reach — unscaled)
@@ -3916,6 +3950,16 @@
         });
       }
 
+      // The owners' headcount as a share of the town, hoisted so the sorting block
+      // (#178) can weight its head-mix with the same formula the export uses. Called
+      // after the final tier ranking it reproduces elite_pop_pct byte for byte; called
+      // in-loop it reads the FOUNDING tiers, which is a deliberate approximation,
+      // acceptable because in-loop it only ever appears in a head-mix denominator
+      // where 2% against 5% moves the result by under 3%.
+      const ownerHeadPct = (reg) => 2
+        + (reg.tier === "metropolis" ? 3 : reg.tier === "city" ? 2 : 0)
+        + (reg.refining > 0 ? 2 : 0) + (reg.isPort === 1 ? 1 : 0) + (reg.isSkyport === 1 ? 1 : 0);
+
       // H1: THE STRATA — every region is two peoples under one name: the
       // owners' row (the charter-holders, the works' masters, the court)
       // and the labor it hires. The founding split is pure structure —
@@ -4797,7 +4841,26 @@
         const rentPush = clamp((meanElite - 58) / 14, 0, 1); // only higher-rent realms push labor out; the ordinary world still drifts toward its winners
         const isConcentrate = disposalOverride ? disposalOverride === "concentrate" : (params.db >= 34 && params.db < 67);
         const attract = regions.map((reg, i) => {
-          const base = 0.5 * reg.wealth + 25 * (onGrid[i] ? 1 : 0) + 0.25 * (100 - reg.blight);
+          // R2 (#165): HARRIS-TODARO expected income, replacing an ad-hoc weighted
+          // sum. People do not move toward the highest wage, they move toward the
+          // highest wage TIMES the chance of actually getting work (Harris & Todaro
+          // 1970). Employment probability is proxied by artifice per head: the works
+          // and trades a place carries (A), divided by the labour already queuing for
+          // them, so a rich town with no jobs left to give pulls less than its wage
+          // suggests, and a modest town still hiring pulls more.
+          const jobsPerHead = reg.A / (1 + reg.settlementPop / 900);
+          const opportunity = clamp(jobsPerHead / 100, 0, 1);
+          const expectedIncome = reg.wealth * opportunity;
+          // ROBACK 1982 compensating differentials: wages are not the whole story.
+          // The grid and clean ground are amenities people will trade income for, so
+          // they enter as a separate term rather than being folded into the wage.
+          // NOTE: this is uniform avoidance of blight, NOT the income-sorting channel
+          // ("coming to the nuisance") that R5 (#168) needs. This model has no
+          // household-level income heterogeneity, so poor and rich value the
+          // dis-amenity identically here. See the R5 discussion before assuming this
+          // supplies the EJ negative mode.
+          const amenity = 25 * (onGrid[i] ? 1 : 0) + 0.25 * (100 - reg.blight);
+          const base = expectedIncome + amenity;
           const rentDrag = 0.4 * Math.max(0, reg.eliteShare - 62);     // the squeezed leave the dear core
           const frontier = 26 * rentPush
             * clamp((52 - reg.wealth) / 52, 0, 1)             // the land is still cheap
@@ -4820,6 +4883,65 @@
           if (gA > 0) { const m = 0.05 * regions[edge.a].settlementPop * gA / 100; delta[edge.a] -= m; delta[edge.b] += m; }
           else if (gA < 0) { const m = 0.05 * regions[edge.b].settlementPop * (-gA) / 100; delta[edge.b] -= m; delta[edge.a] += m; }
         });
+        // #178: THE DIFFERENTIAL EXIT, the post-siting half of the story. The block
+        // above moves PEOPLE toward income. This one moves COIN away from poison, and
+        // it moves it at different speeds for different pockets: the propertied are
+        // SORT_WTP times readier to leave a dirty place than labour is, because they
+        // can afford to be. A town the mobile stratum walks out of keeps its heads and
+        // loses its money, so its mean income falls. That is the accounting shadow of
+        // "coming to the nuisance", and it is why the blight-poverty relation no longer
+        // needs a poverty-targeting exponent to exist at all.
+        //
+        // It reads LAST epoch's blight (computeBlight runs later in this loop), which is
+        // the correctness condition rather than an oversight: sorting is a response to
+        // poison already on the ground, not a forecast of poison to come.
+        //
+        // POOLED PRESERVATION is what keeps this from being a dial. phiP and phiL are
+        // derived so their head-mix-weighted mean is exactly SORT_CHURN * g: the realm
+        // gains NO net aversion to blight, only a SPLIT in who acts on it. Turn
+        // SORT_WTP to 1 and the whole block becomes a no-op by construction.
+        //
+        // It is UNGATED and therefore two-signed. It never reads params.db, never reads
+        // the doctrine, never reads refining, and never reads wealth-as-poverty. Under
+        // concentrate the dirty ends are poor towns and their coin drains. Under
+        // disperse the spoil lands around the works, which are RICH, and the identical
+        // code drains theirs. A town whose blight FALLS receives coin and gets richer,
+        // which is gentrification, on the same three lines, with no special case.
+        //
+        // WHAT IT DOES NOT DO: no headcount moves. settlementPop, attract[] and delta[]
+        // are untouched and elite_pop_pct stays the structural formula both suites pin
+        // exactly. What moves is coin and a mean. The model carries one population
+        // number per region, so a true two-stream sort is not buildable here without
+        // falsifying an exported-column identity. Read this as a reduced form.
+        // It also reads eliteShare and NEVER writes it: writing it was prototyped and
+        // rejected for ratcheting realm median elite_share from 25 to 50 through the B2
+        // investment loop, which would have let R5 contaminate R3's evidence.
+        {
+          const move = new Array(regions.length).fill(0);
+          roadEdges.forEach(edge => {
+            const A = regions[edge.a], B = regions[edge.b];
+            if (!A.settled || !B.settled) return;
+            const g = Math.abs(A.blight - B.blight) / 100;
+            if (g === 0) return; // deterministic no-op on ties
+            const di = A.blight > B.blight ? edge.a : edge.b; // the dirtier end
+            const ci = di === edge.a ? edge.b : edge.a;
+            const dirty = regions[di];
+            const q = ownerHeadPct(dirty) / 100;
+            const phiP = SORT_CHURN * g * SORT_WTP / (q * SORT_WTP + (1 - q));
+            const phiL = phiP / SORT_WTP;
+            const dphi = clamp(phiP - phiL, 0, 1);
+            const coin = dirty.settlementPop * dirty.wealth * (dirty.eliteShare / 100) * dphi;
+            move[di] -= coin;
+            move[ci] += coin;
+          });
+          regions.forEach((reg, i) => {
+            if (!reg.settled || move[i] === 0) return;
+            const C = reg.settlementPop * reg.wealth;
+            const nC = Math.max(1, C + move[i]);
+            reg.wealth = clamp(Math.round(nC / reg.settlementPop), 0, 100);
+            if (reg.wealth > reg.peakWealth) reg.peakWealth = reg.wealth;
+          });
+        }
         regions.forEach((reg, i) => {
           if (reg.settled) {
             // a living town: migrate, then check whether the land has failed
@@ -5522,8 +5644,7 @@
       // district, the quay masters, the lane's keepers); class_gap = the
       // owners' coin per owner over labor's coin per laborer.
       regions.forEach(reg => {
-        reg.elitePopPct = 2 + (reg.tier === "metropolis" ? 3 : reg.tier === "city" ? 2 : 0)
-          + (reg.refining > 0 ? 2 : 0) + (reg.isPort === 1 ? 1 : 0) + (reg.isSkyport === 1 ? 1 : 0);
+        reg.elitePopPct = ownerHeadPct(reg); // same formula, hoisted for #178; value unchanged
         reg.classGap = Math.round(
           ((reg.eliteShare / reg.elitePopPct) / ((100 - reg.eliteShare) / (100 - reg.elitePopPct))) * 10) / 10;
       });

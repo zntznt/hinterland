@@ -28,7 +28,7 @@ The rivers are crossed at Coldbeck Bridge and Asteaderen Bridge; everywhere else
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1000), when the gap held, **the Emptying** (1025–1125), when the gap widened and **the Ordinary Age** (1150–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1000), when the gap held, **the Emptying** (1025–1125), when the gap widened and **the Ordinary Age** (1150–1250), when the gap narrowed. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
 
 **Year 1025.** Politics in a capital Rushold had never seen closed the sea lanes to it. A quarrel between the Corvine League and the Metropole became Rushold's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
 
@@ -98,7 +98,7 @@ The years leave names behind them. The realm now speaks of Drolvek Diggings the 
 
 ## The State of the Realm, Year 1250
 
-Of the realm's 10 settled regions, 7 held steady, 2 declined and 1 collapsed outright.
+Of the realm's 10 settled regions, 9 held steady and 1 collapsed outright.
 2 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Drolvek Diggings and Nether Gnathok, but the roads have stopped going there.
 And 1 place has come back as something else. Comfre Fell stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
 
@@ -108,12 +108,12 @@ Of the realm's 4 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the magnates stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.4 in every hundred of the realm's people hold 36.5 of every hundred coins, and live 16.4 times better than the people who work for them. The gap is sharpest at Rushold, where 67 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 29 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.3 in every hundred of the realm's people hold 35.4 of every hundred coins, and live 15.8 times better than the people who work for them. The gap is sharpest at Rushold, where 67 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 30 parts in a hundred of the whole spread.
 
 3 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.33 at the founding to 0.48 at the close. It turned on the tariff crackdown in 1075. The poorest fifth of the realm carries 2.9 times the blight of the richest fifth. Behind the Thulvek wall, the median settlement earns 89 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Asteaderen drinks 2 points of other towns' poison, only because it stands at the mouth. 9 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.4 in a hundred hold 36.5 of every hundred coins, and live 16.4 times better than the rest. The skyway would cut 18 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 62 against 9, and owning barely half of it: 50 in the hundred of the yield is entered in the Vantic Crown's books, not the realm's. The Thulvek divides even the weather: the rain falls at 58 on one side and 46 in its lee, and no one on the dry side chose the wind.
+The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.33 at the founding to 0.45 at the close. It turned on the tariff crackdown in 1075. The poorest fifth of the realm carries 2.9 times the blight of the richest fifth. Behind the Thulvek wall, the median settlement earns 56 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Asteaderen drinks 2 points of other towns' poison, only because it stands at the mouth. 9 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.3 in a hundred hold 35.4 of every hundred coins, and live 15.8 times better than the rest. The skyway would cut 18 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 61 against 9, and owning barely half of it: 50 in the hundred of the yield is entered in the Vantic Crown's books, not the realm's. The Thulvek divides even the weather: the rain falls at 58 on one side and 46 in its lee, and no one on the dry side chose the wind.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

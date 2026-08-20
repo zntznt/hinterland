@@ -118,7 +118,7 @@ Of the realm's 4 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Temple, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the Temple stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4.7 in every hundred of the realm's people hold 41.2 of every hundred coins, and live 14.2 times better than the people who work for them. The gap is sharpest at Hamwick, where 50 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 44 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4.7 in every hundred of the realm's people hold 41.2 of every hundred coins, and live 14.2 times better than the people who work for them. The gap is sharpest at Hamwick, where 50 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 42 parts in a hundred of the whole spread.
 
 And over all of it stands the Dominion, which holds 4 regions from its foothold at Hamwick and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns. It no longer rules the occupied country, and the two are not the same thing.
 

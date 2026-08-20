@@ -46,7 +46,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1100.** The old First Magnate died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Dhordruk took the chair. Some who objected were killed, and the objections did not stop.
 
-**Year 1100.** The rains failed over Khekby, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1100.
+**Year 1100.** The rains failed over Tarkfiere, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1100.
 
 **Year 1125.** The capital chartered aetherworks at Comfre. The wires reached it fast, because someone had already decided the ore was worth the copper.
 
@@ -84,7 +84,7 @@ The years leave names behind them. The realm now speaks of Comfre the Open, Grug
 
 ## The State of the Realm, Year 1250
 
-Of the realm's 9 settled regions, 7 held steady, 1 declined and 1 collapsed outright.
+Of the realm's 9 settled regions, 1 rose through the years, 7 held steady and 1 collapsed outright.
 3 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Skavurnok Delf, Drennath and Surzethrak, but the roads have stopped going there.
 And 1 place has come back as something else. Khekby stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
 
@@ -94,12 +94,12 @@ Of the realm's 5 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the magnates stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4 in every hundred of the realm's people hold 39.7 of every hundred coins, and live 15.8 times better than the people who work for them. The gap is sharpest at Comfre, where 56 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 28 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.9 in every hundred of the realm's people hold 38.9 of every hundred coins, and live 15.8 times better than the people who work for them. The gap is sharpest at Comfre, where 56 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 28 parts in a hundred of the whole spread.
 
 3 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.42. It turned on the rising at Skavurnok Delf in 1125, which was put down. The poorest fifth of the realm carries 5 times the blight of the richest fifth. Behind the Vrathul wall, the median settlement earns 89 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Quillton drinks 4 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 4 in a hundred hold 39.7 of every hundred coins, and live 15.8 times better than the rest. The skyway would cut 38.7 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
+The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.40. It turned on the rising at Skavurnok Delf in 1125, which was put down. The poorest fifth of the realm carries 5 times the blight of the richest fifth. Behind the Vrathul wall, the median settlement earns 72 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Quillton drinks 4 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.9 in a hundred hold 38.9 of every hundred coins, and live 15.8 times better than the rest. The skyway would cut 38.7 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

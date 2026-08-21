@@ -1377,7 +1377,22 @@
     // about 2% saturates, while the sacrifice zone (median 4.8 raw) saturates as it
     // should, because it IS ruined. This is a choice of UNIT, not of target: it fixes
     // what 100 means and gives the inhabited range about 4x the resolution.
-    const BLIGHT_FULL = 1.0;
+    const BLIGHT_FULL = 3.3;
+    // #180: POISON HAS A MEMORY. Until now blight was recomputed from scratch every
+    // epoch out of the CURRENT works, so a closed works meant land that healed
+    // instantly and completely, in a single step, which is the one thing
+    // contaminated ground reliably does not do. Blight is now a STOCK: each epoch's
+    // deposition settles on top of what is already there, and what is already there
+    // decays. BLIGHT_RETAIN is the share surviving one 25-year epoch. Natural
+    // attenuation of persistent soil and groundwater contaminants runs on decadal
+    // half-lives, so a ~50-year half-life gives 0.5^(25/50) = 0.707; 0.70 is used.
+    // Ruined land therefore recovers on a timescale of a century or two rather than
+    // either never or overnight, and a sacrifice zone whose works have closed can be
+    // resettled by people who arrive long enough after the harm.
+    const BLIGHT_RETAIN = 0.70;
+    // With deposition d held steady the stock settles at d / (1 - RETAIN) = 3.33 d,
+    // so BLIGHT_FULL above is the old deposition ceiling of 1.0 carried onto the
+    // stock's equilibrium footing. Same meaning: 100 is land ruined.
     const RIVER_CARRY = 0.3;  // share of a riverine region's blight shipped downstream
     const RIVER_DECAY = 0.75; // per-step decay of the carried load
     // #178: THE DIFFERENTIAL EXIT. Post-siting sorting, "coming to the nuisance"
@@ -4096,6 +4111,14 @@
       let retentionEpoch = -1, capitalFlight = 0;
       let impositions = 0, lastWoundEpoch = -99;
       let blightEpoch = 0; // B4 (#126): concentrate's poison RAMPS with the works — 0 at the founding, full late (P4 delay)
+      // #180: the contaminant stock carried between epochs. `committed` is the load
+      // standing at the END of the last epoch; computeBlight may run several times
+      // within one epoch (migration moves the poor, a relic calamity scars ground),
+      // so it always derives from `committed` and never from its own output, which
+      // keeps it idempotent inside an epoch and accumulating across them.
+      const blightCommitted = new Array(regions.length).fill(0);
+      let blightPending = new Array(regions.length).fill(0);
+      let blightSeeded = false;
       // #93: a maturing realm wires more of itself. gtEase lowers the hook-up bar
       // a touch each epoch so the grid keeps ratcheting outward through the
       // history instead of freezing after the founding expansion. It is 0 at
@@ -4246,7 +4269,20 @@
         // #180: fixed ceiling, not the per-world maximum. A clean world now reads clean
         // instead of being stretched to fill the scale, and a cell at 100 is ruined
         // rather than merely worst-in-show.
-        const rawB = blightRaw.slice();
+        // blightRaw currently holds SCAR + this epoch's fresh deposition. Split them:
+        // scar is permanent ground truth and does not decay, the rest is deposition
+        // that lands on the decaying stock.
+        const depos = regions.map((_, i) => blightRaw[i] - scar[i]);
+        if (!blightSeeded) {
+          // The founding is a snapshot of a world already running, not year zero of a
+          // clean one, so the stock starts at the equilibrium of its own founding
+          // deposition rather than at nothing. Without this the map would open
+          // artificially clean and darken for its first few epochs.
+          for (let i = 0; i < regions.length; i++) blightCommitted[i] = depos[i] / (1 - BLIGHT_RETAIN);
+          blightSeeded = true;
+        }
+        blightPending = regions.map((_, i) => blightCommitted[i] * BLIGHT_RETAIN + depos[i]);
+        const rawB = regions.map((_, i) => blightPending[i] + scar[i]);
         const pre = regions.map((_, i) => clamp(Math.round(100 * (rawB[i] / BLIGHT_FULL)), 0, 100));
         // TREAT: the realm cleans up its spoil, but only where it can afford the
         // coin AND fields the works. Cleanup scales with wealth (the coin) × A (the
@@ -4260,6 +4296,7 @@
           regions.forEach((reg, i) => {
             const cleared = clamp(0.9 * (reg.A / 100) * (reg.wealth / 100), 0, 0.9);
             pre[i] = Math.round(pre[i] * (1 - cleared));
+            blightPending[i] *= (1 - cleared); // #180: cleanup lifts the STOCK, or the poison returns next epoch
           });
         }
         // G2: the river carries it — every riverine region ships RIVER_CARRY
@@ -5445,6 +5482,10 @@
           h.ref.condition = h.condition;
         });
         computeCrossingFriction();
+        // #180: settle the epoch's contamination into the standing stock. Done ONCE
+        // per epoch, here, so the several computeBlight calls inside an epoch all read
+        // the same starting ground.
+        for (let i = 0; i < regions.length; i++) blightCommitted[i] = blightPending[i];
         blightEpoch = e + 1; // B4: the concentrate ramp reads the current year
         computeBlight();   // the poison follows the poor wherever they end up
         computeLivability(); // and the land's worth-living-in is re-reckoned

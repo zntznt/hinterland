@@ -28,7 +28,7 @@ The rivers are crossed at Quillton Bridge alone; everywhere else the banks are m
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1050), when the gap narrowed and **the Age of Tariffs** (1075–1250), when the gap widened. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1050), when the gap narrowed, **the Age of Tariffs** (1075–1175), when the gap widened and **the Quiet Years** (1200–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
 
 **Year 1025.** Politics in a capital Comfre had never seen closed the sea lanes to it. A quarrel between the Vantreth Imperium and the Metropole became Comfre's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
 
@@ -58,8 +58,6 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1125.** The god's fortune rose at Skavurnok Delf, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Skavurnok Delf.
 
-**Year 1125.** Skavurnok Delf rose, and was put down. The constabulary arrived after the hangings. The injustice that caused the rising was written down in full and then left alone. The people keep the date as the Skavurnok Delf Rising.
-
 **Year 1150.** the Vantreth Imperium sent envoys to Comfre Harbor, and the capital pretended not to notice. Nothing was signed. A rich coast the Metropole has not yet claimed is a coast worth courting, and the powers across the sea prefer to be invited. This is how the next annexation usually begins.
 
 **Year 1150.** The old Hierarch died, and Rosane took the censer without incident. That is rare enough to be worth recording.
@@ -69,6 +67,8 @@ These years split into ages, each named for what the realm was living through: *
 **Year 1150.** The ground moved under Drennath, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Drennath Quake.
 
 **Year 1150.** A storm came off the water and stood over the coast for three days. Comfre took the worst of it, as the exposed shore always does; the Great Storm of 1150 is the name the survivors gave the year.
+
+**Year 1150.** Surzethrak rose. The constabulary line broke and the mob held. Surzethrak keeps what it makes now, and its gates charge no one. And it flourished. The aetherworks the charter had held back ran at full tilt, the crafts the tariffs had taxed to the bone found their feet, and people came to the free town from the tariffed country around it. Freedom released what the old order had held down. The people keep the date as the Surzethrak Rising.
 
 **Year 1175.** The ground moved under Drennath, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Drennath Quake.
 
@@ -80,7 +80,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1225.** A storm came off the water and stood over the coast for three days. Comfre took the worst of it, as the exposed shore always does; the Great Storm of 1225 is the name the survivors gave the year.
 
-The years leave names behind them. The realm now speaks of Comfre the Open, Gruggath the Open, Quillton the Steadfast, Skavurnok Delf the Ashen, Drennath the Hollow, Osterewick the Shadowed, Wordmere the Open, Surzethrak the Ashen, Khekby the Hollow and Tarrewood the Shadowed: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
+The years leave names behind them. The realm now speaks of Comfre the Open, Gruggath the Open, Tarkfiere the Shadowed, Quillton the Steadfast, Skavurnok Delf the Ashen, Drennath the Hollow, Osterewick the Shadowed, Wordmere the Open, Surzethrak the Free, Khekby the Hollow and Tarrewood the Shadowed: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
 
 ## The State of the Realm, Year 1250
 
@@ -94,12 +94,12 @@ Of the realm's 5 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the magnates stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.9 in every hundred of the realm's people hold 38.9 of every hundred coins, and live 15.8 times better than the people who work for them. The gap is sharpest at Comfre, where 56 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 28 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.9 in every hundred of the realm's people hold 37.8 of every hundred coins, and live 15.2 times better than the people who work for them. The gap is sharpest at Comfre, where 57 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 32 parts in a hundred of the whole spread.
 
 3 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.40. It turned on the rising at Skavurnok Delf in 1125, which was put down. The poorest fifth of the realm carries 5 times the blight of the richest fifth. Behind the Vrathul wall, the median settlement earns 72 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Quillton drinks 4 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.9 in a hundred hold 38.9 of every hundred coins, and live 15.8 times better than the rest. The skyway would cut 38.7 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
+The record closes with what the numbers say. This world closed some of its gap. The wealth gap went from 0.39 at the founding to 0.34 at the close. It turned on the rising at Surzethrak in 1150, which won and flourished. The poorest fifth of the realm carries 5 times the blight of the richest fifth. Behind the Vrathul wall, the median settlement earns 60 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Quillton drinks 4 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.9 in a hundred hold 37.8 of every hundred coins, and live 15.2 times better than the rest. The skyway would cut 38.7 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

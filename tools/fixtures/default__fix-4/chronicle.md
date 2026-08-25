@@ -28,7 +28,7 @@ The rivers are crossed at Asteaderen Bridge alone; everywhere else the banks are
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1000), when the gap held, **the Emptying** (1025–1050), when the gap widened, **the Second Spring** (1075–1175), when the gap widened and **the Quiet Years** (1200–1250), when the gap widened. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1000), when the gap held, **the Emptying** (1025–1175), when the gap widened and **the Quiet Years** (1200–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
 
 **Year 1025.** Politics in a capital Rushold had never seen closed the sea lanes to it. A quarrel between the Corvine League and the Metropole became Rushold's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
 
@@ -62,7 +62,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1100.** The buried power near Drolvek Diggings turned over in its sleep. The Temple sealed the site and said little. The scar it burned into the country is still there to read.
 
-**Year 1100.** Drolvek Diggings rose. The constabulary line broke and the mob held. Drolvek Diggings keeps what it makes now, and its gates charge no one. But freedom is not food. The magnates' capital left with the magnates, the aetherworks it had funded went dark, and the skilled workers followed the money out. The free town starved. The injustice had been real and so was the freedom, and neither one fed anyone. The people keep the date as the Drolvek Diggings Rising.
+**Year 1100.** Drolvek Diggings rose. The constabulary line broke and the mob held. Drolvek Diggings keeps what it makes now, and its gates charge no one. And it flourished. The aetherworks the charter had held back ran at full tilt, the crafts the tariffs had taxed to the bone found their feet, and people came to the free town from the tariffed country around it. Freedom released what the old order had held down. The people keep the date as the Drolvek Diggings Rising.
 
 **Year 1125.** The old Hierarch died, and Haine took the censer without incident. That is rare enough to be worth recording.
 
@@ -100,11 +100,11 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1250.** The god's fortune rose at Drolvek Diggings, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Drolvek Diggings.
 
-The years leave names behind them. The realm now speaks of Drolvek Diggings the Famished, Rushold the Kindled, Comfre Fell the Hollow, Dhazroth Cove the Hollow, Zephe the Hollow, Coldbeck the Hollow, Glasteate the Hollow, Throk the Hollow, Syntheport the Hollow and Nether Gnathok the Hollow: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
+The years leave names behind them. The realm now speaks of Drolvek Diggings the Free, Rushold the Kindled, Comfre Fell the Hollow, Dhazroth Cove the Hollow, Zephe the Hollow, Coldbeck the Hollow, Glasteate the Hollow, Throk the Hollow, Syntheport the Hollow and Nether Gnathok the Hollow: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
 
 ## The State of the Realm, Year 1250
 
-Of the realm's 8 settled regions, 2 held steady, 1 declined and 5 collapsed outright.
+Of the realm's 8 settled regions, 3 held steady and 5 collapsed outright.
 4 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Drolvek Diggings, Dhazroth Cove, Coldbeck and Nether Gnathok, but the roads have stopped going there.
 And 4 places have come back as something else. Comfre Fell, Zephe and Throk stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
 
@@ -114,12 +114,12 @@ Of the realm's 4 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the magnates stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4.3 in every hundred of the realm's people hold 50.2 of every hundred coins, and live 22.5 times better than the people who work for them. The gap is sharpest at Rushold, where 78 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 44 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4.3 in every hundred of the realm's people hold 48.2 of every hundred coins, and live 20.9 times better than the people who work for them. The gap is sharpest at Rushold, where 78 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 48 parts in a hundred of the whole spread.
 
 4 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.35 at the founding to 0.48 at the close. It turned on the tariff crackdown in 1075. The poorest fifth of the realm carries 6.3 times the blight of the richest fifth. Behind the Thulvek wall, the median settlement earns 100 in the hundred less than the open country at the same distance. 4 regions sit off the grid because the ledgers said serving them would not pay, and sickness runs 1.2 times heavier there than in the lit core. 7 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 4.3 in a hundred hold 50.2 of every hundred coins, and live 22.5 times better than the rest. The skyway would cut 18 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 63 against 9, and owning barely half of it: 50 in the hundred of the yield is entered in the Vantic Crown's books, not the realm's. The Thulvek divides even the weather: the rain falls at 58 on one side and 46 in its lee, and no one on the dry side chose the wind.
+The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.34 at the founding to 0.42 at the close. It turned on the tariff crackdown in 1075. The poorest fifth of the realm carries 5.9 times the blight of the richest fifth. Behind the Thulvek wall, the median settlement earns 100 in the hundred less than the open country at the same distance. 4 regions sit off the grid because the ledgers said serving them would not pay, and sickness runs 1.2 times heavier there than in the lit core. 7 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 4.3 in a hundred hold 48.2 of every hundred coins, and live 20.9 times better than the rest. The skyway would cut 18 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 59 against 10, and owning barely half of it: 50 in the hundred of the yield is entered in the Vantic Crown's books, not the realm's. The Thulvek divides even the weather: the rain falls at 58 on one side and 46 in its lee, and no one on the dry side chose the wind.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

@@ -3827,11 +3827,22 @@
         const waterMult = 0.7 + 0.3 * (wa / 100); // dry floor 0.70, full 1.00
         // B1: income is A-SCALED so a high-artifice periphery can out-earn a
         // low-artifice core, and the realm's total wealth stops being conserved.
-        // Calibrated to (0.3 + A/100): ~1.0 at the founding artifice (mean ≈70,
-        // so founding wealth barely moves), rising to 1.3 as the works learn (the
-        // pie GROWS) and falling toward 0.3 as artifice decays or crashes (it
-        // SHRINKS) — symmetric about the founding, unlike the (0.5+A/200) floor.
-        const artMult = 0.3 + (reg.A !== undefined ? reg.A : 70) / 100;
+        // R1 (#164): A is capital-intensity/TFP in a SOLOW frame (Solow 1956), so
+        // output scales as a power of it with DIMINISHING RETURNS, not linearly.
+        // The exponent is the conventional capital share, about a third
+        // (Cobb & Douglas 1928; Gollin 2002). Normalised at A = 70, the founding
+        // mean, so founding wealth barely moves.
+        //
+        // The linear form it replaces (0.3 + A/100) had no cited basis and was
+        // wrong at both ends: it paid a constant marginal return to artifice
+        // forever, and an artifice crash cut income by up to 70%, which is a
+        // scale of collapse no production function of this kind produces. The
+        // power form is gentler where it matters (at A = 23, the lowest artifice
+        // measured on settled ground, it returns 0.68 against the linear 0.53)
+        // and more modest at the top (1.13 at A = 100 against 1.30), which is
+        // what diminishing returns means.
+        const artA = (reg.A !== undefined ? reg.A : 70);
+        const artMult = Math.pow(artA / 70, 0.35);
         return base * waterMult * artMult * (reg.warTorn ? 0.85 : 1); // war permanently wounds capacity
       };
       const rArt = sx("artifice");

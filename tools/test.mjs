@@ -3892,9 +3892,24 @@ console.log("# Dynamic engine D1 acceptance: time makes the loops real");
     // began pouring the plumes into the wealthy lowlands.
     const calm = regions.filter(r => P(r).event_type === "none" && P(r).range_shadow === 0);
     if (calm.length > 3) {
+      // R1 (#164): this used to hand-copy the engine's attractiveness sum
+      // (0.5*wealth + 25*on_grid + 0.25*(100-blight)). R2 (#165) replaced that sum
+      // with Harris-Todaro expected income, so the copy had been measuring a formula
+      // the engine no longer used, and it sat close enough to zero (+0.085, 59% of
+      // worlds) that R1's change to the artifice multiplier tipped it negative. That
+      // is the stale-mirror failure mode, the same one that left the fertility and
+      // coastal checks wrong for weeks (#175).
+      //
+      // So the claim is now tested against an OBSERVABLE instead of a copy of the
+      // mechanism: did people move toward places that were ALREADY RICH at the
+      // founding? wealth_t0 is fixed before any epoch migration runs, so it cannot
+      // be circular with the population change being measured, and it needs no
+      // maintenance when the attractiveness formula changes again. Measured: median
+      // +0.29 on the pre-R1 engine and +0.15 after, with 71% and 76% of worlds
+      // positive respectively.
       drainWorlds.push({
         x: calm.map(r => P(r).population - P(r).population_t0),
-        y: calm.map(r => 0.5 * P(r).wealth + 25 * P(r).on_grid + 0.25 * (100 - P(r).blight_load)),
+        y: calm.map(r => P(r).wealth_t0),
       });
     }
     const cats = new Set(regions.map(r => P(r).boom_bust));
@@ -3918,7 +3933,7 @@ console.log("# Dynamic engine D1 acceptance: time makes the loops real");
     const perW = drainWorlds.map(w => pearson(w.x, w.y)).sort((a, b) => a - b);
     const medDrain = perW.length ? perW[Math.floor(perW.length / 2)] : 0;
     const posFrac = perW.length ? perW.filter(v => v > 0).length / perW.length : 0;
-    if (medDrain > 0) ok(`migration STILL favors winners in the median world: median per-world corr(pop delta, attractiveness) = ${medDrain.toFixed(3)} (${Math.round(posFrac * 100)}% of ${perW.length} worlds drift toward attractiveness) — the frontier and the diaspora send the rest against the gradient (B3's migration-both-ways)`);
+    if (medDrain > 0) ok(`migration STILL favors winners in the median world: median per-world corr(pop delta, FOUNDING wealth) = ${medDrain.toFixed(3)} (${Math.round(posFrac * 100)}% of ${perW.length} worlds drift toward ground that was already rich) — the frontier and the diaspora send the rest against the gradient (B3's migration-both-ways)`);
     else fail(`migration no longer favors winners even in the median world: median ${medDrain.toFixed(3)} over ${perW.length} worlds`);
   }
   if (twoCats >= N * 0.8) ok(`trajectories diverge: ≥2 boom/bust categories in ${twoCats}/${N} worlds`);

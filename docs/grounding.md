@@ -100,7 +100,10 @@ pattern of *(Krugman 1991; Marshall 1890)*.
 
 **The mechanism.** Settlement populations grow through 30 founding "centuries"
 of multiplicative shocks (Gibrat-style proportional growth) plus size-attraction
-migration, then epochs continue the dynamics.
+migration, then epochs continue the dynamics, emptying some regions and
+re-founding others at 40 to 60 people. The measured rank-size steepness comes
+mostly from that last part, not from the proportional growth; see the controlled
+measurements below before citing Gibrat for it.
 
 **The literature.** Proportional growth is Gibrat's law *(Gibrat 1931)*;
 Zipf's α ≈ 1 for city sizes arises from Gibrat growth with a lower-bound
@@ -132,6 +135,51 @@ pre-registration actually names, the engine already lands inside the band
 including the hamlets that deviate from the tail steepens the fit, and Eeckhout
 2004 is explicit that the full distribution is lognormal with a power tail only
 at the truncated top.
+
+**But the band is not produced by the mechanism this section credits, and that
+matters more than the metric mismatch did.** #167 established that the engine
+lands inside the declared band on the declared metric. It did not ask *why*, and
+the answer is not the Gibrat founding process described above. Two controlled
+measurements, both on unmodified `main`, both over 16 worlds:
+
+| configuration | upper-half α | towns | median town |
+|---|---|---|---|
+| `ep=0`, the founding alone, no epochs at all | **0.69** | 24 | 2859 |
+| `ep=2` | 1.42 | 18 | 668 |
+| `ep=5` | 1.68 | 19 | 354 |
+| `ep=10` (the sweep's setting) | 1.36 | 19 | 589 |
+| `ep=10`, **resettlement gate disabled**, nothing else changed | **0.82** | 13 | 2109 |
+
+The 30 founding centuries of proportional growth, run to completion and measured
+with no epochs after them, produce **α = 0.69**, outside the band. The band is
+reached only once the epochs run, and disabling the single line that lets an
+emptied region be resettled drops it straight back to 0.82.
+
+The mechanism doing the work is **settlement churn**: abandonment empties
+regions, and the hysteresis gate re-founds them at 40 to 60 people. That stream
+of very small towns is what steepens the upper-half fit. Towns fall from 24 to
+13 across ten epochs without resettlement, and the median town is four times
+larger.
+
+This is not a claim that the number is fake. Churn is a real modelled process
+and the towns it creates are real towns. It is a claim that **this section's
+attribution was wrong**: the rank-size steepness is a property of the
+settlement-turnover dynamics, not of the Gibrat growth rule the docs credited,
+and Gabaix's account of Gibrat-with-a-lower-bound is therefore not the right
+citation for what the engine actually does here.
+
+One further dependency, found while making blight an absolute load
+([#180](https://github.com/zntznt/hinterland/issues/180)): that churn is itself
+enabled by the compressed blight field. When blight is normalised to each world's
+worst cell, poisoned ground costs almost nothing in habitability, so emptied
+regions are cheap to resettle. Give blight an absolute scale and resettlement
+nearly stops (about 1 founding per world against 9), and α falls to 0.70 for the
+same reason the disabled-gate control does. The band and the blight defect are
+therefore coupled, and fixing the latter moves the former.
+
+**Open, and deliberately not resolved by tuning.** Either a defensible mechanism
+has to produce the steepness, or the band needs re-examining against what the
+engine really does. Neither is settled here, and the band has not been widened.
 
 **So no retune was performed.** Changing the growth-shock variance to move a
 number that was never the declared metric would have been tuning the model to

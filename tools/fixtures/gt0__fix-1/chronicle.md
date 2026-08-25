@@ -38,7 +38,9 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1050.** Plague took Umbereton. The blight had sat heavy on that country for years, so the sickness arrived to a town already half-poisoned. A third of the people died or fled. The roads named it the Grey Breath of 1050.
 
-**Year 1075.** The aetherworks at Brook closed its yards for good. The ore that built the town ran out, and the town kept its wires but lost its wages.
+**Year 1050.** Sickness came to Brook. Anyone who had seen the blight-mark had expected it. Where there were healers, their registers do not agree on the death count. The roads out of town do. The roads named it the Grey Breath of 1050.
+
+**Year 1075.** The aetherworks at Brook shut down. The fields that fed them were worked out, and the magnates left as soon as the ore did. The trunk lines still stand there, carrying nothing.
 
 **Year 1075.** The old Hierarch died, and Velane took the censer without incident. That is rare enough to be worth recording.
 
@@ -54,13 +56,13 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1100.** The old Sovereign died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Holdenmere took the capital. Some who objected were killed, and the objections did not stop.
 
-**Year 1100.** The Temple took the gate at Avelle. A gate is a quay, a span, or a pass, and whoever holds it holds a line of people who cannot go around. The tariff was posted by winter.
+**Year 1100.** The Temple claimed the gate at Avelle for its own. The people who used the crossing found the fee waiting the next market day.
 
 **Year 1100.** A storm came off the water and stood over the coast for three days. Crackby took the worst of it, as the exposed shore always does; the Great Storm of 1100 is the name the survivors gave the year.
 
-**Year 1125.** The capital chartered aetherworks at Crackby. The wires reached it fast, because someone had already decided the ore was worth the copper.
+**Year 1125.** Aetherworks rose at Crackby on a fresh charter. The lumen came online that year, and the town doubled before the next census could count it.
 
-**Year 1125.** The magnates moved on the gate at Crackby and held it. There was no fight worth recording. The first tariff notice went up before the ink on the claim was dry.
+**Year 1125.** The magnates took the gate at Crackby. A gate is a quay, a span, or a pass, and whoever holds it holds a line of people who cannot go around. The tariff was posted by winter.
 
 **Year 1125.** Umbereton rose, and was put down. The constabulary arrived after the hangings. The injustice that caused the rising was written down in full and then left alone. The people keep the date as the Umbereton Rising.
 
@@ -88,11 +90,11 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1250.** In the winter after the fighting, terms were set at Corineby. The Crown wrote them: the Temple ceded a gate and paid 9 in tribute out of its ledger. The side with the deeper ledger wrote the terms, which is how terms are usually written. The clerks filed the fair copy as the Peace of Corineby.
 
-The years leave names behind them. The realm now speaks of Crackby the Hollow, Umbereton the Ashen, Nockhold the Hollow, Brokford the Hollow, Umberthold the Hollow, Brook the Steadfast, Avelle the Hollow, Dhozzurn the Hollow, Biregard the Hollow, Bromnakth Cairn the Hollow, Corineby the Hollow and Brathby the Hollow: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
+The years leave names behind them. The realm now speaks of Crackby the Hollow, Umbereton the Ashen, Nockhold the Hollow, Brokford the Hollow, Umberthold the Hollow, Brook the Hollow, Avelle the Hollow, Dhozzurn the Hollow, Biregard the Hollow, Bromnakth Cairn the Hollow, Corineby the Hollow and Brathby the Hollow: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
 
 ## The State of the Realm, Year 1250
 
-Of the realm's 6 settled regions, 1 declined and 5 collapsed outright.
+Of the realm's 6 settled regions, 6 collapsed outright.
 6 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Crackby, Umbereton, Brokford and Umberthold among others, but the roads have stopped going there.
 And 5 places have come back as something else. Nockhold, Avelle and Dhozzurn stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
 Dhozzurn rose further than any other place in the record. In this realm, that says as much about where it stood as about anything it did.
@@ -103,12 +105,12 @@ Of the realm's 4 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the Temple stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 5.8 in every hundred of the realm's people hold 44.8 of every hundred coins, and live 13.2 times better than the people who work for them. The gap is sharpest at Brook, where 46 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 93 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 5.7 in every hundred of the realm's people hold 39.6 of every hundred coins, and live 10.8 times better than the people who work for them. The gap is sharpest at Brook, where 41 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 91 parts in a hundred of the whole spread.
 
 At the record's close, the grid reaches every settlement in the realm. That is written here plainly, so a later reader can check whether it lasted.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world closed some of its gap. The wealth gap went from 0.40 at the founding to 0.23 at the close. It turned on the Crown Granary in 1075. The poorest fifth of the realm carries 2.8 times the blight of the richest fifth. 0 regions sit off the grid because the ledgers said serving them would not pay. Avelle drinks 3 points of other towns' poison, only because it stands at the mouth. 6 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 5.8 in a hundred hold 44.8 of every hundred coins, and live 13.2 times better than the rest. The skyway would cut 29.1 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 0 against 18, and owning barely half of it: 50 in the hundred of the yield is entered in the Aurean League's books, not the realm's. The Zolzek divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Brathby and Nockhold stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.
+The record closes with what the numbers say. This world closed some of its gap. The wealth gap went from 0.37 at the founding to 0.20 at the close. It turned on the Crown Granary in 1075. The poorest fifth of the realm carries 2.6 times the blight of the richest fifth. 0 regions sit off the grid because the ledgers said serving them would not pay. Avelle drinks 3 points of other towns' poison, only because it stands at the mouth. 6 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 5.7 in a hundred hold 39.6 of every hundred coins, and live 10.8 times better than the rest. The skyway would cut 29.1 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 0 against 19, and owning barely half of it: 50 in the hundred of the yield is entered in the Aurean League's books, not the realm's. The Zolzek divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Brathby and Nockhold stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

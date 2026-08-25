@@ -1,6 +1,35 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **Solow-form production scaling** (issue #164, R1, no schema change): the artifice
+  multiplier in `income()` was `0.3 + A/100`, a linear form with no cited basis that
+  paid a constant marginal return to industry forever and punished a crash far harder
+  than any production function of its kind. It is now `(A/70)^0.35`: artifice read as
+  capital-intensity in a Solow frame (Solow 1956), with the exponent set to the
+  conventional capital share of about a third (Cobb and Douglas 1928; Gollin 2002),
+  normalised at the founding mean of 70 so founding wealth barely moves. Diminishing
+  returns at last: 1.13 at full artifice against the old 1.30, and gentler where it
+  matters. One correction to the issue's own framing while landing it: the "70%
+  collapse" it cites is the worst case at A = 0, which the engine never reaches.
+  Measured over 214 settled regions across 12 worlds, artifice never fell below **23**,
+  where the honest comparison is a 47% income cut under the old form against **32%**
+  under the new one. **No pre-registered target moved out of range**: rank-size
+  upper-half median 1.44 to 1.58 (band [1.2, 1.8]), resource-curse share unchanged at
+  8 of 20 worlds, median elite share 25 to 24. `blight_wealth_corr` drifted +0.481 to
+  +0.519, further from its declared negative mode, which is recorded in
+  `docs/grounding.md` rather than tuned away since that target is already documented as
+  missed and carries no numeric band. **One acceptance test was re-derived, not
+  re-pinned.** The migration check hand-copied the engine's old attractiveness sum
+  (`0.5*wealth + 25*on_grid + 0.25*(100-blight)`), which R2 had already replaced with
+  Harris-Todaro expected income, so it was measuring a formula the engine no longer
+  used and sat close enough to zero (+0.085) that this change tipped it negative. Rather
+  than copy the new formula in and plant a third stale mirror, the claim now runs
+  against an **observable**: did people move toward ground that was already rich at the
+  founding? `wealth_t0` is fixed before any epoch migration, so it cannot be circular
+  with the population change it is measured against, and it needs no maintenance the
+  next time attractiveness changes. Measured median +0.29 before this change and +0.15
+  after, with 71% and 76% of worlds positive. **Declared fixture regeneration**: 75 of
+  90 files across 30 cells. `schema_version` stays 54.
 - **the differential exit** (issue #178, no schema change): the environmental-justice
   mechanism that was missing under R5. Post-siting sorting, "coming to the nuisance"
   (Banzhaf and Walsh 2008; Banzhaf, Ma and Timmins 2019): along the road edges migration

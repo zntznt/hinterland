@@ -30,15 +30,15 @@ The rivers are crossed at Ramwill Reach Bridge alone; everywhere else the banks 
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Age of the Gates** (1000–1050), when the gap narrowed, **the Age of Tariffs** (1075–1100), when the gap widened, **the Still Years** (1125–1200), when the gap widened and **the Gathering Years** (1225–1250), when the gap widened. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+These years split into ages, each named for what the realm was living through: **the Age of the Gates** (1000–1050), when the gap narrowed, **the Age of Tariffs** (1075–1100), when the gap widened, **the Still Years** (1125–1200), when the gap widened and **the Gathering Years** (1225–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
 
 **Year 1025.** Politics in a capital Hamwick had never seen closed the sea lanes to it. A quarrel between the Peregrine States and the Metropole became Hamwick's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
 
 **Year 1025.** Sickness came to Myreby. Anyone who had seen the blight-mark had expected it. Where there were healers, their registers do not agree on the death count. The roads out of town do. The roads named it the Long Cough of 1025.
 
-**Year 1050.** The rains failed over Glasholt Crag, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1050.
+**Year 1025.** Plague took Calvermere. The blight had sat heavy on that country for years, so the sickness arrived to a town already half-poisoned. A third of the people died or fled. The roads named it the Long Cough of 1025.
 
-**Year 1050.** Plague took Calvermere. The blight had sat heavy on that country for years, so the sickness arrived to a town already half-poisoned. A third of the people died or fled. The roads named it the Dust Fever of 1050.
+**Year 1050.** The rains failed over Glasholt Crag, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1050.
 
 **Year 1075.** War came to Asellby. It comes to ground that great powers claim and none can hold. The two powers fighting there were the Crown and the magnates. The town was just where they met. When the fighting stopped, the capital had lost a third of its people and a quarter of its wealth, and the mines and aetherworks were wrecked. The Crown's constabulary arrived after the blood, and stayed. The scribes titled the page the War of 1075.
 
@@ -48,19 +48,17 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1075.** The rains failed over Asellby, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1075.
 
-**Year 1075.** Fortune turned at Hamwick: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Hamwick Find.
+**Year 1075.** Fortune turned at Ramwill Reach: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Ramwill Reach Find.
 
 **Year 1075.** Fever ran through Asellby. The blight had weakened the town for a generation, and the sick had nowhere clean to lie. The burial rolls ran longer than the tax rolls that year. The roads named it the Dust Fever of 1075.
 
 **Year 1075.** The Temple came to Myreby, to the ground of its suffering, and consecrated it as Olenne. Pilgrims walk that road now. The Crown's writ had failed there and the magnates' ledgers had seen nothing worth the ink. The faith moved in after the harm was done, and claimed the ground.
 
-**Year 1100.** the Osmark Combine did not send a fleet to Hamwick Harbor. It sent factors and a charter. The aetherworks were bought, the coast was wired to the sea within the season, and money came in to build. The town grew richer than it had ever been. The registers at the capital still carry the town's name. The registers that matter now are kept in another capital, and half of what the ground yields is entered there.
-
 **Year 1100.** The old Sovereign died, and Bravere took the capital without incident. That is rare enough to be worth recording.
 
 **Year 1100.** In the winter after the fighting, terms were set at Asellby. The Crown wrote them: the magnates ceded nothing but its claim and kept its ledger, which held little. The side with the deeper ledger wrote the terms, which is how terms are usually written. The clerks filed the fair copy as the Peace of Asellby.
 
-**Year 1100.** Fortune turned at Hamwick: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Hamwick Find.
+**Year 1100.** Fortune turned at Ramwill Reach: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Ramwill Reach Find.
 
 **Year 1100.** The capital passed the Crown Granary. It taxes the fat years to buy bread for the lean ones. It is the first decree in the realm's history to move coin downhill. It had blocked reform for years, and only gave in once the damage was bad enough.
 
@@ -72,13 +70,17 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1125.** A storm came off the water and stood over the coast for three days. Asellby took the worst of it, as the exposed shore always does; the Great Storm of 1125 is the name the survivors gave the year.
 
+**Year 1150.** the Osmark Combine did not send a fleet to Ramwill Reach Harbor. It sent factors and a charter. The aetherworks were bought, the coast was wired to the sea within the season, and money came in to build. The town grew richer than it had ever been. The registers at the capital still carry the town's name. The registers that matter now are kept in another capital, and half of what the ground yields is entered there.
+
+**Year 1150.** the Peregrine States sent envoys to Hamwick Harbor, and the capital pretended not to notice. Nothing was signed. A rich coast the Metropole has not yet claimed is a coast worth courting, and the powers across the sea prefer to be invited. This is how the next annexation usually begins.
+
 **Year 1150.** The Dominion's fleet stood off Hamwick Harbor at dawn, and by winter it held 4 regions. There was no fighting. Nobody could stop it. The quays now collect for a power across the sea, the yield of the occupied country is assessed at the water, and the wires arrived with the constabulary. It is the first country in the realm to be wired end to end, because its cargo is wanted elsewhere. The Dominion's own registers file it as the Landing at Hamwick.
 
 **Year 1150.** The old First Magnate died, and Vathrek took the chair without incident. That is rare enough to be worth recording.
 
 **Year 1150.** A storm came off the water and stood over the coast for three days. Asellby took the worst of it, as the exposed shore always does; the Great Storm of 1150 is the name the survivors gave the year.
 
-**Year 1150.** Fortune turned at Hamwick: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Hamwick Find.
+**Year 1150.** Fortune turned at Ramwill Reach: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Ramwill Reach Find.
 
 **Year 1175.** The magnates built new aetherworks at Hamwick, where the money had gone. The capital sealed the charter, and the trunk line followed within the season.
 
@@ -94,6 +96,8 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1225.** Fortune turned at Hamwick: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Hamwick Find.
 
+**Year 1250.** the Osmark Combine wound up its concession at Ramwill Reach, 100 years after it opened it in 1150. The lode had drawn down, and the attention left with the ore. The factors sailed, the credit stopped, and the aetherworks they had built went quiet. It cut both ways. The markets that had made the town rich were gone, but so were the levies, and the ground kept what it made for the first time in a generation. The town got its ruin and its freedom in the same year.
+
 **Year 1250.** The old First Magnate died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Kravzeth took the chair. Some who objected were killed, and the objections did not stop.
 
 **Year 1250.** The rains failed over Myreby, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1250.
@@ -106,10 +110,9 @@ The years leave names behind them. The realm now speaks of Brakton the Hollow, D
 
 ## The State of the Realm, Year 1250
 
-Of the realm's 7 settled regions, 1 rose through the years, 1 held steady, 1 declined and 4 collapsed outright.
+Of the realm's 7 settled regions, 2 held steady, 1 declined and 4 collapsed outright.
 5 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Dravzek Crag, Khekton, Glasholt Crag and Serrvarnuk Bastion among others, but the roads have stopped going there.
 And 3 places have come back as something else. Brakton, Myreby and High Gravul stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
-Ramwill Reach is the emptiest of the ghost country. Its best years are gone, and the roads no longer go there.
 Hamwick rose further than any other place in the record. In this realm, that says as much about where it stood as about anything it did.
 
 The Crown holds 6 regions, the Temple 4, the magnates 1; 0 are contested between them, and 1 answer to no one at all.
@@ -118,7 +121,7 @@ Of the realm's 4 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Temple, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the Temple stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4.7 in every hundred of the realm's people hold 41.2 of every hundred coins, and live 14.2 times better than the people who work for them. The gap is sharpest at Hamwick, where 50 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 42 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4.7 in every hundred of the realm's people hold 40 of every hundred coins, and live 13.6 times better than the people who work for them. The gap is sharpest at Ramwill Reach, where 49 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 50 parts in a hundred of the whole spread.
 
 And over all of it stands the Dominion, which holds 4 regions from its foothold at Hamwick and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns. It no longer rules the occupied country, and the two are not the same thing.
 
@@ -126,6 +129,6 @@ And over all of it stands the Dominion, which holds 4 regions from its foothold 
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.28 at the founding to 0.48 at the close. It turned on the Crown Granary in 1100. The poorest fifth of the realm carries 0 times the blight of the richest fifth. Behind the Dhulzar wall, the median settlement earns 100 in the hundred less than the open country at the same distance. 5 regions sit off the grid because the ledgers said serving them would not pay. 6 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 4.7 in a hundred hold 41.2 of every hundred coins, and live 14.2 times better than the rest. The skyway would cut 54 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. And the whole realm's ledger is now one column in someone else's book: 4 regions occupied, the yield assessed at the quay, the free country keeping 1.5 times the share the occupied country keeps. The gap between who is sovereign and who is occupied is the largest one in the realm, and it shapes every other. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 64 against 11, and owning barely half of it: 50 in the hundred of the yield is entered in the Osmark Combine's books, not the realm's. And Ramwill Reach and Khekton stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.
+The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.28 at the founding to 0.39 at the close. It turned on the Crown Granary in 1100. The poorest fifth of the realm carries 0 times the blight of the richest fifth. Behind the Dhulzar wall, the median settlement earns 100 in the hundred less than the open country at the same distance. 5 regions sit off the grid because the ledgers said serving them would not pay. 6 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 4.7 in a hundred hold 40 of every hundred coins, and live 13.6 times better than the rest. The skyway would cut 54 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. And the whole realm's ledger is now one column in someone else's book: 4 regions occupied, the yield assessed at the quay, the free country keeping 1.5 times the share the occupied country keeps. The gap between who is sovereign and who is occupied is the largest one in the realm, and it shapes every other. And 1 coast was courted, developed, and then let go when the lode ran thin. The attention left with the ore, and the ground got its ruin and its freedom in the same year. And Ramwill Reach and Khekton stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

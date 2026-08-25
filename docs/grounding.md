@@ -43,10 +43,27 @@ not estimated shares. The trade term's coefficients (0.78 sea / 0.22 land) are
 authored. Total wealth non-conservation ("a boom grows the pie") is a Solow-
 consistent qualitative property, not a calibrated growth path.
 
-**Disposition.** Code fix planned, tracked as [#164](https://github.com/zntznt/hinterland/issues/164):
-the current linear artifice multiplier `0.3 + A/100` has no cited form and
-makes income collapse ~70% on an artifice crash; it is to be replaced by the
-Solow-form power scaling.
+**Disposition.** Landed, [#164](https://github.com/zntznt/hinterland/issues/164).
+The linear artifice multiplier `0.3 + A/100` is replaced by `(A/70)^0.35`:
+capital-intensity in a Solow frame, with the exponent set to the conventional
+capital share of about a third *(Cobb & Douglas 1928; Gollin 2002)* and
+normalised at the founding mean A = 70, so founding wealth barely moves.
+
+The form it replaces was wrong at both ends. It paid a constant marginal return
+to artifice forever, and it punished a crash far harder than a production
+function of this kind should. One correction to the record while landing it: the
+"~70% collapse" figure quoted in the issue is the theoretical worst case at
+A = 0, not anything the engine reaches. Measured over 214 settled regions in 12
+worlds at `ep=12`, artifice never fell below **23**, so the real comparison at
+the observed floor is a 47% cut under the linear form against 32% under the
+power form.
+
+No pre-registered target moved out of range: the rank-size upper-half median
+went 1.44 to 1.58 (band [1.2, 1.8]), the resource-curse share held at 8 of 20
+worlds, and median elite share moved 25 to 24. `blight_wealth_corr` drifted from
++0.481 to +0.519, which is further from its declared negative mode, but that
+target is already recorded as missed above and carries no numeric band; the
+drift is noted rather than tuned away.
 
 ## 2. The resource curse and its inversion (endowment → retention → wealth)
 

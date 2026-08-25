@@ -26,7 +26,7 @@ The rivers are crossed at Gleighby Bridge and Oxenby Bridge; everywhere else the
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1025), when the gap narrowed, **the Gated Age** (1050–1075), when the gap held, **the Restoration** (1100–1150), when the gap narrowed and **the Compounding Age** (1175–1250), when the gap widened. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1025), when the gap narrowed, **the Gated Age** (1050–1075), when the gap held, **the Restoration** (1100–1150), when the gap narrowed, **the Compounding Age** (1175–1200), when the gap widened and **the Still Years** (1225–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
 
 **Year 1025.** Politics in a capital Umbereness had never seen closed the sea lanes to it. A quarrel between the Verrant Hegemony and the Metropole became Umbereness's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
 
@@ -62,7 +62,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1150.** The old First Magnate died, and Rumth took the chair without incident. That is rare enough to be worth recording.
 
-**Year 1150.** The capital passed the Crown Granary. It taxes the fat years to buy bread for the lean ones. It is the first decree in the realm's history to move coin downhill. It had blocked reform for years, and only gave in once the damage was bad enough.
+**Year 1150.** The capital passed a Tariff Amnesty. The gates still stand, but the fees are capped by decree. It had blocked reform for years, and only gave in once the damage was bad enough.
 
 **Year 1175.** The old Hierarch died, and Galielaine took the censer without incident. That is rare enough to be worth recording.
 
@@ -86,7 +86,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1250.** Fortune turned at Umbereness: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Umbereness Find.
 
-The years leave names behind them. The realm now speaks of Cravergate the Shadowed, Khelth the Lofted, Hazelmoord Cairn the Hollow, Umbereness the Yoked, Larroor the Yoked, Nockton the Shadowed, Neyholt the Shadowed, Pellwick the Open, Grendhul the Famished, Maldenton the Hollow and Gleighby the Lofted: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
+The years leave names behind them. The realm now speaks of Cravergate the Shadowed, Khelth the Lofted, Hazelmoord Cairn the Hollow, Umbereness the Yoked, Larroor the Yoked, Neyholt the Shadowed, Pellwick the Open, Grendhul the Famished, Maldenton the Hollow and Gleighby the Lofted: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
 
 ## The State of the Realm, Year 1250
 
@@ -99,7 +99,7 @@ Of the realm's 6 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the Temple stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.9 in every hundred of the realm's people hold 51.4 of every hundred coins, and live 25.9 times better than the people who work for them. The gap is sharpest at Umbereness, where 66 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 18 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.9 in every hundred of the realm's people hold 49.1 of every hundred coins, and live 23.7 times better than the people who work for them. The gap is sharpest at Umbereness, where 67 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 20 parts in a hundred of the whole spread.
 
 And over all of it stands the Dominion, which holds 2 regions from its foothold at Umbereness and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns. It no longer rules the occupied country, and the two are not the same thing.
 
@@ -107,6 +107,6 @@ And over all of it stands the Dominion, which holds 2 regions from its foothold 
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.52. It turned on the Crown Granary in 1100. The poorest fifth of the realm carries 11.1 times the blight of the richest fifth. Behind the Narzek wall, the median settlement earns 33 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Gleighby drinks 1 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.9 in a hundred hold 51.4 of every hundred coins, and live 25.9 times better than the rest. The skyway would cut 46.5 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. And the whole realm's ledger is now one column in someone else's book: 2 regions occupied, the yield assessed at the quay, the free country keeping 0.9 times the share the occupied country keeps. The gap between who is sovereign and who is occupied is the largest one in the realm, and it shapes every other. The Narzek divides even the weather: the rain falls at 40 on one side and 8 in its lee, and no one on the dry side chose the wind. And Nockton and Hazelmoord Cairn stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.
+The record closes with what the numbers say. This world closed some of its gap. The wealth gap went from 0.50 at the founding to 0.45 at the close. It turned on the Crown Granary in 1100. The poorest fifth of the realm carries 10 times the blight of the richest fifth. Behind the Narzek wall, the median settlement earns 38 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Gleighby drinks 1 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.9 in a hundred hold 49.1 of every hundred coins, and live 23.7 times better than the rest. The skyway would cut 46.5 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. And the whole realm's ledger is now one column in someone else's book: 2 regions occupied, the yield assessed at the quay, the free country keeping 0.9 times the share the occupied country keeps. The gap between who is sovereign and who is occupied is the largest one in the realm, and it shapes every other. The Narzek divides even the weather: the rain falls at 40 on one side and 8 in its lee, and no one on the dry side chose the wind. And Nockton and Hazelmoord Cairn stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

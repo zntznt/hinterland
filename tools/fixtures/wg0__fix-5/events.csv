@@ -6,6 +6,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 1,1025,seizure,3,,,magnate,,,,,,,
 2,1050,drought,4,the Drought of 1050,,,,,,,,,
 3,1075,succession,,Drumdek,,magnate,,,,,,false,1
+4,1100,settlement_founded,10,,,,,,,,,,
 4,1100,refinery_collapse,3,,,,,,,,,,
 4,1100,seizure,3,,,crown,,,,,,,
 4,1100,tower_raised,11,,,apostate,,,,,,,
@@ -19,15 +20,17 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 6,1150,war,2,the Hazelmoord Cairn War,,crown|temple,,,,,,,
 6,1150,succession,,Comfre,,crown,,,,,,false,1
 6,1150,succession,,Rumth,,magnate,,,,,,false,2
+6,1150,blight_plague,0,the Long Cough of 1150,,,,,,,,,
 6,1150,imposition,,,,,structural_adjustment,,,,,,
 7,1175,succession,,Galielaine,,temple,,,,,,false,1
 7,1175,treaty,2,the Peace of Hazelmoord Cairn,,crown|temple,,crown,1,3,,,
 7,1175,drought,4,the Drought of 1175,,,,,,,,,
 7,1175,quake,2,the Hazelmoord Cairn Quake,,,,,,,,,
 7,1175,discovery,3,the Umbereness Find,,,,,,,,,
+8,1200,settlement_abandoned,0,,,,,,,,,,
 8,1200,seizure,9,,,temple,,,,,,,
 8,1200,discovery,3,the Umbereness Find,,,,,,,,,
 9,1225,drought,4,the Drought of 1225,,,,,,,,,
 10,1250,succession,,Ilmarienne,,temple,,,,,,false,2
-10,1250,storm,0,the Great Storm of 1250,,,,,,,,,
+10,1250,storm,3,the Great Storm of 1250,,,,,,,,,
 10,1250,discovery,3,the Umbereness Find,,,,,,,,,

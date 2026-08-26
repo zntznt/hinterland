@@ -1,10 +1,9 @@
 epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occupied,contested,ruler
 1,1025,embargo,1,,,,,,,,,,
-1,1025,settlement_abandoned,2,,,,,,,,,,
 1,1025,settlement_abandoned,11,,,,,,,,,,
 1,1025,seizure,1,,,magnate,,,,,,,
 1,1025,drought,0,the Drought of 1025,,,,,,,,,
-1,1025,blight_plague,1,the Dust Fever of 1025,,,,,,,,,
+1,1025,blight_plague,1,the Blacklung of 1025,,,,,,,,,
 2,1050,settlement_abandoned,0,,,,,,,,,,
 2,1050,discovery,1,the Rushold Find,,,,,,,,,
 3,1075,succession,,Kelmook,,crown,,,,,,true,1
@@ -18,7 +17,6 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 4,1100,tower_raised,7,,,apostate,,,,,,,
 4,1100,relic_calamity,0,,,,,,,,,,
 4,1100,revolt,0,the Drolvek Diggings Rising,won,,,,,,,,
-5,1125,settlement_founded,2,,,,,,,,,,
 5,1125,succession,,Haine,,temple,,,,,,false,1
 5,1125,storm,1,the Great Storm of 1125,,,,,,,,,
 5,1125,discovery,1,the Rushold Find,,,,,,,,,

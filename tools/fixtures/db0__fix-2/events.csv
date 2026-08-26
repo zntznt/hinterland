@@ -1,13 +1,9 @@
 epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occupied,contested,ruler
 1,1025,embargo,11,,,,,,,,,,
 1,1025,settlement_abandoned,1,,,,,,,,,,
-1,1025,settlement_abandoned,6,,,,,,,,,,
-1,1025,settlement_abandoned,10,,,,,,,,,,
 1,1025,blight_plague,0,the Wasting of 1025,,,,,,,,,
 1,1025,relic_calamity,1,,,,,,,,,,
 2,1050,discovery,9,the Hamwiceweld Find,,,,,,,,,
-3,1075,settlement_founded,6,,,,,,,,,,
-3,1075,settlement_founded,10,,,,,,,,,,
 3,1075,ore_strike,9,,,,,,,,,,
 3,1075,war,0,the War of 1075,,crown|magnate,,,,,,,
 3,1075,succession,,Ulverfolt,,crown,,,,,,false,1
@@ -24,14 +20,14 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 7,1175,flood,4,the Vurzekmouth Flood,,,,,,,,,
 8,1200,drought,2,the Drought of 1200,,,,,,,,,
 8,1200,flood,4,the Vurzekmouth Flood,,,,,,,,,
-8,1200,quake,6,the Zolgrek Quake,,,,,,,,,
+8,1200,quake,6,the Markholt Quake,,,,,,,,,
 9,1225,settlement_abandoned,4,,,,,,,,,,
 9,1225,refinery_founded,11,,,,,,,,,,
 9,1225,succession,,Brack,,crown,,,,,,false,2
 9,1225,drought,2,the Drought of 1225,,,,,,,,,
 9,1225,flood,4,the Vurzekmouth Flood,,,,,,,,,
-9,1225,quake,6,the Zolgrek Quake,,,,,,,,,
+9,1225,quake,6,the Markholt Quake,,,,,,,,,
 9,1225,discovery,9,the Hamwiceweld Find,,,,,,,,,
 10,1250,settlement_abandoned,6,,,,,,,,,,
 10,1250,succession,,Novare,,temple,,,,,,true,3
-10,1250,quake,6,the Zolgrek Quake,,,,,,,,,
+10,1250,quake,6,the Markholt Quake,,,,,,,,,

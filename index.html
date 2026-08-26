@@ -1330,7 +1330,7 @@
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 54;
+    const SCHEMA_VERSION = 55;   // #180: v55 redefines blight_load as an ABSOLUTE load (100 = ruined) carried as a decaying stock, where v54 normalised it to each world's own worst cell. Same column name, different meaning — a break, not a silent move.
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     // B6 (#128): tariffs fund the bridges. A held crossing that still collects a real
@@ -5490,7 +5490,20 @@
         computeBlight();   // the poison follows the poor wherever they end up
         computeLivability(); // and the land's worth-living-in is re-reckoned
         regions.forEach(reg => { // plague: maximum contamination + real population, once per region
-          if (!reg.plagued && reg.blight >= 85 && reg.settlementPop >= 500) {
+          // #180: RE-DERIVED, not transplanted. 85 used to mean "within 15% of this
+          // world's worst cell"; on an absolute scale it means "85% of ruined", and
+          // settled ground reaches p90 53, so the gate collapsed onto the sacrifice
+          // zone. That silently disabled the whole wound-response system, because a
+          // plague in the written-off zone deliberately does not set firstWoundEpoch:
+          // measured over 20 worlds, consecrations fell 11/20 -> 2/20 and the seat's
+          // reforms 17/20 -> 11/20 while the units changed underneath them.
+          // 70 is the value that preserves the MECHANISM'S INCIDENCE on inhabited
+          // ground under the new units (47 plagues, 36 of them outside the zone,
+          // against main's 40 and 34), which is what the units change was supposed to
+          // leave alone. It also sits just above the ruin knee at 60, so a plague
+          // strikes ground that has crossed into ruin — the same line the habitability
+          // regime already draws, rather than a second unrelated number.
+          if (!reg.plagued && reg.blight >= 70 && reg.settlementPop >= 500) {
             reg.plagued = true;
             reg.settlementPop = Math.max(20, Math.round(reg.settlementPop * 0.65));
             reg.population = Math.round(reg.settlementPop * (1 + reg.rural));

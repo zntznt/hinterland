@@ -18,17 +18,17 @@ The Glenmook Rill runs down from the high ground by Coldbeck through 2 regions t
 
 The sea lies to the north and east, and the charts call it Wick Expanse and Gord Reach. The realm's gate is Rushold Harbor: everything the mines raise and the aetherworks refine leaves through it, and whoever holds the quay collects the tariff. How far a town sits from the water was luck, decided at the founding like everything else. Sailors keep well clear of the Lyane, where the sea turns on itself; no quay was ever built within its reach.
 
-The old world is still here: the delve called Dovruk gapes in the old workings by Drolvek Diggings, the tomb of Kyrivalene keeps its silence in the barrens by Comfre Fell and the delve called Vornhek gapes in the old workings by Nether Gnathok. Delvers work the Dunhold road every season, because it pays when nothing else does. Not all of them come back, and what they carry out is sold off the books.
+The old world is still here: the delve called Dovruk gapes in the old workings by Drolvek Diggings, the tomb of Kyrivalene keeps its silence in the barrens by Drukstead and the delve called Vornhek gapes in the old workings by Nether Gnathok. Delvers work the Dunhold road every season, because it pays when nothing else does. Not all of them come back, and what they carry out is sold off the books.
 
 High above the roads, by Nether Gnathok, stands Ysethe Refuge, holy ground the Temple never sanctioned and can't forgive. It heals anyone who climbs to it and asks nothing. The census never climbs that far, so the people it shelters go uncounted. Pilgrims walk to it alongside the official roads, which the Temple is reminded of every festival.
 
-Apostates keep Comfre Fell Tower and Coldbeck Tower, out where the constabulary line fails and the grid never came, selling in the darkness what the grid will not carry. The Temple calls it heresy; the magnates call it competition; the people it heals call it the only healer who ever came.
+Apostates keep Drukstead Tower and Coldbeck Tower, out where the constabulary line fails and the grid never came, selling in the darkness what the grid will not carry. The Temple calls it heresy; the magnates call it competition; the people it heals call it the only healer who ever came.
 
 The rivers are crossed at Coldbeck Bridge and Asteaderen Bridge; everywhere else the banks are marsh and the water must be forded, and the fords are where the wagons drown. Whoever holds a bridge holds a queue of people who cannot go around.
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1000), when the gap held, **the Emptying** (1025–1125), when the gap widened and **the Ordinary Age** (1150–1250), when the gap narrowed. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1000), when the gap held, **the Emptying** (1025–1050), when the gap widened, **the Compounding Age** (1075–1150), when the gap widened and **the Settled Years** (1175–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
 
 **Year 1025.** Politics in a capital Rushold had never seen closed the sea lanes to it. A quarrel between the Corvine League and the Metropole became Rushold's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
 
@@ -36,7 +36,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1025.** The rains failed over Drolvek Diggings, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1025.
 
-**Year 1025.** The sickness reached Rushold and stayed. The poisoned ground had done half the work already. Those who could walk left; those who could not were counted after. The roads named it the Dust Fever of 1025.
+**Year 1025.** The sickness reached Rushold and stayed. The poisoned ground had done half the work already. Those who could walk left; those who could not were counted after. The roads named it the Blacklung of 1025.
 
 **Year 1050.** Fortune turned at Rushold: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Rushold Find.
 
@@ -94,13 +94,12 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1250.** The god's fortune rose at Drolvek Diggings, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Drolvek Diggings.
 
-The years leave names behind them. The realm now speaks of Drolvek Diggings the Free, Rushold the Mourning, Comfre Fell the Hollow, Quillby the Open, Coldbeck the Shadowed, Dunhold the Shadowed and Nether Gnathok the Hollow: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
+The years leave names behind them. The realm now speaks of Drolvek Diggings the Free, Rushold the Ashen, Drukstead the Shadowed, Oxenholt Cove the Steadfast, Quillby the Open, Coldbeck the Shadowed, Dunhold the Shadowed and Nether Gnathok the Hollow: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
 
 ## The State of the Realm, Year 1250
 
-Of the realm's 10 settled regions, 9 held steady and 1 collapsed outright.
+Of the realm's 10 settled regions, 10 held steady.
 2 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Drolvek Diggings and Nether Gnathok, but the roads have stopped going there.
-And 1 place has come back as something else. Comfre Fell stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
 
 The Crown holds 8 regions, the Temple 2, the magnates 0; 1 are contested between them, and 1 answer to no one at all.
 
@@ -108,12 +107,12 @@ Of the realm's 4 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the magnates stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.3 in every hundred of the realm's people hold 33.8 of every hundred coins, and live 14.9 times better than the people who work for them. The gap is sharpest at Rushold, where 74 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 36 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.2 in every hundred of the realm's people hold 34.4 of every hundred coins, and live 15.7 times better than the people who work for them. The gap is sharpest at Rushold, where 74 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 33 parts in a hundred of the whole spread.
 
-3 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
+2 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.31 at the founding to 0.41 at the close. It turned on the tariff crackdown in 1075. The poorest fifth of the realm carries 2.9 times the blight of the richest fifth. Behind the Thulvek wall, the median settlement earns 55 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay. Asteaderen drinks 2 points of other towns' poison, only because it stands at the mouth. 9 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.3 in a hundred hold 33.8 of every hundred coins, and live 14.9 times better than the rest. The skyway would cut 18 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 58 against 11, and owning barely half of it: 50 in the hundred of the yield is entered in the Vantic Crown's books, not the realm's. The Thulvek divides even the weather: the rain falls at 58 on one side and 46 in its lee, and no one on the dry side chose the wind.
+The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.31 at the founding to 0.42 at the close. It turned on the tariff crackdown in 1075. The poorest fifth of the realm carries 1 times the blight of the richest fifth. Behind the Thulvek wall, the median settlement earns 73 in the hundred less than the open country at the same distance. 2 regions sit off the grid because the ledgers said serving them would not pay. Asteaderen drinks 6 points of other towns' poison, only because it stands at the mouth. 9 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.2 in a hundred hold 34.4 of every hundred coins, and live 15.7 times better than the rest. The skyway would cut 18 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 58 against 11, and owning barely half of it: 50 in the hundred of the yield is entered in the Vantic Crown's books, not the realm's. The Thulvek divides even the weather: the rain falls at 58 on one side and 46 in its lee, and no one on the dry side chose the wind.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

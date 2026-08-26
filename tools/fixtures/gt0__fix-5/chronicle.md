@@ -18,9 +18,9 @@ The Mermook Rill runs down from the high ground by Oxenby through 2 regions to t
 
 The sea lies to the east, and the charts call it Markhor Sea. The realm's gate is Umbereness Harbor: everything the mines raise and the aetherworks refine leaves through it, and whoever holds the quay collects the tariff. How far a town sits from the water was luck, decided at the founding like everything else.
 
-The old world is still here: the delve called Khalvek gapes in the old workings by Grendhul, the tomb of Velithiene keeps its silence in the barrens by Hazelmoord Cairn and the deadhold of Kyrielune stands empty by Maldenton, and its ground is poisoned yet. Delvers work the Neyholt road every season, because it pays when nothing else does. Not all of them come back, and what they carry out is sold off the books.
+The old world is still here: the delve called Khalvek gapes in the old workings by Grendhul, the tomb of Velithiene keeps its silence in the barrens by Hazelmoord Cairn and the deadhold of Kyrielune stands empty by Gharton, and its ground is poisoned yet. Delvers work the Neyholt road every season, because it pays when nothing else does. Not all of them come back, and what they carry out is sold off the books.
 
-Apostates keep Cravergate Tower and Gleighby Tower, out where the constabulary line fails and the grid never came, selling in the darkness what the grid will not carry. The Temple calls it heresy; the magnates call it competition; the people it heals call it the only healer who ever came.
+An apostate keeps Gleighby Tower, out where the constabulary line fails and the grid never came, selling in the darkness what the grid will not carry. The Temple calls it heresy; the magnates call it competition; the people it heals call it the only healer who ever came.
 
 The rivers are crossed at Gleighby Bridge and Oxenby Bridge; everywhere else the banks are marsh and the water must be forded, and the fords are where the wagons drown. Whoever holds a bridge holds a queue of people who cannot go around.
 
@@ -62,6 +62,8 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1150.** The old First Magnate died, and Rumth took the chair without incident. That is rare enough to be worth recording.
 
+**Year 1150.** A plague settled on Cravergate. The ground had been fouled long before the fever came, and the fever found little to stop it. Whole streets went quiet. The roads named it the Long Cough of 1150.
+
 **Year 1150.** This measure did not come from the capital. It came from the capital's creditors. The imperial loans had gone unpaid and the doctrine was pressing abroad, so the financiers demanded an adjustment: close the granary, order the gates to collect, and balance the books on the people who could least afford it. The official term is structural adjustment. The towns called it a decree written in another capital.
 
 **Year 1175.** The old Hierarch died, and Galielaine took the censer without incident. That is rare enough to be worth recording.
@@ -74,7 +76,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1175.** Fortune turned at Umbereness: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Umbereness Find.
 
-**Year 1200.** The Temple seized the crossing at Grendhul. Whoever holds the narrow ground sets the price to pass it, and the price went up that season.
+**Year 1200.** The Temple took the gate at Grendhul. A gate is a quay, a span, or a pass, and whoever holds it holds a line of people who cannot go around. The tariff was posted by winter.
 
 **Year 1200.** Fortune turned at Umbereness: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Umbereness Find.
 
@@ -82,16 +84,17 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1250.** The old Hierarch died, and Ilmarienne took the censer without incident. That is rare enough to be worth recording.
 
-**Year 1250.** A storm came off the water and stood over the coast for three days. Cravergate took the worst of it, as the exposed shore always does; the Great Storm of 1250 is the name the survivors gave the year.
+**Year 1250.** A storm came off the water and stood over the coast for three days. Umbereness took the worst of it, as the exposed shore always does; the Great Storm of 1250 is the name the survivors gave the year.
 
 **Year 1250.** Fortune turned at Umbereness: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Umbereness Find.
 
-The years leave names behind them. The realm now speaks of Cravergate the Shadowed, Khelth the Lofted, Hazelmoord Cairn the Hollow, Umbereness the Yoked, Larroor the Yoked, Neyholt the Shadowed, Pellwick the Open, Grendhul the Famished, Maldenton the Hollow and Gleighby the Lofted: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
+The years leave names behind them. The realm now speaks of Cravergate the Ashen, Khelth the Lofted, Hazelmoord Cairn the Hollow, Umbereness the Yoked, Larroor the Yoked, Neyholt the Shadowed, Pellwick the Open, Grendhul the Famished, Gharton the Hollow and Gleighby the Lofted: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
 
 ## The State of the Realm, Year 1250
 
-Of the realm's 9 settled regions, 8 held steady and 1 declined.
-3 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Hazelmoord Cairn, Grendhul and Maldenton, but the roads have stopped going there.
+Of the realm's 9 settled regions, 8 held steady and 1 collapsed outright.
+3 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Cravergate, Hazelmoord Cairn and Grendhul, but the roads have stopped going there.
+And 1 place has come back as something else. Gharton stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
 
 The Crown holds 8 regions, the Temple 1, the magnates 0; 2 are contested between them, and 1 answer to no one at all.
 
@@ -99,7 +102,7 @@ Of the realm's 6 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the Temple stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.9 in every hundred of the realm's people hold 57.8 of every hundred coins, and live 33.5 times better than the people who work for them. The gap is sharpest at Umbereness, where 70 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 19 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 4 in every hundred of the realm's people hold 57.8 of every hundred coins, and live 32.9 times better than the people who work for them. The gap is sharpest at Umbereness, where 70 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 20 parts in a hundred of the whole spread.
 
 And over all of it stands the Dominion, which holds 2 regions from its foothold at Umbereness and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns. It no longer rules the occupied country, and the two are not the same thing.
 
@@ -107,6 +110,6 @@ At the record's close, the grid reaches every settlement in the realm. That is w
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.50 at the founding to 0.59 at the close. It turned on the Crown Granary in 1100. The poorest fifth of the realm carries 11.1 times the blight of the richest fifth. Behind the Narzek wall, the median settlement earns 78 in the hundred less than the open country at the same distance. 0 regions sit off the grid because the ledgers said serving them would not pay. Gleighby drinks 1 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.9 in a hundred hold 57.8 of every hundred coins, and live 33.5 times better than the rest. The skyway would cut 46.5 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. And the whole realm's ledger is now one column in someone else's book: 2 regions occupied, the yield assessed at the quay, the free country keeping 0.9 times the share the occupied country keeps. The gap between who is sovereign and who is occupied is the largest one in the realm, and it shapes every other. The Narzek divides even the weather: the rain falls at 40 on one side and 8 in its lee, and no one on the dry side chose the wind. And Nockton and Hazelmoord Cairn stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.
+The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.43 at the founding to 0.54 at the close. It turned on the Crown Granary in 1100. The poorest fifth of the realm carries 3.5 times the blight of the richest fifth. Behind the Narzek wall, the median settlement earns 56 in the hundred less than the open country at the same distance. 0 regions sit off the grid because the ledgers said serving them would not pay. Gleighby drinks 4 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 4 in a hundred hold 57.8 of every hundred coins, and live 32.9 times better than the rest. The skyway would cut 46.5 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. And the whole realm's ledger is now one column in someone else's book: 2 regions occupied, the yield assessed at the quay, the free country keeping 0.9 times the share the occupied country keeps. The gap between who is sovereign and who is occupied is the largest one in the realm, and it shapes every other. The Narzek divides even the weather: the rain falls at 40 on one side and 8 in its lee, and no one on the dry side chose the wind. And Nockton and Hazelmoord Cairn stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

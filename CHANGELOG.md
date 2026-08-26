@@ -1,6 +1,31 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **suite audit: 284 assertions that could not fail** (no schema change, no engine change).
+  Prompted by R1 (#164) turning up a third stale test mirror in one session. The audit
+  found something worse than drift: `tools/test.mjs` carried a **1138-line `validate()`
+  with 284 assertions and no call site anywhere**. Not exported, not imported, not
+  referenced, only three comments elsewhere in the file claiming it ran. It had been
+  inert long enough to rot: its fertility mirror still carried the pre-`5beea32`
+  coefficients (`0.56/0.30/0.10`, no biome term) and its biome rule still opened forest
+  at rainfall 68 rather than 48. Nothing failed, because nothing ran. Of its 270
+  distinct checks, **263 were already enforced** by the live `validate()` in
+  `stress.mjs`; the four that were not have been moved there. **Two of those four were
+  wrong as written** and failed on the current engine: the market-access check demanded
+  a maximum of exactly 100 and broke on degenerate worlds where every access is zeroed
+  by the dead-zone pass (an allowance the `delver_flux` check beside it already makes),
+  and the consecration check re-derived "the first wound" as the earliest plague or
+  calamity in the event list while the engine deliberately **skips a wound in the
+  sacrifice zone** when choosing which one the Temple answers. So the dead code was not
+  merely unused, it was incorrect, and resurrecting it naively would have produced false
+  failures on 5 of 120 configs. It was rescued rather than copied: the consecration
+  claim now checks only what holds without guessing the engine's selection rule, that a
+  consecration lands on wounded ground two epochs after the wound there. The dead helper
+  `batchN()` went too. **A guard against recurrence:** the suite now audits itself, and
+  fails if any top-level function across the eleven tool files is unreferenced anywhere
+  in the corpus, because the worst failure mode in a test suite is not a wrong assertion
+  but one that cannot fail. Main goes 334 checks to 335; stress keeps its coverage and
+  gains four checks it never had.
 - **Solow-form production scaling** (issue #164, R1, no schema change): the artifice
   multiplier in `income()` was `0.3 + A/100`, a linear form with no cited basis that
   paid a constant marginal return to industry forever and punished a crash far harder

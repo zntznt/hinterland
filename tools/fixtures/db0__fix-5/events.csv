@@ -15,6 +15,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 5,1125,annexation,3,the Landing at Umbereness,,,,,,,2,,
 5,1125,seizure,9,,,temple,,,,,,,
 5,1125,ascendancy,9,the Rise of Grendhul,,,,,,,,,
+6,1150,settlement_founded,10,,,,,,,,,,
 6,1150,refinery_founded,3,,,,,,,,,,
 6,1150,war,2,the Hazelmoord Cairn War,,crown|temple,,,,,,,
 6,1150,succession,,Comfre,,crown,,,,,,false,1

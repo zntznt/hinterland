@@ -1,6 +1,109 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **blight becomes an absolute load, and the city-size band turns out to have been
+  numerical noise** (issue #180; **schema v54 → v55**, because `blight_load` changes
+  meaning; all 30 golden cells moved and the atlas was regenerated). Two follow-ups
+  filed out of it: #185 and #186.
+  **The defect.** `blight_load` was normalised to each world's own maximum on every
+  recompute, so it never said "how poisoned is this place", only "how poisoned
+  relative to the single worst cell right now". That anchor is pathological: the worst
+  cell is the sacrifice zone, poisoned until it empties, and it is **uninhabited in 15
+  of 16 worlds**. Every inhabited place was squeezed into the bottom eighth of an
+  integer scale — settled p10/median/p90 of **2 / 5 / 13**, about twelve distinct
+  values for the entire population of the model. The "Ashen" byname, meant to mark a
+  poisoned town, was reachable by **1 of 291** settled regions.
+  **The change.** An absolute load with a fixed ceiling, so 100 means *ruined* rather
+  than *worst in show*; inhabited ground now spans **10 / 28 / 51** and the Ashen
+  byname is reached by 5 of 301, in 5 worlds rather than 1. Contamination is also a
+  **stock** rather than a live reading: it used to be rebuilt from scratch each epoch
+  out of whichever works were running at that moment, so closing a works healed its
+  ground instantly and completely (measured on main, 27 → 9 in one step). It now
+  carries at a ~50-year half-life, so poison outlives its source. Habitability is
+  convex, because one linear coefficient cannot say both that ordinary contamination
+  is a nuisance and that ruined ground is uninhabitable.
+  **The finding, which is bigger than the change.** #180 misses the pre-registered
+  `rank_size_alpha` band — 0.685 against [1.2, 1.8] — and the band **was being met by
+  an artifact**. The first diagnosis (ruined ground is expensive to resettle, so the
+  churn that steepened the tail stops) is **wrong**, and was disproved by trying to
+  reproduce it: strip the ruin penalty out entirely and α does not recover (0.655,
+  with *fewer* rebirths, because towns then simply never die). What actually did it is
+  the **motion of the denominator**. Measured over 8 worlds, the per-world normaliser
+  ranged **5× within a single run** (single steps up to 2.6×), so a cell whose own
+  contamination never changed could read double or half from one epoch to the next
+  because some *other* cell's works opened or closed. That jitter pushed marginal
+  cells across the abandonment and founding bars, and the spread of town **ages** it
+  produced is what the upper-half fit read as a Zipf tail. Freeze main's denominator
+  at any constant and α collapses to 0.65–0.70; at a frozen denominator of 8.0 the
+  blight distribution is p50 4 against main's p50 5 — the same field, the same units —
+  and α still falls 1.255 → 0.650. The level of blight never met that band; the motion
+  of the scale did. Recorded as MISSED in `tools/targets.mjs` with the band untouched,
+  and the suite now reports α while keeping the failure modes that are still real (the
+  tail must stay a good power-law fit — it improved, r² 0.85 → 0.92 — and no world may
+  go degenerate). Retaining the artifact to keep the number would have been
+  target-fitting of the purest kind: preserving a bug because it makes a metric look
+  right.
+  **Two more pins rested on the same artifact**, and both are now reported with their
+  evidence rather than asserted. B3's "migration favours winners in the median world"
+  reads **−0.111 on main** once restricted to continuously inhabited ground, against
+  the +0.248 it published — the positive result came entirely from cells that emptied
+  and came back, whose population delta is abandonment, not migration (filed as #186;
+  the mirror never excluded them because the engine resets a reborn cell's
+  `event_type` to `"none"`). And the blight leg of the disease-burden emergence check
+  is re-pinned 0.3 → 0.15: when blight was rebuilt each epoch from the works running
+  *now*, it and disease burden were near-duplicate readings of one instantaneous
+  quantity, which is why the partial correlation was 0.85. Under contaminant
+  persistence they legitimately come apart (0.23). Sweeping the `burdenEnv`
+  coefficient does move it (0.115 → 0.40 lifts the partial to 0.67) and it was
+  deliberately **not** touched: it sits where the stated conversion rule put it, and
+  moving it to recover a number a memoryless field manufactured would be fitting the
+  artifact.
+  **One threshold was genuinely mis-converted, and that was a real regression.** The
+  plague gate had been transplanted rather than re-derived: `blight >= 85` used to mean
+  "within 15% of this world's worst cell" and now means "85% of ruined", so it
+  collapsed onto the sacrifice zone — which silently disabled the whole wound-response
+  system, because a plague in the written-off zone deliberately does not set
+  `firstWoundEpoch`. Consecrations fell 11/20 → 2/20 and the seat's reforms 17/20 →
+  11/20 while nobody had changed either mechanism. Re-derived to **70**, the value that
+  preserves the mechanism's incidence on inhabited ground (47 plagues, 36 outside the
+  zone, against main's 40 and 34), and which lands just above the ruin knee at 60 so a
+  plague strikes ground that has crossed into ruin rather than answering to a second
+  unrelated number.
+  **Four stale mirrors, all of the same family**, surfaced because an absolute field
+  lets the sacrifice zone saturate while it still holds people. The listening-seat
+  check counted a zone plague as a wound the seat should answer (the engine excludes
+  it by design; the mirror was wrong on main too, 9/10 there against 9/9 corrected).
+  The consecration check counted wounds the Temple *cannot* answer — zone plagues, and
+  relic calamities, which strike sanctuaries by construction while the Temple declines
+  ground that is already holy; corrected, the check gets much **stronger** and the
+  engines agree, main 15/16 (94%) and #180 8/9 (89%) against a 50% floor. The policy-gap
+  check read `findings.blight_ratio`, whose "poorest fifth" is 89-100% uninhabited
+  ground exporting wealth exactly 0; measured on the people it is about, #180 scores
+  **6/6** where main scores 5/6 — the tell that this is precision and not convenience
+  is that it makes the incumbent look worse. And the migration mirror above.
+  **Three exhibits re-pinned**, conditions unchanged, each re-scanned so the world is
+  representative and not lucky: the toll-heavy realm am-52 → am-19 (10 of 60 seeds
+  satisfy it), the granary's crisis arm le-5 → le-8 (4 of 40), the creditor imposition
+  le-7 → le-14 (5 of 40, all five narrated). Capital flight stopped being read off a
+  24-world lottery that fired **once** on main and zero times here, and is now proved
+  on an ore-heavy realm where the retention act actually fires — on both engines.
+  **What #180 does NOT unblock.** Its own sequencing assumed a flat field was why
+  #168's `^1.5` siting exponent could not work. Measured with a real inhabited gradient
+  in place, `^1.5` still fails the both-signs gate and still makes the correlation
+  worse (`^6` +0.103, `^3` +0.409, `^1.5` +0.583, no negative worlds). #168 should stop
+  being framed as blocked on this.
+  **In the atlas**, regenerated over the same 80 worlds: the upper-half rank-size fit
+  moves 1.42 → 0.67 (the recorded miss), urban primacy's maximum falls 16.9× → 3.6×
+  (with no churn, no single town runs away from the field), events per run 57 → 40, the
+  within-place share of person inequality 56% → 46%, and the all-regions
+  `corr(blight, wealth)` median −0.15 → +0.03. `tools/atlas.mjs` also stopped
+  hardcoding the schema version in its own header, which is why it had been announcing
+  v54 through this very bump.
+  **The honest route back to a tail**, filed as #185 rather than built here to hit a
+  number: **first-time foundings are 0.0 per world**, on main and under #180 alike.
+  Every "new town" this engine has produced is a resettlement; the frontier path
+  (`livability >= 45 && a settled neighbour`) has never once fired on ground that never
+  held a town, because the founding pass already settles everything above the bar.
 - **the ordinary channel becomes r − g** (issue #166, R3; no schema change, but all 30
   golden cells moved and the atlas was regenerated). The owners' row used to move by an
   additive pile: common events incremented it (+12 a company town, +5 a war, +4 an

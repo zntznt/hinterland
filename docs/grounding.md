@@ -187,16 +187,60 @@ citation for what the engine actually does here.
 
 One further dependency, found while making blight an absolute load
 ([#180](https://github.com/zntznt/hinterland/issues/180)): that churn is itself
-enabled by the compressed blight field. When blight is normalised to each world's
-worst cell, poisoned ground costs almost nothing in habitability, so emptied
-regions are cheap to resettle. Give blight an absolute scale and resettlement
-nearly stops (about 1 founding per world against 9), and α falls to 0.70 for the
-same reason the disabled-gate control does. The band and the blight defect are
+enabled by the blight field. Give blight an absolute scale and resettlement nearly
+stops (about 1 founding per world against 9), and α falls to 0.70 for the same
+reason the disabled-gate control does. The band and the blight defect are
 therefore coupled, and fixing the latter moves the former.
 
-**Open, and deliberately not resolved by tuning.** Either a defensible mechanism
-has to produce the steepness, or the band needs re-examining against what the
-engine really does. Neither is settled here, and the band has not been widened.
+**And the churn was manufactured by an artifact, which is worse than coupling.**
+The first reading of this, above, was that ruined ground is expensive to resettle
+on an absolute scale, so the churn stops. That reading is **wrong**, and it was
+disproved by trying to reproduce it: strip the ruin penalty out of #180's
+habitability regime entirely and α does not recover (0.655, with *fewer*
+rebirths, 0.6 per world, because towns then simply never die). The habitability
+regime is not what does it.
+
+What does it is the **motion of the denominator**. Blight was renormalised to
+each world's own worst cell on every recompute, and measured over 8 worlds that
+denominator ranged **5× within a single run** (median; single steps up to 2.6×).
+A cell whose own contamination never changed could read double or half from one
+epoch to the next because some *other* cell's works opened or closed. That jitter
+pushed marginal cells back and forth across the abandonment bar (`livability < 20`)
+and the founding bar (`>= 45`), and the spread of town **ages** it produced is
+what the upper-half fit was reading as a Zipf tail.
+
+The controlled experiment is decisive rather than suggestive. Freeze main's
+denominator at *any* constant and α collapses to 0.65–0.70 with rebirths at
+0.6–1.6:
+
+| main, denominator | settled blight p50 | rebirths/world | upper-half α |
+|---|---|---|---|
+| renormalised to the worst cell (as shipped) | 5 | 9.6 | **1.255** |
+| frozen at 3.0 | 10 | 1.6 | 0.700 |
+| frozen at 4.8 | 6 | 0.8 | 0.660 |
+| frozen at 8.0 | **4** | 0.6 | **0.650** |
+
+At a frozen denominator of 8.0 the blight distribution is p50 4 against main's
+p50 5 — the same field, the same units, the same magnitudes — and α still falls
+from 1.255 to 0.650. **The level of blight never met this band. The motion of the
+scale did.** Any correct normalisation removes it, not only #180's.
+
+**So the target is MISSED, and recorded as missed** in `tools/targets.mjs`
+(`missed_since`), with the band left exactly where the literature put it. The
+acceptance suite now reports α instead of asserting it, and keeps the failure
+modes that are still real (the tail must stay a good power-law fit — it improved,
+r² 0.85 → 0.92 — and no world may go degenerate). Retaining the artifact to keep
+the number would have been target-fitting of the purest kind: preserving a bug
+because it makes a metric look right.
+
+**The honest route back, scoped separately.** The same measurement points at a
+real gap: **first-time foundings are 0.0 per world**, on main and under #180
+alike. Every "new town" this engine has ever produced is a resettlement. The
+frontier path (`livability >= 45 && a settled neighbour`) has never once fired on
+ground that never held a town, because the founding pass already settles
+everything above the bar. A settlement system that can genuinely open new ground
+is what would produce a tail honestly — and it is filed on its own rather than
+built here to hit a number.
 
 **So no retune was performed.** Changing the growth-shock variance to move a
 number that was never the declared metric would have been tuning the model to
@@ -213,9 +257,13 @@ range 0.32 to 3.76 over 120 worlds), and only about a fifth of individual worlds
 sit inside [1.2, 1.8]. The pre-registered metric is the median, and the median is
 what is tested.
 
-**Disposition.** Resolved: claim rewritten and metric corrected in
+**Disposition.** Claim rewritten and metric corrected in
 [#167](https://github.com/zntznt/hinterland/issues/167) /
-[#169](https://github.com/zntznt/hinterland/issues/169). No engine retune.
+[#169](https://github.com/zntznt/hinterland/issues/169), attribution corrected in
+[#181](https://github.com/zntznt/hinterland/issues/181), and the band recorded as
+**MISSED** in [#180](https://github.com/zntznt/hinterland/issues/180) once the
+churn that met it turned out to be renormalisation noise. No engine retune at any
+step, and the band has never been touched.
 
 ## 5. Migration, the frontier, and remittances
 
@@ -375,7 +423,47 @@ remains negative-mode by design intent, matching the literature's sign, and
 both signs stay reachable across the doctrine knob; `tools/targets.mjs`
 declares the sign expectation and deliberately no coefficient.
 
-**Disposition.** Code fix planned, tracked as [#168](https://github.com/zntznt/hinterland/issues/168); docs-label meanwhile.
+**The field itself was broken, and that was the upstream cause**
+([#180](https://github.com/zntznt/hinterland/issues/180), landed). `blight_load`
+was normalised to each world's own maximum on every recompute, so it never said
+"how poisoned is this place", only "how poisoned relative to the single worst
+cell right now". The anchor was pathological: the worst cell is the sacrifice
+zone, poisoned until it empties, and it is **uninhabited in 15 of 16 worlds**.
+Every inhabited place was squeezed into the bottom eighth of an integer scale —
+settled p10/median/p90 of **2 / 5 / 13**, roughly twelve distinct values for the
+entire population of the model.
+
+It is now an absolute load with a fixed ceiling, so 100 means *ruined* rather
+than *worst in show*, and inhabited ground spans **10 / 28 / 51**. Contamination
+is also a **stock** now rather than a live reading: it used to be rebuilt from
+scratch each epoch out of whichever works were running at that moment, so closing
+a works healed its ground instantly and completely (measured on main: 27 → 9 in
+one step). Poison outlives its source at a ~50-year half-life. The "Ashen" byname,
+which the issue showed was effectively unearnable by a town (1 of 291 settled
+regions), is now reached by 5 of 301, in 5 worlds rather than 1.
+
+Two consequences are recorded rather than tuned away. The **city-size band** is
+now missed, for the reason set out in section 4 — it was met by the old field's
+renormalisation jitter, not by anything the model does on purpose. And the
+association between contamination and **disease burden** weakened sharply
+(partial correlation 0.85 → 0.23, holding wealth and healing reach fixed). That
+second one is the memoryless field showing itself again: when blight was rebuilt
+each epoch from the works running *now*, it and disease burden were near-duplicate
+readings of one instantaneous quantity, so a near-deterministic relation between
+them was guaranteed by construction. Under contaminant persistence a town can sit
+on a century of accumulated poison with its works long closed, and exposure
+history and present sickness legitimately come apart. The `burdenEnv` coefficient
+was **not** moved to recover the old number (sweeping it does move it — 0.115 to
+0.40 lifts the partial to 0.67); it sits where the stated conversion rule put it.
+
+**Disposition.** Field fixed and landed,
+[#180](https://github.com/zntznt/hinterland/issues/180). The `(1−wealth)⁶`
+exponent is a separate question, still tracked as
+[#168](https://github.com/zntznt/hinterland/issues/168) — and #180 measured that
+one directly: with a real inhabited gradient in place, `^1.5` still *fails* the
+both-signs gate and still makes the correlation worse (`^6` +0.103, `^3` +0.409,
+`^1.5` +0.583, no negative worlds). So #168 is not blocked on field resolution,
+which is what its sequencing assumed.
 
 ## 9. Disease burden and access to care
 
@@ -545,8 +633,35 @@ epoch to drag the median negative. Tracked as
 89-100% uninhabited) and is scheduled separately, since it is byte-pinned in all 30
 fixtures and quoted in every chronicle.
 
-The code changes themselves are deferred and tracked as issues
-[#164](https://github.com/zntznt/hinterland/issues/164)–[#169](https://github.com/zntznt/hinterland/issues/169);
+**`rank_size_alpha` is MISSED as of 2026-08**
+([#180](https://github.com/zntznt/hinterland/issues/180)). The declared band
+[1.2, 1.8] is unchanged; the engine reads **0.685** on the pre-registered metric.
+The full evidence is in section 4, and the short form is that the band was met by
+a numerical artifact rather than by any modelled process: blight was renormalised
+to each world's worst cell every recompute, that denominator moved 5× within a
+single run, and the resulting livability jitter churned marginal towns in and out
+of existence. Freeze the denominator at any constant — including one that
+reproduces main's exact blight distribution — and α falls to 0.65. The band was
+not widened, the artifact was not retained, and the suite now reports α rather
+than asserting it.
+
+**Two other acceptance pins turned out to rest on the same artifact**, and both
+are now reported rather than asserted, with the evidence in the suite:
+
+- *B3's "migration favours winners in the median world."* Restricted to
+  continuously inhabited ground — where migration is the only thing moving people
+  — this reads **−0.111 on main** and −0.051 under #180. The published +0.248 came
+  entirely from including cells that emptied and came back, whose population delta
+  is abandonment and refounding rather than any migration flow. The claim needs
+  re-deriving against the migration mechanism itself; it is not a units question
+  and was not settled inside #180.
+- *The blight leg of the disease-burden emergence check.* Re-pinned 0.3 → 0.15,
+  because the old number measured two near-duplicate readings of one instantaneous
+  quantity. See section 8.
+
+The code changes themselves were deferred and tracked as issues
+[#164](https://github.com/zntznt/hinterland/issues/164)–[#169](https://github.com/zntznt/hinterland/issues/169)
+plus [#180](https://github.com/zntznt/hinterland/issues/180);
 this section must be updated with any target those tuning runs fail to reach.
 
 ## References

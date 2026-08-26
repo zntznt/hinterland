@@ -24,7 +24,40 @@ export const TARGETS = {
     metric: "sweep median of per-world rank-size slope α (upper-half fit)",
     range: [1.2, 1.8],
     cite: ["gabaix1999", "eeckhout2004", "gibrat1931"],
-    note: "α = 1 is the infinite-system limit, not a small-system prediction.",
+    note: "α = 1 is the infinite-system limit, not a small-system prediction. MISSED as of 2026-08 (#180), see docs/grounding.md section 4.",
+    // MISSED as of 2026-08, issue #180. The band is UNCHANGED and must stay
+    // unchanged: it is literature-declared, and the code moving away from it does
+    // not license moving it toward the code.
+    //
+    // What has to be recorded is WHY, because this is not an ordinary regression.
+    // Until #180, blight was renormalised to each world's own worst cell on every
+    // recompute. Measured over 8 worlds, that denominator ranged 5x within a single
+    // run (median; single-step moves up to 2.6x), so a cell whose own contamination
+    // never changed could read double or half from one epoch to the next because
+    // some OTHER cell's works opened or closed. That jitter crossed marginal cells
+    // back and forth over the abandonment bar (livability < 20) and the founding bar
+    // (>= 45), producing 9.6 rebirths per world. The resulting spread of town AGES
+    // is what the upper-half fit was reading as a Zipf tail.
+    //
+    // It is an artifact, and the experiment is decisive rather than suggestive:
+    // freeze main's denominator at ANY constant and α collapses to 0.65-0.70 with
+    // rebirths at 0.6-1.6. At a frozen denominator of 8.0 the settled blight
+    // distribution is p50 4 against main's p50 5 — the same field, the same units,
+    // the same magnitudes — and α still falls from 1.255 to 0.650. The level of
+    // blight is not what met this band. The MOTION of the scale was.
+    //
+    // So the band was being met by numerical noise, and any correct normalisation
+    // removes it, not only #180's. Retaining the artifact to keep the number would
+    // be target-fitting of the purest kind: preserving a bug because it makes a
+    // metric look right.
+    //
+    // The honest route back is a real mechanism, and the same measurement points at
+    // it: FIRST-TIME foundings are 0.0 per world on main AND on #180. Every "new
+    // town" this engine has ever produced is a resettlement; the frontier path at
+    // engine.mjs (`livability >= 45 && a settled neighbour`) has never once fired on
+    // ground that never held a town, because the founding pass already settles
+    // everything above the bar. Scoped separately rather than built to hit a number.
+    missed_since: "2026-08 (#180)",
   },
 
   // R5, blight–wealth correlation. The EJ literature finds disproportionate

@@ -19,6 +19,7 @@ for (let i = 0; i < N; i++) {
   const F = gj.hinterland.findings;
   worlds.push({
     seed, hash, capName, reign, chron,
+    schemaVersion: gj.hinterland.schema_version,
     gini: giniOf(R.map(r => r.wealth)),
     dGini: F.gini - F.gini_t0,
     withinPct: F.within_pct ?? 0,
@@ -148,10 +149,13 @@ const aband = worlds.find(w => w.abandWorld);
 if (aband) picks.push(["The Abandoned Coast", aband, "courted, developed, then let go when the lode ran thin. Ruin and freedom in one year",
   (w) => line(w, /wound up its concession|attention left with the ore/i)]);
 
+// #180: read the schema version off the sweep's own output. It was hardcoded, so it
+// said v54 through a version bump that changed what blight_load MEANS.
+const SCHEMA_V = worlds[0].schemaVersion;
 let md = `# The Hinterland Atlas
 
 A calibration sweep of **${N} worlds** (default knobs, 24 regions, 10
-epochs, schema v54) measured end-to-end, and the archetypal extremes it
+epochs, schema v${SCHEMA_V}) measured end-to-end, and the archetypal extremes it
 found. Every world below is one click away. The seed and knobs live in
 the URL hash. Every quotation is the world describing itself (the
 chronicle is deterministic: you will find the same words). For HOW to
@@ -218,7 +222,7 @@ Knob extremes for the classroom. Each isolates one mechanism:
 - **The sealed realm** ([openness=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&openness=0)): the quays closed by decree. No sea trade, no port tariffs, and no door for the Dominion. The price is smaller than the safety, and that asymmetry is a finding about what this economy is made of.
 - **Both mercies** ([db=0&gt=0](https://zntznt.github.io/hinterland/#seed=atlas-0&regions=24&ep=10&db=0&gt=0)): no dumping and a universal grid at once. This is the nearest thing this engine has to a just policy regime, run on the same rock as everything above.
 
-*Generated from the calibration sweep (schema v54); regenerate with the
+*Generated from the calibration sweep (schema v${SCHEMA_V}); regenerate with the
 suite's atlas script (node --max-old-space-size=8192 atlas.mjs).*
 `;
 writeFileSync(new URL("../docs/atlas.md", import.meta.url), md);

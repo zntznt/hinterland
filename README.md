@@ -24,7 +24,7 @@ Client-side, no backend.
   engine no longer presumes it, and where in the possibility space the
   extraction worlds still live.
 - **The atlas:** [`docs/atlas.md`](docs/atlas.md). A calibration sweep of 80
-  worlds (schema v54) and the archetypal extremes it found: the world that
+  worlds (schema v55) and the archetypal extremes it found: the world that
   closed its gap, the concession coast that is developed *and* owned, the
   occupied realm, the town that freed itself. Each is one click away with its own
   chronicle line, and the **verdict space** they populate (gap × floor ×
@@ -83,7 +83,7 @@ paves over and occasionally wakes.
 - [Six words you'll meet everywhere](#six-words-youll-meet-everywhere)
 - [Controls](#controls)
 - [The QGIS bridge](#the-qgis-bridge)
-- [Export schema (v54)](#export-schema-v54)
+- [Export schema (v55)](#export-schema-v55)
 
 ## Controls
 
@@ -131,7 +131,7 @@ byname roll, live in [CHANGELOG.md](CHANGELOG.md) so this page stays a front
 door. Open the field guide (docs/field-guide.md) for how to READ a world from
 the columns; open the changelog for how each mechanic earned its place.
 
-## Export schema (v54)
+## Export schema (v55)
 
 The FeatureCollection carries a top-level `hinterland` member with
 `schema_version` and the exact generator parameters. Every file can reproduce
@@ -144,6 +144,13 @@ precinct / buried power), and `findings`, including the de-moralized
 `findings.verdict` (this world's gap × floor × growth class) and
 `findings.concessions` (imperial reach).
 
+> **A note on v55.** `blight_load` changed *meaning* in v55 (issue #180): it was
+> normalised to each world's own worst cell and is now an absolute load where 100
+> means ruined, carried as a decaying stock rather than recomputed from scratch each
+> epoch. Same column name, different scale — a reader that assumed the old semantics
+> will misread v55 output. Inhabited ground now spans roughly 10 to 51 where it used
+> to span 2 to 13.
+>
 > **A note on the re-skin (v54).** The export vocabulary renamed once, cleanly,
 > with no alias columns; old files stay readable under their old
 > `schema_version`. Internal enum *data-keys* (event `refinery_collapse`, era
@@ -171,7 +178,7 @@ precinct / buried power), and `findings`, including the de-moralized
 | `grid_access` | 0–100 | 100 when wired; decays with cost-distance off the wire (canister trade) |
 | `arcane_service_index` | 0–100 | delivered metered magic. Needs the grid AND the wealth to pay; **need is not an input** |
 | `elevation` | 0–100 | blind geology; blight flows downhill |
-| `blight_load` | 0–100 | aetherworks plumes (downwind/downhill physics) + spoil placed by the **disposal doctrine** (B4): *disperse* settles it by distance alone (often on the industrial core), *concentrate* hauls it onto one sacrifice zone, *treat* cleans it where coin and works allow. Correlation with wealth now spans **both signs**. The poison can land on the rich |
+| `blight_load` | 0–100 | **absolute** contamination since v55 (#180): 100 means the ground is ruined, not merely the worst in this world, and the load is a **stock** that decays at a ~50-year half-life rather than a reading of who is smelting right now. Aetherworks plumes (downwind/downhill physics) + spoil placed by the **disposal doctrine** (B4): *disperse* settles it by distance alone (often on the industrial core), *concentrate* hauls it onto one sacrifice zone, *treat* cleans it where coin and works allow. Correlation with wealth now spans **both signs**. The poison can land on the rich |
 | `injustice_idx` | 0–100 | a **labeled composite** (`blight × poverty`), one plate among many, not the boot lens; the raw fields are the evidence |
 | `healing_reach` | 0–100 | decay over cost-distance to the nearest healer |
 | `safe_water` | 0–100 | waterworks/grid/wealth minus a blight penalty |

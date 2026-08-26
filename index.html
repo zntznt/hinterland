@@ -1330,7 +1330,7 @@
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 54;
+    const SCHEMA_VERSION = 55;   // #180: v55 redefines blight_load as an ABSOLUTE load (100 = ruined) carried as a decaying stock, where v54 normalised it to each world's own worst cell. Same column name, different meaning — a break, not a silent move.
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     // B6 (#128): tariffs fund the bridges. A held crossing that still collects a real
@@ -1366,6 +1366,33 @@
     const R3_DRIFT_K = 0.6;
     const R3_R_BASE = 0.05;    // return on the owners' holdings per 25-year epoch at reference intensity
     const R3_YIELD_REF = 2.0;  // the holdings intensity that counts as reference (a gate plus a works)
+    // #180: blight is an ABSOLUTE load now, not a share of the worst cell. It used to
+    // be normalised to each world's own maximum, which made the scale's anchor a cell
+    // that is uninhabited in 15 of 16 worlds (the sacrifice zone, poisoned until it
+    // empties), and squeezed every inhabited place into p10 2 / median 5 / p90 13 on an
+    // integer field. BLIGHT_FULL is the raw spoil load that reads as 100: land ruined.
+    // One works produces SPOIL = 5*C raw units per epoch, so 1.0 is a fifth of one
+    // fully-running works' output landing on a single region. Measured against the
+    // engine's own output, inhabited ground then spans p10 8 / median 25 / p90 56 and
+    // about 2% saturates, while the sacrifice zone (median 4.8 raw) saturates as it
+    // should, because it IS ruined. This is a choice of UNIT, not of target: it fixes
+    // what 100 means and gives the inhabited range about 4x the resolution.
+    const BLIGHT_FULL = 3.3;
+    // #180: POISON HAS A MEMORY. Until now blight was recomputed from scratch every
+    // epoch out of the CURRENT works, so a closed works meant land that healed
+    // instantly and completely, in a single step, which is the one thing
+    // contaminated ground reliably does not do. Blight is now a STOCK: each epoch's
+    // deposition settles on top of what is already there, and what is already there
+    // decays. BLIGHT_RETAIN is the share surviving one 25-year epoch. Natural
+    // attenuation of persistent soil and groundwater contaminants runs on decadal
+    // half-lives, so a ~50-year half-life gives 0.5^(25/50) = 0.707; 0.70 is used.
+    // Ruined land therefore recovers on a timescale of a century or two rather than
+    // either never or overnight, and a sacrifice zone whose works have closed can be
+    // resettled by people who arrive long enough after the harm.
+    const BLIGHT_RETAIN = 0.70;
+    // With deposition d held steady the stock settles at d / (1 - RETAIN) = 3.33 d,
+    // so BLIGHT_FULL above is the old deposition ceiling of 1.0 carried onto the
+    // stock's equilibrium footing. Same meaning: 100 is land ruined.
     const RIVER_CARRY = 0.3;  // share of a riverine region's blight shipped downstream
     const RIVER_DECAY = 0.75; // per-step decay of the carried load
     // #178: THE DIFFERENTIAL EXIT. Post-siting sorting, "coming to the nuisance"
@@ -4084,6 +4111,14 @@
       let retentionEpoch = -1, capitalFlight = 0;
       let impositions = 0, lastWoundEpoch = -99;
       let blightEpoch = 0; // B4 (#126): concentrate's poison RAMPS with the works — 0 at the founding, full late (P4 delay)
+      // #180: the contaminant stock carried between epochs. `committed` is the load
+      // standing at the END of the last epoch; computeBlight may run several times
+      // within one epoch (migration moves the poor, a relic calamity scars ground),
+      // so it always derives from `committed` and never from its own output, which
+      // keeps it idempotent inside an epoch and accumulating across them.
+      const blightCommitted = new Array(regions.length).fill(0);
+      let blightPending = new Array(regions.length).fill(0);
+      let blightSeeded = false;
       // #93: a maturing realm wires more of itself. gtEase lowers the hook-up bar
       // a touch each epoch so the grid keeps ratcheting outward through the
       // history instead of freezing after the founding expansion. It is 0 at
@@ -4231,9 +4266,24 @@
             if (wsum > 0) regions.forEach((_, i) => { blightRaw[i] += SPOIL * (wts[i] / wsum); });
           }
         });
-        let maxB = 0;
-        const rawB = blightRaw.map(v => { if (v > maxB) maxB = v; return v; });
-        const pre = regions.map((_, i) => maxB > 0 ? Math.round(100 * (rawB[i] / maxB)) : 0);
+        // #180: fixed ceiling, not the per-world maximum. A clean world now reads clean
+        // instead of being stretched to fill the scale, and a cell at 100 is ruined
+        // rather than merely worst-in-show.
+        // blightRaw currently holds SCAR + this epoch's fresh deposition. Split them:
+        // scar is permanent ground truth and does not decay, the rest is deposition
+        // that lands on the decaying stock.
+        const depos = regions.map((_, i) => blightRaw[i] - scar[i]);
+        if (!blightSeeded) {
+          // The founding is a snapshot of a world already running, not year zero of a
+          // clean one, so the stock starts at the equilibrium of its own founding
+          // deposition rather than at nothing. Without this the map would open
+          // artificially clean and darken for its first few epochs.
+          for (let i = 0; i < regions.length; i++) blightCommitted[i] = depos[i] / (1 - BLIGHT_RETAIN);
+          blightSeeded = true;
+        }
+        blightPending = regions.map((_, i) => blightCommitted[i] * BLIGHT_RETAIN + depos[i]);
+        const rawB = regions.map((_, i) => blightPending[i] + scar[i]);
+        const pre = regions.map((_, i) => clamp(Math.round(100 * (rawB[i] / BLIGHT_FULL)), 0, 100));
         // TREAT: the realm cleans up its spoil, but only where it can afford the
         // coin AND fields the works. Cleanup scales with wealth (the coin) × A (the
         // works) — a rich, developed core clears nearly all of its load; a poor or
@@ -4246,6 +4296,7 @@
           regions.forEach((reg, i) => {
             const cleared = clamp(0.9 * (reg.A / 100) * (reg.wealth / 100), 0, 0.9);
             pre[i] = Math.round(pre[i] * (1 - cleared));
+            blightPending[i] *= (1 - cleared); // #180: cleanup lifts the STOCK, or the poison returns next epoch
           });
         }
         // G2: the river carries it — every riverine region ships RIVER_CARRY
@@ -4292,8 +4343,15 @@
             0.10 * Math.max(0, 100 - 1.8 * Math.abs(reg.temperature - 55)) +
             0.08 * (reg.elevation >= 78 ? 0 : 100) +
             0.10 * reg.biomeHabitability;                   // grassland ~80 lifts, alpine ~10 drags
+          // #180: convex, because a flat coefficient cannot say both true things at once.
+          // The old max-normalised field was effectively bimodal: ordinary towns sat at
+          // 2-13 and barely felt it, while the sacrifice zone sat at 100 and was
+          // annihilated (0.55 * 100 = 55 livability, certain abandonment). On an absolute
+          // scale the same two facts need two regimes, or ruined land keeps its town.
+          // Below the ruin knee the load is a nuisance priced like the old field at
+          // median load; above it, habitability collapses, which is what "ruined" means.
           const degradation =
-            0.55 * reg.blight +
+            0.115 * reg.blight + 0.9 * Math.max(0, reg.blight - 60) +
             (reg.exhausted ? 14 : 0);                     // a dead lode is a town's lost reason
           const draw =
             0.16 * reg.centrality +
@@ -4923,7 +4981,7 @@
           // household-level income heterogeneity, so poor and rich value the
           // dis-amenity identically here. See the R5 discussion before assuming this
           // supplies the EJ negative mode.
-          const amenity = 25 * (onGrid[i] ? 1 : 0) + 0.25 * (100 - reg.blight);
+          const amenity = 25 * (onGrid[i] ? 1 : 0) + (25 - 0.052 * reg.blight); // #180: was 0.25*(100-blight); 0.25/4.8 keeps the same pull at median load
           const base = expectedIncome + amenity;
           const rentDrag = 0.4 * Math.max(0, reg.eliteShare - 62);     // the squeezed leave the dear core
           const frontier = 26 * rentPush
@@ -4937,7 +4995,7 @@
           // empty. Whether the rush wins the race with the poison is the contingency:
           // some worlds fill and are ruined, others never fill and stay contained.
           const rush = (i === sacrificeZone && isConcentrate)
-            ? 26 * clamp(1 - reg.blight / 55, 0, 1) * (onGrid[i] ? 1 : 0.5)
+            ? 26 * clamp(1 - reg.blight / 100, 0, 1) * (onGrid[i] ? 1 : 0.5) // #180: was /55 in max-normalised units
             : 0;
           return base - rentDrag + frontier + rush;
         });
@@ -4985,7 +5043,7 @@
           roadEdges.forEach(edge => {
             const A = regions[edge.a], B = regions[edge.b];
             if (!A.settled || !B.settled) return;
-            const g = Math.abs(A.blight - B.blight) / 100;
+            const g = Math.abs(A.blight - B.blight) / 480; // #180: /4.8 keeps the rate #178 pinned at 0.03
             if (g === 0) return; // deterministic no-op on ties
             const di = A.blight > B.blight ? edge.a : edge.b; // the dirtier end
             const ci = di === edge.a ? edge.b : edge.a;
@@ -5424,11 +5482,28 @@
           h.ref.condition = h.condition;
         });
         computeCrossingFriction();
+        // #180: settle the epoch's contamination into the standing stock. Done ONCE
+        // per epoch, here, so the several computeBlight calls inside an epoch all read
+        // the same starting ground.
+        for (let i = 0; i < regions.length; i++) blightCommitted[i] = blightPending[i];
         blightEpoch = e + 1; // B4: the concentrate ramp reads the current year
         computeBlight();   // the poison follows the poor wherever they end up
         computeLivability(); // and the land's worth-living-in is re-reckoned
         regions.forEach(reg => { // plague: maximum contamination + real population, once per region
-          if (!reg.plagued && reg.blight >= 85 && reg.settlementPop >= 500) {
+          // #180: RE-DERIVED, not transplanted. 85 used to mean "within 15% of this
+          // world's worst cell"; on an absolute scale it means "85% of ruined", and
+          // settled ground reaches p90 53, so the gate collapsed onto the sacrifice
+          // zone. That silently disabled the whole wound-response system, because a
+          // plague in the written-off zone deliberately does not set firstWoundEpoch:
+          // measured over 20 worlds, consecrations fell 11/20 -> 2/20 and the seat's
+          // reforms 17/20 -> 11/20 while the units changed underneath them.
+          // 70 is the value that preserves the MECHANISM'S INCIDENCE on inhabited
+          // ground under the new units (47 plagues, 36 of them outside the zone,
+          // against main's 40 and 34), which is what the units change was supposed to
+          // leave alone. It also sits just above the ruin knee at 60, so a plague
+          // strikes ground that has crossed into ruin — the same line the habitability
+          // regime already draws, rather than a second unrelated number.
+          if (!reg.plagued && reg.blight >= 70 && reg.settlementPop >= 500) {
             reg.plagued = true;
             reg.settlementPop = Math.max(20, Math.round(reg.settlementPop * 0.65));
             reg.population = Math.round(reg.settlementPop * (1 + reg.rural));
@@ -5790,9 +5865,9 @@
         }
         const wwHere = reg.tier === "metropolis" || (reg.tier === "city" && reg.onConduit);
         reg.safeWater = clamp(Math.round(
-          (wwHere ? 85 : (reg.onConduit ? 45 : 15)) + 0.25 * reg.wealth - 0.35 * reg.blight
+          (wwHere ? 85 : (reg.onConduit ? 45 : 15)) + 0.25 * reg.wealth - 0.073 * reg.blight // #180: was 0.35, /4.8
           // G2: the river gives water — unless upstream already fouled it
-          + (reg.onRiver ? Math.max(0, 12 - 0.25 * reg.downstreamBlight) : 0)
+          + (reg.onRiver ? Math.max(0, 12 - 0.052 * reg.downstreamBlight) : 0) // #180: was 0.25, /4.8
         ), 0, 100);
         const tierF = { metropolis: 0, city: 30, "works-town": 60, "frontier-post": 85 }[reg.tier];
         reg.vulnerability = clamp(Math.round(
@@ -5800,7 +5875,7 @@
         ), 0, 100);
         const care = 1 - 0.55 * reg.healingReach / 100; // reach averts burden
         const jit = 0.94 + sx("health#" + reg.id)() * 0.12;
-        reg.burdenEnv = r1(0.55 * reg.blight * care * jit);
+        reg.burdenEnv = r1(0.115 * reg.blight * care * jit); // #180: was 0.55, /4.8
         reg.burdenWater = r1(0.45 * (100 - reg.safeWater) * care * jit);
         reg.burdenUnmet = r1(0.35 * reg.vulnerability * care * jit);
         reg.burden = r1(reg.burdenEnv + reg.burdenWater + reg.burdenUnmet);
@@ -6086,7 +6161,7 @@
         // civic bonus does not survive the Crown's abdication
         const effBloc = reg.occupied ? "dominion" : reg.bloc;
         reg.socialTrust = clamp(Math.round(
-          20 + 0.4 * reg.centrality + (reg.onConduit ? 12 : 0) - 0.2 * reg.blight +
+          20 + 0.4 * reg.centrality + (reg.onConduit ? 12 : 0) - 0.042 * reg.blight + // #180: was 0.2, /4.8
           0.1 * reg.forceProjection + (effBloc === "crown" ? 8 : effBloc === "ungoverned" ? -8 : 0) -
           (reg.towerNear === 1 ? 12 : 0) // fear lives near the apostate's walls
         ), 0, 100);

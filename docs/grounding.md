@@ -251,12 +251,14 @@ is why R2 left `corr(blight_load, wealth)` unmoved at +0.25, and why the
 
 ## 6. Elite share: the ratchet and the leveler
 
-**The mechanism (as planned; the current form is event bumps + a
-threshold-gated competition term).** Each region's ownership share evolves by
-an ordinary logistic drift `dS ∝ (r − g)·S·(1−S)`, where `r` proxies returns
-on holdings (refining, gates, land rents) and `g` is the region's per-capita
-growth, plus discrete shocks: war, plague, collapse, and won revolts level
-abruptly; occupation and expropriation concentrate abruptly.
+**The mechanism (landed).** Each region's ownership share evolves by an
+ordinary logistic drift `dS = k·(r − g)·S·(1−S)`, where `r` is the return on
+the owners' holdings (gates held, works, live seams, the sky lanes, and B2's
+placements net of what a bust took off them) and `g` is the region's
+per-capita growth plus the competitive churn that bids concentrated rents
+toward labour, plus discrete shocks on a separate ledger: plague, collapse,
+and won revolts level abruptly; war, occupation, and expropriation
+concentrate abruptly.
 
 **The literature.** The drift is Piketty's central dynamic, wealth
 concentrates when returns on capital outrun growth *(Piketty 2014; Piketty &
@@ -266,16 +268,64 @@ revolution, state collapse, and plague, the "Four Horsemen" *(Scheidel
 2017)*, and elite persistence through ordinary politics is *(Acemoglu &
 Robinson 2008)*.
 
-**Divergences, to fix.** The current implementation is asymmetric in a way
-the docs denied: common events increment the share while ordinary decrements
-are threshold-gated, yet the design principles claim "no mechanism may have a
-hardcoded moral sign." The r−g form will make the ordinary channel genuinely
-two-signed, boom regions where g outruns r compress through the ordinary
-channel, while keeping the empirically defensible Scheidel asymmetry in the
-*shock* ledger, where the literature actually puts it. The logistic form and
-the constant k remain authored.
+**Divergences, labeled.** The logistic form and the constant `k` are
+authored. `k = 0.6` was picked by sweep, as the *smallest* value clearing all
+three pre-registered sub-targets, which bracket it from opposite sides: below
+it the no-shock median sits at 0, a coin flip rather than the upward mode
+`upward_mode_absent_shocks` asks for; above it the drift starts swamping the
+discrete ledger and starving the compressing half. `r` and `g` are both
+per-epoch rates but neither is estimated from anything — `r`'s reference
+intensity (a held gate plus a works) and its ~5%-per-epoch base return are
+authored, and `g`'s per-capita term is clamped to ±0.15 so that a collapse
+cannot enter the ordinary channel and be counted a second time against the
+shock ledger.
 
-**Disposition.** Code fix planned, tracked as [#166](https://github.com/zntznt/hinterland/issues/166).
+One divergence from the issue's own wording, kept deliberately. #166
+enumerates war among the "levelings", and in this engine war **concentrates**
+(+5, property surviving people). Scheidel's levelling war is
+*mass-mobilization* war; this engine's war is a dynastic border war, which
+historically consolidated surviving property claims rather than levelling
+them. The move was put on the shock ledger, where #166 asks for it, with its
+sign left as the engine has it rather than flipped to match a label.
+
+**Disposition.** Landed, [#166](https://github.com/zntznt/hinterland/issues/166).
+The threshold-gated competition term is gone, folded into `g` and no longer
+conditioned on the share already exceeding 33. Measured over 24 worlds
+(`rg-*`, `regions=12`, `ep=10`, 195 settled regions), the ordinary channel now
+runs the way Piketty says it should: stagnant ground deepens the owners' row
+by **+7.74** while booming ground **thins** it by **−0.30**, and 36 of 65
+booming regions compress with no event at all. Before the change the same
+comparison ran *backwards* — −3.57 against +2.19 — because the row simply
+tracked the wealth swing, so a boom concentrated and a bust compressed. It
+replicates on an independent sweep (`atlas-*`, `regions=24`): +4.32 against
++1.61, 41% of booming regions compressing.
+
+**What it cost, recorded rather than tuned away.** Because `r` outrunning `g`
+is the ordinary case, the whole ordinary channel now sits slightly higher, and
+B5's older claim that the owners' row falls with no fire at all got rarer:
+`elite_ordinary_mean` reads negative in **3 of 24** `eo-*` worlds where #127
+measured 6. That is exactly the suite's pin, so the claim survives with no
+headroom left. The pin was **not** relaxed to restore margin; it is annotated
+in `tools/test.mjs` so a later change to this channel has to re-measure. The
+`eo-2` exhibit did have to move to `eo-19`, because under the new form eo-2
+reads +4.5 ordinary against +1.3 total and would have illustrated the opposite
+of the claim. Re-picking an illustration is legitimate where the sweep
+establishes the claim independently; relaxing the sweep's own pin would not
+be.
+
+No pre-registered target moved out of range. Same probe over the same 20-world
+`atlas-*` sweep, before and after: the upper-half rank-size α median held at
+1.255 (band [1.2, 1.8]), `blight_wealth_corr` moved +0.508 to **+0.510**,
+between-place gini held at 0.310, and the resource-curse share held at 16 of 20
+worlds (on this probe's coarse reading — any settled region above the world's
+median endowment and below its median wealth — which is looser than §1's
+populated-quadrant count and is quoted here only because it is *unmoved*, not
+for its level). The owners' row itself sits about four points higher at every quantile,
+elite share p10/median/p90 going 14/24/45 to **19/28/48**, which is the direct
+consequence of `upward_mode_absent_shocks`: `r` outrunning `g` is the ordinary
+case, and `S·(1 − S)` stalls the drift near the bounds so fewer regions ride the
+floor. There is no pre-registered target on the *level* of the elite share, only
+on its dynamics, so this is reported rather than corrected.
 
 ## 7. The grid and infrastructure rationing
 

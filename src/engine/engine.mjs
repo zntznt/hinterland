@@ -31,6 +31,19 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     const FORD_MULT = 2.2;    // crossing a river off-bridge: wide water is a wall too
     const WILD_R = 220;       // euclidean reach of a ruin's peril / a tower's shadow (B0.5: a LOCAL euclidean peril radius, not a cost-graph reach — unscaled, like PASS_R)
     const RIVER_EDGE = 0.6;   // barge transport: river edges are cheap
+    // R3 (#166): how hard the ordinary r-g gap moves the owners' row per epoch.
+    // Swept against the three PRE-REGISTERED sub-targets, which BRACKET k from
+    // opposite sides. Raising k widens the correct Piketty ordering (stagnant ground
+    // concentrates, booming ground compresses) and lifts the no-shock distribution
+    // until its central tendency is upward, which `upward_mode_absent_shocks` wants;
+    // raising it further swamps the discrete shock ledger and starves the compressing
+    // half, which `ordinary_two_signed` and `catastrophic_leveling_discrete` forbid.
+    // 0.6 is the SMALLEST k that clears all three: below it the no-shock median sits
+    // at 0 (a coin flip, not an upward mode), above it high-growth compression starts
+    // falling away. The target was not moved to meet the knob.
+    const R3_DRIFT_K = 0.6;
+    const R3_R_BASE = 0.05;    // return on the owners' holdings per 25-year epoch at reference intensity
+    const R3_YIELD_REF = 2.0;  // the holdings intensity that counts as reference (a gate plus a works)
     const RIVER_CARRY = 0.3;  // share of a riverine region's blight shipped downstream
     const RIVER_DECAY = 0.75; // per-step decay of the carried load
     // #178: THE DIFFERENTIAL EXIT. Post-siting sorting, "coming to the nuisance"
@@ -3468,18 +3481,58 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
           // churns harder. churnFactor: 50→1 neutral, 100→0 frozen, 0→2 wide-open.
           const orderLevel = clamp(params.order + (reg.occupied ? 50 : 0), 0, 100);
           const churnFactor = clamp(1 - (orderLevel - 50) / 50, 0, 2);
-          const competition = churnFactor * 5.5 * marketAccess * clamp((reg.eliteShare - 33) / 59, 0, 1); // active decay of concentration
-          const boomChurn = churnFactor * 2.4 * clamp(wealthSwing / 10, 0, 1);            // a boom mints new owners
+          // R3 (#166): THE ORDINARY CHANNEL IS r - g. It used to be a pile of authored
+          // increments: events added to the owners' row while the decrements were
+          // threshold-gated (the old competition term only bit above eliteShare 33) or
+          // shunted to the catastrophe ledger. That is a hardcoded moral sign, which is
+          // exactly what P2 says this model must not do, and it meant ordinary times
+          // could only concentrate.
+          //
+          // Now concentration drifts by whether returns on holdings outrun growth
+          // (Piketty 2014; Piketty & Saez 2003): dS = k*(r - g)*S*(1-S).
+          //   r  what the owners' stock earns: tolls, works, live seams, the sky lanes,
+          //      plus B2's placements, net of what a bust took off them.
+          //   g  what the region earns per head, PLUS the competitive churn that bids
+          //      concentrated rents toward labour (the old competition and boom-churn
+          //      terms, folded in as #166 asks, and no longer gated on a threshold).
+          // S(1-S) is what keeps a share a share: drift stalls as the row approaches
+          // either bound, so the 8/92 clamp is a guard rather than the mechanism.
+          //
+          // A boom region where g outruns r now COMPRESSES through the ordinary
+          // channel, with no event required. The discrete levelings (plague, revolt,
+          // the company leaving) and concentrations (war, occupation, expropriation)
+          // stay where the literature puts them, on the Scheidel 2017 shock ledger,
+          // and are all charged to eliteCatDelta so the ordinary reading is clean.
+          const S = reg.eliteShare / 100;
+          const ownerYield = 0.75 * gateIncome      // the toll house pays the holder's men
+            + (reg.refining > 0 ? 0.8 : 0)          // the works pay their masters
+            + (reg.E >= 40 ? 0.5 : 0)               // live seams pay their charter-holders
+            + (reg.isSkyport === 1 ? 0.6 : 0);      // the aerie: absentee owners cluster at the lanes
+          // Both sides must be PER-EPOCH RATES or the comparison is meaningless. The
+          // first cut of this divided elite-share POINTS by 100 and got r about 0.006
+          // against a g swinging to -0.29, so (r - g) was just -g: any region whose
+          // wealth fell concentrated violently, and the row ran to its clamp.
+          const yieldNorm = clamp((rentKeep * ownerYield
+            + (reg.compradorGain || 0)              // B2: the coin that didn't build deepens the row
+            - (reg.investBustLoss || 0)) / R3_YIELD_REF, 0, 3);
+          const rReturn = R3_R_BASE * yieldNorm;    // holdings earn ~5% an epoch at reference intensity
+          // g is ORDINARY growth. A collapse is not ordinary, and routing it through
+          // this channel would let the shock ledger's business leak in twice, so the
+          // per-capita term is bounded to ordinary swings; catastrophes stay discrete.
+          const growthRaw = wealthBefore > 0 ? wealthSwing / wealthBefore : 0;
+          const gGrowth = clamp(growthRaw, -0.15, 0.15)
+            + churnFactor * 5.5 * marketAccess / 100          // the market bids concentrated rents down
+            + churnFactor * 2.4 * clamp(wealthSwing / 10, 0, 1) / 100; // a boom mints new owners
+          const dS = R3_DRIFT_K * (rReturn - gGrowth) * S * (1 - S) * 100;
           reg.eliteShare = clamp(reg.eliteShare
-            + wealthDrift                          // the owners capture the swing — the upside only where the market lets them
-            + rentKeep * (0.75 * gateIncome        // the toll house pays the holder's men (competition bids it down)
-              + (reg.refining > 0 ? 0.8 : 0)       // the works pay their masters
-              + (reg.E >= 40 ? 0.5 : 0)            // live seams pay their charter-holders
-              + (reg.isSkyport === 1 ? 0.6 : 0))   // the aerie: absentee owners cluster at the lanes
-            + (reg.compradorGain || 0)             // B2: the coin that didn't build deepens the owners' row
-            - (reg.investBustLoss || 0)            // B2: a busted placement — the owners take the loss
-            - competition                          // B5: high market access bids concentrated rents down
-            - boomChurn                            // B5: a boom mints new owners, diluting the row
+            + dS
+            // #93's direct capture, KEPT. The obvious tidy is to delete it as
+            // double-counting the swing g already carries, and that was measured:
+            // without it, booming-region compression falls from 55% to 32% (41% to 25%
+            // on the wider atlas sweep), because r beats g nearly everywhere in a realm
+            // this poorly connected. The term that LOOKS like the authored ratchet is
+            // what gives the r-g channel its other sign.
+            + wealthDrift                          // the owners still capture the swing first, before r-g settles it
             - 0.6 * Math.max(0, bread), 8, 92);    // bread reaches the bottom
         });
         // B3 (#125): migration's SECOND edge — three flows before the old drift.
@@ -3778,7 +3831,15 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
             wreg.E = Math.round(wreg.E * 0.7);
             wreg.retention = Math.round(wreg.retention * 0.7);
             wreg.warTorn = true; wreg.A = Math.round(wreg.A * 0.6); // B1: war wrecks the works — artifice crashes
-            wreg.eliteShare = Math.min(92, wreg.eliteShare + 5); // property survives people
+            // R3 (#166): ON THE SHOCK LEDGER. #166 enumerates war among the discrete
+            // Scheidel channels, so its move is charged to eliteCatDelta and OUT of the
+            // ordinary reading. One honest divergence from the issue's own wording: it
+            // files war under "levelings", and here war CONCENTRATES (+5). Scheidel's
+            // leveling war is MASS-MOBILIZATION war (Scheidel 2017, ch. 3-5); this
+            // engine's war is a dynastic border war, which historically consolidated
+            // surviving property claims rather than levelling them. The sign is left as
+            // the engine has it rather than flipped to match a label.
+            { const _es0 = wreg.eliteShare; wreg.eliteShare = Math.min(92, wreg.eliteShare + 5); wreg.eliteCatDelta += wreg.eliteShare - _es0; } // property survives people (shock ledger)
             wreg.eventType = "war"; wreg.eventEpoch = e + 1;
             wreg.eventSeverity = 70 + Math.round(rEv() * 25);
             const facs = warPair || wreg.topTwo || ["crown", "magnate"];
@@ -3806,7 +3867,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
               if (occRun.dist[i] > OCC_R) return;
               reg.occupied = true; reg.occupiedEpoch = e + 1;
               reg.retention = Math.round(reg.retention * 0.6);   // the yield leaves the realm
-              reg.eliteShare = Math.min(92, reg.eliteShare + 4); // the occupation hires the owners' row
+              { const _es0 = reg.eliteShare; reg.eliteShare = Math.min(92, reg.eliteShare + 4); reg.eliteCatDelta += reg.eliteShare - _es0; } // the occupation hires the owners' row (R3 #166: an UPWARD shock, charged to the ledger beside expropriation)
               // the extractive corridor: the zone is force-wired to the
               // quay — the conduit reaches you when someone else wants
               // what you have (Dijkstra prefix: the path stays in the ball)

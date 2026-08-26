@@ -211,7 +211,7 @@ precinct / buried power), and `findings`, including the de-moralized
 | `event_type` | enum | lived history (latest event; full timeline in `hinterland.events`): `refinery_collapse` \| `blight_plague` \| `ore_strike` \| `war` \| `consecration` \| … (data-keys stable) |
 | `event_epoch` / `event_severity` | int / 0–100 | when it struck (−1 = never) and how hard |
 | `won_arc` | enum | **B8** the fate a won rising bought: `flourished` (a throttled town freed and booming) \| `starved` (a propped-up town losing its capital and order). Liberation is a distribution, not a verdict |
-| `elite_share` | 8–92 | the owners' row's slice of this region's coin. Founded on structure, then moved by history: rents concentrate, the granary levels, shocks jolt (won revolt −25, collapse −10, plague −8) |
+| `elite_share` | 8–92 | the owners' row's slice of this region's coin. Founded on structure, then moved by history: an ordinary logistic drift on `r − g` (returns on holdings against per-capita growth, so stagnant ground concentrates and booming ground compresses), the granary levels, and discrete shocks jolt (won revolt −25, collapse −10, plague −8, war +5, occupation +4, expropriation +10) |
 | `elite_delta` / `elite_ordinary_delta` | ± | the row's move since founding, and the same with catastrophe shocks charged OUT. Where the ordinary delta reads **negative**, **B5** competition and boom-churn (not a fire) thinned the row |
 | `rank_churn` | ±100 | did *who* is rich change (climbers and fallers), or only how much? |
 | `elite_pop_pct` / `class_gap` | 2–8 / ratio | the owners' headcount and the coin-per-owner over coin-per-laborer ratio (both exactly recomputable) |

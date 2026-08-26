@@ -1998,6 +1998,15 @@ console.log("# The ordinary erosion B5 (#127): the owners' row can fall without 
 // POSITIVE (+1.2) — the ratchet still rules the average, the fall is the meaningful
 // minority INVERSION. Per-region rank_churn spans −71..+67 (56 climbers / 67 fallers over
 // 200 regions). Pins carry a margin below the measured counts.
+//
+// R3 (#166) ATE THAT MARGIN, and the pin is NOT being relaxed to hide it. The r−g form
+// lifts the ordinary channel upward, because r outrunning g is the ordinary case and
+// `upward_mode_absent_shocks` is a PRE-REGISTERED target; charging war and occupation to
+// the shock ledger (where #166 puts them) also moves two upward bumps out of the ordinary
+// reading, but the lift dominates. The count went 6/24 measured at #127 to **3/24** here,
+// exactly the pin. The CLAIM survives — the row still falls with no fire in a real
+// minority of worlds — but the headroom does not, so a later change touching this channel
+// must re-measure rather than assume. Recorded in CHANGELOG and docs/grounding.md §6.
 {
   const N = 24;
   let ordFell = 0, ordFellSeed = null, bothSignsWorlds = 0;
@@ -2019,7 +2028,7 @@ console.log("# The ordinary erosion B5 (#127): the owners' row can fall without 
   }
   // (a) the inversion exists at meaningful frequency (measured 6/24; pin >=3 for margin)
   if (ordFell >= 3)
-    ok(`THE OWNERS' ROW FALLS WITHOUT A CATASTROPHE: the ordinary-erosion mean (revolt/collapse/plague charged out) reads NEGATIVE in ${ordFell}/${N} worlds — competition and boom-churn, not a shock, thin the row (${ordFellSeed})`);
+    ok(`THE OWNERS' ROW FALLS WITHOUT A CATASTROPHE: the ordinary-erosion mean (the whole shock ledger — revolt, collapse, plague, war, occupation, expropriation — charged out) reads NEGATIVE in ${ordFell}/${N} worlds: the r−g drift alone, with no fire at all, thinned the row (${ordFellSeed})`);
   else fail(`ordinary erosion too rare: ${ordFell}/${N}`);
   // (b) the row moves BOTH ways in ordinary times (the elitedelta lens is two-signed)
   if (bothSignsWorlds >= 16)
@@ -2032,21 +2041,103 @@ console.log("# The ordinary erosion B5 (#127): the owners' row can fall without 
   else fail(`rank_churn spread too narrow: range ${rcRange}, ${climbers}up/${fallers}down`);
 }
 
-// EXHIBIT (pinned URL #seed=eo-2&regions=12&ep=10): the owners' row fell HARD, and it was
-// ORDINARY. This world suffered all three catastrophes — a revolt, a refinery collapse, a
-// plague — yet charge every one of them OUT and the row STILL fell: elite_ordinary_mean
-// negative on competition and churn alone. The total fell deeper than the ordinary
-// component (the shocks CUT the row further), so the ordinary mean is the honest floor:
-// even with no fires at all, these owners lost ground.
+// EXHIBIT (pinned URL #seed=eo-19&regions=12&ep=10): the owners' row fell HARD, and it was
+// ORDINARY. This world suffered every catastrophe the engine has — a revolt, a refinery
+// collapse, a plague, a war — yet charge every one of them OUT and the row STILL fell:
+// elite_ordinary_mean negative on ordinary drift alone. The total fell deeper than the
+// ordinary component (the shocks CUT the row further), so the ordinary mean is the honest
+// floor: even with no fires at all, these owners lost ground.
+//
+// R3 (#166) MOVED THIS EXHIBIT, from eo-2 to eo-19. Under the r−g form eo-2 no longer
+// carries the claim: its ordinary mean now reads +4.5 while its total reads +1.3, so the
+// shocks are what thinned that world's row and the exhibit would have been asserting the
+// opposite of what the world does. The exhibit is an ILLUSTRATION of a claim the sweep
+// above establishes independently (that claim, `ordFell >= 3`, still passes), so re-picking
+// the instance is legitimate where relaxing the sweep's own pin would not be. eo-19 is the
+// strongest of the three worlds that still carry it (eo-7, eo-17, eo-19).
 {
-  const g = (await genEngine(`#seed=eo-2&regions=12&ep=10`)).gj;
+  const g = (await genEngine(`#seed=eo-19&regions=12&ep=10`)).gj;
   const F = g.hinterland.findings;
   const P = regionsOf(g).map(f => f.properties).filter(r => r.is_settled);
   const totMean = P.reduce((a, r) => a + r.elite_delta, 0) / P.length;
   const hadCat = (g.hinterland.events || []).some(e => ["revolt", "refinery_collapse", "blight_plague"].includes(e.type));
   if (F.elite_ordinary_mean < 0 && hadCat && totMean < F.elite_ordinary_mean)
-    ok(`THE EXHIBIT (eo-2): the owners' row fell ${totMean.toFixed(1)} points; charge out the shocks this world DID suffer and it STILL fell (ordinary mean ${F.elite_ordinary_mean}) — ordinary erosion, not the fires, thinned the row`);
-  else fail(`eo-2 exhibit failed: ordMean ${F.elite_ordinary_mean}, tot ${totMean.toFixed(1)}, hadCat ${hadCat}`);
+    ok(`THE EXHIBIT (eo-19): the owners' row fell ${totMean.toFixed(1)} points; charge out the shocks this world DID suffer and it STILL fell (ordinary mean ${F.elite_ordinary_mean}) — ordinary erosion, not the fires, thinned the row`);
+  else fail(`eo-19 exhibit failed: ordMean ${F.elite_ordinary_mean}, tot ${totMean.toFixed(1)}, hadCat ${hadCat}`);
+}
+
+console.log("# R3 (#166): the ordinary channel is r - g, and the levelings stay discrete");
+
+// #166 replaced the additive pile on the owners' row with Piketty's own dynamic,
+// dS = k*(r - g)*S*(1-S), and moved war and occupation onto the Scheidel shock ledger
+// beside expropriation. Three sub-targets were PRE-REGISTERED in tools/targets.mjs
+// (elite_share: ordinary_two_signed, upward_mode_absent_shocks, catastrophic_leveling_
+// discrete) BEFORE the change, and all three are checked here from exported columns
+// only. Measured on this rg-* sweep after the change; pins carry margin below the
+// measured values. The same measurement on the PRE-#166 engine is quoted at each pin,
+// because two of the three did NOT hold before, which is why the issue existed.
+{
+  const N = 24, EP = 10;
+  const rows = [];
+  for (let i = 0; i < N; i++) {
+    const g = (await genEngine(`#seed=rg-${i}&regions=12&ep=${EP}`)).gj;
+    for (const r of regionsOf(g).map(f => f.properties).filter(r => r.is_settled)) {
+      const ord = r.elite_ordinary_delta;
+      rows.push({
+        growth: r.wealth_t0 > 0 ? (r.wealth - r.wealth_t0) / r.wealth_t0 : 0,
+        ord,
+        cat: r.elite_delta - ord,   // exactly recomputable: elite_delta - elite_ordinary_delta
+      });
+    }
+  }
+  const m = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
+  const byG = [...rows].sort((a, b) => a.growth - b.growth);
+  const t = Math.floor(rows.length / 3);
+  const lo = byG.slice(0, t), hi = byG.slice(-t);
+  const loOrd = m(lo.map(r => r.ord)), hiOrd = m(hi.map(r => r.ord));
+  const hiDown = hi.filter(r => r.ord < 0).length;
+
+  // (a) ordinary_two_signed, in its CONDITIONAL reading. It is not enough that both
+  // signs appear somewhere — a bread dole would do that. The sign has to answer to
+  // (r - g): stagnant ground must concentrate FASTER than booming ground, and booming
+  // ground must actually compress in a real share of cases, with no event required.
+  // PRE-#166 this ran BACKWARDS (low-growth −3.57 against high-growth +2.19, a gap of
+  // −5.76 over the atlas sweep): booms concentrated and busts compressed, because the
+  // row simply tracked the wealth swing. Measured now: +7.74 against −0.30, 36/65
+  // booming regions compressing. Pinned at 30% for margin (the atlas-24 sweep, a
+  // different seed family and world size, reads 41%).
+  if (loOrd > hiOrd && hiDown >= Math.round(0.30 * hi.length))
+    ok(`the ordinary channel answers to r − g: stagnant ground deepens the owners' row ${loOrd.toFixed(2)} against booming ground's ${hiOrd.toFixed(2)}, and ${hiDown}/${hi.length} booming regions COMPRESS on ordinary drift alone — no shock required`);
+  else fail(`r−g ordering not held: low-growth ${loOrd.toFixed(2)} vs high-growth ${hiOrd.toFixed(2)}, ${hiDown}/${hi.length} compressing`);
+
+  // (b) upward_mode_absent_shocks. Take only the regions whose shock ledger is EMPTY —
+  // no revolt, no plague, no collapse, no war, no occupation, no expropriation — and the
+  // typical one must still drift UP, because r outrunning g is the ordinary case and
+  // that is Piketty's whole claim. Read as a central tendency rather than a modal bin,
+  // since the modal bin is an artifact of where you put the edges. Measured 55 up
+  // against 45 down of 107, median +1 — a tendency, not a rout. PRE-#166 the same set
+  // read a NEGATIVE median (−2.00) and this target did not hold at all.
+  const calm = rows.filter(r => r.cat === 0);
+  const up = calm.filter(r => r.ord > 0).length, dn = calm.filter(r => r.ord < 0).length;
+  const calmMed = median(calm.map(r => r.ord));
+  if (up > dn && calmMed >= 0)
+    ok(`absent any shock the row still drifts UP: of ${calm.length} regions with an EMPTY catastrophe ledger ${up} deepened against ${dn} that thinned (median ${calmMed}) — r outruns g in the ordinary case, and it is a tendency, not a floor`);
+  else fail(`no-shock drift not upward: ${up} up / ${dn} down, median ${calmMed}`);
+
+  // (c) catastrophic_leveling_discrete: the big levelings stay SUDDEN. The right
+  // comparison is per-EPOCH, because "discrete" is a claim about how fast a move
+  // arrives, not about how much ground each channel covers over a whole history: one
+  // revolt takes 25 points off the row in a single epoch, where the ordinary channel
+  // is a drift measured in fractions of a point per epoch. (The cumulative comparison
+  // is also reported here and is much narrower — mean |ledger| 7.5 against a mean
+  // |ordinary| of 6.5 accumulated over all ten epochs — which is the honest number to
+  // watch if k is ever raised again.)
+  const shocked = rows.filter(r => r.cat !== 0);
+  const catMag = m(shocked.map(r => Math.abs(r.cat)));
+  const ordPerEpoch = m(rows.map(r => Math.abs(r.ord))) / EP;
+  if (shocked.length >= 40 && catMag >= 5 * ordPerEpoch)
+    ok(`the levelings stay DISCRETE: ${shocked.length} regions carry a shock-ledger entry averaging ${catMag.toFixed(1)} points, against an ordinary drift of ${ordPerEpoch.toFixed(2)} points per epoch — ${(catMag / ordPerEpoch).toFixed(0)}× — so Scheidel's horsemen still arrive all at once`);
+  else fail(`shock ledger not discrete enough: ${shocked.length} entries, |cat| ${catMag.toFixed(1)} vs ${ordPerEpoch.toFixed(2)}/epoch`);
 }
 
 console.log("# Tariffs fund the bridges B6 (#128): extraction and upkeep are one ledger");

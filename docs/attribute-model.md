@@ -57,12 +57,15 @@ A third commitment was added at the pivot and governs §8:
    blades and the contingency that picks; the code never implements a verdict.
    Concentration can finance or hoard; a reform can save or rot; a rising can free
    a boomtown or starve it. Which happens is a fact about the state, not the code.
-   (Honesty note: B5, the elite share, does not currently meet this principle:
-   common events ratchet it up while ordinary decrements are threshold-gated.
-   A re-derivation to a two-signed r−g drift plus a discrete shock ledger, which
-   is where the literature actually puts the asymmetry, is planned and tracked
-   as [issue #166](https://github.com/zntznt/hinterland/issues/166); see
-   [grounding.md](grounding.md) §6.)
+   (B5, the elite share, used to be the standing exception to this principle:
+   common events ratcheted it up while ordinary decrements were threshold-gated.
+   [Issue #166](https://github.com/zntznt/hinterland/issues/166) re-derived it as a
+   two-signed r−g drift plus a discrete shock ledger, which is where the literature
+   actually puts the asymmetry. The ordinary channel now compresses booming ground
+   and concentrates stagnant ground with no event required, and the sign is a fact
+   about the state rather than a fact about the code; see
+   [grounding.md](grounding.md) §6 for the measurement and for what the change
+   cost.)
 
 The single most important structural decision the design converged on, and the one
 the pivot then generalized:
@@ -471,7 +474,7 @@ max ~23%). Schema climbed v41→v54 across these.
 | **B2** | the investment pool (the exchange) | **development finance**: elite coin builds `A` | **comprador hoarding**: coin banks to the owners' row | the town's `value_retention` × the world regime (does capital dare, does value stay to build?) | (uses `artifice_index_t0`); `findings.floor` |
 | **B3** | migration + diaspora | drift toward winners (size begets size) | the **frontier term** (outward against the gradient) + emigration off-map + remittances home | rent differential × opportunity × the metropole's pull | `emigrants_total`, `remittance_income` |
 | **B4** | the disposal doctrine | **concentrate** onto a sacrifice zone / **disperse** onto the industrial rich | **treat** where coin + `A` allow | the `db` knob (disperse/concentrate/treat) × future migration × treatment capacity; `corr(blight,wealth)` spans both signs | `disposal_doctrine`, `sacrifice_zone` |
-| **B5** | elite share | the structural ratchet up (rents concentrate) | **ordinary erosion** down (competition, boom-churn) where market access is high | market access × order level (a police state freezes both) | `elite_delta`, `elite_ordinary_delta`, `rank_churn` |
+| **B5** | elite share | **concentration** where returns on holdings outrun growth (`r > g`) | **compression** where growth outruns returns (`g > r`), booming and well-connected ground bidding rents toward labour | the `r − g` gap itself: holdings intensity × market access × order level (a police state freezes the churn side) | `elite_delta`, `elite_ordinary_delta`, `rank_churn` |
 | **B6** | tariffs + crossings | extraction at the held gate | **upkeep**: the tariff funds the crossing; amnesty leaves it to **rot** | the fiscal state of the holder; reform design (amnesty caps `tollScale` below the upkeep floor) | `crossing_condition`, `crossing_type`, `crossing_friction`; edge `condition`/`is_decayed` |
 | **B7** | reform long edges | a measure damps a term now | its **long edge** curdles later (charter→debt, granary→dependency, retention→flight, amnesty→rot); a deaf capital gets a measure **imposed** by creditors | time + the state it lands in (P4); `iq` as posture × the world's doctrine pressure | `hinterland.reform_edges` (charter_debt, granary_dependency, capital_flight, impositions…) |
 | **B8** | revolts (won) | a **throttled** town freed → **flourishes** (suppressed potential released) | a **propped-up** town freed → **starves** (capital and order flee) | the freed town's fundamentals at the moment of rising | `won_arc` (`flourished`/`starved`) |

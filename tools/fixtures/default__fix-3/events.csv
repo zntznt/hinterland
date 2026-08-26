@@ -12,7 +12,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 3,1075,seizure,0,,,crown,,,,,,,
 4,1100,ore_strike,8,,,,,,,,,,
 4,1100,succession,,Dhordruk,,magnate,,,,,,true,1
-4,1100,drought,2,the Drought of 1100,,,,,,,,,
+4,1100,drought,9,the Drought of 1100,,,,,,,,,
 5,1125,refinery_founded,0,,,,,,,,,,
 5,1125,succession,,Evere,,crown,,,,,,false,1
 5,1125,seizure,0,,,magnate,,,,,,,

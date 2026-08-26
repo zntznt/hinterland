@@ -1,6 +1,79 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the ordinary channel becomes r − g** (issue #166, R3; no schema change, but all 30
+  golden cells moved and the atlas was regenerated). The owners' row used to move by an
+  additive pile: common events incremented it (+12 a company town, +5 a war, +4 an
+  occupation, +3 a new holder, +3 the works' factors) while the ordinary *decrements*
+  were threshold-gated — the competition term only bit once the share already exceeded
+  33 — or shunted onto the catastrophe ledger. That is a hardcoded moral sign in a model
+  whose stated principles forbid one. It is now Piketty's own dynamic,
+  `dS = k·(r − g)·S·(1 − S)`: `r` is what the owners' stock earns (held gates, works,
+  live seams, the sky lanes, B2's placements net of busts), `g` is per-capita growth
+  **plus** the old competition and boom-churn terms folded in and no longer gated on any
+  threshold, and `S(1 − S)` is what keeps a share a share, so the 8/92 clamp is a guard
+  rather than the mechanism. War and occupation moved onto the Scheidel shock ledger
+  beside expropriation, where #166 puts them.
+  **The result, measured** (24 worlds, `rg-*`, `regions=12`, `ep=10`, 195 settled
+  regions): stagnant ground deepens the owners' row **+7.74** while booming ground
+  **thins** it **−0.30**, and 36 of 65 booming regions compress with no event at all.
+  Before the change the same comparison ran **backwards** — −3.57 against +2.19 — because
+  the row simply tracked the wealth swing, so a boom concentrated and a bust compressed,
+  which is the opposite of the mechanism the docs claimed. It replicates on an
+  independent sweep (`atlas-*`, `regions=24`): +4.32 against +1.61, 41% of booming
+  regions compressing. Three checks now hold the three targets `tools/targets.mjs`
+  pre-registered for this (`ordinary_two_signed`, `upward_mode_absent_shocks`,
+  `catastrophic_leveling_discrete`); **two of the three did not hold before**.
+  **Two things the calibration turned up.** First, the constant `k` is not free to be
+  chosen for effect: the pre-registered targets **bracket it from opposite sides**.
+  Below 0.6 the no-shock median sits at 0 — a coin flip, not the upward mode
+  `upward_mode_absent_shocks` asks for; above it the drift starts swamping the discrete
+  ledger and starving the compressing half. 0.6 is the smallest value clearing all
+  three, and no target was moved to meet it. Second, **removing #93's direct capture
+  term made the model worse, not purer.** It looks like the authored ratchet, and the
+  obvious tidy is to delete it as double-counting the swing that `g` already carries —
+  but measured at the shipped `k`, dropping it cuts booming-region compression from
+  **55% to 32%** (41% to 25% on the wider `atlas-*` sweep), because without it `r` beats
+  `g` almost everywhere in a realm this poorly connected. It was kept, and the reason is
+  now in the code rather than in a guess.
+  **One divergence from the issue's own wording**, kept deliberately: #166 files war
+  among the "levelings", and here war **concentrates** (+5, property surviving people).
+  Scheidel's levelling war is *mass-mobilization* war; this engine's war is a dynastic
+  border war, which historically consolidated surviving property claims rather than
+  levelling them. It went on the ledger with its sign as the engine has it, not flipped
+  to match a label.
+  **A calibration error worth recording**, since the formula reads as if it could not
+  have one: the first cut divided elite-share **points** by 100 on one side of the
+  comparison and left a rate on the other, so `r ≈ 0.006` met a `g` swinging to −0.29
+  and `(r − g)` was simply `−g`. Every region whose wealth fell concentrated violently
+  and the row ran straight to its clamp. Both sides are per-epoch rates now, and `g`'s
+  per-capita term is clamped to ±0.15 so a collapse cannot enter the ordinary channel
+  and be counted a second time against the shock ledger.
+  **What it cost, recorded rather than tuned away.** Because `r` outrunning `g` is the
+  ordinary case, the whole ordinary channel sits slightly higher, and B5's older claim
+  that the owners' row falls with no fire at all got rarer: `elite_ordinary_mean` reads
+  negative in **3 of 24** `eo-*` worlds where #127 measured 6. That is *exactly* the
+  suite's pin — the claim survives with no headroom left. The pin was **not** relaxed to
+  restore margin; it is annotated in `tools/test.mjs` so a later change here has to
+  re-measure. The `eo-2` exhibit did move, to `eo-19`: under the new form eo-2 reads
+  +4.5 ordinary against +1.3 total and would have illustrated the opposite of the claim.
+  Re-picking an illustration is legitimate where the sweep establishes the claim
+  independently; relaxing the sweep's own pin would not be.
+  **No pre-registered target moved out of range.** Same probe over the same 20-world
+  `atlas-*` sweep, before and after: the upper-half rank-size α median held at **1.255**
+  (band [1.2, 1.8]), `blight_wealth_corr` moved +0.508 → **+0.510**, between-place gini
+  held at **0.310**, and the resource-curse share held at 16 of 20 worlds (on a coarse
+  median-split reading, looser than §1's populated-quadrant count and quoted only
+  because it is *unmoved*, not for its level). The owners'
+  row itself sits about four points higher at every quantile — elite share p10/median/p90
+  went 14/24/45 to **19/28/48** — which is the direct consequence of
+  `upward_mode_absent_shocks`: `r` outrunning `g` is the ordinary case, and `S(1 − S)`
+  stalls the drift near the bounds, so fewer regions ride the floor. There is no
+  pre-registered target on the *level* of the elite share, only on its dynamics, so this
+  is reported rather than corrected. All 30 golden cells moved (63 of 90 artifacts) and
+  `docs/atlas.md` was regenerated: the owners' median share of all coin went 44.2% to
+  46.7%, and the median world's region map is now blind to 56% of person-level
+  inequality rather than 54%.
 - **suite audit: 284 assertions that could not fail** (no schema change, no engine change).
   Prompted by R1 (#164) turning up a third stale test mirror in one session. The audit
   found something worse than drift: `tools/test.mjs` carried a **1138-line `validate()`

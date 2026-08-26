@@ -301,7 +301,7 @@ never implements a verdict.
 | the investment pool (B2) | the exchange's two edges: development finance (builds `A`) vs comprador hoarding, set by retention × world regime | `artifice_index_t0` vs close `A`; `findings.floor` |
 | migration + diaspora (B3) | the drift toward winners **and** the frontier term (outward against the gradient) + emigration off-map + remittances home | `emigrants_total`, `remittance_income`, population drift |
 | the disposal doctrine (B4) | disperse / concentrate / treat: the poison can land on the poor OR the rich | `blight_load`, `corr(blight, wealth)` both signs, `sacrifice_zone` |
-| elite share (B5) | the ratchet up **and** ordinary erosion down (competition, boom-churn) where market access is high; a police state freezes both | `elite_share`, `elite_ordinary_delta`, `rank_churn` |
+| elite share (B5) | an ordinary drift on `r − g`: concentration where holdings out-earn growth, **compression** where a boom outruns them; a police state freezes the churn side. The discrete levelings sit on their own ledger | `elite_share`, `elite_ordinary_delta`, `rank_churn` |
 | tariffs + crossings (B6) | extraction at the gate **and** upkeep of the crossing; amnesty rots the span | `tariff_burden`, `crossing_friction`, `trade_drag` |
 | reforms (B7) | every measure's long edge: charter→debt, granary→dependency, retention→flight, amnesty→rot; and `iq` posture → creditor imposition | `reform_edges`, `turning` |
 | revolts (B8) | won is a distribution: a throttled town flourishes, a propped-up one starves | `won_arc`, epithets `the Free` / `the Famished` |

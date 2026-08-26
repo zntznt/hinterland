@@ -787,6 +787,13 @@ function validate(gj, tag) {
     // ruins, or one the lifecycle collapses, leaves the whole column at 0.
     const maxDelv = Math.max(...regions.map(r => r.properties.delver_flux), 0);
     if (maxDelv !== 100 && maxDelv !== 0) return fail(`${tag}: max delver_flux ${maxDelv} (expected 100 or a ruinless/collapsed 0)`);
+    // Rescued from the dead test.mjs validate(): market_access is normalised to the
+    // best-served settled region, so its maximum is 100 by construction. The dead
+    // version demanded exactly 100 and failed on degenerate worlds (cfg 3: 8 regions,
+    // 7 of them unsettled, every access zeroed by the dead-zone pass), an allowance
+    // the delver_flux check beside it already makes.
+    const maxMA = Math.max(...regions.map(r => r.properties.market_access));
+    if (maxMA !== 100 && maxMA !== 0) return fail(`${tag}: max market_access ${maxMA} (expected 100, or 0 in a world with nothing settled to serve)`);
     const towers = towersOf(gj);
     if (towers.length > 2) return fail(`${tag}: tower count ${towers.length}`);
     const towerRegs = new Set(towers.map(t => t.properties.region_id));
@@ -1180,6 +1187,24 @@ function validate(gj, tag) {
     for (const s of sites) {
       if (s.geometry.type !== "Point") return fail(`${tag}: sanct not a Point`);
       if (!ids.has(s.properties.region_id)) return fail(`${tag}: sanct region_id invalid`);
+    }
+    // Rescued from the dead validate() that sat unused in test.mjs (see the audit
+    // note in CHANGELOG). Rescued, not copied: the original re-derived "the first
+    // wound" as simply the earliest plague or calamity in the event list, while the
+    // engine deliberately SKIPS a wound in the sacrifice zone when choosing the one
+    // the Temple answers (engine.mjs, firstWoundIdx). So the dead assertion was not
+    // merely unused, it was wrong, and it failed on 4 of 120 configs when run as
+    // written. The claim below is the part that holds without re-deriving the
+    // engine's selection rule: a consecration lands on ground that was wounded, two
+    // epochs after that wound. Which wound the Temple chooses is the engine's
+    // business, and a test that guesses at it just rots again.
+    if (consEvs.length === 1) {
+      const c = consEvs[0];
+      const woundHere = evList.filter(ev => (ev.type === "blight_plague" || ev.type === "relic_calamity")
+        && ev.region_id === c.region_id);
+      if (!woundHere.length) return fail(`${tag}: consecration at ${c.region_id} with no wound there`);
+      if (!woundHere.some(w => c.epoch === w.epoch + 2))
+        return fail(`${tag}: consecration at epoch ${c.epoch} does not answer a wound at ${c.epoch - 2} (wounds there: ${woundHere.map(w => w.epoch).join(",")})`);
     }
     for (const r of regions) {
       if (siteIds.has(r.properties.region_id) && r.properties.temple_reach !== 100)

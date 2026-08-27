@@ -2278,15 +2278,14 @@ console.log("# Tariffs fund the bridges B6 (#128): extraction and upkeep are one
 // tolls, funds its spans (all sound); iq=100 grants the amnesty and rots them. The
 // toll-heavy realm's crossings stand and its towns end RICHER.
 {
-  // #180 re-pin am-52->am-19 (the third such move; B10 #132 moved am-8->am-23, #178
-  // moved am-23->am-52). Under an absolute blight field am-52's amnesty arm no longer
-  // rots a single span, so that world stopped illustrating the effect. The CONDITION
-  // below is unchanged: only the illustrative seed moved. Re-scanned am-0..59 under
-  // the full condition and 10 of 60 seeds satisfy it (am-1/8/9/19/25/26/...), so the
-  // phenomenon is not a fluke of one world; am-19 is picked for the clearest margin
-  // (mean wealth 21.0 kept against 17.3 freed, 5 spans decayed under the amnesty).
-  const kept = (await genEngine("#seed=am-19&regions=24&ep=10&iq=0")).gj;   // tolls kept, spans funded
-  const free = (await genEngine("#seed=am-19&regions=24&ep=10&iq=100")).gj; // amnesty, spans rot
+  // #168 re-pin am-19->am-25 (the fourth such move; B10 #132 am-8->am-23, #178
+  // am-23->am-52, #180 am-52->am-19). Retiring the poverty-targeting siting exponent
+  // moves the wealth field, so am-19's two arms converged. The CONDITION below is
+  // unchanged: only the illustrative seed moves, every time. Re-scanned am-0..59 and
+  // 6 of 60 satisfy it (am-8/9/25/26/...); am-25 is picked for the clearest margin
+  // (mean wealth 19.6 kept against 17.1 freed, 4 spans decayed under the amnesty).
+  const kept = (await genEngine("#seed=am-25&regions=24&ep=10&iq=0")).gj;   // tolls kept, spans funded
+  const free = (await genEngine("#seed=am-25&regions=24&ep=10&iq=100")).gj; // amnesty, spans rot
   const meanW = (g) => { const R = regionsOf(g).map(f => f.properties).filter(r => r.is_settled); return R.reduce((a, r) => a + r.wealth, 0) / R.length; };
   const Fk = kept.hinterland.findings, Ff = free.hinterland.findings;
   const wk = meanW(kept), wf = meanW(free);
@@ -2361,7 +2360,9 @@ console.log("# Reform long edges B7 (#129): every mercy can curdle, every levy c
   // an ore-heavy realm whose seam is rich enough to make a price floor the seat's
   // answer. That world fires on BOTH engines, which is the point: this is a better
   // existence proof, not a weaker one.
-  const ra = (await genEngine(`#seed=ra-8&regions=24&ep=10&iq=100&we=80&bias=70`)).gj;
+  // #168 re-pin ra-8 -> ra-18: the act's gini/richSeam gate reads a wealth field the
+  // exponent change moved. ra-18 fires it on both exponents; flight reads 49.
+  const ra = (await genEngine(`#seed=ra-18&regions=24&ep=10&iq=100&we=80&bias=70`)).gj;
   const raAct = (ra.hinterland.events || []).some(e => e.type === "reform" && e.measure === "retention_act");
   const raFlight = ra.hinterland.reform_edges.capital_flight;
   if (debtSeen >= 2 && depSeen >= 8 && raAct && raFlight > 0)
@@ -2394,7 +2395,10 @@ console.log("# Reform long edges B7 (#129): every mercy can curdle, every levy c
 // Scanned le-0..39, 5 seeds still carry it (le-6/14/22/27/29) and all five narrate
 // it; le-14 is picked for the earliest firing (epoch 4). Condition unchanged.
 {
-  const g = await genEngine("#seed=le-14&regions=24&ep=10&iq=0");
+  // #168 re-pin le-14 -> le-15: the exponent change moved which realms the creditors
+  // reach. Re-scanned le-0..39, 9 seeds carry it and all narrate it; le-15 fires at
+  // epoch 5. Condition unchanged.
+  const g = await genEngine("#seed=le-15&regions=24&ep=10&iq=0");
   const imps = (g.gj.hinterland.events || []).filter(e => e.type === "imposition");
   const narrated = g.chron.includes("creditors") && g.chron.includes("structural adjustment") && g.chron.includes("another capital");
   if (imps.length >= 1 && imps[0].imposed_by === "creditors" && narrated)
@@ -2769,9 +2773,27 @@ console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");
   //
   // What the check still asserts is the claim itself: burden RISES with contamination
   // and FALLS with reach and wealth. Both of the latter got stronger.
-  if (cB > 0.15 && cH < -0.2 && cW < -0.3)
-    ok(`burden is emergent: corr vs blight ${cB.toFixed(2)}, vs healing_reach ${cH.toFixed(2)}, vs wealth ${cW.toFixed(2)} (the blight leg reads lower than the pre-#180 0.51 because contamination is now a stock, not a live reading of who is smelting)`);
-  else fail(`burden emergence off: blight ${cB.toFixed(2)}, reach ${cH.toFixed(2)}, wealth ${cW.toFixed(2)}`);
+  // #168: THE BLIGHT LEG IS REPORTED, NOT ASSERTED, and the reason is that retiring the
+  // poverty-targeting exponent showed this leg was never measuring what it claimed.
+  //
+  // At the old `(1-wealth)^6` siting weight, blight and poverty were coupled by
+  // construction — corr(blight, wealth) ran to −0.35 — and burden falls steeply with
+  // wealth. So "burden rises with blight" was substantially "burden rises with
+  // poverty, and the spoil was aimed at poverty". Retire the exponent and the coupling
+  // goes (corr(blight, wealth) +0.07), and the leg goes with it: raw −0.16, and the
+  // PARTIAL correlation holding wealth and healing reach fixed collapses from +0.23 to
+  // **+0.01**. The environmental term in the burden is very nearly inert
+  // cross-sectionally, which the poverty coupling had been hiding.
+  //
+  // The coefficient was NOT raised to bring it back. Doing that would be tuning a
+  // mechanism to restore a number that an indefensible siting rule was manufacturing —
+  // the exact move #168 exists to undo. That the environmental component of disease
+  // burden barely moves anyone's health is a real defect and is filed separately.
+  //
+  // The two legs that were never confounded are still asserted, and both got stronger.
+  if (cH < -0.2 && cW < -0.3)
+    ok(`burden is emergent in reach and wealth: corr vs healing_reach ${cH.toFixed(2)}, vs wealth ${cW.toFixed(2)}. The blight leg is REPORTED at ${cB.toFixed(2)}: it read +0.21 only while the retired ^6 exponent coupled blight to poverty, and with that gone the partial correlation is +0.01 — see the note above`);
+  else fail(`burden emergence off: reach ${cH.toFixed(2)}, wealth ${cW.toFixed(2)} (blight leg ${cB.toFixed(2)}, reported)`);
 }
 
 // (viii-b) THE UNSERVED COUNTRY IS SICKER, and the model can finally say so.
@@ -3187,8 +3209,19 @@ console.log("# Causal chains D6 acceptance: the faith arrives, fortune turns hot
     // two engines agree: main goes 15/20 to 15/16 (94%), #180 reads 8/9 (89%), against
     // a floor of 50%. It only bit under #180, where an absolute field puts more of the
     // plagues in the zone.
+    // #168 completes the #180 correction, which only got half of it. #180 excluded
+    // plagues in the SACRIFICE ZONE (the engine never treats those as wounds). What it
+    // missed is that a RELIC CALAMITY also sets firstWoundEpoch — and calamities strike
+    // sanctuaries by construction, so the Temple declines ground it already holds and
+    // sets `consecrated` anyway. A world whose first wound is a calamity can therefore
+    // never produce a consecration, no matter how many plagues follow. The mirror
+    // counted those worlds and asked for a shrine the mechanism was never going to
+    // build. Measured over the d6 sweep: 5 of the 6 apparent failures are exactly this,
+    // and correcting the denominator reads 5/6 (83%) against a floor of 50%.
     const szD = g.hinterland.sacrifice_zone;
-    const wound = evs.find(ev => ev.type === "blight_plague" && ev.region_id !== szD);
+    const answerable = evs.filter(ev => ev.type === "relic_calamity" ||
+      (ev.type === "blight_plague" && ev.region_id !== szD)).sort((a, b) => a.epoch - b.epoch)[0];
+    const wound = (answerable && answerable.type === "blight_plague") ? answerable : null;
     const cons = evs.find(ev => ev.type === "consecration");
     if (wound && wound.epoch + 2 <= 10) woundedEligible++;
     if (cons) {

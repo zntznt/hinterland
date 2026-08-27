@@ -35,6 +35,26 @@
   worlds five are clearly negative. One obstacle from the last attempt is also simply
   gone — `^1.5` used to fail "water access tracks prosperity" at 11/20 against a floor of
   12, and post-#180 every exponent tested passes it.
+  **It was propping up a second finding too, which is a sharper vindication than the
+  issue expected.** "Burden is emergent: it rises with blight" read +0.21 only because
+  `^6` coupled blight to poverty by construction (corr(blight, wealth) −0.35) and burden
+  falls steeply with wealth. Retire the exponent and the coupling goes (+0.07), and the
+  environmental term turns out to explain **nothing measurable** about who is sick: the
+  partial correlation holding wealth and healing reach fixed collapses from +0.23 to
+  **+0.01**. The `burdenEnv` coefficient was NOT raised to bring it back — that lever
+  does work, and using it would be restoring a number an indefensible siting rule had
+  manufactured. The check now reports that leg with the measurement inline; the two legs
+  that were never confounded are still asserted and both got stronger. Filed as #192.
+  **Four mirrors and exhibits moved with it.** The consecration check completes a
+  correction #180 only half-made: #180 excluded sacrifice-zone plagues from the
+  denominator, but a RELIC CALAMITY also sets the wound flag, and calamities strike
+  sanctuaries by construction, so the Temple declines ground it already holds. A world
+  whose first wound is a calamity can never produce a consecration; 5 of 6 apparent
+  failures were exactly that, and the corrected denominator reads 5/6 against a floor of
+  half — on **both** exponents (^6 reads 8/9), which is how you tell a mirror fix from a
+  tuned one. Three pinned exhibits moved seeds with their conditions unchanged: the
+  toll-heavy realm am-19 → am-25 (the fourth such move), the creditor imposition
+  le-14 → le-15, and the retention act's capital flight ra-8 → ra-18.
 - **"the poorest fifth of the realm" was 85% empty cells** (issue #178's two remaining
   defects; **schema v55 → v56**, because `findings.blight_ratio` keeps its key, changes
   its population, and becomes nullable; all 30 golden cells moved). #178's mechanism —

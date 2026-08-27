@@ -1106,6 +1106,30 @@ console.log("# The argument surface A1 acceptance: the app says what it measures
   if (R.chron.includes("What the Record Shows") && R.chron.includes("no villain in the record") && R.chron.includes("rules an author chose"))
     ok("the chronicle closes with a verdict that owns its authorship: What the Record Shows");
   else fail("the chronicle does not conclude");
+  // #185: THE TWINS MUST BOTH BE TOWNS. The exhibit's whole claim is "same distance
+  // from the seat, different fate", and a fate needs somebody to suffer it. The pair
+  // used to be drawn from every region and picked by the widest wealth gap, so an
+  // abandoned cell — exporting wealth exactly 0 — won that contest outright whenever
+  // one sat in the shadow. Measured over 40 worlds before the fix: twins were found
+  // in 33 and the shadow twin was EMPTY GROUND in 24 of them. Three times in four the
+  // headline exhibit compared a living town against a field, and named a place that
+  // has no name. Pinned here so it cannot drift back.
+  {
+    let found = 0, bothTowns = 0, bothNamed = 0;
+    for (let i = 0; i < 24; i++) {
+      const g = (await genEngine(`#seed=tw-${i}&regions=24&ep=10`)).gj;
+      const tw = g.hinterland.findings.twins;
+      if (!tw) continue;
+      found++;
+      const byId = new Map(regionsOf(g).map(f => [f.properties.region_id, f.properties]));
+      const named = new Set(settlesOf(g).map(f => f.properties.region_id));
+      if (byId.get(tw.shadow).is_settled === 1 && byId.get(tw.open).is_settled === 1) bothTowns++;
+      if (named.has(tw.shadow) && named.has(tw.open)) bothNamed++;
+    }
+    if (found >= 12 && bothTowns === found && bothNamed === found)
+      ok(`the twins are two TOWNS: across ${found} worlds that report a pair, both sides are settled and both have a name to print (${bothTowns}/${found}) — the exhibit compares fates, not a town against a field`);
+    else fail(`twins on empty ground: ${bothTowns}/${found} both settled, ${bothNamed}/${found} both named`);
+  }
   // the twins named in the panel match the exported finding
   if (F.twins) {
     const nameOf = (id) => settlesOf(A1.gj).find(st => st.properties.region_id === id).properties.name;

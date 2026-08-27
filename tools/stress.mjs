@@ -852,9 +852,16 @@ function validate(gj, tag) {
     const mean = (xs) => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
     const med2 = (xs) => { const t = xs.slice().sort((a, b) => a - b); return t.length ? t[Math.floor(t.length / 2)] : 0; };
     const r1 = (v) => Math.round(v * 10) / 10;
-    const k = Math.max(1, Math.floor(P.length / 5));
-    const byW = P.slice().sort((a, b) => a.wealth - b.wealth || a.region_id - b.region_id);
-    const expBlight = r1(mean(byW.slice(0, k).map(r => r.blight_load)) / Math.max(1, mean(byW.slice(-k).map(r => r.blight_load))));
+    // #178: the INHABITED realm. This ranked every cell and called the bottom fifth
+    // "the poorest fifth of the realm", but an empty cell exports wealth exactly 0, so
+    // empty cells ARE the bottom fifth — measured over 80 worlds that fifth was 85%
+    // uninhabited on average, and 100% of it in the worst worlds. Nullable now, where
+    // fewer than five towns stand to rank.
+    const byW = P.filter(r => r.is_settled === 1).sort((a, b) => a.wealth - b.wealth || a.region_id - b.region_id);
+    const k = Math.max(1, Math.floor(byW.length / 5));
+    const expBlight = byW.length >= 5
+      ? r1(mean(byW.slice(0, k).map(r => r.blight_load)) / Math.max(1, mean(byW.slice(-k).map(r => r.blight_load))))
+      : null;
     if (F.blight_ratio !== expBlight) return fail(`${tag}: findings blight_ratio ${F.blight_ratio} != ${expBlight}`);
     // #185: SETTLED ground on both sides, mirroring the engine. These two arrays feed
     // both `shadow_gap_pct` and the twins, and both are claims about TOWNS — the

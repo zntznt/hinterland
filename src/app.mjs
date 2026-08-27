@@ -321,7 +321,17 @@ const d3 = globalThis.d3;
           (F.within_pct !== null && F.within_pct >= 15 ? `. A map drawn by region misses much of it: <b>${F.within_pct}%</b> of the spread sits inside the towns` : ``) +
           `. The sharpest company town is <b>${esc(ct.name)}</b>, where ${F.company_share} of every 100 coins belong to its owners' row.`);
       }
-      L.push(`The poorest fifth of this realm carries <b>${F.blight_ratio}×</b> the blight of the richest fifth.`);
+      // #178: over the realm's TOWNS, and reporting what the ratio says rather than
+      // framing every value as a disparity. The old form fired unconditionally and
+      // read as a finding of injustice even at 1.0 (parity — which is the median over
+      // 80 worlds) or below it (the richest fifth carrying more).
+      if (F.blight_ratio !== null) {
+        L.push(F.blight_ratio > 1.1
+          ? `The poorest fifth of this realm's towns carries <b>${F.blight_ratio}×</b> the blight of its richest fifth.`
+          : F.blight_ratio < 0.9
+            ? `The poison did not settle on the poor here: the poorest fifth of this realm's towns carries <b>${F.blight_ratio}×</b> the blight of its richest fifth. The wealthy end breathes more of it.`
+            : `The poorest fifth of this realm's towns carries <b>${F.blight_ratio}×</b> the blight of its richest fifth: here the poison fell on rich and poor alike.`);
+      }
       if (F.moran && F.moran_blight)
         L.push(`The clustering is computed from this world's own map. Global Moran's I puts wealth at <b>${F.moran.I.toFixed(3)}</b> and blight at <b>${F.moran_blight.I.toFixed(3)}</b>, against ${F.moran.expected.toFixed(3)} expected under no structure (p ${F.moran.p.toFixed(3)} / ${F.moran_blight.p.toFixed(3)}, ${F.moran.n_perm} permutations over the region adjacency). Read it as a statement about this generated map's internal structure, not about the world outside: the terrain is laid down with smoothing kernels, so neighbouring cells resemble each other by construction, and some spatial correlation is guaranteed before any economy runs.`);
       if (F.shadow_gap_pct !== null && F.shadow_gap_pct > 0 && model.ridges.length)
@@ -1770,7 +1780,12 @@ const d3 = globalThis.d3;
       document.getElementById("cfCapR2").innerHTML = MODE.capR;
       document.getElementById("cfLeft").innerHTML = cfPaneSVG(asVals);
       document.getElementById("cfRight").innerHTML = cfPaneSVG(cfVals);
-      const dRatio = Math.round((asF.blight_ratio - cfF.blight_ratio) * 10) / 10;
+      // #178: blight_ratio is over the realm's TOWNS now, and is null where too few
+      // stand to rank a fifth against a fifth. Guard the arithmetic, or a sparse world
+      // renders "null×" and a NaN delta.
+      const haveRatio = asF.blight_ratio !== null && cfF.blight_ratio !== null;
+      const dRatio = haveRatio ? Math.round((asF.blight_ratio - cfF.blight_ratio) * 10) / 10 : 0;
+      const ratioCell = (v) => v === null ? "too few towns to rank" : `<b>${v}&times;</b>`;
       const dDark = asDark - cfDark;
       const verdict = cfMode === "gt"
         ? (dDark > 0
@@ -1778,12 +1793,14 @@ const d3 = globalThis.d3;
           : `The ledgers already reached everyone here; the charter would change nothing. Luck, not virtue.`)
         : cfMode === "both"
         ? `Both mercies together: <b>${dRatio > 0 ? dRatio + "&times; less blight on the poorest fifth" : "the blight unchanged"}</b> and <b>${dDark > 0 ? dDark + " settlements lit" : "the grid unchanged"}</b>. <b>The gap between these maps is a policy.</b>`
+        : !haveRatio
+        ? `Too few towns stand in this realm to rank a poorest fifth against a richest one, so the doctrine's share of the poison cannot be read here. That is a limit of the measurement, not a verdict about the world.`
         : dRatio > 0
-        ? `The doctrine alone puts <b>${dRatio}&times; extra blight</b> on the poorest fifth, over the dispersed spread the wind and water would have made. <b>The gap between these maps is a policy.</b>`
+        ? `The doctrine alone puts <b>${dRatio}&times; extra blight</b> on the poorest fifth of towns, over the dispersed spread the wind and water would have made. <b>The gap between these maps is a policy.</b>`
         : `In this world the dispersed spread already found the poor; the doctrine moved little the terrain had not. That kind of innocence is luck, not virtue. A doctrine can also land the poison on the RICH, where the ratio reads the other way.`;
       stats.innerHTML = verdict +
         `<table><tr><th></th><th>as rolled</th><th>the counterfactual</th></tr>` +
-        `<tr><td>poorest fifth's blight vs richest's</td><td><b>${asF.blight_ratio}&times;</b></td><td><b>${cfF.blight_ratio}&times;</b></td></tr>` +
+        `<tr><td>poorest fifth of towns' blight vs richest fifth's</td><td>${ratioCell(asF.blight_ratio)}</td><td>${ratioCell(cfF.blight_ratio)}</td></tr>` +
         `<tr><td>settlements off the grid</td><td>${asDark}</td><td>${cfDark}</td></tr>` +
         `<tr><td>plagues in the record</td><td>${asPlagues}</td><td>${cfPlagues}</td></tr>` +
         `<tr><td>gini at the close</td><td>${asF.gini.toFixed(2)}</td><td>${cfF.gini.toFixed(2)}</td></tr></table>`;

@@ -1,6 +1,36 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **"the poorest fifth of the realm" was 85% empty cells** (issue #178's two remaining
+  defects; **schema v55 → v56**, because `findings.blight_ratio` keeps its key, changes
+  its population, and becomes nullable; all 30 golden cells moved). #178's mechanism —
+  the differential exit — landed in #179; what stayed open were the two defects it found
+  along the way, and both were worse than filed.
+  **The published ratio measured abandoned ground.** `blight_ratio` ranked every cell by
+  wealth and called the bottom fifth "the poorest fifth of the realm" — but an empty cell
+  exports wealth exactly 0, so empty cells **are** the bottom fifth. Measured over 80
+  worlds that fifth was **85% uninhabited on average**, 100% of it in the worst worlds,
+  and the value differs from the inhabited reading in **73 of 80**. It now ranks the
+  realm's towns, and is null where fewer than five stand to rank a fifth against a fifth
+  (reachable — null in 36 of 48 worlds at 5-8 regions, where the old form quietly
+  reported a number computed from empty ground). This was not the easier reading: the
+  median sits at **1.0** either way. On the corrected one the direction runs opposite to
+  the headline the docs used to carry — the poison lands on the **rich** in 34 of 80
+  worlds against the poor in 22, with 24 at parity.
+  **The chronicle, the app and the atlas were asserting the sign.** The chronicle and the
+  readout both stated the ratio unconditionally as "carries N times the blight of the
+  richest fifth", which reads as a finding of injustice even at 1.0 — parity, and the
+  commonest case — or below it, where the richest fifth carries more. Both now report
+  what the number says. The atlas was worse: it published the **all-regions**
+  correlation while `tools/targets.mjs` and every live acceptance check use settled-only,
+  so the headline document and the test suite disagreed about the sign of the project's
+  central environmental-justice claim; and its prose read "blight–wealth correlation
+  **stays negative** (the poison lands on the poor) in N/80 worlds", asserting the
+  conclusion and filling in a count, so a refuting number still rendered as
+  confirmation. It now reports both directions with the median beside them and points at
+  the MISSED target in `docs/grounding.md` §8.
+  The counterfactual panel's arithmetic is guarded for the new null, and the
+  exactly-recomputable mirror in `tools/stress.mjs` carries the settled ranking.
 - **the model measured environmental injustice in the unserved country and then declined
   to report it** (issue #189, the empty-ground audit; no schema change, 30 of 30 golden
   cells moved). A systematic sweep of every aggregate in the findings block, prompted by

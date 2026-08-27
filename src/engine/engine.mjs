@@ -8,7 +8,8 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 55;   // #180: v55 redefines blight_load as an ABSOLUTE load (100 = ruined) carried as a decaying stock, where v54 normalised it to each world's own worst cell. Same column name, different meaning — a break, not a silent move.
+    const SCHEMA_VERSION = 56;   // #178: v56 redefines findings.blight_ratio over the INHABITED realm — its "poorest fifth" was 85% empty cells, which export wealth 0 and so ARE the bottom fifth — and makes it nullable where too few towns stand to rank. Same key, different population, new null: a break, not a silent move.
+    // v55 (#180) redefined blight_load as an ABSOLUTE load (100 = ruined) carried as a decaying stock, where v54 normalised it to each world's own worst cell.
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
     // B6 (#128): tariffs fund the bridges. A held crossing that still collects a real
@@ -5966,11 +5967,22 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       const mean = (xs) => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
       const med = (xs) => { const t = xs.slice().sort((a, b) => a - b); return t.length ? t[Math.floor(t.length / 2)] : 0; };
       const r1 = (v) => Math.round(v * 10) / 10;
-      // the poorest fifth against the richest fifth
-      const k = Math.max(1, Math.floor(n / 5));
-      const byWealth = R.slice().sort((a, b) => a.wealth - b.wealth || a.id - b.id);
-      const blightRatio = r1(mean(byWealth.slice(0, k).map(r => r.blight)) /
-        Math.max(1, mean(byWealth.slice(-k).map(r => r.blight))));
+      // the poorest fifth against the richest fifth — OF THE INHABITED REALM.
+      // #178: this ranked every cell by wealth and called the bottom fifth "the
+      // poorest fifth of the realm", but an empty cell exports wealth exactly 0, so
+      // empty cells ARE the bottom fifth: measured over 80 worlds, that fifth was
+      // **85% uninhabited on average**, and 100% of it in the worst worlds. The
+      // published claim about who breathes the poison was, in most worlds, a statement
+      // about abandoned ground. It differs from the inhabited reading in 73 of 80
+      // worlds. Settled-only is the same correction, on the same stated grounds, that
+      // targets.mjs already applied to blight_wealth_corr: exposure is about people
+      // breathing something. It is not the easier reading — both medians sit at 1.0.
+      const peopledByWealth = R.filter(r => r.settled).sort((a, b) => a.wealth - b.wealth || a.id - b.id);
+      const k = Math.max(1, Math.floor(peopledByWealth.length / 5));
+      const blightRatio = peopledByWealth.length >= 5
+        ? r1(mean(peopledByWealth.slice(0, k).map(r => r.blight)) /
+             Math.max(1, mean(peopledByWealth.slice(-k).map(r => r.blight))))
+        : null;
       // the mountain-shadow earnings gap (medians; seat excluded from the open side)
       // #185: SETTLED ground on both sides, and this was a real bug, not a precaution.
       // The twins are "the sharpest same-distance pair across the wall" — a comparison
@@ -6854,7 +6866,20 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
           }
           V.push(tsent);
         }
-        V.push(`The poorest fifth of the realm carries ${F.blight_ratio} times the blight of the richest fifth.`);
+        // #178: report what the ratio SAYS, rather than framing every value as a
+        // disparity. This sentence used to fire unconditionally in the form "carries N
+        // times the blight of the richest fifth" — which reads as a finding of
+        // injustice even when N is 1.0 (no disparity at all) or below it (the RICHEST
+        // fifth carrying more). Measured over 80 worlds the median is exactly 1.0, so
+        // the commonest thing this line was reporting as an injustice was parity.
+        if (F.blight_ratio !== null) {
+          const towns = "the realm's poorest fifth of towns";
+          V.push(F.blight_ratio > 1.1
+            ? `${towns[0].toUpperCase()}${towns.slice(1)} carries ${F.blight_ratio} times the blight of its richest fifth.`
+            : F.blight_ratio < 0.9
+              ? `The poison did not settle on the poor here: ${towns} carries ${F.blight_ratio} times the blight of its richest fifth. The wealthy end breathes more of it.`
+              : `${towns[0].toUpperCase()}${towns.slice(1)} carries ${F.blight_ratio} times the blight of its richest fifth: in this realm the poison fell on rich and poor alike.`);
+        }
         if (F.shadow_gap_pct !== null && F.shadow_gap_pct > 0 && model.ridges.length)
           V.push(`Behind the ${model.ridges[0].name} wall, the median settlement earns ${F.shadow_gap_pct} in the hundred less than the open country at the same distance.`);
         V.push(`${F.dark_n} regions sit off the grid because the ledgers said serving them would not pay` +

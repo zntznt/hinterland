@@ -648,9 +648,20 @@ flat, a response-side mechanism would need household relocation rates above 100%
 epoch to drag the median negative. Tracked as
 [#178](https://github.com/zntznt/hinterland/issues/178).
 
-`findings.blight_ratio` carries the identical all-regions defect (its "poorest fifth" is
-89-100% uninhabited) and is scheduled separately, since it is byte-pinned in all 30
-fixtures and quoted in every chronicle.
+`findings.blight_ratio` carried the identical all-regions defect and is **fixed**
+([#178](https://github.com/zntznt/hinterland/issues/178), schema v56). Measured over 80
+worlds, its "poorest fifth of the realm" was **85% empty cells on average** and 100% of
+it in the worst worlds — the published claim about who breathes the poison was, in most
+worlds, a statement about abandoned ground, and it differs from the inhabited reading in
+**73 of 80 worlds**. It now ranks the realm's TOWNS, and is null where fewer than five
+stand to rank a fifth against a fifth (reachable: 36 of 48 worlds at 5-8 regions).
+Adopting the settled reading was not the easier choice — the median sits at 1.0 either
+way — and on the corrected reading the direction reads the other way from the headline:
+the poison lands on the **rich** in 34 of 80 worlds against the poor in 22, with 24 at
+parity. Two narration defects went with it: the chronicle and the app both stated the
+ratio unconditionally in the form "carries N times the blight of the richest fifth",
+which reads as a finding of injustice even at 1.0 (parity, the commonest case) or below
+it; both now report what the number says.
 
 **`rank_size_alpha` is MISSED as of 2026-08**
 ([#180](https://github.com/zntznt/hinterland/issues/180)). The declared band

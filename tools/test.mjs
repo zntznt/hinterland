@@ -2774,6 +2774,29 @@ console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");
   else fail(`burden emergence off: blight ${cB.toFixed(2)}, reach ${cH.toFixed(2)}, wealth ${cW.toFixed(2)}`);
 }
 
+// (viii-b) THE UNSERVED COUNTRY IS SICKER, and the model can finally say so.
+// `dark_burden_ratio` publishes how much heavier sickness runs off the grid than in
+// the lit core, and the chronicle prints that sentence only when the ratio exceeds 1.
+// It was computed over ALL off-grid regions — and the off-grid country is 59% EMPTY
+// CELLS, each exporting disease_burden_per_1k = 0 by construction ("a dead zone has
+// no people, so no health burden"). The zeros ran the numerator and inverted the
+// finding: a published median of 0.4, the unserved country reading HEALTHIER than the
+// core, so the model measured a service-deprivation effect and then declined to report
+// it in 30 of 39 worlds. Over the people actually living out there it is 2.0, and the
+// sentence now prints in 21 of 22 worlds. Pinned as a claim, not just a bug fix.
+{
+  let holds = 0, tested = 0; const N = 24; const vals = [];
+  for (let i = 0; i < N; i++) {
+    const F = (await genEngine(`#seed=sw-${i}&regions=24&ep=10`)).gj.hinterland.findings;
+    if (F.dark_burden_ratio === null) continue;   // nobody lives off-grid: no claim to make
+    tested++; vals.push(F.dark_burden_ratio);
+    if (F.dark_burden_ratio > 1) holds++;
+  }
+  if (tested >= 10 && holds >= Math.ceil(tested * 0.75))
+    ok(`THE UNSERVED COUNTRY IS SICKER: sickness runs heavier off the grid than in the lit core in ${holds}/${tested} worlds that have anyone living off it (median ${median(vals)}x) — measured over the people the ledgers declined to serve, not over the empty ground beside them`);
+  else fail(`dark-country burden claim not holding: ${holds}/${tested}, median ${median(vals)}`);
+}
+
 // (ix) The high-burden/low-care quadrant is populated (the payload claim).
 {
   let quad = 0; const N = 20;

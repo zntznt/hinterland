@@ -60,6 +60,43 @@ export const TARGETS = {
     missed_since: "2026-08 (#180)",
   },
 
+  // #192, the contamination-attributable fraction of disease burden. DECLARED
+  // 2026-08, from the literature, BEFORE the coefficient it governs was touched and
+  // before the status quo was measured against it — the whole point of this file.
+  //
+  // The defect that prompted it: `burdenEnv` was set by a units conversion in #180
+  // (0.55 / 4.8), not from any epidemiology, and #168 then showed it explains
+  // essentially nothing about who is sick once you stop letting a poverty-targeting
+  // siting rule couple contamination to poverty (partial correlation +0.01). A
+  // component that moves the outcome by nothing is decorative, and the additive
+  // decomposition the docs describe — environmental + waterborne + unmet-need —
+  // oversells one of its three limbs.
+  //
+  // The metric is the ATTRIBUTABLE FRACTION, which is the quantity the literature
+  // itself reports: rerun each world with contamination set to zero and ask what share
+  // of the disease burden disappears. That is a counterfactual, not a correlation, so
+  // it cannot be gamed by whatever else happens to covary with blight — which is
+  // exactly how the old number went wrong.
+  //
+  // The band brackets the two standard global estimates. Landrigan et al. 2018 (the
+  // Lancet Commission on Pollution and Health) attribute ~9 million premature deaths a
+  // year to pollution, about **16% of all deaths worldwide**. Prüss-Ustün et al. 2016
+  // (WHO) put ~23% of global deaths on modifiable environmental factors overall, a
+  // broader category that also covers the water and sanitation this model bills to a
+  // separate component. So 16% is the central anchor, 23% the generous upper reading,
+  // and 10% a conservative floor.
+  //
+  // NOTE the direction of difficulty: the engine currently sits FAR BELOW this band,
+  // so meeting it means strengthening a mechanism, and the target is declared here
+  // before any measurement of by how much. If the shipped value lands outside the
+  // band, that is a miss for docs/grounding.md, not a reason to move the band.
+  burden_env_fraction: {
+    metric: "share of total disease_burden_per_1k that disappears when blight is counterfactually zeroed, median over settled regions across the default sweep",
+    range: [0.10, 0.25],
+    cite: ["landrigan2018", "pruss2016"],
+    note: "Counterfactual attributable fraction, the quantity the cited studies report. Not a correlation: #168 showed the correlation reading was an artifact of the retired siting exponent.",
+  },
+
   // R5, blight–wealth correlation. The EJ literature finds disproportionate
   // exposure of the poor via siting AND post-siting sorting (UCC 1987; Bullard
   // 1990; Banzhaf-Ma-Timmins 2019), i.e. a negative mode, but the relation is

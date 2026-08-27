@@ -906,6 +906,15 @@ resort, the Wikipedia article about the work.
 - Olson, Mancur (1993). "Dictatorship, Democracy, and Development." *American
   Political Science Review* 87(3): 567–576. OA copy:
   <https://devf21.classes.ryansafner.com/readings/Olson-1993.pdf>
+- Landrigan, Philip J. et al. (2018). "The Lancet Commission on pollution and
+  health." *The Lancet* 391(10119), 462-512. Attributes ~9 million premature
+  deaths in 2015 to pollution, about 16% of deaths worldwide:
+  <https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(17)32345-0/fulltext>
+- Prüss-Ustün, Annette, J. Wolf, C. Corvalán, R. Bos & M. Neira (2016).
+  *Preventing disease through healthy environments: a global assessment of the
+  burden of disease from environmental risks*. WHO. Puts ~23% of global deaths
+  on modifiable environmental factors:
+  <https://www.who.int/publications/i/item/9789241565196>
 - Piketty, Thomas (2014). *Capital in the Twenty-First Century*. Belknap
   Press of Harvard University Press. Book; no open full text:
   <https://en.wikipedia.org/wiki/Capital_in_the_Twenty-First_Century>

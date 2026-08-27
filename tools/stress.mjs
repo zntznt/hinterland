@@ -856,8 +856,16 @@ function validate(gj, tag) {
     const byW = P.slice().sort((a, b) => a.wealth - b.wealth || a.region_id - b.region_id);
     const expBlight = r1(mean(byW.slice(0, k).map(r => r.blight_load)) / Math.max(1, mean(byW.slice(-k).map(r => r.blight_load))));
     if (F.blight_ratio !== expBlight) return fail(`${tag}: findings blight_ratio ${F.blight_ratio} != ${expBlight}`);
-    const shadow = P.filter(r => r.range_shadow === 1);
-    const open = P.filter(r => r.range_shadow === 0 && r.is_capital_region !== 1);
+    // #185: SETTLED ground on both sides, mirroring the engine. These two arrays feed
+    // both `shadow_gap_pct` and the twins, and both are claims about TOWNS — the
+    // chronicle says "the median settlement earns N in the hundred less". A cell the
+    // years emptied exports wealth exactly 0, so counting it as a zero-wealth
+    // settlement dragged the shadow median down for free. Measured over 40 worlds:
+    // the headline gap falls from a median of 72% to 50%, and the old maximum of
+    // 100% ("the walled country earns nothing") could only ever mean that most of
+    // the shadowed cells were fields.
+    const shadow = P.filter(r => r.range_shadow === 1 && r.is_settled === 1);
+    const open = P.filter(r => r.range_shadow === 0 && r.is_capital_region !== 1 && r.is_settled === 1);
     const expGap = (shadow.length >= 2 && open.length >= 2 && med2(open.map(r => r.wealth)) > 0)
       ? Math.round(100 * (1 - med2(shadow.map(r => r.wealth)) / med2(open.map(r => r.wealth)))) : null;
     if (F.shadow_gap_pct !== expGap) return fail(`${tag}: findings shadow_gap ${F.shadow_gap_pct} != ${expGap}`);
@@ -1019,7 +1027,10 @@ function validate(gj, tag) {
         if (r.sky_advantage !== expAdv)
           return fail(`${tag}: sky_advantage ${r.sky_advantage} != ${expAdv} (#${r.region_id})`);
       }
-      const shS = P.filter(r => r.range_shadow === 1), opS = P.filter(r => r.range_shadow === 0 && r.is_capital_region !== 1);
+      // #185: settled ground, as above — the sky means answer "would the skyway help
+      // the walled country", and an empty cell has nobody to board.
+      const shS = P.filter(r => r.range_shadow === 1 && r.is_settled === 1);
+      const opS = P.filter(r => r.range_shadow === 0 && r.is_capital_region !== 1 && r.is_settled === 1);
       const expShadow = shS.length >= 2 ? r1(mean(shS.map(r => r.sky_advantage))) : null;
       const expOpen = opS.length >= 2 ? r1(mean(opS.map(r => r.sky_advantage))) : null;
       if (F.sky.shadow_adv !== expShadow || F.sky.open_adv !== expOpen)

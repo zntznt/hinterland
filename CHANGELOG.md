@@ -1,6 +1,58 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the mountain wall's cost was measured against fields, not towns** (issue #185; no
+  schema change, but two headline claims move; 9 of 30 golden cells moved). Two
+  arrays decide everything this model says about what a mountain wall costs — the
+  shadowed regions and the open ones — and both were drawn from **every region**,
+  settled or not. A cell the years emptied exports wealth exactly 0, so it entered
+  both claims as a settlement earning nothing.
+  **The headline number.** `shadow_gap_pct` is quoted in every chronicle as "the median
+  settlement earns N in the hundred less than the open country at the same distance".
+  Measured over 40 worlds at `ep=10`, it falls from a median of **72% to 50%** once the
+  median is taken over actual settlements. Its old maximum was **100%** — the walled
+  country earning literally nothing — which is only reachable when over half the
+  shadowed cells are fields. The engine was not finding a mountain effect that large;
+  it was counting empty ground.
+  **The exhibit.** The twins are the *same distance, different fate* argument: the
+  sharpest same-distance pair across the wall, picked by the widest wealth gap. An
+  abandoned cell wins that contest outright whenever one sits in the shadow. Twins were
+  found in 33 of those 40 worlds, and in **24 of the 33 (73%)** the shadow twin was
+  empty ground — named in the panel and the chronicle as a place that has no name to
+  print. A dead cell is not the wall's victim; it is nobody's town.
+  Both sides of both claims must now be settled; the sky means (`shadow_adv` /
+  `open_adv`, which ask whether the skyway would help the walled country) follow the
+  same rule, since an empty cell has nobody to board. A check pins the twins invariant,
+  and the exactly-recomputable mirrors in `tools/stress.mjs` were updated with it.
+  **The rest of #185 was built, measured, and deliberately not landed**, which is the
+  more useful half. The issue was filed on a finding — that **first-time settlement
+  foundings are 0.0 per world**, so every "new town" this engine has ever produced is a
+  resettlement — and its cause turned out to be one line: the founding sets
+  `settled = 1` on every region, two lines under a comment promising that whether a
+  region holds a settlement "is now an outcome". It is not an outcome. The pool the
+  frontier path draws from is empty by construction. Worse, the founding centuries grow
+  a hamlet on every cell using a quality term blind to ruggedness, temperature,
+  elevation and biome, so **66 of 384 cells start below the loop's own abandonment bar
+  and exactly 66 abandonments fire in epoch 1** — a correction wave the chronicles have
+  been narrating as town deaths.
+  A founding gate was implemented against the loop's own bar and it works: epoch-1
+  abandonments fall 66 → 13, later abandonment is untouched (43 → 44), the end state is
+  identical (79% settled either way), the realm keeps its people, and first-time
+  foundings go **0.0 → 1.6 per world** — the frontier path firing on virgin ground for
+  the first time. **And it does not do what the issue was filed for:** upper-half α
+  moves 0.685 → **0.630**, *away* from the pre-registered band. The premise that a real
+  settlement frontier would produce the tail is measured and false at this magnitude.
+  #185 was filed with "do not build this to reach the band" written into it; it did not
+  reach it, and that is the finding rather than a reason to keep tuning. The cost of
+  landing it anyway would have been 15 broken checks — mostly correlations over all
+  regions in `ep=0` sweeps, which were clean only because main happened to settle every
+  cell — plus two real ones: sample truncation drops `corr(burden, blight)` 0.21 → 0.10,
+  and R3's pre-registered `upward_mode_absent_shocks` flips to 61 up / 62 down, since
+  `k = 0.6` was chosen in #184 as the *smallest* value clearing all three sub-targets
+  and is marginal by construction. Re-tuning `k` to keep a target met after perturbing
+  the world would be fitting the knob to the test. The evidence is written up in full on
+  #185 for whoever picks it up; the band question stays open in `docs/grounding.md` §4,
+  and nothing here has moved it.
 - **blight becomes an absolute load, and the city-size band turns out to have been
   numerical noise** (issue #180; **schema v54 → v55**, because `blight_load` changes
   meaning; all 30 golden cells moved and the atlas was regenerated). Two follow-ups

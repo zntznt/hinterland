@@ -5972,8 +5972,18 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       const blightRatio = r1(mean(byWealth.slice(0, k).map(r => r.blight)) /
         Math.max(1, mean(byWealth.slice(-k).map(r => r.blight))));
       // the mountain-shadow earnings gap (medians; seat excluded from the open side)
-      const shadow = R.filter(r => r.rangeShadow === 1);
-      const open = R.filter(r => r.rangeShadow === 0 && !r.isCapital);
+      // #185: SETTLED ground on both sides, and this was a real bug, not a precaution.
+      // The twins are "the sharpest same-distance pair across the wall" — a comparison
+      // between two TOWNS, one walled in and one not — and the pick is by the widest
+      // WEALTH GAP. But the candidates were drawn from every region, and a cell the
+      // years emptied exports wealth exactly 0, so an abandoned cell won the gap
+      // contest outright almost whenever one sat in the shadow. Measured over 40
+      // worlds at ep=10: twins were found in 33, and in **24 of those 33** the shadow
+      // twin was empty ground. The headline exhibit was comparing a living town
+      // against a field three times out of four, and naming a place with no name to
+      // print. A dead cell is not the wall's victim; it is nobody's town.
+      const shadow = R.filter(r => r.rangeShadow === 1 && r.settled);
+      const open = R.filter(r => r.rangeShadow === 0 && !r.isCapital && r.settled);
       const shadowGap = (shadow.length >= 2 && open.length >= 2 && med(open.map(r => r.wealth)) > 0)
         ? Math.round(100 * (1 - med(shadow.map(r => r.wealth)) / med(open.map(r => r.wealth)))) : null;
       // darkness and its burden

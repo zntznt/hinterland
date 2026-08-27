@@ -87,7 +87,15 @@ decides who gets rain).
 **A construction, labeled:** a mountain shadow exists in 80/80 worlds because a
 ridge count of ≥ 1 is built in, so the *existence* is not a finding. Its
 **magnitude** is (shadow share spans 0.04–0.83), and *what the wall costs* is
-what the twins measure.
+what `shadow_gap_pct` and the twins measure — over **towns**, since
+[#185](https://github.com/zntznt/hinterland/issues/185). Both were drawn from
+every region, and a cell the years had emptied exports wealth exactly 0, so it
+counted as a settlement earning nothing. The published gap fell from a median
+of **72% to 50%** once taken over actual settlements (its old maximum of 100%
+was only reachable when most of the shadowed cells were fields), and the twins
+pair had been naming empty ground as the "shadow twin" in 24 of 33 worlds. Read
+the gap as what the wall costs *the people behind it*, not as a property of the
+rock.
 **The experiment:** arm the capital pin and move the capital: the geology does
 not move, the shadow re-deals, and different towns inherit the wall.
 **In QGIS:** filter `range_shadow = 1`, compare median `wealth` and

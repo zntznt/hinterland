@@ -1,6 +1,40 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the poverty-targeting siting exponent is gone, and the target it was propping up is
+  now missed honestly** (issue #168, R5; no schema change; all 30 golden cells moved).
+  #168 was filed against `(1 − wealth/100)^6`, the weight the concentrate doctrine used
+  to spread residual spoil: at that exponent the poorest cell is weighted **sixty-four
+  times** the median one, which does not model siting so much as author the
+  blight-poverty correlation the findings then report as a discovery. It had been parked
+  twice — once on #165, then on #180 — with the note "#180 step 3 returns to this issue
+  once the field is absolute". #180 landed, so the question was live again, and
+  re-measuring turned up two things.
+  **#180 had already narrowed this target a long way, and nobody recorded it.** The
+  misses register still read "+0.46, only 3 of 24 worlds negative" — the pre-#180
+  number. Measured across four seed families before and after the absolute blight field:
+  `atlas-*` went **+0.509 → +0.167** (4/24 negative → 9/24), `bw-*` +0.144 → **+0.055**
+  (6/24 → **12/24**), `r5-*` +0.280 → +0.104, `dbsw-*` +0.200 → +0.071. Giving inhabited
+  ground a real contamination gradient did more for this EJ target than any response-side
+  mechanism managed, which is exactly what #178 predicted.
+  **And the exponent is now `^2`, which widens the miss on purpose.** Two income-elastic
+  siting channels — cheap land and weak resistance (Banzhaf, Ma & Timmins 2019;
+  Banzhaf & Walsh 2008) — multiplying: the poorest ground carries four times the median
+  weight rather than sixty-four. The cost is stated because it *is* the point: the median
+  moves from +0.055 back to **+0.436**. The negative mode was closest at the exponent
+  that manufactured it, and a target met by authoring its own answer was never met. The
+  engine now misses it honestly instead of hitting it by construction — the same trade
+  #180 made for the city-size band.
+  **Not the `^1.5` the issue prescribes, and the reason is P2 rather than fit.** At 1.5
+  the concentrate doctrine loses its poverty-targeting blade outright: over the suite's
+  48-world doctrine sweep the most negative world reads −0.18 and exactly **one** world
+  is clearly negative, so "concentrate can put the poison on the poor" stops being
+  reachable and the knob stops having two edges. `^2` is the shallowest value at which
+  both blades survive, and it is not a knife-edge once you look past the suite's own
+  seeds: on **24 unseen worlds** the most negative reads −0.33, and pooled over 120
+  worlds five are clearly negative. One obstacle from the last attempt is also simply
+  gone — `^1.5` used to fail "water access tracks prosperity" at 11/20 against a floor of
+  12, and post-#180 every exponent tested passes it.
 - **"the poorest fifth of the realm" was 85% empty cells** (issue #178's two remaining
   defects; **schema v55 → v56**, because `findings.blight_ratio` keeps its key, changes
   its population, and becomes nullable; all 30 golden cells moved). #178's mechanism —

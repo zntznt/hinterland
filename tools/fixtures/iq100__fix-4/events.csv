@@ -1,16 +1,16 @@
 epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occupied,contested,ruler
 1,1025,embargo,1,,,,,,,,,,
-1,1025,settlement_abandoned,0,,,,,,,,,,
 1,1025,settlement_abandoned,2,,,,,,,,,,
 1,1025,settlement_abandoned,11,,,,,,,,,,
 1,1025,seizure,1,,,magnate,,,,,,,
-1,1025,drought,3,the Drought of 1025,,,,,,,,,
+1,1025,drought,0,the Drought of 1025,,,,,,,,,
+2,1050,settlement_abandoned,0,,,,,,,,,,
 2,1050,discovery,1,the Rushold Find,,,,,,,,,
+3,1075,settlement_founded,2,,,,,,,,,,
 3,1075,succession,,Kelmook,,crown,,,,,,true,1
 3,1075,succession,,Brolt,,magnate,,,,,,true,1
 3,1075,storm,1,the Great Storm of 1075,,,,,,,,,
 4,1100,concession,1,,,,,,,,,,
-4,1100,settlement_founded,2,,,,,,,,,,
 4,1100,refinery_collapse,1,,,,,,,,,,
 4,1100,seizure,1,,,crown,,,,,,,
 4,1100,tower_raised,7,,,apostate,,,,,,,
@@ -25,8 +25,7 @@ epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occu
 6,1150,drought,3,the Drought of 1150,,,,,,,,,
 6,1150,quake,11,the Nether Gnathok Quake,,,,,,,,,
 6,1150,reform,,,,,crown_granary,,,,,,
-7,1175,settlement_abandoned,3,,,,,,,,,,
-7,1175,war,1,the Rushold War,,crown|magnate,,,,,,,
+7,1175,war,1,the War of 1175,,crown|magnate,,,,,,,
 8,1200,succession,,Calden,,crown,,,,,,false,2
 8,1200,treaty,1,the Peace of Rushold,,crown|magnate,,crown,1,3,,,
 8,1200,storm,1,the Great Storm of 1200,,,,,,,,,

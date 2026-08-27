@@ -84,7 +84,25 @@ export const TARGETS = {
     mode: "negative",
     both_signs_reachable: true,
     cite: ["ucc1987", "bullard1990", "banzhaf2019"],
-    note: "No numeric band: the literature supports a sign tendency, not a coefficient. MISSED as of 2026-08, see docs/grounding.md section 8.",
+    note: "No numeric band: the literature supports a sign tendency, not a coefficient. MISSED as of 2026-08, see docs/grounding.md section 8. The miss NARROWED sharply under #180 and then WIDENED deliberately under #168 — read both notes below before citing a number.",
+    // TWO movements since this was first recorded as missed, in opposite directions,
+    // and neither was a retune of this target.
+    //
+    // 1. #180 (the absolute blight field) narrowed it a long way, and nobody recorded
+    //    that at the time. On the atlas sweep the median went +0.509 to +0.167 and the
+    //    negative share 4/24 to 9/24; on the bw sweep +0.144 to +0.055 with 6/24 to
+    //    12/24 negative. Giving inhabited ground a real contamination gradient did more
+    //    for this target than any response-side mechanism managed.
+    //
+    // 2. #168 then widened it on purpose, by replacing the (1-wealth)^6 siting weight
+    //    with ^2. That exponent is the whole reason the negative mode was ever within
+    //    reach: at ^6 the poorest cell is weighted 64x the median one, which does not
+    //    model siting so much as author the correlation the findings report. Measured
+    //    at the shipped ^2 the median sits at +0.436 against +0.055 at ^6.
+    //
+    // The target is NOT re-aimed and the mode stays "negative". What is recorded is
+    // that this engine does not reach it through a defensible siting rule, and that
+    // reaching it through an indefensible one was never reaching it.
   },
 
   // R3, elite share dynamics. Absent shocks, concentration drifts upward where

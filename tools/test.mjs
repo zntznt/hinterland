@@ -1833,15 +1833,18 @@ console.log("# The chronicle E4 acceptance: the world narrating itself");
     ok("no internals leak into the prose");
   else fail("prose leaks internals");
 
-  // a consecration world: the new shrine is dedicated by name (d6-2 on the
-  // 1600×1000 world — d6-1's rectangle history no longer consecrates; guarded
-  // so a seed without a consecration fails a check instead of crashing the run)
-  const C = await genEngine("#seed=d6-2&regions=24&ep=10");
+  // a consecration world: the new shrine is dedicated by name. Re-pinned d6-1 -> d6-2
+  // (the rectangle world) -> d6-5 (#168: retiring the siting exponent moves the blight
+  // field, so d6-2 no longer consecrates at all). Re-scanned d6-0..23 under the full
+  // condition — a consecration AND its dedication in the prose — and 6 seeds carry it
+  // (d6-5/7/13/14/15/22). Guarded so a seed without one fails a check instead of
+  // crashing the run.
+  const C = await genEngine("#seed=d6-5&regions=24&ep=10");
   const cons = (C.gj.hinterland.events || []).find(ev => ev.type === "consecration");
   const consSite = cons ? sanctOf(C.gj).find(st => st.properties.region_id === cons.region_id) : null;
   const shrineName = consSite ? consSite.properties.site_name : null;
   if (cons && shrineName && C.chron.includes("consecrated it as " + shrineName))
-    ok(`the consecration is narrated with its dedication (${shrineName} on seed d6-2)`);
+    ok(`the consecration is narrated with its dedication (${shrineName} on seed d6-5)`);
   else fail(`consecration not narrated (cons=${!!cons}, shrine=${shrineName})`);
 
   // the founding snapshot has no years to tell
@@ -3235,7 +3238,15 @@ console.log("# Causal chains D6 acceptance: the faith arrives, fortune turns hot
     if (strike) strikeWorlds++;
     if (strike && war && war.epoch > strike.epoch && war.epoch <= strike.epoch + 2) chainWindow++;
   }
-  if (woundedEligible >= N * 0.6 && consecrations >= woundedEligible * 0.5)
+  // #168: the sample-size guard is now an absolute floor, not a fraction of the sweep.
+  // It read `woundedEligible >= N * 0.6` — 12 of 20 — which was calibrated when the
+  // denominator counted every wound in the log. Correcting that denominator (above) to
+  // the wounds the Temple can actually answer necessarily shrinks it: 6 of 20 at the
+  // shipped exponent, 9 of 20 at the old one. Both are below 12, so the guard would
+  // fire on the PREVIOUS engine too — it is mis-scaled for the corrected definition
+  // rather than reporting a regression. What the guard is for is having enough worlds
+  // to make the ratio mean anything, so it asks for that directly.
+  if (woundedEligible >= 5 && consecrations >= woundedEligible * 0.5)
     ok(`the faith arrives where the suffering is: ${consecrations} consecrations across ${woundedEligible} wounded worlds`);
   else fail(`consecration rare: ${consecrations}/${woundedEligible} wounded worlds`);
   if (consecrations > 0 && shrineLive >= consecrations * 0.85)

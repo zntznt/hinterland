@@ -412,16 +412,23 @@ into **siting** (facilities go where land is cheap and resistance is weak) and
 *(Banzhaf, Ma & Timmins 2019; Banzhaf & Walsh 2008)*; plant openings
 measurably move local housing values *(Currie et al. 2015)*.
 
-**Divergences, to fix.** The concentrate doctrine targets poverty with a
+**Divergences, fixed.** The concentrate doctrine used to target poverty with a
 `(1−wealth)⁶` weight, an exponent chosen for dramatic effect, far beyond any
-empirical elasticity, which near-authors the blight-poverty correlation it
-then "finds." The planned fix reduces it to `(1−wealth)^1.5`, documented as a
-land-price/least-resistance proxy, with the sorting channel running through
-migration ([#165](https://github.com/zntznt/hinterland/issues/165)) where the
-literature actually locates it. The correlation
-remains negative-mode by design intent, matching the literature's sign, and
-both signs stay reachable across the doctrine knob; `tools/targets.mjs`
-declares the sign expectation and deliberately no coefficient.
+empirical elasticity, which near-authored the blight-poverty correlation it
+then "found": at that exponent the poorest cell is weighted **sixty-four times**
+the median one. It is now `(1−wealth)²`
+([#168](https://github.com/zntznt/hinterland/issues/168), landed), derived as
+the two income-elastic siting channels the literature names — cheap land and
+weak resistance *(Banzhaf, Ma & Timmins 2019; Banzhaf & Walsh 2008)* —
+multiplying, so the poorest ground carries four times the median weight rather
+than sixty-four. The post-siting sorting channel runs through migration
+([#165](https://github.com/zntznt/hinterland/issues/165)) and the differential
+exit ([#178](https://github.com/zntznt/hinterland/issues/178)), where the
+literature locates it. Both signs stay reachable across the doctrine knob;
+`tools/targets.mjs` declares the sign expectation and deliberately no
+coefficient. What this cost the declared negative mode is recorded in the misses
+register, and it is the point rather than a side effect: the mode was closest at
+the exponent that authored it.
 
 **The field itself was broken, and that was the upstream cause**
 ([#180](https://github.com/zntznt/hinterland/issues/180), landed). `blight_load`
@@ -639,6 +646,40 @@ lowering the siting exponent from `^6` toward the defensible `^1.5` moves the me
 removed reaches a negative median at all (−0.08). So "the blight falls on the poor" in
 this engine has been an artifact of a poverty-targeting exponent far beyond the EJ
 literature, rather than a result that survives a defensible siting rule.
+
+**Two later movements, in opposite directions. The numbers above are the 2026-08
+baseline and are kept for the record; neither movement re-aimed the target.**
+
+*#180 narrowed the miss a long way, and nobody recorded it at the time.* Making blight
+an absolute load gave inhabited ground a real contamination gradient, which is what this
+target needs to bite on. Measured across four seed families before and after:
+
+| sweep | before #180 | after |
+|---|---|---|
+| `atlas-*` | **+0.509**, 4/24 negative | **+0.167**, 9/24 negative |
+| `bw-*` | +0.144, 6/24 | **+0.055**, 12/24 |
+| `r5-*` | +0.280, 3/24 | +0.104, 7/24 |
+| `dbsw-*` | +0.200, 7/24 | +0.071, 9/24 |
+
+Fixing the field did more for this target than any response-side mechanism managed, which
+is exactly what #178 predicted and what #168 was waiting for.
+
+*#168 then widened it deliberately, by shipping the defensible exponent.* The
+`(1 − wealth/100)^6` weight is gone, replaced by `^2`: two income-elastic siting channels,
+cheap land and weak resistance, multiplying. At `^6` the poorest cell was weighted
+**sixty-four times** the median one; at `^2` it is four. The cost is stated plainly,
+because it is the whole point of the miss: the median moves from **+0.055 back to
++0.436**. The negative mode was closest at the exponent that authored it, and a target
+met by authoring its own answer was never met. The engine now misses this target
+honestly rather than hitting it by construction.
+
+*Why `^2` and not the `^1.5` #168 prescribes.* At 1.5 the concentrate doctrine loses its
+poverty-targeting blade outright: over the suite's 48-world doctrine sweep the most
+negative world reads −0.18 and exactly one is clearly negative, so "concentrate can put
+the poison on the poor" stops being reachable and the knob stops having two edges, which
+P2 forbids. `^2` is the shallowest value at which both blades survive, and it is not
+marginal once you look past the suite's own seeds: on 24 unseen worlds the most negative
+reads −0.33, and pooled over 120 worlds five are clearly negative.
 
 *The blocker is upstream of the response, and no sorting mechanism can clear it.* The
 settled blight field is crushed by the max-normalisation to roughly **p10 2 / median 6 /

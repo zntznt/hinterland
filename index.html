@@ -1394,6 +1394,30 @@
     // With deposition d held steady the stock settles at d / (1 - RETAIN) = 3.33 d,
     // so BLIGHT_FULL above is the old deposition ceiling of 1.0 carried onto the
     // stock's equilibrium footing. Same meaning: 100 is land ruined.
+    // R5 (#168): how sharply the concentrate doctrine's residual spoil seeks poor
+    // ground. It was 6, which #168 correctly calls "far beyond anything in the EJ
+    // literature": at that exponent the poorest cell is weighted SIXTY-FOUR times the
+    // median one, and a rule that aggressive does not model siting, it authors the
+    // blight-poverty correlation the findings then report as a discovery.
+    //
+    // The literature says facilities go where land is cheap AND where resistance is
+    // weak (Banzhaf, Ma & Timmins 2019; Banzhaf & Walsh 2008). Those are two channels,
+    // each roughly unit-elastic in income, which multiply: an exponent near 2, a 4x
+    // weight on the poorest ground against the median. That is the derivation.
+    //
+    // NOT the 1.5 the issue prescribes, and the reason is P2 rather than fit. At 1.5
+    // the concentrate doctrine loses its poverty-targeting blade entirely: over the
+    // suite's own 48-world doctrine sweep the most negative world reads -0.18 and
+    // exactly ONE world is clearly negative, so "concentrate can put the poison on the
+    // poor" stops being reachable and the knob stops having two edges. 2 is the
+    // shallowest value at which both blades survive, and it is not marginal once you
+    // look past the suite's own seeds: on 24 UNSEEN worlds the most negative reads
+    // -0.33, and pooled over 120 worlds five are clearly negative.
+    //
+    // This WIDENS a pre-registered miss, deliberately. See tools/targets.mjs and
+    // docs/grounding.md section 8: the negative mode was closest at the indefensible
+    // exponent, and a target met by authoring its own answer is not met.
+    const SITE_POV = 2;
     const RIVER_CARRY = 0.3;  // share of a riverine region's blight shipped downstream
     const RIVER_DECAY = 0.75; // per-step decay of the carried load
     // #178: THE DIFFERENTIAL EXIT. Post-siting sorting, "coming to the nuisance"
@@ -4249,7 +4273,7 @@
             // ground to consecrate, while the realm-scale reading stays poverty-seeking
             // (blight on the poor, a negative wealth-correlation) and the ramp keeps
             // the zone's own early window clean for the rush.
-            const wts = regions.map((reg, idx) => { const w = (idx === sacrificeZone || !reg.settled) ? 0 : Math.pow(1 - reg.wealth / 100, 6) * clamp(reg.settlementPop / 1200, 0.15, 1); wsum += w; return w; });
+            const wts = regions.map((reg, idx) => { const w = (idx === sacrificeZone || !reg.settled) ? 0 : Math.pow(1 - reg.wealth / 100, SITE_POV) * clamp(reg.settlementPop / 1200, 0.15, 1); wsum += w; return w; });
             if (wsum > 0) regions.forEach((_, i) => { blightRaw[i] += margin * (wts[i] / wsum); });
           } else {
             // DISPERSE (and TREAT's pre-cleanup spread): distance decay ONLY, no

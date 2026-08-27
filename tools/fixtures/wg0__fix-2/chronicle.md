@@ -22,15 +22,15 @@ The old world is still here: the delve called Skavdurk gapes in the old workings
 
 Past the last boundary stone, by Raven, the lawless keep their own harbor: Ulvere Quay. No charter lists it, no gate taxes it, and assessors who visit don't come back a second time. Anything the realm won't carry on its books leaves through here, and the ground around it keeps what the gates would have taken.
 
+An apostate keeps Raven Tower, out where the constabulary line fails and the grid never came, selling in the darkness what the grid will not carry. The Temple calls it heresy; the magnates call it competition; the people it heals call it the only healer who ever came.
+
 The rivers are crossed at Varrgak Bridge alone; everywhere else the banks are marsh and the water must be forded, and the fords are where the wagons drown. Whoever holds a bridge holds a queue of people who cannot go around.
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Age of the Gates** (1000–1000), when the gap held, **the Emptying** (1025–1100), when the gap narrowed and **the Still Years** (1125–1250), when the gap widened. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+These years split into ages, each named for what the realm was living through: **the Age of the Gates** (1000–1100), when the gap widened, **the Still Years** (1125–1200), when the gap held and **the Emptying** (1225–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
 
 **Year 1025.** Politics in a capital Pellness had never seen closed the sea lanes to it. A quarrel between the Solvent States and the Metropole became Pellness's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
-
-**Year 1025.** Sickness came to Raven. Anyone who had seen the blight-mark had expected it. Where there were healers, their registers do not agree on the death count. The roads out of town do. The roads named it the Long Cough of 1025.
 
 **Year 1025.** At the sanctioned ground by Skulgruk, something of the old world stirred and broke. The Temple calls it a test. The survivors did not. The blight it left has not faded.
 
@@ -38,19 +38,17 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1075.** A lode no survey had found came up under Hamwiceweld. The rush was immediate: retainers, chancers, assayers, and everyone who trails them.
 
-**Year 1075.** War came to Kemerby. It comes to ground that great powers claim and none can hold. The two powers fighting there were the Crown and the magnates. The town was just where they met. When the fighting stopped, the capital had lost a third of its people and a quarter of its wealth, and the mines and aetherworks were wrecked. The Crown's constabulary arrived after the blood, and stayed. The scribes titled the page the Kemerby War.
+**Year 1075.** War came to Kemerby. It comes to ground that great powers claim and none can hold. The two powers fighting there were the Crown and the magnates. The town was just where they met. When the fighting stopped, the capital had lost a third of its people and a quarter of its wealth, and the mines and aetherworks were wrecked. The Crown's constabulary arrived after the blood, and stayed. The scribes titled the page the War of 1075.
 
 **Year 1075.** The old Sovereign died, and Ulverfolt took the capital without incident. That is rare enough to be worth recording.
 
 **Year 1075.** The capital passed a Tariff Amnesty. The gates still stand, but the fees are capped by decree. It had blocked reform for years, and only gave in once the damage was bad enough.
 
-**Year 1075.** The Temple came to Raven, to the ground of its suffering, and consecrated it as Isandre. Pilgrims walk that road now. The Crown's writ had failed there and the magnates' ledgers had seen nothing worth the ink. The faith moved in after the harm was done, and claimed the ground.
-
 **Year 1100.** The old Hierarch died, and Sarelle took the censer without incident. That is rare enough to be worth recording.
 
 **Year 1100.** In the winter after the fighting, terms were set at Kemerby. The Crown wrote them: the magnates ceded nothing but its claim and kept its ledger, which held little. The side with the deeper ledger wrote the terms, which is how terms are usually written. The clerks filed the fair copy as the Peace of Kemerby.
 
-**Year 1100.** The sickness reached Hamwiceweld and stayed. The poisoned ground had done half the work already. Those who could walk left; those who could not were counted after. The roads named it the Ash Fever of 1100.
+**Year 1100.** Sickness came to Hamwiceweld. Anyone who had seen the blight-mark had expected it. Where there were healers, their registers do not agree on the death count. The roads out of town do. The roads named it the Dust Fever of 1100.
 
 **Year 1100.** Skulgruk rose. The constabulary line broke and the mob held. Skulgruk keeps what it makes now, and its gates charge no one. And it flourished. The aetherworks the charter had held back ran at full tilt, the crafts the tariffs had taxed to the bone found their feet, and people came to the free town from the tariffed country around it. Freedom released what the old order had held down. The people keep the date as the Skulgruk Rising.
 
@@ -58,7 +56,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1125.** The rains failed over Sellowford, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1125.
 
-**Year 1175.** The magnates pulled their money out of Kemerby when the ore stopped paying. The aetherworks went dark, and the town it had grown around emptied behind it.
+**Year 1175.** The aetherworks at Kemerby failed. The seam it drew from was mined to nothing, and the wages stopped a season before the wires did.
 
 **Year 1175.** The old Hierarch died, and Santhe took the censer without incident. That is rare enough to be worth recording.
 
@@ -88,27 +86,27 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1250.** The ground moved under Markholt, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Markholt Quake.
 
-The years leave names behind them. The realm now speaks of Kemerby the Yoked, Skulgruk the Free, Sellowford the Yoked, Merholt the Hollow, Vurzekmouth the Hollow, Varrgak the Yoked, Markholt the Hollow, Raven the Hollow, Asdenby the Yoked, Hamwiceweld the Yoked, Thereby the Yoked and Pellness the Yoked: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
+The years leave names behind them. The realm now speaks of Kemerby the Yoked, Skulgruk the Free, Sellowford the Yoked, Merholt the Shadowed, Vurzekmouth the Hollow, Varrgak the Yoked, Markholt the Hollow, Raven the Lofted, Asdenby the Yoked, Hamwiceweld the Yoked, Thereby the Yoked and Pellness the Yoked: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
 
 ## The State of the Realm, Year 1250
 
-Of the realm's 7 settled regions, 1 rose through the years, 5 held steady and 1 declined.
-5 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Skulgruk, Merholt, Vurzekmouth and Markholt among others, but the roads have stopped going there.
+Of the realm's 9 settled regions, 1 rose through the years, 7 held steady and 1 declined.
+3 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Skulgruk, Vurzekmouth and Markholt, but the roads have stopped going there.
 
-The Crown holds 8 regions, the Temple 2, the magnates 0; 2 are contested between them, and 0 answer to no one at all.
+The Crown holds 9 regions, the Temple 1, the magnates 0; 1 are contested between them, and 1 answer to no one at all.
 
 Of the realm's 5 gates, meaning the bridges, the passes, and the quays, the Crown keeps 3, the Temple 0, and the magnates 0. 0 stand untolled. Every levy on the list is paid by people who did not choose the road.
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the Temple stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.3 in every hundred of the realm's people hold 35.5 of every hundred coins, and live 16.2 times better than the people who work for them. The gap is sharpest at Kemerby, where 65 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 62 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.7 in every hundred of the realm's people hold 35.5 of every hundred coins, and live 14.5 times better than the people who work for them. The gap is sharpest at Kemerby, where 65 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 50 parts in a hundred of the whole spread.
 
 And over all of it stands the Dominion, which holds 7 regions from its foothold at Pellness and calls the arrangement trade. The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. The Crown still reigns. It no longer rules the occupied country, and the two are not the same thing.
 
-3 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
+1 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.16 at the founding to 0.25 at the close. It turned on the Tariff Amnesty in 1075. The realm's poorest fifth of towns carries 2 times the blight of its richest fifth. 3 regions sit off the grid because the ledgers said serving them would not pay. Vurzekmouth drinks 5 points of other towns' poison, only because it stands at the mouth. 6 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.3 in a hundred hold 35.5 of every hundred coins, and live 16.2 times better than the rest. The Volkruk divides even the weather: the rain falls at 38 on one side and 2 in its lee, and no one on the dry side chose the wind.
+The record closes with what the numbers say. This world got more unequal. The wealth gap went from 0.27 at the founding to 0.39 at the close. It turned on the Tariff Amnesty in 1075. The realm's poorest fifth of towns carries 1 times the blight of its richest fifth: in this realm the poison fell on rich and poor alike. Behind the Volkruk wall, the median settlement earns 94 in the hundred less than the open country at the same distance. 1 regions sit off the grid because the ledgers said serving them would not pay. Vurzekmouth drinks 5 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.7 in a hundred hold 35.5 of every hundred coins, and live 14.5 times better than the rest. The skyway would cut 57 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. And the whole realm's ledger is now one column in someone else's book: 7 regions occupied, the yield assessed at the quay, the free country keeping 0.8 times the share the occupied country keeps. The gap between who is sovereign and who is occupied is the largest one in the realm, and it shapes every other. The Volkruk divides even the weather: the rain falls at 38 on one side and 2 in its lee, and no one on the dry side chose the wind.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

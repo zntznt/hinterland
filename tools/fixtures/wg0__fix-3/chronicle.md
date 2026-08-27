@@ -28,7 +28,7 @@ The rivers are crossed at Quillton Bridge alone; everywhere else the banks are m
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1025), when the gap narrowed, **the Gated Age** (1050–1125), when the gap widened and **the Gated Age** (1150–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1025), when the gap narrowed, **the Gated Age** (1050–1100), when the gap held, **the Return** (1125–1150), when the gap widened and **the Age of Tariffs** (1175–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
 
 **Year 1025.** Politics in a capital Comfre had never seen closed the sea lanes to it. A quarrel between the Vantreth Imperium and the Metropole became Comfre's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
 
@@ -46,7 +46,7 @@ These years split into ages, each named for what the realm was living through: *
 
 **Year 1100.** The old First Magnate died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Dhordruk took the chair. Some who objected were killed, and the objections did not stop.
 
-**Year 1100.** The rains failed over Mariellenne Delf, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1100.
+**Year 1100.** The rains failed over Coltby, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1100.
 
 **Year 1125.** The capital chartered aetherworks at Comfre. The wires reached it fast, because someone had already decided the ore was worth the copper.
 
@@ -95,12 +95,12 @@ Of the realm's 5 gates, meaning the bridges, the passes, and the quays, the Crow
 
 The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the magnates stand nearest to blows.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.8 in every hundred of the realm's people hold 38.7 of every hundred coins, and live 16 times better than the people who work for them. The gap is sharpest at Comfre, where 66 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 31 parts in a hundred of the whole spread.
+And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.8 in every hundred of the realm's people hold 38.6 of every hundred coins, and live 16 times better than the people who work for them. The gap is sharpest at Comfre, where 66 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 31 parts in a hundred of the whole spread.
 
 2 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.39. It turned on the rising at Surzethrak in 1150, which was put down. The realm's poorest fifth of towns carries 2.6 times the blight of its richest fifth. Behind the Vrathul wall, the median settlement earns 50 in the hundred less than the open country at the same distance. 2 regions sit off the grid because the ledgers said serving them would not pay. Quillton drinks 6 points of other towns' poison, only because it stands at the mouth. 9 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.8 in a hundred hold 38.7 of every hundred coins, and live 16 times better than the rest. The skyway would cut 32 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
+The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.39. It turned on the rising at Surzethrak in 1150, which was put down. The realm's poorest fifth of towns carries 1.7 times the blight of its richest fifth. Behind the Vrathul wall, the median settlement earns 50 in the hundred less than the open country at the same distance. 2 regions sit off the grid because the ledgers said serving them would not pay. Quillton drinks 7 points of other towns' poison, only because it stands at the mouth. 9 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.8 in a hundred hold 38.6 of every hundred coins, and live 16 times better than the rest. The skyway would cut 32 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
 
 No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.

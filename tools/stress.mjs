@@ -871,8 +871,15 @@ function validate(gj, tag) {
     if (F.shadow_gap_pct !== expGap) return fail(`${tag}: findings shadow_gap ${F.shadow_gap_pct} != ${expGap}`);
     const dark = P.filter(r => r.on_grid === 0), lit = P.filter(r => r.on_grid === 1);
     if (F.dark_n !== dark.length) return fail(`${tag}: findings dark_n`);
-    const expDB = (dark.length && lit.length)
-      ? r1(mean(dark.map(r => r.disease_burden_per_1k)) / Math.max(0.1, mean(lit.map(r => r.disease_burden_per_1k)))) : null;
+    // #185 sweep: dark_n counts REGIONS the grid skips (true of empty ground too), but
+    // the burden ratio asks how much sicker the people it declined to serve are, and an
+    // unsettled cell exports disease_burden_per_1k = 0 by construction. The off-grid
+    // country is 59% empty cells, so the zeros ran the numerator and INVERTED the
+    // finding: 0.9 published (the unserved country reading healthier) against 2.0 over
+    // the people living there.
+    const darkP = dark.filter(r => r.is_settled === 1), litP = lit.filter(r => r.is_settled === 1);
+    const expDB = (darkP.length && litP.length)
+      ? r1(mean(darkP.map(r => r.disease_burden_per_1k)) / Math.max(0.1, mean(litP.map(r => r.disease_burden_per_1k)))) : null;
     if (F.dark_burden_ratio !== expDB) return fail(`${tag}: findings dark_burden ${F.dark_burden_ratio} != ${expDB}`);
     const mouth = P.reduce((a, b) => b.downstream_blight > a.downstream_blight ? b : a, P[0]);
     if (F.mouth_region !== (mouth.downstream_blight > 0 ? mouth.region_id : null)) return fail(`${tag}: findings mouth_region`);
@@ -1084,13 +1091,19 @@ function validate(gj, tag) {
           return fail(`${tag}: a Dominion gate on free ground (#${a.properties.region_id})`);
       }
       // findings.sovereignty recomputes exactly
+      // #185 sweep: territory is territory, but the three RATIOS are about an economy
+      // and an owning class. A cell the years emptied keeps its elite_share and its
+      // retention while exporting wealth 0, so it carried the ownership and yield of a
+      // town that no longer exists — and growth_gap counted its whole founding wealth
+      // as a loss, mostly on the free side.
       const freeR = P.filter(r => r.occupied === 0);
-      const expSov = occ.length && freeR.length ? {
+      const occP = occ.filter(r => r.is_settled === 1), freeP = freeR.filter(r => r.is_settled === 1);
+      const expSov = occ.length && freeR.length && occP.length && freeP.length ? {
         occupied_n: occ.length,
         corridor_wired: occ.filter(r => r.on_grid === 1).length,
-        retent_ratio: r1(mean(freeR.map(r => r.value_retention)) / Math.max(1, mean(occ.map(r => r.value_retention)))),
-        growth_gap: med2(freeR.map(r => r.wealth - r.wealth_t0)) - med2(occ.map(r => r.wealth - r.wealth_t0)),
-        comprador_ratio: r1(mean(occ.map(r => r.elite_share)) / Math.max(1, mean(freeR.map(r => r.elite_share))))
+        retent_ratio: r1(mean(freeP.map(r => r.value_retention)) / Math.max(1, mean(occP.map(r => r.value_retention)))),
+        growth_gap: med2(freeP.map(r => r.wealth - r.wealth_t0)) - med2(occP.map(r => r.wealth - r.wealth_t0)),
+        comprador_ratio: r1(mean(occP.map(r => r.elite_share)) / Math.max(1, mean(freeP.map(r => r.elite_share))))
       } : null;
       if (JSON.stringify(F.sovereignty) !== JSON.stringify(expSov))
         return fail(`${tag}: findings sovereignty ${JSON.stringify(F.sovereignty)} != ${JSON.stringify(expSov)}`);

@@ -478,7 +478,26 @@ travel-time-to-care as the access measure *(Weiss et al. 2018)*.
 are authored shapes, not estimated hazard models. The additive
 cause-decomposition is a bookkeeping convenience.
 
-**Disposition.** Docs-label.
+**A published claim was inverted, and then suppressed by its own inversion**
+([#189](https://github.com/zntznt/hinterland/issues/189), fixed).
+`dark_burden_ratio` reports how much heavier sickness runs off the grid than in
+the lit core, and the chronicle prints that sentence only when the ratio exceeds
+1. It was averaged over all off-grid regions — and the off-grid country is **59%
+empty cells**, each exporting `disease_burden_per_1k = 0` by construction, since
+a dead zone has no people to be sick. The zeros ran the numerator. The published
+median was **0.4**, the unserved country reading *healthier* than the core, so
+the model measured a service-deprivation effect and then declined to report it in
+**30 of 39 worlds**. Measured over the people actually living out there the ratio
+is **2.0**, and the finding holds in **21 of 22**. It is now computed over
+inhabited ground on both sides and pinned as a positive claim in the suite.
+
+The general lesson is filed as #189 and is not specific to this section: a
+statistic about people, computed over a sample that includes ground with nobody
+on it, reads whatever the zeros say. The same defect had already been found in
+the blight-wealth correlation (§8), the policy gap, the migration drift (§5), and
+the mountain wall's cost.
+
+**Disposition.** Docs-label; the dark-country ratio corrected in #189.
 
 ## 10. Reforms, impositions, and their long edges
 

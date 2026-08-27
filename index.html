@@ -7309,9 +7309,23 @@
       const shadowGap = (shadow.length >= 2 && open.length >= 2 && med(open.map(r => r.wealth)) > 0)
         ? Math.round(100 * (1 - med(shadow.map(r => r.wealth)) / med(open.map(r => r.wealth)))) : null;
       // darkness and its burden
+      // dark_n counts REGIONS the grid skips, which is true of empty ground too, so it
+      // stays over all of them. The burden ratio is a different claim — how much sicker
+      // are the people the ledgers declined to serve — and it was averaging fields in
+      // as healthy citizens. An unsettled cell exports disease_burden_per_1k = 0 by
+      // construction ("a dead zone has no people, so no health burden"), and the
+      // off-grid country is 59% empty cells, so the zeros dominated the numerator.
+      //
+      // It inverted the finding. Published median over 40 worlds: 0.9 — the unserved
+      // country reading HEALTHIER than the lit core. Over the people actually living
+      // there: 2.0, twice as sick. And the chronicle prints its sentence only when the
+      // ratio exceeds 1, so the model measured environmental injustice in the unserved
+      // country and then declined to report it in 13 of 22 worlds — in 12 of those 13
+      // the finding held on inhabited ground. It holds in 21 of 22 worlds.
       const dark = R.filter(r => !r.onConduit), lit = R.filter(r => r.onConduit);
-      const darkBurden = (dark.length && lit.length)
-        ? r1(mean(dark.map(r => r.burden)) / Math.max(0.1, mean(lit.map(r => r.burden)))) : null;
+      const darkPeopled = dark.filter(r => r.settled), litPeopled = lit.filter(r => r.settled);
+      const darkBurden = (darkPeopled.length && litPeopled.length)
+        ? r1(mean(darkPeopled.map(r => r.burden)) / Math.max(0.1, mean(litPeopled.map(r => r.burden)))) : null;
       // who drinks last
       const mouth = R.reduce((a, b) => b.downstreamBlight > a.downstreamBlight ? b : a, R[0]);
       // who pays the gates
@@ -7449,14 +7463,25 @@
       // extractive corridor), grows slower, and its owners' row does
       // better than the free realm's (the comprador bargain). All exactly
       // recomputable from the exported columns.
+      // #185 sweep: TERRITORY and PEOPLE are different questions here, and this block
+      // was answering both with one array. Occupied ground is occupied whether or not
+      // anyone lives on it — the Dominion's ball covers empty cells and force-wires
+      // them too — so `occupied_n` and `corridor_wired` stay territorial. The three
+      // RATIOS are claims about an economy and an owning class, and a cell the years
+      // emptied has neither: it exports wealth 0 while KEEPING its elite_share and
+      // retention (the abandonment pass clears population and tier, not the economic
+      // columns). So they were averaging in the ownership and the yield of towns that
+      // no longer exist, and `growth_gap` in particular took each dead cell's whole
+      // founding wealth as a loss, mostly on the free side.
       const occs = R.filter(r => r.occupied);
       const freeR = R.filter(r => !r.occupied);
-      const sovereignty = occs.length && freeR.length ? {
+      const occsP = occs.filter(r => r.settled), freeP = freeR.filter(r => r.settled);
+      const sovereignty = occs.length && freeR.length && occsP.length && freeP.length ? {
         occupied_n: occs.length,
         corridor_wired: occs.filter(r => r.onConduit).length,
-        retent_ratio: r1(mean(freeR.map(r => r.retention)) / Math.max(1, mean(occs.map(r => r.retention)))),
-        growth_gap: med(freeR.map(r => r.wealth - r.wealthT0)) - med(occs.map(r => r.wealth - r.wealthT0)),
-        comprador_ratio: r1(mean(occs.map(r => r.eliteShare)) / Math.max(1, mean(freeR.map(r => r.eliteShare))))
+        retent_ratio: r1(mean(freeP.map(r => r.retention)) / Math.max(1, mean(occsP.map(r => r.retention)))),
+        growth_gap: med(freeP.map(r => r.wealth - r.wealthT0)) - med(occsP.map(r => r.wealth - r.wealthT0)),
+        comprador_ratio: r1(mean(occsP.map(r => r.eliteShare)) / Math.max(1, mean(freeP.map(r => r.eliteShare))))
       } : null;
       // #56: the thesis, measured — global Moran's I over the SAME region
       // adjacency the cost graph walks (row-standardized weights), with a

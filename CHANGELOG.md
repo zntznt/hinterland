@@ -1,6 +1,48 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the model measured environmental injustice in the unserved country and then declined
+  to report it** (issue #189, the empty-ground audit; no schema change, 30 of 30 golden
+  cells moved). A systematic sweep of every aggregate in the findings block, prompted by
+  the same defect surfacing three times in a row across #180 and #185: a statistic about
+  *people* computed over a population that includes cells with nobody on them, where the
+  human columns read 0 by construction. 29 aggregate sites, 8 already guarded, each
+  suspect recomputed from the exported columns both ways over 40 worlds and checked
+  against the engine's own value first.
+  **`dark_burden_ratio` inverted a published claim.** It publishes how much heavier
+  sickness runs off the grid than in the lit core, and the chronicle prints that
+  sentence only when the ratio exceeds 1. The off-grid country is **59% empty cells**,
+  each exporting `disease_burden_per_1k = 0` — "a dead zone has no people, so no health
+  burden" — and the zeros ran the numerator. Published median **0.4**: the unserved
+  country reading *healthier* than the core, so the sentence was suppressed in **30 of
+  39 worlds**. Over the people actually living out there the ratio is **2.0** and the
+  finding holds in **21 of 22**. It is now pinned as a positive claim in the suite
+  rather than merely fixed.
+  **`sovereignty`'s ratios were averaging in towns that no longer exist.** A cell the
+  years emptied exports wealth 0 while **keeping** its `elite_share` and `retention`,
+  because the abandonment pass clears population and tier but not the economic columns.
+  `comprador_ratio` fell 1.8 → 1.4 (a third of the occupation premium was the ownership
+  of dead towns) and `growth_gap` moved 7 → 8, since each dead cell's whole founding
+  wealth was counted as a loss, mostly on the free side. `occupied_n` and
+  `corridor_wired` were deliberately left territorial: occupied ground is occupied
+  whether or not anyone lives on it, and the Dominion force-wires empty cells too.
+  **What the sweep cleared**, checked rather than assumed: the coin and headcount
+  aggregates are population-weighted, so empty cells contribute 0 on their own; the
+  company town has never once been an empty cell (0 of 40 worlds); no unsettled cell has
+  ever carried a nonzero tariff burden (0 of 40); and gini, the size distribution and
+  the median-wealth findings were already filtered.
+  **What it flagged and did not change**, with reasons on #189: `findings.moran` over
+  wealth admits empty cells at 0 and empty cells cluster spatially, but Moran's I is a
+  *lattice* statistic — restricting the sample means restricting the graph, which
+  changes the number's meaning rather than correcting it. `sky.reached_n` counts
+  unsettled ground as reached in 38 of 40 worlds, vacuous rather than distorting.
+  `blight_ratio` carries the identical defect, is already tracked as #178, and is left
+  alone because it is byte-pinned in all 30 fixtures and quoted in every chronicle — the
+  sweep confirms it differs from the settled reading in 36 of 40 worlds.
+  The exactly-recomputable mirrors in `tools/stress.mjs` now carry the settled filters
+  and are the guard: a regression in these columns flips 120 configs red. A syntactic
+  rule would false-positive on every legitimate land column, so the mirrors are the
+  enforcement point.
 - **the mountain wall's cost was measured against fields, not towns** (issue #185; no
   schema change, but two headline claims move; 9 of 30 golden cells moved). Two
   arrays decide everything this model says about what a mountain wall costs — the

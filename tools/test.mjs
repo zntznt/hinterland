@@ -1860,13 +1860,13 @@ const prov = A1.gj.hinterland;
 // for. Earlier note: re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
 // the default carries the Concordat-era `world` block (regime chain + series), and
 // `fate` still rides provenance only when set — so a default world has no fate key.
-if (prov && prov.schema_version === 55 && prov.epochs === 0 && prov.responsiveness === 45 && prov.order === 50 && prov.openness === 100 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+if (prov && prov.schema_version === 56 && prov.epochs === 0 && prov.responsiveness === 45 && prov.order === 50 && prov.openness === 100 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && prov.disposal_doctrine === "concentrate" && !("fate" in prov) &&
     prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=55 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
+  ok("provenance carries schema_version=56 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await genEngine("#seed=&regions=&we=&wg=");
@@ -2532,9 +2532,9 @@ console.log("# The mix pulls apart B10 (#132): a second pole, two knobs retired"
   // (i) old links MAP FORWARD: an hb=0 link seals the quays via openness=0
   const sealed = (await genEngine("#seed=alpha&regions=24&hb=0")).gj.hinterland;
   const openLink = (await genEngine("#seed=alpha&regions=24&openness=0")).gj.hinterland;
-  if (sealed.schema_version === 55 && sealed.openness === 0 && sealed.harbors_closed === true &&
+  if (sealed.schema_version === 56 && sealed.openness === 0 && sealed.harbors_closed === true &&
       openLink.openness === 0 && openLink.harbors_closed === true)
-    ok(`old links map forward: hb=0 seals the quays through openness=0 (harbors_closed), same as openness=0 (schema 55)`);
+    ok(`old links map forward: hb=0 seals the quays through openness=0 (harbors_closed), same as openness=0 (schema 56)`);
   else fail(`forward mapping broken: hb=0 openness ${sealed.openness}/closed ${sealed.harbors_closed}`);
 
   // (ii) EXHIBIT — a trade world whose largest CITY is NOT the seat (the second pole).

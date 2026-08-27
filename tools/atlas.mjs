@@ -10,6 +10,7 @@ for (let i = 0; i < N; i++) {
   const hash = `#seed=${seed}&regions=24&ep=10`;
   const { gj, chron } = await genEngine(hash);
   const R = gj.features.filter(f => f.properties.kind === "region").map(f => f.properties);
+  const S = R.filter(r => r.is_settled === 1);   // #178: the inhabited realm
   const evs = gj.hinterland.events || [];
   const held = { crown: 0, temple: 0, magnate: 0, none: 0 };
   gj.features.filter(f => ["bridge", "pass", "port"].includes(f.properties.kind)).forEach(f => held[f.properties.held_by]++);
@@ -38,7 +39,12 @@ for (let i = 0; i < N; i++) {
     turning: F.turning ? F.turning.type + (F.turning.measure ? ":" + F.turning.measure : "") : "none",
     offShare: R.filter(r => r.on_grid === 0).length / R.length,
     shadowShare: R.filter(r => r.range_shadow === 1).length / R.length,
-    blightCorr: pearson(R.map(r => r.blight_load), R.map(r => r.wealth)),
+    // #178: SETTLED-only, the metric tools/targets.mjs actually declares and every
+    // live acceptance check already uses. The atlas was publishing the all-regions
+    // reading, so the headline document and the test suite disagreed about the sign of
+    // the project's central environmental-justice claim. Over 80 worlds: all-regions
+    // median 0.0, settled-only +0.1.
+    blightCorr: pearson(S.map(r => r.blight_load), S.map(r => r.wealth)),
     wars: evs.filter(e => e.type === "war").length,
     seizures: evs.filter(e => e.type === "seizure").length,
     crises: evs.filter(e => e.type === "succession" && e.contested).length,
@@ -168,9 +174,12 @@ read these worlds, see the [field guide](field-guide.md).
 `;
 rows.forEach(([k, s]) => { md += `| ${k} | ${fmt(s.min)} | ${fmt(s.med)} | ${fmt(s.max)} |\n`; });
 md += `
-Sanity anchors, measured on this sweep: blight–wealth correlation stays
-negative at the default dump bias (the poison lands on the poor) in
-${worlds.filter(w => w.blightCorr < 0).length}/${N} worlds; a mountain shadow exists in
+Sanity anchors, measured on this sweep. The blight–wealth correlation over
+inhabited ground is **negative** (the poison landing on the poor) in
+${worlds.filter(w => w.blightCorr < 0).length}/${N} worlds and **positive** (landing on
+the rich) in ${worlds.filter(w => w.blightCorr > 0).length}/${N}, median
+${fmt(stat("blightCorr").med)}. This engine does not find that spoil reliably seeks
+poverty, and \`docs/grounding.md\` §8 records that pre-registered target as MISSED; a mountain shadow exists in
 ${worlds.filter(w => w.shadowShare > 0).length}/${N}; the event engine fired in
 ${worlds.filter(w => w.eventsN > 0).length}/${N}; the empire more often BOUGHT than
 landed: a foreign concession opened in

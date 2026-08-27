@@ -6,7 +6,7 @@ import { gen, genEngine, setupEngine,
   mean, med, r1, cen, median, pearson, giniOf, wgini,
 } from "./lib.mjs";
 import { cells, captureCell, geojsonDiff, csvDiff, chronicleDiff } from "./fixtures.matrix.mjs";
-import { alphaRange } from "./targets.mjs";
+import { alphaRange, TARGETS } from "./targets.mjs";
 import { createPool } from "./pool.mjs";
 import { JSDOM } from "jsdom";
 import * as d3d from "d3-delaunay";
@@ -2820,6 +2820,45 @@ console.log("# Phase 5 acceptance: emergent burden, the quadrant, coverage");
   if (tested >= 10 && holds >= Math.ceil(tested * 0.75))
     ok(`THE UNSERVED COUNTRY IS SICKER: sickness runs heavier off the grid than in the lit core in ${holds}/${tested} worlds that have anyone living off it (median ${median(vals)}x) — measured over the people the ledgers declined to serve, not over the empty ground beside them`);
   else fail(`dark-country burden claim not holding: ${holds}/${tested}, median ${median(vals)}`);
+}
+
+// (viii-c) #192: THE CONTAMINATION-ATTRIBUTABLE FRACTION, against the band declared in
+// tools/targets.mjs BEFORE the coefficient was touched (Landrigan et al. 2018 put
+// pollution at ~16% of deaths worldwide; Prüss-Ustün et al. 2016 put ~23% on modifiable
+// environmental factors overall, a broader category this model bills partly to water).
+//
+// The metric is a COUNTERFACTUAL, not a correlation, and that is the point: #168 showed
+// the correlation reading of this mechanism was an artifact of a poverty-targeting
+// siting exponent, because whatever covaries with blight rides along with it. Zeroing
+// the contamination and asking what share of the burden disappears cannot be gamed that
+// way.
+//
+// Exactly recomputable from the export, because `care` and `jit` multiply every limb of
+// the burden and therefore cancel in the ratio:
+//     burden      = care*jit*( 0.23*B + 0.45*(100-SW) + 0.35*V )
+//     attributable= care*jit*( 0.23*B + 0.45*dSW )
+// The one approximation is that safe_water is rounded before it is clamped, so dSW
+// carries up to half a point of rounding; the check takes a MEDIAN over ~450 regions,
+// where that averages out, and the band is the literature's own width rather than a
+// tight pin.
+{
+  const N = 24; const fracs = [];
+  for (let i = 0; i < N; i++) {
+    const g = (await genEngine(`#seed=af-${i}&regions=24&ep=10`)).gj;
+    for (const r of regionsOf(g).map(f => f.properties).filter(r => r.is_settled)) {
+      const B = r.blight_load, SW = r.safe_water, V = r.vulnerability_idx;
+      const riverGain = r.on_river === 1 ? Math.min(12, 0.104 * r.downstream_blight) : 0;
+      const dSW = Math.min(100, SW + 0.146 * B + riverGain) - SW;
+      const attributable = 0.23 * B + 0.45 * dSW;
+      const total = 0.23 * B + 0.45 * (100 - SW) + 0.35 * V;
+      if (total > 0) fracs.push(attributable / total);
+    }
+  }
+  const medFrac = median(fracs);
+  const [lo, hi] = TARGETS.burden_env_fraction.range;
+  if (fracs.length > 200 && medFrac >= lo && medFrac <= hi)
+    ok(`CONTAMINATION CARRIES ITS SHARE OF THE SICKNESS: zeroing the blight removes ${(100 * medFrac).toFixed(1)}% of the disease burden (median over ${fracs.length} settled regions), inside the pre-registered [${100 * lo}%, ${100 * hi}%] the epidemiology declares — Landrigan's 16% is the anchor. Before #192 this read 8.8%, and the component explained nothing about who was sick`);
+  else fail(`burden attributable fraction out of the pre-registered band: ${(100 * medFrac).toFixed(1)}% over ${fracs.length} regions, band [${100 * lo}%, ${100 * hi}%]`);
 }
 
 // (ix) The high-burden/low-care quadrant is populated (the payload claim).

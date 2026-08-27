@@ -481,9 +481,40 @@ healing reach, which decays with cost-distance to the nearest healer.
 **The literature.** Income-health gradients *(Preston 1975; Deaton 2003)*;
 travel-time-to-care as the access measure *(Weiss et al. 2018)*.
 
-**Divergences, labeled.** Component weights and the exponential reach constant
-are authored shapes, not estimated hazard models. The additive
-cause-decomposition is a bookkeeping convenience.
+**Divergences, labeled.** The exponential reach constant is an authored shape, not
+an estimated hazard model, and the additive cause-decomposition is a bookkeeping
+convenience. The **environmental weight is no longer authored**
+([#192](https://github.com/zntznt/hinterland/issues/192)): it is set against the
+attributable fraction the epidemiology reports, see below.
+
+**The environmental limb was decorative, and is now derived**
+([#192](https://github.com/zntznt/hinterland/issues/192), landed). Its coefficient
+came out of a units conversion in [#180](https://github.com/zntznt/hinterland/issues/180)
+(`0.55 / 4.8`), not from any epidemiology, and
+[#168](https://github.com/zntznt/hinterland/issues/168) then showed it explained
+essentially nothing about who is sick once the retired `^6` siting exponent stopped
+coupling contamination to poverty — a partial correlation of **+0.01**. A limb of a
+three-part decomposition that moves the outcome by nothing is not a mechanism.
+
+It is now set against the **attributable fraction**, which is the quantity the cited
+studies actually report: zero the contamination and ask what share of the burden
+disappears. `tools/targets.mjs` declared the band [10%, 25%] from *(Landrigan et al.
+2018)*, who put ~9 million premature deaths a year on pollution, about **16% of deaths
+worldwide**, and *(Prüss-Ustün et al. 2016)*, who put ~23% on modifiable environmental
+factors overall — **before** the coefficient moved and before the status quo was
+measured against it. A counterfactual was chosen over a correlation deliberately:
+whatever covaries with blight rides along with a correlation, which is exactly how the
+old reading went wrong.
+
+Only the magnitude turned out to be free. Measured first, the model's own split between
+direct exposure and contaminated water was **3.55 : 1**, against Landrigan's ~6.5M air
+to ~1.8M water, about 3.6 : 1 — the structure was already right. So the ratio is
+preserved untouched and both channels scale by the same factor of 2, which lands the
+attributable fraction at **16.0%** against 8.8% before. Note what it does not do: median
+burden moves 40 to 42. The realm is not made sicker; the sickness is attributed to what
+causes it. The partial correlation recovers to +0.31 as a *consequence* — it was not the
+target, and #192 was explicit that restoring the old +0.23 must not be the success
+criterion, since that number was itself the artifact.
 
 **A published claim was inverted, and then suppressed by its own inversion**
 ([#189](https://github.com/zntznt/hinterland/issues/189), fixed).

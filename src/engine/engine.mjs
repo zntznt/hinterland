@@ -4568,9 +4568,9 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         }
         const wwHere = reg.tier === "metropolis" || (reg.tier === "city" && reg.onConduit);
         reg.safeWater = clamp(Math.round(
-          (wwHere ? 85 : (reg.onConduit ? 45 : 15)) + 0.25 * reg.wealth - 0.073 * reg.blight // #180: was 0.35, /4.8
+          (wwHere ? 85 : (reg.onConduit ? 45 : 15)) + 0.25 * reg.wealth - 0.146 * reg.blight // #192: 0.073 x2, the same factor as burdenEnv so the 3.6:1 split holds
           // G2: the river gives water — unless upstream already fouled it
-          + (reg.onRiver ? Math.max(0, 12 - 0.052 * reg.downstreamBlight) : 0) // #180: was 0.25, /4.8
+          + (reg.onRiver ? Math.max(0, 12 - 0.104 * reg.downstreamBlight) : 0) // #192: 0.052 x2, same factor
         ), 0, 100);
         const tierF = { metropolis: 0, city: 30, "works-town": 60, "frontier-post": 85 }[reg.tier];
         reg.vulnerability = clamp(Math.round(
@@ -4578,7 +4578,28 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         ), 0, 100);
         const care = 1 - 0.55 * reg.healingReach / 100; // reach averts burden
         const jit = 0.94 + sx("health#" + reg.id)() * 0.12;
-        reg.burdenEnv = r1(0.115 * reg.blight * care * jit); // #180: was 0.55, /4.8
+        // #192: DERIVED, not converted. This coefficient came out of a units change in
+        // #180 (0.55 / 4.8), and #168 then showed the component explained essentially
+        // nothing about who is sick once the retired siting exponent stopped coupling
+        // contamination to poverty. A limb of the burden decomposition that moves the
+        // outcome by nothing is decorative.
+        //
+        // It is now set against the quantity the epidemiology actually reports, the
+        // ATTRIBUTABLE FRACTION: zero the contamination and ask what share of the
+        // disease burden goes away. Landrigan et al. 2018 (the Lancet Commission on
+        // Pollution and Health) put ~9 million premature deaths a year on pollution,
+        // about 16% of deaths worldwide; Prüss-Ustün et al. 2016 (WHO) put ~23% of
+        // deaths on modifiable environmental factors overall. tools/targets.mjs declared
+        // the band [10%, 25%] on the 16% anchor BEFORE this line moved.
+        //
+        // Only the magnitude was free. Measured first, the model's own split between
+        // direct exposure and contaminated water was **3.55 : 1** against Landrigan's
+        // ~3.6 : 1, so the structure was already right and the ratio is preserved
+        // untouched: both channels scale by the same factor 2, which lands the
+        // attributable fraction at 16.0% against 8.8% before. Note what this does NOT
+        // do — median burden moves 40 to 42. The realm does not get sicker; the
+        // sickness gets attributed to what causes it.
+        reg.burdenEnv = r1(0.23 * reg.blight * care * jit); // #192: 0.115 x2, derived above
         reg.burdenWater = r1(0.45 * (100 - reg.safeWater) * care * jit);
         reg.burdenUnmet = r1(0.35 * reg.vulnerability * care * jit);
         reg.burden = r1(reg.burdenEnv + reg.burdenWater + reg.burdenUnmet);

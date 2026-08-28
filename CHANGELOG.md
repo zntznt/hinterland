@@ -1,6 +1,39 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the environmental limb of the disease burden was decorative; it is now derived from
+  the epidemiology** (issue #192; no schema change; all 30 golden cells moved, atlas
+  regenerated). `burdenEnv`'s coefficient came out of a units conversion in #180
+  (`0.55 / 4.8`), not from any literature, and #168 then showed it explained essentially
+  nothing about who is sick once the retired `^6` siting exponent stopped coupling
+  contamination to poverty — a partial correlation of **+0.01**. A limb of a three-part
+  decomposition that moves the outcome by nothing is not a mechanism.
+  **The target was declared first, in its own commit, before the coefficient moved and
+  before the status quo was measured against it** — which is what `tools/targets.mjs`
+  is for. `burden_env_fraction`, band **[10%, 25%]**, cited to Landrigan et al. 2018
+  (the Lancet Commission on Pollution and Health: ~9 million premature deaths a year,
+  about **16% of deaths worldwide**) and Prüss-Ustün et al. 2016 (WHO: ~23% of deaths
+  from modifiable environmental factors, a broader category this model bills partly to
+  its water component). The engine was expected to sit below the band; by how much was
+  not known when the band was written down.
+  **The metric is a counterfactual, not a correlation, and that is the whole point.**
+  Zero the contamination and ask what share of the burden disappears — the quantity the
+  cited studies themselves report. #168 had just shown that the correlation reading of
+  this mechanism was an artifact of a siting rule, because whatever covaries with blight
+  rides along with a correlation. A counterfactual cannot be gamed that way. It is also
+  exactly recomputable from the export, since `care` and `jit` multiply every limb of
+  the burden and cancel in the ratio, so the suite pins it from the columns.
+  **Only the magnitude turned out to be free.** Measured first, the model's own split
+  between direct exposure and contaminated water was **3.55 : 1**, against Landrigan's
+  ~6.5M air to ~1.8M water — about **3.6 : 1**. The structure was already right, so the
+  ratio is preserved untouched and both channels scale by the same factor of **2**,
+  which lands the attributable fraction at **16.0%** against 8.8% before. Note what it
+  does not do: median burden moves 40 to 42. The realm is not made sicker; the sickness
+  is attributed to what causes it.
+  The partial correlation recovers to **+0.31** as a *consequence*. It was not the
+  target — #192 was explicit that restoring the old +0.23 must not be the success
+  criterion, because that number was itself the artifact — and the shipped value
+  overshoots it, which is what deriving from a different quantity looks like.
 - **the poverty-targeting siting exponent is gone, and the target it was propping up is
   now missed honestly** (issue #168, R5; no schema change; all 30 golden cells moved).
   #168 was filed against `(1 − wealth/100)^6`, the weight the concentrate doctrine used

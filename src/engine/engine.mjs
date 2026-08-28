@@ -6974,6 +6974,487 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       return L.join("\n").replace(/\n{3,}/g, "\n\n") + "\n";
     }
 
+    // ---- The findings, composed (D3, #139) ----------------------------------
+    //
+    // The analyst register, on the loom. `findingsHTML` used to hold about fifteen
+    // canned sentences with the numbers interpolated into them, so every world
+    // argued its case in the same words and only the figures moved. Same facts now,
+    // composed prose: a claim and a gloss drawn from a gated pool, filled from the
+    // findings object, and audited slot by slot against it.
+    //
+    // The engine composes; it does not render. Emphasis is marked **like this**,
+    // the way composeChronicle already marks it, and app.mjs turns the markers into
+    // whatever the panel wants. That keeps the engine DOM-free and makes the whole
+    // surface testable without jsdom.
+    //
+    // Every fragment obeys the loom's house law (loomLint enforces it in the suite):
+    // a clause, never a sentence; no opening capital, no terminal stop; at least one
+    // slot. The frames own the punctuation.
+
+    const FINDINGS_FRAMES = [
+      "{A}. {B}.", "{A}; {B}.", "{A}, and {B}.", "{A}. {B}.",
+      "{A}: {B}.", "{A}, though {B}.", "{A}, and so {B}.", "{A}. And {B}.",
+    ];
+
+    const FINDINGS_POOL = {
+      // -- the lead: which way the gap moved, and on what ----------------------
+      lead: [
+        { t: "**this world closed the gap**: the wealth gap ran {num:gini_t0} at the founding and {num:gini} at the close", req: f => f.dG <= -0.04 },
+        { t: "**this world closed the gap**, from {num:gini_t0} at the founding down to {num:gini}", req: f => f.dG <= -0.04 },
+        { t: "the gap this world was founded with, {num:gini_t0}, is not the gap it closes on: **{num:gini}**", req: f => f.dG <= -0.04 },
+        { t: "**the distance narrowed**: a founding gap of {num:gini_t0} reads {num:gini} by the last epoch", req: f => f.dG <= -0.04 },
+        { t: "**this world got more unequal**: the wealth gap ran {num:gini_t0} at the founding and {num:gini} at the close", req: f => f.dG >= 0.04 },
+        { t: "**this world got more unequal**, from {num:gini_t0} at the founding up to {num:gini}", req: f => f.dG >= 0.04 },
+        { t: "what began at {num:gini_t0} ends at **{num:gini}**: **the gap widened**", req: f => f.dG >= 0.04 },
+        { t: "**the distance opened**: a founding gap of {num:gini_t0} reads {num:gini} by the last epoch", req: f => f.dG >= 0.04 },
+        { t: "**this world held its shape**: the wealth gap stayed at {num:gini}", req: f => Math.abs(f.dG) < 0.04 },
+        { t: "**nothing moved the shape of this world**: the gap sat at {num:gini_t0} and sits at {num:gini}", req: f => Math.abs(f.dG) < 0.04 },
+        { t: "**the gap kept its place**, {num:gini_t0} to {num:gini} across the whole run", req: f => Math.abs(f.dG) < 0.04 },
+      ],
+      lead_gloss: [
+        { t: "that is unusually level for a world of {num:n_regions} regions", req: f => f.gini < 0.35 },
+        { t: "worlds this level are rare across {num:n_regions} regions", req: f => f.gini < 0.35 },
+        { t: "a realm of {num:n_regions} regions is about as unequal as these worlds get", req: f => f.gini > 0.62 },
+        { t: "a gap of {num:gini} is near the ceiling these rules can produce", req: f => f.gini > 0.62 },
+        { t: "{num:gini} sits near the middle of all the worlds these rules can roll", req: f => f.gini >= 0.35 && f.gini <= 0.62 },
+        { t: "{num:gini} is an ordinary reading for this ruleset", req: f => f.gini >= 0.35 && f.gini <= 0.62 },
+        { t: "the founding roll set {num:gini_t0} and the centuries did the rest", req: () => true },
+        { t: "the same {num:n_regions} regions carried both readings", req: () => true },
+        { t: "few of the worlds these rules can roll come out under {num:gini}", req: f => f.gini < 0.35 },
+        { t: "a gap of {num:gini} across {num:n_regions} regions is at the top of this ruleset's range", req: f => f.gini > 0.62 },
+        { t: "that is an unremarkable {num:gini} for a run of {num:n_epochs} epochs", req: f => f.gini >= 0.35 && f.gini <= 0.62 },
+        { t: "the founding rolled {num:gini_t0} and {num:n_epochs} epochs of compounding did the rest", req: () => true },
+      ],
+      turning: [
+        { t: "it turned on the revolt of {num:turn_year}, and **the rising was put down**", req: f => f.turnKind === "crushed" },
+        { t: "the hinge is {num:turn_year}, when the rising came and **was crushed**", req: f => f.turnKind === "crushed" },
+        { t: "**the revolt of {num:turn_year} won, and then the town starved**", req: f => f.turnKind === "starved" },
+        { t: "the rising of {num:turn_year} carried, and **the winners went hungry**", req: f => f.turnKind === "starved" },
+        { t: "**the revolt of {num:turn_year} won, and the town flourished after**", req: f => f.turnKind === "flourished" },
+        { t: "the rising of {num:turn_year} carried, and **the ledger turned with it**", req: f => f.turnKind === "flourished" },
+        { t: "it turned on {term:measure}, passed in {num:turn_year}", req: f => f.turnKind === "reform" },
+        { t: "the hinge is {term:measure} in {num:turn_year}", req: f => f.turnKind === "reform" },
+        { t: "it turned on a reaction, {term:measure}, in {num:turn_year}", req: f => f.turnKind === "reaction" },
+        { t: "the hinge is {num:turn_year}, when the capital answered with {term:measure}", req: f => f.turnKind === "reaction" },
+        { t: "no reform came and no revolt came, so the loops ran unopposed for {num:n_epochs} epochs", req: f => f.turnKind === "none" },
+        { t: "nothing interrupted it: {num:n_epochs} epochs and not one reform or rising", req: f => f.turnKind === "none" },
+        { t: "the rising of {num:turn_year} was **put down**, and the ledger closed over it", req: f => f.turnKind === "crushed" },
+        { t: "**{term:measure}** in {num:turn_year} is where the curve bends", req: f => f.turnKind === "reform" },
+        { t: "the answer came in {num:turn_year} as {term:measure}, and it was a **reaction**", req: f => f.turnKind === "reaction" },
+        { t: "the rising of {num:turn_year} took the town and then **the harvest failed it**", req: f => f.turnKind === "starved" },
+        { t: "{num:turn_year} carried the rising, and **what followed was better**", req: f => f.turnKind === "flourished" },
+        { t: "{num:n_epochs} epochs and no hinge at all: neither reform nor rising came", req: f => f.turnKind === "none" },
+      ],
+
+      // -- the periodization ---------------------------------------------------
+      ages: [
+        { t: "the record divides into ages: {term:ages}", req: f => f.hasAges },
+        { t: "the run does not read as one period but as {num:n_ages}: {term:ages}", req: f => f.hasAges },
+        { t: "cut at the turns, the record gives {term:ages}", req: f => f.hasAges },
+        { t: "the epochs group into {num:n_ages} ages, {term:ages}", req: f => f.hasAges },
+        { t: "read as periods rather than years, it runs {term:ages}", req: f => f.hasAges },
+        { t: "the run breaks into {num:n_ages} periods rather than reading as one: {term:ages}", req: f => f.hasAges },
+        { t: "by the gini's own turns the record is {num:n_ages} ages: {term:ages}", req: f => f.hasAges },
+      ],
+      ages_gloss: [
+        { t: "the {num:n_ages} ages are cut from the same epoch series the timeline draws, so the two surfaces cannot disagree", req: () => true },
+        { t: "the {num:n_ages} cut points are the series' own, not an editor's", req: () => true },
+        { t: "nothing chose those boundaries but the turns of the gini itself, {num:gini_t0} to {num:gini}", req: () => true },
+        { t: "the same {num:n_epochs} epochs, grouped by where the curve bent", req: () => true },
+      ],
+
+      // -- the class ledger inside each town -----------------------------------
+      class: [
+        { t: "the gap runs inside each town and not only between them: **{num:pop_pct}%** of this realm's people hold **{num:coin_pct}%** of its coin", req: f => f.hasClass },
+        { t: "**{num:pop_pct}%** of the people hold **{num:coin_pct}%** of the coin, which is a gap the region map cannot show", req: f => f.hasClass },
+        { t: "inside the towns, **{num:pop_pct}%** of the people hold **{num:coin_pct}%** of the coin", req: f => f.hasClass },
+        { t: "the owners' row is **{num:pop_pct}%** of this realm and holds **{num:coin_pct}%** of what it earns", req: f => f.hasClass },
+        { t: "between towns is not where most of it sits: **{num:pop_pct}%** of the people hold **{num:coin_pct}%** of the coin", req: f => f.hasClass },
+        { t: "the sharper gap is within the towns, not between them: **{num:pop_pct}%** hold **{num:coin_pct}%**", req: f => f.hasClass },
+        { t: "a region map shows the wrong gap: inside the towns, **{num:pop_pct}%** of the people hold **{num:coin_pct}%** of the coin", req: f => f.hasClass },
+        { t: "**{num:coin_pct}%** of the realm's coin belongs to **{num:pop_pct}%** of its people", req: f => f.hasClass },
+      ],
+      class_gloss: [
+        { t: "the owners' row lives **{num:class_gap}×** better than the labour it hires, and the sharpest company town is **{name:company_town}**, where {num:company_share} coins in every hundred belong to that row", req: f => f.hasClass },
+        { t: "that row lives **{num:class_gap}×** better than the labour it hires; at **{name:company_town}** it takes {num:company_share} coins in every hundred", req: f => f.hasClass },
+        { t: "**{num:within_pct}%** of the whole spread sits inside the towns, which a map drawn by region misses entirely, and inside them the owners live **{num:class_gap}×** better than the labour they hire", req: f => f.hasWithin },
+        { t: "a region map misses **{num:within_pct}%** of the spread, because that much of it is within the towns, where the ratio of owner to labour is **{num:class_gap}×**", req: f => f.hasWithin },
+        { t: "**{name:company_town}** is the sharpest of them, {num:company_share} coins in every hundred to a row that lives **{num:class_gap}×** better than the labour it hires", req: f => f.hasClass },
+        { t: "the ratio is **{num:class_gap}×**, owners to labour, in the same town", req: f => f.hasClass },
+      ],
+
+      // -- who carries the poison ----------------------------------------------
+      blight: [
+        { t: "the poorest fifth of this realm's towns carries **{num:blight_ratio}×** the blight of its richest fifth", req: f => f.hasBlightRatio },
+        { t: "poison sorts by wealth here: the poorest fifth of the towns carries **{num:blight_ratio}×** what the richest fifth carries", req: f => f.hasBlightRatio && f.blight_ratio > 1.1 },
+        { t: "the bottom fifth of the towns breathes **{num:blight_ratio}×** the blight of the top fifth", req: f => f.hasBlightRatio },
+        { t: "measured over the towns that have people in them, the ratio of poorest fifth to richest is **{num:blight_ratio}×**", req: f => f.hasBlightRatio },
+        { t: "sorted by wealth, the towns give a blight ratio of **{num:blight_ratio}×**, poorest fifth to richest", req: f => f.hasBlightRatio },
+        { t: "the ratio of the poorest fifth's blight to the richest fifth's is **{num:blight_ratio}×**", req: f => f.hasBlightRatio },
+        { t: "counted over inhabited towns only, the bottom fifth carries **{num:blight_ratio}×** the top fifth's blight", req: f => f.hasBlightRatio },
+      ],
+      blight_gloss: [
+        { t: "the poison did not settle on the poor across these {num:n_regions} regions: the wealthy end breathes more of it", req: f => f.hasBlightRatio && f.blight_ratio < 0.9 },
+        { t: "at {num:blight_ratio}× it is the wealthy end carrying the heavier load, which these rules permit and do not require", req: f => f.hasBlightRatio && f.blight_ratio < 0.9 },
+        { t: "over {num:n_regions} regions the poison fell on rich and poor alike", req: f => f.hasBlightRatio && f.blight_ratio >= 0.9 && f.blight_ratio <= 1.1 },
+        { t: "at {num:blight_ratio}× the burden is not sorted by wealth at all", req: f => f.hasBlightRatio && f.blight_ratio >= 0.9 && f.blight_ratio <= 1.1 },
+        { t: "nobody sited an aetherworks to reach {num:blight_ratio}×; the ratio is what the siting rule produced", req: f => f.hasBlightRatio && f.blight_ratio > 1.1 },
+        { t: "across {num:n_regions} regions the ground took it wherever the ground was cheapest", req: f => f.hasBlightRatio && f.blight_ratio > 1.1 },
+      ],
+
+      // -- the clustering, with its caveat -------------------------------------
+      moran: [
+        { t: "clustering is computed from this world's own map: Moran's I puts wealth at **{num:moran_i}** and blight at **{num:moran_blight_i}**, against {num:moran_expected} expected under no structure", req: f => f.hasMoran },
+        { t: "wealth clusters at Moran's I **{num:moran_i}** and blight at **{num:moran_blight_i}**, where no structure would give {num:moran_expected}", req: f => f.hasMoran },
+        { t: "over the region adjacency, wealth returns Moran's I **{num:moran_i}** and blight **{num:moran_blight_i}**", req: f => f.hasMoran },
+        { t: "the two clustering statistics are **{num:moran_i}** for wealth and **{num:moran_blight_i}** for blight, against {num:moran_expected} under no structure", req: f => f.hasMoran },
+        { t: "spatial clustering returns **{num:moran_i}** for wealth and **{num:moran_blight_i}** for blight over the region adjacency", req: f => f.hasMoran },
+        { t: "the adjacency graph gives Moran's I **{num:moran_i}** on wealth, **{num:moran_blight_i}** on blight", req: f => f.hasMoran },
+        { t: "neither field is randomly arranged: Moran's I reads **{num:moran_i}** and **{num:moran_blight_i}** against {num:moran_expected}", req: f => f.hasMoran },
+        { t: "wealth and blight both cluster, at **{num:moran_i}** and **{num:moran_blight_i}**, where no structure would return {num:moran_expected}", req: f => f.hasMoran },
+      ],
+      moran_gloss: [
+        { t: "the figure describes this generated map's internal structure and not the world outside: the terrain is laid down with smoothing kernels, so neighbouring cells resemble each other by construction and some correlation is guaranteed before any economy runs (p {num:moran_p} and {num:moran_blight_p} over {num:moran_perm} permutations)", req: f => f.hasMoran },
+        { t: "the smoothing kernels that lay down the terrain guarantee some of this before any economy runs, so the number describes the map's construction as much as its history (p {num:moran_p} and {num:moran_blight_p}, {num:moran_perm} permutations)", req: f => f.hasMoran },
+        { t: "p {num:moran_p} and {num:moran_blight_p} over {num:moran_perm} permutations of the adjacency, which tests the arrangement and not the cause", req: f => f.hasMoran },
+        { t: "neighbouring cells resemble each other by construction here, so treat the figure as a property of the generated map (p {num:moran_p} / {num:moran_blight_p})", req: f => f.hasMoran },
+        { t: "some of that is guaranteed by construction, since the terrain is laid down with smoothing kernels and neighbours resemble each other before any economy runs (p {num:moran_p} / {num:moran_blight_p}, {num:moran_perm} permutations)", req: f => f.hasMoran },
+        { t: "the permutation test ({num:moran_perm} draws, p {num:moran_p} and {num:moran_blight_p}) asks whether this arrangement is unusual for this map, not whether it is unusual for a world", req: f => f.hasMoran },
+        { t: "treat it as a property of the generated map: smoothing kernels put correlation into the terrain before the first town was placed (p {num:moran_p} / {num:moran_blight_p})", req: f => f.hasMoran },
+      ],
+
+      // -- the wall, the rain, the twins ---------------------------------------
+      shadow: [
+        { t: "behind the {name:ridge} wall a median settlement takes **{num:shadow_gap}% less** than the open country at the same remove from the capital", req: f => f.hasShadow },
+        { t: "the {name:ridge} costs the country behind it **{num:shadow_gap}%** of the median settlement's earnings, distance held equal", req: f => f.hasShadow },
+        { t: "at equal distance from the capital, the country behind the {name:ridge} earns **{num:shadow_gap}% less**", req: f => f.hasShadow },
+        { t: "the shadow of the {name:ridge} is worth **{num:shadow_gap}%** of a median settlement's earnings", req: f => f.hasShadow },
+        { t: "the country behind the {name:ridge} earns **{num:shadow_gap}% less** than its equals in the open", req: f => f.hasShadow },
+        { t: "hold the distance to the capital constant and the {name:ridge} still costs **{num:shadow_gap}%**", req: f => f.hasShadow },
+        { t: "a median settlement behind the {name:ridge} is **{num:shadow_gap}%** poorer than one the same distance out in the open", req: f => f.hasShadow },
+      ],
+      shadow_gloss: [
+        { t: "distance is held equal in that comparison, so the {name:ridge} is what is left", req: f => f.hasShadow },
+        { t: "nothing but the {name:ridge} separates the two sides of it", req: f => f.hasShadow },
+        { t: "the roads across it go through {num:crossings} crossings and no further", req: f => f.hasCrossings },
+        { t: "the capital at {term:realm} is the same walk away for both", req: f => f.hasShadow },
+        { t: "the {name:ridge} is the only term left once distance is controlled for", req: f => f.hasShadow },
+        { t: "there are {num:crossings} ways through the {name:ridge} and no fourth option", req: f => f.hasCrossings },
+        { t: "the {name:ridge} was there before the capital chose its site", req: f => f.hasShadow && f.hasCrossings },
+      ],
+      rain: [
+        { t: "the {name:ridge} splits the rain: median rainfall **{num:rain_wet}** on its wet side and **{num:rain_dry}** in its lee", req: f => f.hasRain },
+        { t: "rainfall reads **{num:rain_wet}** on the windward side of the {name:ridge} and **{num:rain_dry}** behind it", req: f => f.hasRain },
+        { t: "the same {name:ridge} divides the weather, **{num:rain_wet}** against **{num:rain_dry}**", req: f => f.hasRain },
+        { t: "the {name:ridge} takes the rain: **{num:rain_wet}** on the windward side, **{num:rain_dry}** in the lee", req: f => f.hasRain },
+        { t: "median rainfall falls from **{num:rain_wet}** to **{num:rain_dry}** across the {name:ridge}", req: f => f.hasRain },
+        { t: "one side of the {name:ridge} gets **{num:rain_wet}** and the other **{num:rain_dry}**", req: f => f.hasRain },
+      ],
+      rain_gloss: [
+        { t: "the farms followed the rain, and nobody in the {name:ridge} lee chose the wind", req: () => true },
+        { t: "the wind over these {num:n_regions} regions was set before the first settlement and has not been asked since", req: () => true },
+        { t: "a difference of {num:rain_wet} to {num:rain_dry} is upstream of every choice anyone here made", req: () => true },
+        { t: "the farms went where the water was, {num:rain_wet} against {num:rain_dry}, and the wind was not consulted", req: () => true },
+        { t: "a {num:rain_wet}-to-{num:rain_dry} split in the rain is upstream of every settlement decision that followed", req: () => true },
+      ],
+      twins: [
+        { t: "**{name:twin_open}** and **{name:twin_shadow}** stand the same distance from the capital, one in the open and one behind the wall", req: f => f.hasTwins },
+        { t: "two towns at one distance: **{name:twin_open}** in the open, **{name:twin_shadow}** behind the wall", req: f => f.hasTwins },
+        { t: "the pair to read is **{name:twin_open}** and **{name:twin_shadow}**, equidistant from the capital and divided by rock", req: f => f.hasTwins },
+        { t: "the exhibit is **{name:twin_open}** against **{name:twin_shadow}**: same distance from the capital, opposite sides of the rock", req: f => f.hasTwins },
+        { t: "hold distance constant and you get **{name:twin_open}** and **{name:twin_shadow}**, one open and one walled", req: f => f.hasTwins },
+        { t: "**{name:twin_shadow}** sits behind the wall at the same remove from the capital as **{name:twin_open}** sits in front of it", req: f => f.hasTwins },
+      ],
+      twins_gloss: [
+        { t: "{name:twin_open} returns wealth {num:twin_open_wealth}, market {num:twin_open_market}, burden {num:twin_open_burden}; {name:twin_shadow} returns {num:twin_shadow_wealth}, {num:twin_shadow_market}, {num:twin_shadow_burden}, and **the difference is the mountain**", req: f => f.hasTwins },
+        { t: "wealth {num:twin_open_wealth} against {num:twin_shadow_wealth}, market {num:twin_open_market} against {num:twin_shadow_market}, burden {num:twin_open_burden} against {num:twin_shadow_burden}: **the mountain is the whole of it**", req: f => f.hasTwins },
+        { t: "the open twin carries wealth {num:twin_open_wealth} and burden {num:twin_open_burden}, the walled one {num:twin_shadow_wealth} and {num:twin_shadow_burden}, and **nothing else separates them**", req: f => f.hasTwins },
+        { t: "wealth {num:twin_open_wealth} against {num:twin_shadow_wealth} and burden {num:twin_open_burden} against {num:twin_shadow_burden}, with **the rock as the only variable**", req: f => f.hasTwins },
+        { t: "market access {num:twin_open_market} against {num:twin_shadow_market}, wealth {num:twin_open_wealth} against {num:twin_shadow_wealth}: **the mountain is the whole of the difference**", req: f => f.hasTwins },
+        { t: "one carries burden {num:twin_open_burden} and the other {num:twin_shadow_burden} at identical distance, so **the wall is the explanation and there is no other**", req: f => f.hasTwins },
+      ],
+
+      // -- the grid, the mouth, the gates --------------------------------------
+      dark: [
+        { t: "**{num:dark_n}** of {num:n_regions} regions have no grid line, the projection being that serving them would not repay it", req: () => true },
+        { t: "the ledgers left **{num:dark_n}** of {num:n_regions} regions unwired, on the grounds that wiring them would not pay", req: () => true },
+        { t: "**{num:dark_n}** regions in {num:n_regions} have no line to them, and the reason entered was cost", req: () => true },
+        { t: "of {num:n_regions} regions, **{num:dark_n}** were found not worth connecting", req: () => true },
+        { t: "**{num:dark_n}** regions were left off the grid on a projection that they would not repay the wire", req: () => true },
+        { t: "the wire stops short of **{num:dark_n}** of {num:n_regions} regions, by arithmetic rather than by accident", req: () => true },
+        { t: "a cost projection drew a line and **{num:dark_n}** regions fell outside it", req: () => true },
+      ],
+      dark_gloss: [
+        { t: "they carry **{num:dark_burden}×** the disease burden of the lit core", req: f => f.hasDarkBurden },
+        { t: "sickness runs **{num:dark_burden}×** heavier there than where the wires reach", req: f => f.hasDarkBurden },
+        { t: "the decision was arithmetic across all {num:n_regions} and the consequence is not", req: f => !f.hasDarkBurden },
+        { t: "no one in any of the {num:dark_n} voted on that boundary; a projection drew it", req: f => !f.hasDarkBurden },
+        { t: "disease runs **{num:dark_burden}×** heavier outside the wire than inside it", req: f => f.hasDarkBurden },
+        { t: "the unwired carry **{num:dark_burden}×** the burden of the wired, which is the projection's cost, paid by someone else", req: f => f.hasDarkBurden },
+        { t: "the boundary was drawn once, on cost, and has held for {num:n_epochs} epochs", req: f => !f.hasDarkBurden },
+      ],
+      mouth: [
+        { t: "**{name:mouth_town}** stands at the river mouth and takes **{num:mouth_downstream} points** of other towns' poison with the water", req: f => f.hasMouth },
+        { t: "everything upstream ends at **{name:mouth_town}**, which carries **{num:mouth_downstream} points** of blight it did not make", req: f => f.hasMouth },
+        { t: "**{num:mouth_downstream} points** of the blight at **{name:mouth_town}** were put in the water by towns above it", req: f => f.hasMouth },
+        { t: "the last town on the water is **{name:mouth_town}**, and it carries **{num:mouth_downstream} points** of blight from upstream", req: f => f.hasMouth },
+        { t: "**{name:mouth_town}** drinks what {num:n_regions} regions upstream of it discard: **{num:mouth_downstream} points**", req: f => f.hasMouth },
+        { t: "at the mouth, **{name:mouth_town}** takes delivery of **{num:mouth_downstream} points** of other towns' poison", req: f => f.hasMouth },
+      ],
+      mouth_gloss: [
+        { t: "the land set {name:mouth_town} last in that order before anyone built anything", req: () => true },
+        { t: "nobody in {name:mouth_town} chose to be last in the queue", req: () => true },
+        { t: "the river decided that sequence for all {num:n_regions} regions, and the ledger kept it", req: () => true },
+        { t: "{name:mouth_town}'s position in the chain was fixed by the water and has never been renegotiated", req: f => f.hasMouth },
+        { t: "being last on {num:n_regions} regions' river is not a policy anyone adopted", req: () => true },
+        { t: "the order that put {name:mouth_town} last was set by gradient, not by anyone's choice", req: f => f.hasMouth },
+      ],
+      toll: [
+        { t: "**{num:toll_n}** regions hand a tariff to gate-holders they had no part in choosing", req: f => f.hasToll },
+        { t: "at **{num:toll_n}** regions the crossing is held by someone the region did not pick, and the tariff is paid anyway", req: f => f.hasToll },
+        { t: "**{num:toll_n}** regions cross ground they do not hold, and are charged for it", req: f => f.hasToll },
+        { t: "**{num:toll_n}** regions are charged at crossings they do not own", req: f => f.hasToll },
+        { t: "a tariff falls on **{num:toll_n}** regions at gates chosen by geology and held by someone else", req: f => f.hasToll },
+        { t: "**{num:toll_n}** of {num:n_regions} regions pay to pass ground held by a party they never selected", req: f => f.hasToll },
+      ],
+      toll_gloss: [
+        { t: "the drag those tariffs put on trade across the realm reads {num:trade_drag}", req: f => f.hasDrag && f.trade_drag > 0 },
+        { t: "{num:crossings_decayed} of {num:crossings} crossings are past their upkeep, which raises the charge again", req: f => f.hasDecay },
+        { t: "at every one of the {num:crossings} crossings the holder was decided by where the rock narrowed", req: f => f.hasCrossings },
+        { t: "{num:crossings_decayed} of {num:crossings} crossings have fallen past their upkeep, which raises what the passage costs again", req: f => f.hasDecay },
+        { t: "geology chose the {num:crossings} narrow places and whoever held them at the founding still does", req: f => f.hasCrossings },
+        { t: "there is no route around the {num:crossings} of them; that is what makes them worth holding", req: f => f.hasToll && f.hasCrossings },
+      ],
+
+      // -- the census, the empire, the sky --------------------------------------
+      zipf: [
+        { t: "the towns fall into a **rank-size hierarchy**, and the big-town tail runs at slope α {num:tail_alpha}", req: f => f.hasZipf },
+        { t: "the census sorts into a **rank-size hierarchy** whose tail slope is α {num:tail_alpha}", req: f => f.hasZipf },
+        { t: "town sizes lie on a **rank-size line**: tail slope α {num:tail_alpha}, α {num:alpha} across the whole system", req: f => f.hasZipf },
+        { t: "the size distribution is a **rank-size hierarchy**, fitted at α {num:alpha} overall and α {num:tail_alpha} in the tail", req: f => f.hasZipf },
+        { t: "town sizes here obey a **rank-size law**, α {num:alpha} across the system and α {num:tail_alpha} in the tail, with the largest holding {num:primacy}× the second", req: f => f.hasZipf },
+        { t: "the census is a **rank-size hierarchy** and the tail is the part worth reading: α {num:tail_alpha}", req: f => f.hasZipf },
+        { t: "ranked by size, the towns lie on a line: α {num:alpha} over the system, α {num:tail_alpha} in the big-town tail", req: f => f.hasZipf },
+        { t: "the size distribution came out **rank-size**, tail slope α {num:tail_alpha}, fit {num:tail_r2}", req: f => f.hasZipf },
+      ],
+      zipf_gloss: [
+        { t: "the regularity itself is built in: the founding centuries grow every town by proportional random increments, which is Gibrat's rule, and that rule produces a size law on its own. What is **not** decided in advance is how steep it comes out, and the steepness is the finding, not the law (fit {num:tail_r2}, primacy {num:primacy}×)", req: f => f.hasZipf },
+        { t: "the shape is Gibrat's rule, written in at the founding, so the law is not the finding; the steepness is, at fit {num:tail_r2} with the largest town holding {num:primacy}× the second", req: f => f.hasZipf },
+        { t: "proportional growth guarantees a size law before any economy runs, so read the slope and not the line: fit {num:tail_r2}, primacy {num:primacy}×", req: f => f.hasZipf },
+        { t: "the law was written in at the founding by proportional growth, so it is not evidence of anything; the slope is, at α {num:tail_alpha} and fit {num:tail_r2}", req: f => f.hasZipf },
+        { t: "a size law is guaranteed here before any economy runs, which is why the claim is about steepness (α {num:tail_alpha}, fit {num:tail_r2}) and not about shape", req: f => f.hasZipf },
+        { t: "primacy {num:primacy}× and fit {num:tail_r2}: the regularity was decreed at the founding, the steepness was not", req: f => f.hasZipf },
+        { t: "proportional growth produces this line on its own, so read α {num:tail_alpha} at fit {num:tail_r2} and not the fact that there is a line at all", req: f => f.hasZipf },
+      ],
+      sovereignty: [
+        { t: "**{num:occupied_n}** regions are occupied ground, and every levy in them is paid to a power no one here can petition", req: f => f.hasSov },
+        { t: "on **{num:occupied_n}** regions the levy leaves the realm entirely, to a power with no petitioner in it", req: f => f.hasSov },
+        { t: "**{num:occupied_n}** regions answer to an authority outside this map", req: f => f.hasSov },
+        { t: "**{num:occupied_n}** regions are under occupation, and the levy leaves with the cargo", req: f => f.hasSov },
+        { t: "sovereignty is the last inequality here: **{num:occupied_n}** regions do not hold their own", req: f => f.hasSov },
+        { t: "on **{num:occupied_n}** regions the question of who is owed is settled outside the realm", req: f => f.hasSov },
+      ],
+      sovereignty_gloss: [
+        { t: "the free country keeps **{num:retent}×** the share of its own value that the occupied country keeps, and yet the occupied zone is the realm's best-wired ({num:wired} of {num:occupied_n} on the grid): **the grid reaches you when someone else wants what you have**", req: f => f.hasSov },
+        { t: "retention runs **{num:retent}×** higher in the free country, while the wires run the other way, {num:wired} of {num:occupied_n} occupied regions connected: **the line follows the cargo**", req: f => f.hasSov },
+        { t: "the occupied owners' row holds {num:comprador}× the free realm's share, so the occupation did not replace the owners; **it hired them**", req: f => f.hasComprador },
+        { t: "the free country retains **{num:retent}×** what the occupied country retains, and {num:wired} of {num:occupied_n} occupied regions are wired: **the line follows what someone else wants**", req: f => f.hasSov },
+        { t: "**{num:wired}** of {num:occupied_n} occupied regions carry a grid line, which is the best coverage in the realm, and retention there runs at **{num:retent}×** below the free country's", req: f => f.hasSov },
+        { t: "the occupied owners' row holds **{num:comprador}×** the free realm's share, so the occupation kept the owners and changed only who they answer to", req: f => f.hasComprador },
+      ],
+      concessions: [
+        { t: "the empire mostly did not invade, it bought in: **{num:conc_n}** {term:coast_is} a foreign concession", req: f => f.hasConc },
+        { t: "**{num:conc_n}** {term:coast_is} held by concession rather than by conquest", req: f => f.hasConc },
+        { t: "**{num:aband_n}** {term:coast_was} wound up when the lode ran thin, and **the attention left with the ore**", req: f => f.hasAband && !f.hasConc },
+        { t: "**{num:conc_n}** {term:coast_is} owned from outside without ever being invaded", req: f => f.hasConc },
+        { t: "the empire took **{num:conc_n}** {term:coast_is} by contract, which is cheaper than taking {term:coast_is} by force", req: f => f.hasConc },
+        { t: "the reach here is commercial: **{num:conc_n}** {term:coast_is} a concession of {name:metropole}", req: f => f.hasConc },
+        { t: "no fleet was needed for **{num:conc_n}** {term:coast_is}; a contract with {name:metropole} did it", req: f => f.hasConc },
+        { t: "**{num:aband_n}** {term:coast_was} developed and then dropped", req: f => f.hasAband && !f.hasConc },
+        { t: "the empire came to **{num:aband_n}** {term:coast_was} and then stopped coming", req: f => f.hasAband && !f.hasConc },
+      ],
+      concessions_gloss: [
+        { t: "richer than the median at **{num:conc_wealth}** against {num:median_wealth}, with **{num:foreign_claim}%** of the yield entered in {name:metropole}'s books: **it was developed and owned in the same ledger**", req: f => f.hasConc && f.concRicher },
+        { t: "the concession outearns the median, {num:conc_wealth} to {num:median_wealth}, and sends **{num:foreign_claim}%** of it home to {name:metropole}", req: f => f.hasConc && f.concRicher },
+        { t: "poorer than the median it sits in, **{num:conc_wealth}** against {num:median_wealth}, and still sending **{num:foreign_claim}%** of its yield to {name:metropole}", req: f => f.hasConc && !f.concRicher },
+        { t: "worth **{num:conc_wealth}** against a median of {num:median_wealth} and remitting **{num:foreign_claim}%** to {name:metropole} regardless: **the claim does not wait on the yield**", req: f => f.hasConc && !f.concRicher },
+        { t: "**{num:aband_n}** {term:coast_was} let go when the ore thinned, and **the attention left with the ore**", req: f => f.hasAband && f.hasConc },
+        { t: "the yield is entered in {name:metropole}'s books at **{num:foreign_claim}%**, whatever the ground itself returns", req: f => f.hasConc },
+        { t: "{name:metropole} books **{num:foreign_claim}%** of what comes out, and the ground keeps the rest and the ruin", req: f => f.hasConc },
+        { t: "at **{num:conc_wealth}** against a median of {num:median_wealth}, the concession is not a gift to the district it sits in", req: f => f.hasConc },
+        { t: "**{num:aband_n}** more {term:coast_was} wound up when the ore thinned, and the ground got its ruin and its freedom in the same year", req: f => f.hasAband && f.hasConc },
+      ],
+      sky: [
+        { t: "behind the wall the lanes would cut the road to the capital by **{num:sky_shadow}%**, where the open country gains {num:sky_open}%", req: f => f.hasSky },
+        { t: "the skyway is worth **{num:sky_shadow}%** of the walled country's distance and only {num:sky_open}% of the open country's", req: f => f.hasSky },
+        { t: "flight would help the walled country most: **{num:sky_shadow}%** off its road to the capital against {num:sky_open}% off the open country's", req: f => f.hasSky },
+        { t: "the lanes are worth **{num:sky_shadow}%** of the walled country's road and {num:sky_open}% of the open country's", req: f => f.hasSky },
+        { t: "measured in distance saved, the skyway gives the shadow **{num:sky_shadow}%** and the open country {num:sky_open}%", req: f => f.hasSky },
+        { t: "**{num:sky_shadow}%** off the walled road, {num:sky_open}% off the open one: the sky is worth most where the ground is worst", req: f => f.hasSky },
+      ],
+      sky_gloss: [
+        { t: "boarding is a privilege of the owners' row, so **the {num:sky_shadow}% goes to the country that can least afford the fare**", req: f => f.hasSky },
+        { t: "the fare is the filter: **the lane saves {num:sky_shadow}% for whoever can board, and the walk is what the rest keep**", req: f => f.hasSky },
+        { t: "the owners' row of the shadow twin measures the wall at **{num:twin_sky}% less**, and its labour still walks the pass", req: f => f.hasTwinSky },
+        { t: "the fare sorts who gets the **{num:sky_shadow}%**, and it is not the country that needs it", req: f => f.hasSky },
+        { t: "a lane that saves **{num:sky_shadow}%** is a lane priced beyond the people it would save it for", req: f => f.hasSky },
+        { t: "the shadow twin's owners' row measures the wall at **{num:twin_sky}% less** and its labour still walks the pass", req: f => f.hasTwinSky },
+      ],
+
+      // -- the close -----------------------------------------------------------
+      closer: [
+        { t: "none of this was painted: it fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, and every one of these {num:n_facts} figures recomputes from the exported columns", req: () => true },
+        { t: "nobody steered this: it fell out of the ore, the wall, the water and the ledgers, and all {num:n_facts} figures above recompute from the exported columns", req: () => true },
+        { t: "no author placed any of it. The ground, the wall, the water and the arithmetic did, and each of the {num:n_facts} figures here recomputes from the export", req: () => true },
+        { t: "there is no villain in this record and it happened anyway; every one of the {num:n_facts} figures recomputes from the exported columns", req: () => true },
+        { t: "no author placed any of this. The ore, the wall, the water and the arithmetic did, and all {num:n_facts} figures recompute from the export", req: () => true },
+        { t: "every one of these {num:n_facts} figures came out of the same {num:n_regions} regions and recomputes from the exported columns", req: () => true },
+        { t: "the record is arithmetic all the way down: {num:n_facts} figures, each recomputable from the export, none of them written by hand", req: () => true },
+        { t: "nothing above was authored. It fell out of the ore, the wall, the water and what the ledgers said would pay, across {num:n_epochs} epochs", req: () => true },
+        { t: "not one of the {num:n_facts} figures here was chosen; each is what the rules returned, and each recomputes from the exported columns", req: () => true },
+        { t: "the ground, the wall and the arithmetic wrote this between them, and all {num:n_facts} figures recompute from the export", req: () => true },
+        { t: "{num:n_epochs} epochs of it, {num:n_facts} figures, and no hand on the scale: every value recomputes from the exported columns", req: () => true },
+        { t: "read it as arithmetic rather than as argument: {num:n_facts} figures over {num:n_regions} regions, all of them recomputable", req: () => true },
+      ],
+    };
+
+    // The order the blocks argue in. Each entry is [claim class, gloss class]; a
+    // block appears only if its claim class has a fragment whose req passes, which
+    // is the gating doing the work the old `if` ladder did.
+    const FINDINGS_ORDER = [
+      ["lead", "lead_gloss"], ["turning", null], ["ages", "ages_gloss"],
+      ["class", "class_gloss"], ["blight", "blight_gloss"], ["moran", "moran_gloss"],
+      ["shadow", "shadow_gloss"], ["dark", "dark_gloss"], ["mouth", "mouth_gloss"],
+      ["toll", "toll_gloss"], ["rain", "rain_gloss"], ["twins", "twins_gloss"],
+      ["zipf", "zipf_gloss"], ["sovereignty", "sovereignty_gloss"],
+      ["concessions", "concessions_gloss"], ["sky", "sky_gloss"], ["closer", null],
+    ];
+
+    const FINDINGS_MEASURES = {
+      dumping_reform: "a Dumping Reform", grid_charter: "a Grid Charter",
+      toll_amnesty: "a Tariff Amnesty", retention_act: "a Retention Act",
+      crown_granary: "the Crown Granary", dumping_entrenched: "the dumping entrenched in law",
+      toll_crackdown: "a tariff crackdown",
+    };
+
+    // The context every fragment gates on and every slot fills from: the findings
+    // object, flattened, with the branch predicates precomputed so a `req` reads as
+    // a claim about the world rather than as a null check.
+    function findingsCtx(model, params) {
+      const F = getFindings(model);
+      const town = (id) => model.settlements.find(st => st.regionId === id)
+        || { name: ((model.regions.find(r => r.id === id) || {}).placeName) || "the wild" };
+      const reg = (id) => model.regions.find(r => r.id === id) || {};
+      const tw = F.twins ? { open: reg(F.twins.open), shadow: reg(F.twins.shadow) } : null;
+      const t = F.turning;
+      const turnKind = !t ? "none"
+        : t.type === "revolt" ? (t.outcome === "won" ? (t.arc === "starved" ? "starved" : "flourished") : "crushed")
+        : t.type === "reform" ? "reform" : "reaction";
+      return {
+        F, dG: F.gini - F.gini_t0, gini: F.gini, gini_t0: F.gini_t0,
+        n_regions: model.regions.length, n_epochs: model.epochSnaps.length - 1,
+        realm: model.capitalName,
+        turnKind: (t || params.ep > 0) ? turnKind : "none",
+        turn_year: t ? 1000 + 25 * t.epoch : null,
+        measure: t && t.measure ? FINDINGS_MEASURES[t.measure] : null,
+        hasAges: !!(F.ages && F.ages.length > 1), n_ages: F.ages ? F.ages.length : 0,
+        ages: F.ages ? F.ages.map(a => `**${a.name}** (${1000 + 25 * a.from_epoch}–${1000 + 25 * a.to_epoch}, gini ${a.gini_start.toFixed(2)} → ${a.gini_end.toFixed(2)})`).join(", ") : null,
+        hasClass: !!(F.owners && F.class_gap !== null),
+        pop_pct: F.owners ? F.owners.pop_pct : null, coin_pct: F.owners ? F.owners.coin_pct : null,
+        class_gap: F.class_gap, company_town: F.company_town !== undefined && F.company_town !== null ? town(F.company_town).name : null,
+        company_share: F.company_share,
+        hasWithin: F.within_pct !== null && F.within_pct >= 15, within_pct: F.within_pct,
+        hasBlightRatio: F.blight_ratio !== null, blight_ratio: F.blight_ratio,
+        hasMoran: !!(F.moran && F.moran_blight),
+        moran_i: F.moran ? F.moran.I : null, moran_blight_i: F.moran_blight ? F.moran_blight.I : null,
+        moran_expected: F.moran ? F.moran.expected : null, moran_p: F.moran ? F.moran.p : null,
+        moran_blight_p: F.moran_blight ? F.moran_blight.p : null, moran_perm: F.moran ? F.moran.n_perm : null,
+        ridge: model.ridges.length ? model.ridges[0].name : null,
+        hasShadow: F.shadow_gap_pct !== null && F.shadow_gap_pct > 0 && model.ridges.length > 0,
+        shadow_gap: F.shadow_gap_pct,
+        hasCrossings: F.crossings_total > 0, crossings: F.crossings_total,
+        crossings_decayed: F.crossings_decayed, hasDecay: F.crossings_decayed > 0,
+        hasRain: !!(F.rain_split && F.rain_split.wet - F.rain_split.dry >= 8 && model.ridges.length),
+        rain_wet: F.rain_split ? F.rain_split.wet : null, rain_dry: F.rain_split ? F.rain_split.dry : null,
+        hasTwins: !!F.twins,
+        twin_open: tw ? town(F.twins.open).name : null, twin_shadow: tw ? town(F.twins.shadow).name : null,
+        twin_open_wealth: tw ? tw.open.wealth : null, twin_open_market: tw ? tw.open.marketAccess : null,
+        twin_open_burden: tw ? tw.open.burden : null, twin_shadow_wealth: tw ? tw.shadow.wealth : null,
+        twin_shadow_market: tw ? tw.shadow.marketAccess : null, twin_shadow_burden: tw ? tw.shadow.burden : null,
+        dark_n: F.dark_n, hasDarkBurden: F.dark_burden_ratio !== null && F.dark_burden_ratio > 1,
+        dark_burden: F.dark_burden_ratio,
+        hasMouth: F.mouth_region !== null,
+        mouth_town: F.mouth_region !== null ? town(F.mouth_region).name : null,
+        mouth_downstream: F.mouth_downstream,
+        hasToll: F.toll_paying_n > 0, toll_n: F.toll_paying_n,
+        hasDrag: F.trade_drag !== null && F.trade_drag !== undefined, trade_drag: F.trade_drag,
+        hasZipf: !!F.zipf, alpha: F.zipf ? F.zipf.alpha : null, tail_alpha: F.zipf ? F.zipf.tail_alpha : null,
+        tail_r2: F.zipf ? F.zipf.tail_r2 : null, primacy: F.zipf ? F.zipf.primacy : null,
+        hasSov: !!F.sovereignty, occupied_n: F.sovereignty ? F.sovereignty.occupied_n : null,
+        retent: F.sovereignty ? F.sovereignty.retent_ratio : null,
+        wired: F.sovereignty ? F.sovereignty.corridor_wired : null,
+        hasComprador: !!(F.sovereignty && F.sovereignty.comprador_ratio > 1),
+        comprador: F.sovereignty ? F.sovereignty.comprador_ratio : null,
+        hasConc: !!(F.concessions && F.concessions.concession_n > 0),
+        concRicher: !!(F.concessions && F.concessions.conc_wealth > F.concessions.median_wealth),
+        hasAband: !!(F.concessions && F.concessions.abandoned_n > 0),
+        conc_n: F.concessions ? F.concessions.concession_n : null,
+        aband_n: F.concessions ? F.concessions.abandoned_n : null,
+        conc_wealth: F.concessions ? F.concessions.conc_wealth : null,
+        median_wealth: F.concessions ? F.concessions.median_wealth : null,
+        foreign_claim: F.concessions ? F.concessions.foreign_claim : null,
+        coast_is: F.concessions && F.concessions.concession_n === 1 ? "coast is" : "coasts are",
+        coast_was: F.concessions && F.concessions.abandoned_n === 1 ? "coast was" : "coasts were",
+        metropole: model.metropole,
+        hasSky: !!(F.sky && F.sky.shadow_adv !== null && F.sky.open_adv !== null && F.sky.shadow_adv >= F.sky.open_adv + 5),
+        sky_shadow: F.sky ? F.sky.shadow_adv : null, sky_open: F.sky ? F.sky.open_adv : null,
+        hasTwinSky: !!(F.twins && F.sky && F.sky.twin_sky !== null && F.sky.twin_sky > 0),
+        twin_sky: F.sky ? F.sky.twin_sky : null,
+        n_facts: 0,          // filled in on the second pass: the closer counts the rest
+      };
+    }
+
+    // Slot resolution. `num` returns {value, rule} where the analyst quotes to a
+    // fixed precision — a gini to two places, a Moran's I to three — so the audit
+    // recomputes the told from the true and a moved digit fails.
+    const FINDINGS_FIXED = {
+      gini: "fixed2", gini_t0: "fixed2", moran_i: "fixed3", moran_blight_i: "fixed3",
+      moran_expected: "fixed3", moran_p: "fixed3", moran_blight_p: "fixed3",
+      alpha: "fixed2", tail_alpha: "fixed2", tail_r2: "fixed2", primacy: "fixed1",
+      dark_burden: "fixed1", blight_ratio: "fixed1", retent: "fixed1", comprador: "fixed1",
+      class_gap: "fixed1", trade_drag: "fixed1", foreign_claim: "pct",
+    };
+    const findingsResolve = (kind, key, c) => {
+      if (kind === "name" || kind === "term") return c[key];
+      if (kind === "num") {
+        const v = c[key];
+        if (v === null || v === undefined) return null;
+        return FINDINGS_FIXED[key] ? { value: v, rule: FINDINGS_FIXED[key] } : v;
+      }
+      return null;
+    };
+
+    // Compose the panel. Returns blocks, each with its own facts[], so the caller
+    // can render and the suite can audit without either one parsing prose.
+    function composeFindings(model, params) {
+      const c = findingsCtx(model, params);
+      const blocks = [];
+      let factN = 0;
+      for (const [claim, gloss] of FINDINGS_ORDER) {
+        if (!loomGate(FINDINGS_POOL, claim, c, undefined, new Set()).length) continue;
+        if (claim === "closer") c.n_facts = factN;
+        const v = loomCompose({
+          register: "analyst", frames: FINDINGS_FRAMES, pool: FINDINGS_POOL,
+          classes: [gloss ? [claim, gloss] : [claim]], ctx: c, resolve: findingsResolve,
+          rv: loomStream(params.seed, "findings", claim),
+        });
+        if (!v.text) continue;
+        factN += v.facts.filter(f => f.path.startsWith("num:")).length;
+        blocks.push({ topic: claim, text: v.text, facts: v.facts, names: v.names });
+      }
+      return blocks;
+    }
+
     // ---- The loom: one prose engine for every register (D1, #137) -----------
     //
     // Principle P5 (direction.md §4): the app SELECTS sentences today; it must
@@ -7117,11 +7598,20 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     // The rule table the audit inverts. Each entry recomputes `told` from `true`,
     // so a fact whose told does not follow from its true is caught by arithmetic
     // rather than by inspection.
+    // D3 (#139) adds the fixed-decimal and percentage rules the analyst register
+    // needs: a gini is quoted to two places and a Moran's I to three, and "verbatim"
+    // would print 0.15 as "0.15" but 0.1 as "0.1", which reads as a different
+    // precision claim. Every rule stays a pure function of the value, so the audit
+    // still catches a planted told by recomputing it.
     const LOOM_RULES = {
       verbatim: (v) => String(v),
       folk:     (v) => loomFolk(Math.round(v)),
       spelled:  (v) => loomSpell(v),
       share:    (v, ctx) => loomFolk(Math.round(100 * v / Math.max(1, ctx.of))),
+      fixed1:   (v) => Number(v).toFixed(1),
+      fixed2:   (v) => Number(v).toFixed(2),
+      fixed3:   (v) => Number(v).toFixed(3),
+      pct:      (v) => String(Math.round(100 * v)),
     };
     const loomRuleFor = (register) => ({ exact: "verbatim", folk: "folk", spelled: "spelled" }[
       (LOOM_REGISTERS[register] || {}).digits] || "verbatim");
@@ -7337,10 +7827,17 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
           if (/[.!?]$/.test(t)) problems.push(`${at} — ends with a stop; frames own the stop, and a fragment that carries one is a canned sentence`);
           LOOM_SLOT_RE.lastIndex = 0;
           if (!LOOM_SLOT_RE.test(t)) problems.push(`${at} — carries no slot; it has one surface and will collide with itself (see #136)`);
-          const unknown = t.match(/\{([a-z]+):/g) || [];
+          const unknown = t.match(/\{([a-zA-Z]+):/g) || [];
           for (const u of unknown) {
             const kind = u.slice(1, -1);
             if (!LOOM_SLOT_KINDS.includes(kind)) problems.push(`${at} — unknown slot kind "${kind}"`);
+          }
+          // anything in braces that is not a WELL-FORMED slot: a valid kind with a
+          // key the slot grammar cannot read is the quiet version of this bug, since
+          // it reaches the page as literal braces and leaves no fact behind.
+          for (const brace of (t.match(/\{[^}]*\}/g) || [])) {
+            LOOM_SLOT_RE.lastIndex = 0;
+            if (!LOOM_SLOT_RE.test(brace)) problems.push(`${at} — ${JSON.stringify(brace)} is not a well-formed slot; it would reach the page verbatim`);
           }
         }
       }
@@ -7422,4 +7919,6 @@ export {
   loomStream, loomLexicon, loomMint, loomFolk, loomSpell, loomRuleFor,
   loomGate, loomFill, loomCompose, loomAudit,
   loomSkeleton, loomDiversity, loomDiversityFloor, loomMeetsFloor, loomLint,
+  // The findings, composed on the loom (D3, #139)
+  FINDINGS_POOL, FINDINGS_ORDER, FINDINGS_FRAMES, composeFindings, findingsCtx,
 };

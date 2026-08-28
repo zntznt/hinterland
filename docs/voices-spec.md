@@ -346,3 +346,214 @@ Gate to proceed: owner eyeballs all 50 and reads 6 random pairs aloud (at least
 one of them a positive-band pair); V1–V6 all pass on 3 seeds; no surface repeats
 > 3; only then design export schema (`voices` block) and UI, per direction.md
 Phase D2.
+
+---
+
+## 7. The gate run (#136): what passed, what did not, and what building it found
+
+Built at `tools/proto/` (`voices-proto.mjs` + `voices-pools.mjs` + `voices-extract.mjs`);
+sample at [voices-sample.md](voices-sample.md). Zero app changes: `index.html`, `src/`
+and the acceptance suite are untouched, and nothing in `tools/proto/` is imported by
+anything that runs in CI.
+
+    cd tools/proto
+    NODE_PATH=../node_modules node voices-proto.mjs --seeds atlas-1,atlas-2,atlas-3 --ep 10
+
+Pools were authored at the spec's **full** declared scale — 135 oral + 116 written = 251
+fragments, 20 frames, 4 diction skins, 20 imperial stems — not the half scale §6 permits.
+The reason is §5's own warning, and it is the first finding below.
+
+### 7.1 Invariants, 3 seeds, 50 voices each
+
+| | atlas-1 | atlas-2 | atlas-3 |
+|---|---|---|---|
+| V1 every digit in a written voice is an export value in `facts[]` | PASS | PASS | PASS |
+| V2 oral voices contain no digits | PASS | PASS | PASS |
+| V3 every proper name traces to the export | PASS | PASS | PASS |
+| V4 `S_written − S_oral` is the signed skew law, corridor included | PASS | PASS | PASS |
+| V5 no Cyrillic / banned lexicon, **no surface > 3** | PASS (max 3) | PASS (max 3) | PASS (max 3) |
+
+950 distinct realized surfaces over 1022 draws. **V6 splits on its own wording** and the
+two readings disagree, so both are reported rather than one being quietly chosen:
+
+- **strict** — `weary` (−10..+15) counts as neither side, so the negative side is
+  {fury, aggrieved} and the positive {steady, proud}: **FAIL** (neg 2/2, pos 1/2 —
+  `proud` is empty across all three seeds).
+- **loose** — `weary` spans zero and counts on both: **PASS** (neg 3/2, pos 2/2).
+
+Non-grievance oral sentences 81%, well clear of the 20% floor either way.
+
+**The gate does not open under the strict reading, and the strict reading is the one that
+does any work** — under the loose one, a single `steady` town in three worlds satisfies a
+tripwire whose stated purpose is "the street is not a monotone". §7.4 is why.
+
+### 7.2 The spec's ground-truth column list has drifted from the export
+
+Three of the columns §0 lists by name do not exist under those names, and a fourth exists
+but is far thinner than the slot table assumes. The prototype maps them in `ctxOf`; the
+spec should be corrected at the source.
+
+| spec says | export has | note |
+|---|---|---|
+| `toll_burden` | `tariff_burden` | same quantity |
+| `refining_capacity` | `aetherworks_capacity` | same quantity |
+| `on_conduit` | `on_grid` | same quantity |
+| `road_name` | present, but on only **15 of 176** road features across five seeds | `{road}` is thin, not dead — see below |
+
+`{road}` is worth a note of its own, because the first pass of this prototype cut every
+road fragment on a false reading: it sampled one seed's first four road features, saw
+`road_name: null`, and concluded the slot was dead. It is not. Named roads are rare (8.5%
+of road features) but they carry `from_region` / `to_region`, so `{road}` resolves per
+region exactly like `{gate}` does, and the names arrive with their article ("the Ore
+Road"). The slot is restored, and it earns its keep twice: it varies by region, and it is
+a name that is **not the town's own**, which §7.3 shows is the scarce resource.
+
+Two more are live but behave unlike the spec assumes:
+
+- **`grid_access` saturates.** It is 100 for every connected town, so under §2 step 3's
+  "salience = its gating column value", the `grid` topic out-ranked everything and led
+  almost every voice — including a `fury` gate town whose oral paragraph therefore opened
+  on a boast about a new lamp. The prototype ranks `grid` by `arcane_service_index`
+  (median 43, max 68 over five seeds), which is the graded measure of what the
+  connection delivers.
+- **The skin picker collapses.** §1 selects works-town on `refining_capacity>0 || on_conduit`,
+  ahead of everything else. `on_grid` is true for **55 of 57** settled regions across the three sample
+  seeds, so works-town absorbs 96% of towns and the other three skins barely appear —
+  metropolitan reaches 4 ports, old-faith 1 sanctuary. The picker needs a
+  discriminating first test, not a near-universal one.
+
+### 7.3 The collision math assumed slots the fragments did not have
+
+§1's combinatorics are explicit — "surface = fragment × slot fill × diction skin: with ≥2
+slots averaging ≥6 realizations and 4 skins, ≥12 distinct surfaces per fragment". A
+**slotless** fragment has exactly one surface per skin, so it collides with itself on every
+draw and no amount of pool growth helps. Measured, in order:
+
+| build | worst surface repeat over the seeds run (V5 ceiling: 3) |
+|---|---|
+| half scale, mostly slotless (what §6 permits) | **14** |
+| full scale, mostly slotless | **8** |
+| full scale, every fragment carrying a region-varying slot | **3** |
+
+So §5's "halving it produces visible repetition by voice ~30" is right but understates the
+cause: the pool size was never the binding constraint. What binds is slot density, and the
+spec states the requirement in its arithmetic without stating it as a rule. It should be a
+rule: **no fragment without a region-varying slot.**
+
+That fix has a cost the spec has no rule for either. Forcing a name into every fragment
+makes the oral register chant its own town's name — **mean 5.9 mentions per oral paragraph,
+max 8; written mean 7.0, max 11.** Real speech pronominalizes. The spec needs an anaphora
+rule (a second, name-free realization per fragment, used after the first two mentions), and
+V5 must then be counted on the *displayed* text so the rule cannot be used to manufacture
+surface variety the reader never sees.
+
+### 7.4 V6 fired on a real defect: the credit side of the sentiment formula is starved
+
+`proud` is empty in the 3-seed sample not by chance. Across **20 seeds, 386 settled
+regions**, under §3's formula verbatim:
+
+| band | share |
+|---|---|
+| fury | 1.8% |
+| aggrieved | 17.1% |
+| weary | **65.0%** |
+| steady | 14.8% |
+| proud | **1.3%** |
+
+mean C 29.5, mean G 27.7. The G side is well scaled — `blight_load` (median 26) and
+`tariff_burden` (median 21) land where §3 expects. The C side is not, and one term is why:
+
+| credit term | weight | mean contribution | share of C |
+|---|---|---|---|
+| `wealth` | 0.30 | **4.5** | 15% |
+| `social_trust` | 0.25 | 15.1 | 51% |
+| `market_access` | 0.15 | 6.3 | 21% |
+| `sky_advantage` | 0.10 | 2.2 | 8% |
+
+`wealth` is clamped 0–100 in the engine, so §3 treating it as a 0–100 index is not wrong on
+its face — but its **realized** distribution is p50 13, p90 29, p99 51, **max 55**. Half of
+C's nominal headroom sits in a term that in practice contributes 4.5 points, and
+`social_trust` (median 64) supplies most of what pride there is.
+
+The tell is in §4, the worked examples that are called "the quality bar":
+
+- example (a) assumes `wealth` 31 — the **91st percentile** of the measured distribution;
+- example (d), Vellenmark, assumes `wealth` 71 — **above the observed maximum of 55**, in
+  386 regions.
+
+Example (d) exists specifically so that the spec's own example set can pass V6 ("A spec
+whose examples are all misery would fail its own V6"). It is built on a column value the
+engine does not produce. The tripwire caught the spec, which is what a tripwire is for.
+
+**Measured but deliberately NOT applied**, since the sentiment model is the owner's call and
+§0 already schedules its re-derivation for Phase D2: entering `wealth` as its within-sample
+percentile, changing nothing else, moves the same 386 regions to fury 1.0% / aggrieved
+10.9% / weary 40.4% / **steady 42.5% / proud 5.2%** — V6 passes strictly, and the street
+gains the upper edge §3 says it should have. Reproduce with
+`node voices-proto.mjs --diag`, which prints both distributions side by side.
+
+Note also that at a 1.3% `proud` rate, a 3-seed sample of ~60 regions has roughly a
+**55% chance** of containing one at all. Even with the formula unchanged, V6 as specified is
+a coin flip rather than a tripwire; its sample size should be stated in seeds *or* regions,
+whichever gives the band the resolution the check needs.
+
+### 7.5 V3 contradicts §1 and §2 as literally written
+
+V3 says "every proper name in either register appears **verbatim** in the export", but §1
+requires self-referential event names to shorten ("the Landing at X" spoken in X → "the
+Landing") and §2 requires the year to be omitted for an era-phrase when
+`legibility_gap ≥ 55` and the event is ≥ 2 epochs old. Under the literal V3 both rules are
+violations. The prototype checks the **surface** against the set of shortenings recomputed
+from the export by those two rules — anything else and V3 either forbids the spec's own
+behaviour or, if it only inspects the slot's source value, tests nothing about what the
+voice actually said. V3's wording should carry the exception.
+
+### 7.6 v2 added the elsewhere layer to §1 and §2 but not to §3
+
+§3's per-topic sign table covers harm, achievement and disorder. `elsewhere` — the class
+v2 introduced to carry the deterritorialization pillar — is in none of them, so a voice
+whose lead topic is `elsewhere` gets **skew 0**: `S_written = S_oral`, no divergence at
+all, in the one register whose entire purpose is to diverge. Measured across the 3-seed
+sample, `elsewhere` is the third most common lead topic (9 of 75 written voices) and
+**12% of written voices carry no skew**:
+
+| the lead topic's interest | voices | share |
+|---|---|---|
+| harm minimised (+D) | 45 | 60% |
+| achievement inflated (+D) | 19 | 25% |
+| **no interest engaged (0)** | **9** | **12%** |
+| constabulary inflates disorder (+D) | 2 | 3% |
+
+The prototype leaves the hole visible rather than guessing a sign for it. The interest is
+arguable in both directions and the spec should say which: an office citing `{exchange}`'s
+grade or `{metropole}`’s standard form has an interest in appearing to hold **no discretion**
+(the `circular` class exists for exactly that), which argues for a deflating skew toward
+"not a matter for this office"; but a district reporting outward migration as "the ordinary
+circulation of an expanding trade" is inflating, same as any achievement. Whichever it is,
+`elsewhere` needs a row in §3's table before D2, or the deterritorialization pillar arrives
+in the fragments and never reaches the lie.
+
+### 7.7 What remains for the owner
+
+The machine part of the gate is met on 3 seeds: V1–V5 pass, no surface repeats above 3.
+What is left is the part only the owner can do — reading all 50, reading 6 pairs aloud
+including a positive-band pair, and judging the two named risks (euphemism-join flatness;
+the house-style-of-lying uniformity). Note that the positive-band pairs in the sample are
+`steady` and thin on the ground (2 of 75 oral voices), and that even those read
+grievance-heavy: most `aspiration` fragments gate on a `wealth` or `aetherworks_capacity`
+threshold the measured distributions rarely clear, so a `steady` town's oral voice ends up
+drawing from `witness` and `grievance` anyway. That is §7.4 showing up in the reading
+rather than in the histogram, and it is the thing to listen for when reading aloud.
+
+Three decisions block D2, and all three are the owner's:
+
+1. **Which reading of V6 governs**, and whether its sample size is stated in seeds or in
+   regions.
+2. **Whether `wealth` enters the sentiment formula raw or as a percentile** — or whether
+   §3 is left alone and the re-derivation waits for Phase D2's column set as §0 plans, in
+   which case the strict V6 stays red until then and should be recorded as such.
+3. **What interest the `elsewhere` topic serves** in §3's sign table (§7.6).
+
+The corrections in §7.2, §7.3 and §7.5 are editorial rather than judgement calls — the
+column names, the "no fragment without a region-varying slot" rule, the anaphora rule, and
+V3's shortening exception — and can be folded into §§0–3 whenever the spec is next opened.

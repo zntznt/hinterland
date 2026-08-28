@@ -430,6 +430,44 @@ the sweep harness before pinning, per house rule.
 > 11 → 0.41, 16 → 0.28, 22 → 0.20. An 11-fragment pool lands inside the 0.36–0.52
 > band this paragraph records for today's chronicle, which is the calibration check
 > on the measure as well as the budget for D3 and D4.
+>
+> **D4 (#140) landed on it**: the chronicle is the second surface migrated, and the
+> largest. 56 chronicle classes and 92 event classes in the historian register;
+> `composeChronicle` keeps its signature and takes an optional audit array, so the
+> markdown surface can be checked on its facts rather than on its bytes. The
+> twenty-seven-branch event ladder is gone. **The closing act was `findingsHTML`
+> written a second time** and now calls `composeFindings`, skipping the three topics
+> the State of the Realm already carries — the class ledger, the sovereignty ledger
+> and the dark grid were each stated twice in one document.
+>
+> **This section's cross-seed ceiling is met and the within-seed one is not, and the
+> difference is the finding.** Cross-seed skeleton overlap runs **0.197** (0.1968 over
+> 40 seeds) against the 0.20 pinned above, from a v1 baseline of 0.62 on the same
+> instrument. The within-seed cross-knob figure runs **0.76** against 0.45, from 0.93,
+> and is reported by the suite rather than pinned, because **it is not reachable by
+> authoring**: a knob at its extreme leaves 77–96% of the beat structure standing
+> (`iq=100` shares 53 of 54 beats with the default), and the composition substream is
+> keyed on the seed, so two knob settings of one seed draw the SAME fragments for every
+> beat they share. Closing that gap would mean keying composition on world state and
+> rewording a chronicle whose content did not change — varying the prose to move a
+> number rather than because the world differs. The ceiling as written measures knob
+> reach, which is Phase A's business (§6, A3), not the loom's.
+>
+> Two things about the MEASURE were learned here and are worth carrying into D5 and
+> the voices. **A wordy frame raises cross-world sameness**: a frame's words belong to
+> every world that draws it, so five phrase-frames moved the corpus from 0.197 to
+> 0.200 while making the sentences more various. Frames stay at punctuation; variety
+> is bought in the pool. And **the measure rewards a document that repeats itself**:
+> suppressing within-chronicle clause repeats (one tally across The Years) raised
+> cross-seed overlap from 0.21 to 0.22, because a world that never repeats covers more
+> of the pool. The tally stayed — a reader who meets the same sentence twice in one
+> document notices what no cross-seed statistic can see — and the trade is recorded
+> here so the next surface does not rediscover it by accident.
+>
+> The instrument's floor was measured rather than assumed: two acts of the same
+> chronicle, sharing register and subject and no template, score 0.045–0.073, and a
+> chronicle against another world's findings panel scores 0.092. The 0.20 ceiling is
+> a claim about prose, not an artifact of the mask.
 
 ---
 

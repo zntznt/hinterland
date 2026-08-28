@@ -4835,9 +4835,11 @@ console.log("# The chronicle composed D4 (#140): the historian stops reciting");
     const corpus = worlds.map(w => w.text).join("\n");
     const survivors = DELETED.filter(v => corpus.includes(v));
     // Pinned at two thirds. v1 sat at 1.00 by construction: every beat was one
-    // sentence, so every world said it. Measured here at 0.25 over 16 seeds, and the sentence that
-    // holds the record is a succession claim, and successions are the commonest
-    // event the model produces: about five per world.
+    // sentence, so every world said it. Measured here at 0.56 over these 16 seeds
+    // (0.50 over 24, `chronicle-proto.mjs --repeats`), and the sentence that holds the
+    // record is always a succession clause, because successions are the commonest
+    // event the model produces — about five per world, so one world covers half the
+    // class on its own. The pin has room for that and none for a template.
     if (share <= 2 / 3 && !ladder && !survivors.length)
       ok(`no sentence is a template any more: over ${worlds.length} chronicles the most-repeated masked sentence appears in ${top[1]} of them (${share.toFixed(2)}, pinned at 0.67 against v1's 1.00 by construction), the twenty-seven-branch event ladder is gone from the engine, and none of the ${DELETED.length} deleted v1 sentences survives`);
     else fail(`a template survives: worst masked sentence in ${top[1]}/${worlds.length} worlds ("${top[0].slice(0, 70)}"), ladder ${ladder}, survivors ${survivors.slice(0, 2).join(" | ")}`);

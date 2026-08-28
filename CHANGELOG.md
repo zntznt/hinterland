@@ -1,6 +1,41 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the loom: the house prose engine's runtime, built and left dormant** (issue #137,
+  D1; no schema change; **exports byte-identical**, verified directly as well as by the
+  golden pin). Principle P5 (direction.md §4) says the app must COMPOSE sentences where
+  it now SELECTS them. This lands the machine that will do it and nothing that consumes
+  it: frames, typed slots, column-predicate gating, per-surface substreams, world
+  lexica, the slot audit, the skeleton-masked diversity measure, and the pool linter.
+  No fragment pool ships with it. A pool belongs to the surface that migrates onto it,
+  behind that surface's own prototype gate — voices D2 (#138), findings D3 (#139),
+  chronicle D4 (#140), verdict D5 (#141).
+  **Dormant is one letter from dead**, which is the exact failure the suite's own
+  self-audit exists to catch, so the dormancy is checked: every one of the 19 exported
+  `loom*` symbols must be exercised by the suite or the check fails. It found six that
+  were not on its first run.
+  **Byte-identity was verified two ways**: the 30 golden cells, and a direct
+  before/after diff of 1.9 MB of export (GeoJSON + epoch series + chronicle + CSV,
+  four configs) against the pre-loom engine. Identical. The new `imperial` name
+  register — the Concordat tongue, §3.6's audible loanword tier — moves nothing
+  either, because `nameRegister()` never selects it.
+  **Three findings came out of building it.**
+  (1) *The one-slot rule is now house law, enforced by lint.* §1's collision
+  arithmetic assumes "≥2 slots averaging ≥6 realizations"; a slotless fragment has one
+  surface and collides with itself on every draw. The #136 gate measured worst-surface
+  repeats of 14 at half pool scale and **8 at full scale** against a ceiling of 3. Pool
+  size was never the binding constraint. Slot density was.
+  (2) *The pooled type-token ratio was the wrong measure and had to go.* Types grow
+  sublinearly in tokens, so a pooled ratio falls as a corpus grows and a fixed floor on
+  it fails good corpora for being large — the first version of this measure did exactly
+  that to a 20-paragraph sample. It is now the mean WITHIN-skeleton ratio, which is
+  stable in n; the suite pins that stability.
+  (3) *§4's 0.20 cross-seed overlap ceiling has a price, and it is now measured.*
+  Pairwise skeleton overlap against pool size, everything else held: **8 fragments →
+  0.56, 9 → 0.46, 11 → 0.41, 16 → 0.28, 22 → 0.20**. So the ceiling costs roughly 22
+  fragments at this frame count, and an 11-fragment pool lands at 0.41, squarely inside
+  the 0.36-0.52 band §4 records for today's chronicle. D3 and D4 now have a number to
+  author against instead of a target to discover late.
 - **the voices prototype gate: V1-V5 hold, V6 caught the spec** (issue #136; no schema
   change; no app change; nothing in `tools/proto/` runs in CI). The gate asked for 50
   voices, the six invariants, and a judgement. The invariants are in

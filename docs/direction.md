@@ -405,6 +405,25 @@ regeneration (§6).
 0.36–0.52); within-seed cross-knob overlap < 0.45 (today 0.68–0.89). Measured on
 the sweep harness before pinning, per house rule.
 
+> **Built, D1 (#137).** The loom's runtime is in `engine.mjs` and dormant: frames,
+> typed slots, column gating, per-surface substreams, world lexica (including the
+> imperial tier), the slot audit, `loomSkeleton`/`loomDiversity`/`loomDiversityFloor`,
+> and `loomLint`. No surface consumes it and no fragment pool ships with it — a pool
+> belongs to the surface that migrates onto it, behind that surface's own gate. The
+> export is byte-identical with the loom present, checked directly and by the golden
+> pin, and the suite enforces that every exported `loom*` symbol is exercised, so the
+> dormancy cannot quietly become dead code.
+>
+> Two of the rules above are now mechanical rather than advisory. **No fragment
+> without a region-varying slot**: `loomLint` fails a pool that carries one, because
+> the #136 gate measured worst-surface repeats of 14 at half pool scale and 8 at full
+> scale against a ceiling of 3, and slot density — not pool size — was the binding
+> constraint. And **the overlap ceiling above has a measured price**: pairwise
+> skeleton overlap against pool size, everything else held, runs 8 fragments → 0.56,
+> 11 → 0.41, 16 → 0.28, 22 → 0.20. An 11-fragment pool lands inside the 0.36–0.52
+> band this paragraph records for today's chronicle, which is the calibration check
+> on the measure as well as the budget for D3 and D4.
+
 ---
 
 ## 5. THE REIGN + THE VOICES (G5): folded in

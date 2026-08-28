@@ -6472,146 +6472,48 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         twins
       };
     }
-    function composeChronicle(model, params) {
-      const rc = streams(params.seed)("chronicle");
-      const pick = (v) => v[Math.floor(rc() * v.length)];
+    // `audit`, when passed, collects one entry per composed beat: {key, text, facts,
+    // names}. The chronicle returns markdown, and markdown cannot be audited — the
+    // facts can. Nothing in the app passes it; the suite does, so that every figure
+    // on the page can be recomputed from the column it claims to quote.
+    function composeChronicle(model, params, audit) {
+      const keep = (key, v) => { if (v && audit) audit.push({ key, text: v.text, facts: v.facts, names: v.names }); return v; };
       const year = (e) => 1000 + 25 * e;
       const closeY = year(params.ep);
-      const town = (id) => model.settlements.find(s => s.regionId === id) || { name: ((model.regions.find(r => r.id === id) || {}).placeName) || "the wild", regionId: id, tier: "none", population: 0 };
-      const tierWord = { metropolis: "the capital", city: "the city", "works-town": "the works-town", "frontier-post": "the frontier post" };
-      const list = (xs) => xs.length <= 1 ? (xs[0] || "") :
-        xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
-      const compass = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"][Math.round(model.windDeg / 45) % 8];
       const L = [];
 
       // -- the founding ------------------------------------------------------
+      // D4 (#140): composed on the loom in the historian register. What was one fixed
+      // template per beat is now a gated pool, and an ABSENCE is a fragment like any
+      // other rather than the else-branch of a template.
+      const CC = chronicleCtx(model, params);
       L.push(`# A Chronicle of the Hinterland`);
       L.push(``);
-      const crownLine = model.dynasties.crown;
-      const reigning = (crownLine[crownLine.length - 1] || {}).name || "an unnamed regent";
-      L.push(`*The world called "${params.seed}". Written down at ${model.capitalName} in the year ${closeY}, during the reign of ${reigning}.*`);
+      {
+        const v = keep("preamble", chronicleBeat(CHRONICLE_POOL, "preamble", null, CC, params.seed, "preamble"));
+        L.push(`*${v ? v.text.replace(/\.$/, "") : `The world called "${params.seed}"`}.*`);
+      }
       L.push(``);
       L.push(`## The Founding, Year 1000`);
       L.push(``);
-      const n = model.regions.length;
-      // founding works: today's refineries, minus the mid-run foundings, plus the collapsed
-      const foundedIds = new Set(model.events.filter(ev => ev.type === "refinery_founded").map(ev => ev.region_id));
-      const collapsedIds = model.events.filter(ev => ev.type === "refinery_collapse").map(ev => ev.region_id);
-      const works0 = model.regions.filter(r => (r.refining > 0 && !foundedIds.has(r.id))).map(r => r.id).concat(collapsedIds);
-      const consIds = new Set(model.events.filter(ev => ev.type === "consecration").map(ev => ev.region_id));
-      const shrines0 = model.sanctionedSites.filter(s => !consIds.has(s.regionId));
-      const dark0 = model.epochSnaps[0].onGrid.filter(v => !v).length;
-      L.push(`This record covers a realm of ${n} settled regions, with its capital at ${model.capitalName}. ` +
-        `The wind comes from the ${compass}. Most of what follows was set by the ground itself: ` +
-        `where the aetherstone lies, where the land will carry a road, and where it won't.`);
-      {
-        const pops = model.regions.map(r => r.popT0).sort((a, b) => b - a);
-        const medP = pops[Math.floor(pops.length / 2)];
+      for (const [claim, gloss] of CHRONICLE_FOUNDING) {
+        const v = keep(claim, chronicleBeat(CHRONICLE_POOL, claim, gloss, CC, params.seed, claim));
+        if (!v) continue;
+        L.push(v.text);
         L.push(``);
-        L.push(`No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held ${pops[0].toLocaleString("en-US")} people to the median town's ${medP.toLocaleString("en-US")}. The bigger a town got, the faster it grew.`);
-      }
-      L.push(``);
-      L.push(`The aetherworks at ${list(works0.map(id => town(id).name))} refine aetherstone into lumen, and the trunk lines run from them to the capital. ` +
-        `The Temple holds sacred ground at ${list(shrines0.map(s => `${s.name} (by ${town(s.regionId).name})`))}, out where the aetherstone lies and the Crown's authority is weak. ` +
-        (dark0 > 0
-          ? `${dark0} settlements started off the grid: reachable by road, but with no power line, because the ledgers said wiring them wouldn't pay.`
-          : `Every settlement started on the grid. The ledgers rarely allow that, and never for long.`));
-      {
-        const aeries = model.regions.filter(r => r.isSkyport === 1).map(r => town(r.id).name);
-        L.push(``);
-        L.push(aeries.length >= 2
-          ? `There is also the ${model.skywayName} Lane: lift-barges running between ${list(aeries)}, over the walls, fords, and gates below. ` +
-            `The lanes go where the ground is hardest and the cargo most valuable, and you pay to board at the aerie. ` +
-            `The road is open to everyone; the sky isn't.`
-          : `No skyway was built here. The ledgers found no lane worth the lift.`);
-      }
-      if (model.ridges.length) {
-        const shadowN = model.regions.filter(r => r.rangeShadow === 1).length;
-        const passNames = model.passes.map(p => p.name);
-        L.push(``);
-        L.push(`The ${list(model.ridges.map(R => `${R.name} ${R.kind}`))} ${model.ridges.length > 1 ? "wall" : "walls"} off the country, and the roads across ${model.ridges.length > 1 ? "them" : "it"} go through ${list(passNames)}. ` +
-          (shadowN > 0
-            ? `${shadowN} regions sit in the mountains' shadow, cut off from ${model.capitalName} by the wall. That costs them, as the record will show.`
-            : `As it happened, no region ended up cut off from ${model.capitalName} by the wall. That was luck, not fairness.`));
-      }
-      for (const RV of model.rivers) {
-        const head = town(model.regions[RV.chain[0]].id).name;
-        const mouth = town(model.regions[RV.chain[RV.chain.length - 1]].id).name;
-        L.push(``);
-        L.push(`The ${RV.name}${RV.kind === "River" ? "" : " " + RV.kind} runs down from the high ground by ${head} through ${RV.chain.length} regions to the border. ` +
-          `The towns drink from it in order: ${head} gets it clean; ${mouth}, at the mouth, gets whatever every town and aetherworks upstream have dumped in. ` +
-          `Nobody at the mouth chose to be last. The land decided that.`);
-      }
-      if (model.seaSides.length) {
-        const ports = model.regions.filter(r => r.isPort === 1);
-        const portBits = ports.map(reg => {
-          const t = town(reg.id);
-          const riverPort = reg.onRiver === 1 && reg.downstreamBlight > 0;
-          return harborName(t.name) + (riverPort ? ` (which drinks the river last and ships it first)` : ``);
-        });
-        L.push(``);
-        const chartNames = model.seaShapes.map(S => S.name).filter(Boolean);
-        L.push(`The sea lies to the ${list(model.seaSides)}${chartNames.length ? `, and the charts call it ${list(chartNames)}` : ""}. ` +
-          (ports.length
-            ? `The realm's ${ports.length > 1 ? "gates are" : "gate is"} ${list(portBits)}: everything the mines raise and the aetherworks refine leaves through ${ports.length > 1 ? "them" : "it"}, and whoever holds the quay collects the tariff. ` +
-              `How far a town sits from the water was luck, decided at the founding like everything else.`
-            : (params.hb === 0
-              ? `The quays are sealed by decree: the realm trades with no one across the water, and no one lands. The cost of that safety falls on every coast that could have been a gate.`
-              : `No harbor was built at the founding; the coast waits.`)) +
-          (model.maelstrom ? ` Sailors keep well clear of the ${model.maelstrom.name}, where the sea turns on itself; no quay was ever built within its reach.` : ``));
-      }
-      if (model.ruins.length) {
-        const ruinBits = model.ruins.map(r => {
-          const t = town(model.regions[r.regionIdx].id).name;
-          return r.type === "delve" ? `the delve called ${r.name} gapes in the old workings by ${t}`
-            : r.type === "tomb" ? `the tomb of ${r.name} keeps its silence in the barrens by ${t}`
-            : `the deadhold of ${r.name} stands empty by ${t}, and its ground is poisoned yet`;
-        });
-        const busiest = model.regions.reduce((a, b) => a.delverFlux >= b.delverFlux ? a : b);
-        L.push(``);
-        L.push(`The old world is still here: ${list(ruinBits)}. ` +
-          `Delvers work the ${town(busiest.id).name} road every season, because it pays when nothing else does. Not all of them come back, and what they carry out is sold off the books.`);
-      }
-      if (model.freeport) {
-        const t = town(model.freeport.regionId);
-        L.push(``);
-        L.push(`Past the last boundary stone, by ${t.name}, the lawless keep their own harbor: ${model.freeport.name}. No charter lists it, no gate taxes it, and assessors who visit don't come back a second time. Anything the realm won't carry on its books leaves through here, and the ground around it keeps what the gates would have taken` +
-          (params.hb === 0 ? `. With the quays sealed by decree, this is the only working gate left.` : `.`));
-      }
-      if (model.sanctuary) {
-        const t = town(model.sanctuary.regionId);
-        L.push(``);
-        L.push(`High above the roads, by ${t.name}, stands ${model.sanctuary.name}, holy ground the Temple never sanctioned and can't forgive. It heals anyone who climbs to it and asks nothing. The census never climbs that far, so the people it shelters go uncounted. Pilgrims walk to it alongside the official roads, which the Temple is reminded of every festival.`);
-      }
-      {
-        const still = model.regions.filter(r => r.stillair === 1);
-        if (still.length) {
-          const bits = still.map(r => town(r.id).name);
-          L.push(``);
-          L.push(`Over ${list(bits)} lies ${model.stillName}: ground where the lift-stones just stop working. No aerie can be built there and no lane can land. Everywhere else the sky costs money; here it isn't for sale at any price.` +
-            (model.regions.find(r => r.isCapital).stillair === 1 ? ` The capital itself sits in the still, so no skyway flies in this realm at all.` : ``));
+        // the rivers are told one at a time, each on its own substream
+        if (claim === "sea") for (const [ri, RV] of model.rivers.entries()) {
+          const rc = Object.assign({}, CC, {
+            hasRiver: true, river: RV.name + (RV.kind === "River" ? "" : " " + RV.kind),
+            river_head: CC.town(model.regions[RV.chain[0]].id).name,
+            river_mouth: CC.town(model.regions[RV.chain[RV.chain.length - 1]].id).name,
+            river_len: RV.chain.length,
+          });
+          const rv = keep("river#" + ri, chronicleBeat(CHRONICLE_POOL, "river", "river_gloss", rc, params.seed, "river#" + ri));
+          if (rv) { L.push(rv.text); L.push(``); }
         }
       }
-      if (model.camps.length) {
-        const bits = model.camps.map(cp => `${cp.name} by ${town(cp.regionId).name}`);
-        L.push(``);
-        L.push(`Where the beasts are worth a bounty and the constabularies never come, hunters keep ${list(bits)}. The stands thin the predation on their ground, the trophies are fenced where nothing is taxed, and for the poorest the bounty is the one rung of a ladder the realm never built.`);
-      }
-      {
-        const towers = model.regions.filter(r => r.hasTower === 1);
-        if (towers.length) {
-          const bits = towers.map(reg => `${town(reg.id).name} Tower`);
-          L.push(``);
-          L.push(`${towers.length > 1 ? "Apostates keep" : "An apostate keeps"} ${list(bits)}, out where the constabulary line fails and the grid never came, selling in the darkness what the grid will not carry. ` +
-            `The Temple calls it heresy; the magnates call it competition; the people it heals call it the only healer who ever came.`);
-        }
-      }
-      if (model.bridges.length) {
-        const bits = model.bridges.map(b => `${town(model.regions[b.regionIdx].id).name} Bridge`);
-        L.push(``);
-        L.push(`The rivers are crossed at ${list(bits)}${model.bridges.length > 1 ? "" : " alone"}; everywhere else the banks are marsh and the water must be forded, and the fords are where the wagons drown. ` +
-          `Whoever holds a bridge holds a queue of people who cannot go around.`);
-      }
+      if (L[L.length - 1] === ``) L.pop();
 
       // -- the years ---------------------------------------------------------
       if (params.ep > 0) {
@@ -6619,359 +6521,2358 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         L.push(`## The Years`);
         L.push(``);
         // #86: the realm's own ages open The Years — a periodization the reader
-        // can point at ("the gap opened in the Age of the Gates").
-        {
-          const FA = getFindings(model).ages;
-          if (FA && FA.length) {
-            const span = (a) => `${year(a.from_epoch)}–${year(a.to_epoch)}`;
-            const spread = (a) => a.gini_end > a.gini_start + 0.02 ? "the gap widened"
-              : a.gini_start > a.gini_end + 0.02 ? "the gap narrowed" : "the gap held";
-            const bits = FA.map(a => `**${a.name}** (${span(a)}), when ${spread(a)}`);
-            L.push(`These years split into ages, each named for what the realm was living through: ${list(bits)}. ` +
-              `No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.`);
-            L.push(``);
-          }
-        }
-        if (model.events.length === 0) {
-          L.push(`No upheavals are recorded. The years passed as the founding had set them up, which does not mean they passed kindly. ` +
-            `The grid crawled toward the money, the ore drew down, and the poison settled where it always settles.`);
-        }
-        const strikeEv = model.events.find(ev => ev.type === "ore_strike");
-        for (const ev of model.events) {
-          const t = ev.region_id !== undefined ? town(ev.region_id) : null;
-          const y = year(ev.epoch);
-          let line = "";
-          if (ev.type === "refinery_collapse") line = pick([
-            `The aetherworks at ${t.name} shut down. The fields that fed them were worked out, and the magnates left as soon as the ore did. The trunk lines still stand there, carrying nothing.`,
-            `The aetherworks at ${t.name} closed its yards for good. The ore that built the town ran out, and the town kept its wires but lost its wages.`,
-            `The last shift at the ${t.name} aetherworks clocked out and did not come back. The lode was spent. The lumen tanks went cold within the month.`,
-            `The magnates pulled their money out of ${t.name} when the ore stopped paying. The aetherworks went dark, and the town it had grown around emptied behind it.`,
-            `The aetherworks at ${t.name} failed. The seam it drew from was mined to nothing, and the wages stopped a season before the wires did.`,
-          ]);
-          else if (ev.type === "refinery_founded") line = pick([
-            `The magnates built new aetherworks at ${t.name}, where the money had gone. The capital sealed the charter, and the trunk line followed within the season.`,
-            `New aetherworks fires were lit at ${t.name}. The capital called it progress. The towns the new trunk line skipped did not.`,
-            `The magnates broke ground on aetherworks at ${t.name}. Where the ore was rich the money followed, and the grid was run out to meet it.`,
-            `Aetherworks rose at ${t.name} on a fresh charter. The lumen came online that year, and the town doubled before the next census could count it.`,
-            `The capital chartered aetherworks at ${t.name}. The wires reached it fast, because someone had already decided the ore was worth the copper.`,
-          ]);
-          else if (ev.type === "blight_plague") line = pick([
-            `Plague took ${t.name}. The blight had sat heavy on that country for years, so the sickness arrived to a town already half-poisoned. A third of the people died or fled.`,
-            `Sickness came to ${t.name}. Anyone who had seen the blight-mark had expected it. Where there were healers, their registers do not agree on the death count. The roads out of town do.`,
-            `A plague settled on ${t.name}. The ground had been fouled long before the fever came, and the fever found little to stop it. Whole streets went quiet.`,
-            `Fever ran through ${t.name}. The blight had weakened the town for a generation, and the sick had nowhere clean to lie. The burial rolls ran longer than the tax rolls that year.`,
-            `The sickness reached ${t.name} and stayed. The poisoned ground had done half the work already. Those who could walk left; those who could not were counted after.`,
-          ]) + (ev.name ? ` The roads named it ${ev.name}.` : ``);
-          else if (ev.type === "relic_calamity") line = pick([
-            `The relic ground by ${t.name} woke. The surviving accounts do not say clearly what the old power did there. The land it touched still carries the scar.`,
-            `At the sanctioned ground by ${t.name}, something of the old world stirred and broke. The Temple calls it a test. The survivors did not. The blight it left has not faded.`,
-            `Something old came awake in the ground by ${t.name}. What it was, no two accounts agree. What it left behind is plain enough: land that will not grow.`,
-            `The buried power near ${t.name} turned over in its sleep. The Temple sealed the site and said little. The scar it burned into the country is still there to read.`,
-            `Whatever the old world left under ${t.name} broke loose. The records are thin and frightened. The blighted ring around the site kept everyone honest about that much.`,
-          ]);
-          else if (ev.type === "ore_strike") {
-            line = pick([
-              `Prospectors struck a hidden lode under ${t.name}. By winter the roads were full of wagons and the town was full of strangers.`,
-              `A lode no survey had found came up under ${t.name}. The rush was immediate: retainers, chancers, assayers, and everyone who trails them.`,
-              `Diggers hit rich ore under ${t.name} where no one had thought to look. Within a season the town had tripled, and the price of a bed had tripled with it.`,
-              `A new seam opened under ${t.name}. Word travels fast where ore is concerned, and the strangers were on the road before the assay was even filed.`,
-              `The ground under ${t.name} gave up a lode nobody had mapped. The town filled overnight with people who had nothing but a shovel and a claim.`,
-            ]);
-            const warAfter = model.events.find(w => w.type === "war" && w.epoch > ev.epoch && w.epoch <= ev.epoch + 2);
-            if (warAfter) line += ` The ground was already disputed, and every magnate, priest, and captain in the realm knew what a lode there meant.`;
-          }
-          else if (ev.type === "war") {
-            const chained = strikeEv && ev.epoch > strikeEv.epoch && ev.epoch <= strikeEv.epoch + 2;
-            const FN = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };
-            const powers = ev.factions ? ` The two powers fighting there were ${FN[ev.factions[0]]} and ${FN[ev.factions[1]]}. The town was just where they met.` : ``;
-            line = (chained
-              ? `War came to ${t.name}, ${25 * (ev.epoch - strikeEv.epoch)} years after the strike. Armies follow ore.${powers} `
-              : `War came to ${t.name}. It comes to ground that great powers claim and none can hold.${powers} `) +
-              `When the fighting stopped, ${tierWord[t.tier]} had lost a third of its people and a quarter of its wealth, and the mines and aetherworks were wrecked. The Crown's constabulary arrived after the blood, and stayed.` +
-              (ev.name ? ` The scribes titled the page ${ev.name}.` : ``);
-          }
-          else if (ev.type === "seizure") {
-            const F = ev.faction === "crown" ? "the Crown" : ev.faction === "temple" ? "the Temple" : "the magnates";
-            const what = t.name; // the gate is named for its town
-            line = pick([
-              `${F.charAt(0).toUpperCase() + F.slice(1)} took the gate at ${what}. A gate is a quay, a span, or a pass, and whoever holds it holds a line of people who cannot go around. The tariff was posted by winter.`,
-              `${F.charAt(0).toUpperCase() + F.slice(1)} pressed ${F === "the magnates" ? "their" : "its"} claim on the crossing at ${what}. No blood is recorded. The claim was made on paper, and the tariff kept it.`,
-              `${F.charAt(0).toUpperCase() + F.slice(1)} seized the crossing at ${what}. Whoever holds the narrow ground sets the price to pass it, and the price went up that season.`,
-              `${F.charAt(0).toUpperCase() + F.slice(1)} moved on the gate at ${what} and held it. There was no fight worth recording. The first tariff notice went up before the ink on the claim was dry.`,
-              `${F.charAt(0).toUpperCase() + F.slice(1)} claimed the gate at ${what} for ${F === "the magnates" ? "their" : "its"} own. The people who used the crossing found the fee waiting the next market day.`,
-            ]);
-          }
-          else if (ev.type === "tower_burned") {
-            const F = ev.faction === "crown" ? "the Crown's soldiers" : "the Temple's censors";
-            line = `${F.charAt(0).toUpperCase() + F.slice(1)} burned the tower at ${t.name}. The writs do not say what this cost. The one healer the darkness had is gone, and nothing came to replace it.`;
-          }
-          else if (ev.type === "tower_raised") {
-            line = `An apostate raised a tower at ${t.name}, out where no writ runs and the grid never came. The neighbors did not report it for a season. They were its first customers.`;
-          }
-          else if (ev.type === "succession") {
-            const TITLE = { crown: "Sovereign", temple: "Hierarch", magnate: "First Magnate" };
-            const SEATW = { crown: "the capital", temple: "the censer", magnate: "the chair" };
-            line = ev.contested
-              ? `The old ${TITLE[ev.faction]} died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end ${ev.name} took ${SEATW[ev.faction]}. Some who objected were killed, and the objections did not stop.`
-              : `The old ${TITLE[ev.faction]} died, and ${ev.name} took ${SEATW[ev.faction]} without incident. That is rare enough to be worth recording.`;
-          }
-          else if (ev.type === "reform") {
-            const PROSE = {
-              dumping_reform: "a Dumping Reform. The spoil trains now go where the land is empty, not where the people are poor",
-              grid_charter: "a Grid Charter. The bar for connection dropped, and the wires reached further out than the ledgers alone would ever have carried them",
-              toll_amnesty: "a Tariff Amnesty. The gates still stand, but the fees are capped by decree",
-              retention_act: "a Retention Act. It set a floor under the ore price, fixed at the capital, so the bottom half of the realm keeps more of what its own ground produces",
-              crown_granary: "the Crown Granary. It taxes the fat years to buy bread for the lean ones. It is the first decree in the realm's history to move coin downhill"
-            };
-            line = `The capital passed ${PROSE[ev.measure]}. It had blocked reform for years, and only gave in once the damage was bad enough.`;
-          }
-          else if (ev.type === "reaction") {
-            const PROSE = {
-              dumping_entrenched: "the dumping was written into law, and the spoil trains sought out the poor more openly than before",
-              toll_crackdown: "the tariffs rose by decree. The gates' holders had paid for their privileges, and the capital owed them"
-            };
-            line = `The capital met the unrest with force: ${PROSE[ev.measure]}. There was no debate on record.`;
-          }
-          else if (ev.type === "imposition") {
-            // B7 (#129): a measure the realm did not choose — narrated AS imposed
-            line = `This measure did not come from the capital. It came from the capital's creditors. The imperial loans had gone unpaid and the doctrine was pressing abroad, so the financiers demanded an adjustment: close the granary, order the gates to collect, and balance the books on the people who could least afford it. The official term is structural adjustment. The towns called it a decree written in another capital.`;
-          }
-          else if (ev.type === "revolt") {
-            const rr = model.regions.find(r => r.id === ev.region_id);
-            const underDominion = rr.occupiedEpoch !== -1 && rr.occupiedEpoch < ev.epoch;
-            // B8 (#130): the won rising is a distribution — the chronicle learns its
-            // two arcs. A Free town that FLOURISHED (suppressed potential released) or
-            // one that STARVED (the fled capital and order left it hollow).
-            const wonArc = ev.arc === "starved"
-              ? ` But freedom is not food. The magnates' capital left with the magnates, the aetherworks it had funded went dark, and the skilled workers followed the money out. The free town starved. The injustice had been real and so was the freedom, and neither one fed anyone.`
-              : ` And it flourished. The aetherworks the charter had held back ran at full tilt, the crafts the tariffs had taxed to the bone found their feet, and people came to the free town from the tariffed country around it. Freedom released what the old order had held down.`;
-            line = underDominion
-              ? (ev.outcome === "won"
-                ? `${t.name} rose against the Dominion itself, and won. The factors were thrown into the harbor, the assessment tables were burned, and the town keeps what it makes now.${wonArc}`
-                : `${t.name} rose against the Dominion, and the imperial constabulary put it down, which is what the imperial constabulary is there to do. The assessment tables do not mention the rising, so this record does.`)
-              : (ev.outcome === "won"
-                ? `${t.name} rose. The constabulary line broke and the mob held. ${t.name} keeps what it makes now, and its gates charge no one.${wonArc}`
-                : `${t.name} rose, and was put down. The constabulary arrived after the hangings. The injustice that caused the rising was written down in full and then left alone.`);
-            if (ev.name) line += ` The people keep the date as ${ev.name}.`;
-          }
-          else if (ev.type === "treaty") {
-            const FN3 = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };
-            const W2 = FN3[ev.winner], L2 = FN3[ev.factions.find(f => f !== ev.winner)];
-            const terms = (ev.ceded > 0 ? `${L2} ceded ${ev.ceded === 1 ? "a gate" : ev.ceded + " gates"}` : `${L2} ceded nothing but its claim`) +
-              (ev.tribute > 0 ? ` and paid ${ev.tribute} in tribute out of its ledger` : ` and kept its ledger, which held little`);
-            line = `In the winter after the fighting, terms were set at ${t.name}. ${W2.charAt(0).toUpperCase() + W2.slice(1)} wrote them: ${terms}. ` +
-              `The side with the deeper ledger wrote the terms, which is how terms are usually written.` +
-              (ev.name ? ` The clerks filed the fair copy as ${ev.name}.` : ``);
-          }
-          else if (ev.type === "annexation") {
-            line = `The Dominion's fleet stood off ${harborName(t.name)} at dawn, and by winter it held ${ev.occupied} regions. ` +
-              `There was no fighting. Nobody could stop it. The quays now collect for a power across the sea, the yield of the occupied country is assessed at the water, ` +
-              `and the wires arrived with the constabulary. It is the first country in the realm to be wired end to end, because its cargo is wanted elsewhere.` +
-              (ev.name ? ` The Dominion's own registers file it as ${ev.name}.` : ``);
-          }
-          else if (ev.type === "concession") {
-            // B11 (#133): the empire that buys instead of landing
-            line = `${ev.power || "the Metropole"} did not send a fleet to ${harborName(t.name)}. It sent factors and a charter. ` +
-              `The aetherworks were bought, the coast was wired to the sea within the season, and money came in to build. The town grew richer than it had ever been. ` +
-              `The registers at the capital still carry the town's name. The registers that matter now are kept in another capital, and half of what the ground yields is entered there.`;
-          }
-          else if (ev.type === "abandonment") {
-            const startY = ev.since !== undefined ? 1000 + 25 * ev.since : null;
-            line = `${ev.power || "the Metropole"} wound up its concession at ${t.name}${startY ? `, ${25 * (ev.epoch - ev.since)} years after it opened it in ${startY}` : ``}. ` +
-              `The lode had drawn down, and the attention left with the ore. The factors sailed, the credit stopped, and the aetherworks they had built went quiet. ` +
-              `It cut both ways. The markets that had made the town rich were gone, but so were the levies, and the ground kept what it made for the first time in a generation. The town got its ruin and its freedom in the same year.`;
-          }
-          else if (ev.type === "embargo") {
-            line = `Politics in a capital ${t.name} had never seen closed the sea lanes to it. A quarrel between ${ev.power || "a rival power"} and the Metropole became ${t.name}'s ruin. ` +
-              `The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.`;
-          }
-          else if (ev.type === "courting") {
-            line = `${ev.power || "the Rival"} sent envoys to ${harborName(t.name)}, and the capital pretended not to notice. ` +
-              `Nothing was signed. A rich coast the Metropole has not yet claimed is a coast worth courting, and the powers across the sea prefer to be invited. This is how the next annexation usually begins.`;
-          }
-          else if (ev.type === "consecration") {
-            const shrine = model.sanctionedSites.find(s => s.regionId === ev.region_id);
-            line = `The Temple came to ${t.name}, to the ground of its suffering, and consecrated it as ${shrine ? shrine.name : "holy ground"}. ` +
-              `Pilgrims walk that road now. The Crown's writ had failed there and the magnates' ledgers had seen nothing worth the ink. The faith moved in after the harm was done, and claimed the ground.`;
-          }
-          // D7: the years' shocks — weather, ground, discovery, and the god
-          else if (ev.type === "drought") line = `The rains failed over ${t.name}, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page ${ev.name}.`;
-          else if (ev.type === "flood") line = `The river rose over ${t.name} and took the low ground with it: the fields, the founding wharves, whatever stood in the way. The accounts call it ${ev.name}, and they do not agree on how many it took.`;
-          else if (ev.type === "quake") line = `The ground moved under ${t.name}, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as ${ev.name}.`;
-          else if (ev.type === "storm") line = `A storm came off the water and stood over the coast for three days. ${t.name} took the worst of it, as the exposed shore always does; ${ev.name} is the name the survivors gave the year.`;
-          else if (ev.type === "discovery") line = `Fortune turned at ${t.name}: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as ${ev.name}.`;
-          else if (ev.type === "ascendancy") line = `The god's fortune rose at ${t.name}, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as ${ev.name}.`;
-          if (!line) continue; // an unrecognized event leaves no year-line
-          L.push(`**Year ${y}.** ${line}`);
+        // can point at ("the gap opened in the Age of the Gates"). D4 (#140):
+        // composed, along with the quiet-years clause that used to be its else-branch.
+        for (const [claim, gloss] of CHRONICLE_YEARS_OPEN) {
+          const v = keep("years#" + claim, chronicleBeat(CHRONICLE_POOL, claim, gloss, CC, params.seed, "years#" + claim));
+          if (!v) continue;
+          L.push(v.text);
           L.push(``);
         }
+        // D4 (#140): every year-line is composed. What was a twenty-seven branch
+        // `if` ladder of fixed templates is EVENT_POOL, gated per type; the branches
+        // that used to choose a template (contested or not, won or lost, chained to
+        // a strike or not) are `req` predicates on fragments, so a world that does
+        // not meet one never sees the clause.
+        const strikeEv = model.events.find(ev => ev.type === "ore_strike");
+        // One tally for the whole act: no clause is written twice in one chronicle's
+        // years, however many droughts or successions this world happens to have.
+        const yearsUsed = new Set();
+        model.events.forEach((ev, i) => {
+          const v = keep(`ev#${i}#${ev.type}`, eventLine(ev, i, CC, model, params, strikeEv, yearsUsed));
+          if (!v.text) return; // an unrecognized event leaves no year-line
+          L.push(`**Year ${year(ev.epoch)}.** ${v.text}`);
+          L.push(``);
+        });
         // E6: the years leave bynames where they pass — derived, not drawn
-        const byn = model.regions.filter(r => r.epithet).map(r => `${town(r.id).name} ${r.epithet}`);
-        if (byn.length) {
-          L.push(`The years leave names behind them. The realm now speaks of ${list(byn)}: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.`);
+        for (const [claim, gloss] of CHRONICLE_YEARS_CLOSE) {
+          const v = keep("years#" + claim, chronicleBeat(CHRONICLE_POOL, claim, gloss, CC, params.seed, "years#" + claim));
+          if (!v) continue;
+          L.push(v.text);
           L.push(``);
         }
       }
 
       // -- the state of the realm --------------------------------------------
+      // D4 (#140): composed, and one act shorter than it was. The class ledger and
+      // the sovereignty paragraph were each stated twice in v1 — once here and once
+      // in What the Record Shows — so the Record act skips what this one says.
       L.push(``);
       L.push(`## The State of the Realm, Year ${closeY}`);
       L.push(``);
-      if (params.ep > 0) {
-        const bb = { boom: 0, stable: 0, decline: 0, collapse: 0, abandoned: 0 };
-        model.regions.forEach(r => { bb[r.boomBust] = (bb[r.boomBust] || 0) + 1; });
-        const settledCount = model.regions.filter(r => r.settled).length;
-        const parts = [];
-        if (bb.boom) parts.push(`${bb.boom} rose through the years`);
-        if (bb.stable) parts.push(`${bb.stable} held steady`);
-        if (bb.decline) parts.push(`${bb.decline} declined`);
-        if (bb.collapse) parts.push(`${bb.collapse} collapsed outright`);
-        L.push(`Of the realm's ${settledCount} settled regions, ${list(parts)}.`);
-        // D8: the ghost country — cells the years emptied, and cells reborn
-        const deadholds = model.regions.filter(r => !r.settled && r.abandonedEpoch >= 0);
-        if (deadholds.length) {
-          const names = deadholds.slice(0, 4).map(r => r.placeName).filter(Boolean);
-          L.push(`${deadholds.length} ${deadholds.length === 1 ? "holding stands" : "holdings stand"} empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name ${list(names)}${deadholds.length > names.length ? " among others" : ""}, but the roads have stopped going there.`);
-        }
-        const reborn = model.regions.filter(r => r.settled && r.rebirths >= 1);
-        if (reborn.length) {
-          const rn2 = reborn.slice(0, 3).map(r => town(r.id).name).filter(Boolean);
-          L.push(`And ${reborn.length} ${reborn.length === 1 ? "place has" : "places have"} come back as something else. ${list(rn2)} stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.`);
-        }
-        const ghost = model.regions.reduce((a, b) => a.abandonment >= b.abandonment ? a : b);
-        if (ghost.abandonment >= 35)
-          L.push(`${town(ghost.id).name} is the emptiest of the ghost country. Its best years are gone, and the roads no longer go there.`);
-        const riser = model.regions.reduce((a, b) => (a.wealth - a.wealthT0) >= (b.wealth - b.wealthT0) ? a : b);
-        if (riser.wealth - riser.wealthT0 > 10)
-          L.push(`${town(riser.id).name} rose further than any other place in the record. In this realm, that says as much about where it stood as about anything it did.`);
+      for (const [claim, gloss] of CHRONICLE_STATE) {
+        const v = keep("state#" + claim, chronicleBeat(CHRONICLE_POOL, claim, gloss, CC, params.seed, "state#" + claim));
+        if (!v) continue;
+        L.push(v.text);
         L.push(``);
       }
-      const bc = { crown: 0, temple: 0, magnate: 0, contested: 0, ungoverned: 0 };
-      model.regions.forEach(r => { bc[r.bloc]++; });
-      L.push(`The Crown holds ${bc.crown} regions, the Temple ${bc.temple}, the magnates ${bc.magnate}; ` +
-        `${bc.contested} are contested between them, and ${bc.ungoverned} answer to no one at all.`);
-      if (model.holdings.length) {
-        const hc = { crown: 0, temple: 0, magnate: 0, none: 0 };
-        model.holdings.forEach(h => { hc[h.heldBy]++; });
-        L.push(``);
-        L.push(`Of the realm's ${model.holdings.length} gates, meaning the bridges, the passes, and the quays, ` +
-          `the Crown keeps ${hc.crown}, the Temple ${hc.temple}, and the magnates ${hc.magnate}. ${hc.none} stand untolled. ` +
-          `Every levy on the list is paid by people who did not choose the road.`);
-        const tr = model.treasuries;
-        if (tr.crown + tr.temple + tr.magnate > 0) {
-          const FN2 = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };
-          const richest = ["crown", "temple", "magnate"].reduce((a, b) => tr[a] >= tr[b] ? a : b);
-          const tn = model.tensions;
-          const pairs = [["crown_magnate", "the Crown and the magnates"], ["crown_temple", "the Crown and the Temple"], ["magnate_temple", "the magnates and the Temple"]];
-          const worst = pairs.reduce((a, b) => tn[a[0]] >= tn[b[0]] ? a : b);
-          L.push(``);
-          L.push(`The tariff ledgers run deepest with ${FN2[richest]}, and coin buys the next gate. More gates mean more coin, which buys more gates. ` +
-            (tn[worst[0]] >= 20
-              ? `Of the powers, ${worst[1]} stand nearest to blows.`
-              : `For now, none of the powers hold a grievance worth the ink.`));
-        }
-      }
-      { // H1: the chronicle counts the owners' row (no phrasing dice:
-        // the older histories keep their exact words)
-        const FS = getFindings(model);
-        if (FS.owners && FS.class_gap !== null) {
-          const ct0 = town(FS.company_town);
-          L.push(``);
-          L.push(`And every town holds two peoples under one name: the owners' row and the labor it hires. ` +
-            `Together, ${FS.owners.pop_pct} in every hundred of the realm's people hold ${FS.owners.coin_pct} of every hundred coins, and live ${FS.class_gap} times better than the people who work for them. ` +
-            `The gap is sharpest at ${ct0.name}, where ${FS.company_share} coins in every hundred belong to the few` +
-            (FS.within_pct !== null && FS.within_pct >= 15 ? `. A map drawn by region cannot show this, since it sees towns but not rows, and it misses ${FS.within_pct} parts in a hundred of the whole spread` : ``) + `.`);
-        }
-      }
-      { // X1: the state of the realm counts its sovereign — or its master
-        const occN = model.regions.filter(r => r.occupied).length;
-        if (model.dominion && occN > 0) {
-          const fh = town(model.regions[model.dominion.foothold].id);
-          L.push(``);
-          L.push(`And over all of it stands the Dominion, which holds ${occN} regions from its foothold at ${fh.name} and calls the arrangement trade. ` +
-            `The occupied country keeps the smallest share of what it makes and carries the best wires in the realm, both for the same reason. ` +
-            `The Crown still reigns. It no longer rules the occupied country, and the two are not the same thing.`);
-        } else if (model.dominion === null && params.ep > 0) {
-          // no clause: worlds the Dominion never reached tell no tale of it
-        }
-      }
-      const darkNow = model.regions.filter(r => !r.onConduit).length;
-      L.push(``);
-      L.push(darkNow > 0
-        ? `${darkNow} of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.`
-        : `At the record's close, the grid reaches every settlement in the realm. That is written here plainly, so a later reader can check whether it lasted.`);
+      if (L[L.length - 1] === ``) L.pop();
       // A1: the chronicler is required to close with what the numbers say
       {
         const F = getFindings(model);
         L.push(``);
         L.push(`## What the Record Shows`);
         L.push(``);
-        const V = [];
+        // D4 (#140): this act WAS the findings panel written a second time in the
+        // historian's voice — same facts, same conditions, different words, and two
+        // copies to keep in step. It calls the same composer now, on its own
+        // substream, so the two surfaces cannot drift and there is one pool to
+        // maintain rather than two. The `lead` block is skipped because the act's
+        // own opening sentence already carries the gap's movement.
         {
-          const dG = F.gini - F.gini_t0;
-          const rev = model.events.find(ev => ev.type === "revolt");
-          const MEAS = { dumping_reform: "the Dumping Reform", grid_charter: "the Grid Charter", toll_amnesty: "the Tariff Amnesty",
-            retention_act: "the Retention Act", crown_granary: "the Crown Granary", dumping_entrenched: "the entrenchment of the dumping", toll_crackdown: "the tariff crackdown" };
-          let tsent = dG <= -0.04
-            ? `This world closed some of its gap. The wealth gap went from ${F.gini_t0.toFixed(2)} at the founding to ${F.gini.toFixed(2)} at the close`
-            : dG >= 0.04
-            ? `This world got more unequal. The wealth gap went from ${F.gini_t0.toFixed(2)} at the founding to ${F.gini.toFixed(2)} at the close`
-            : `This world held its shape. The wealth gap stayed at ${F.gini.toFixed(2)}`;
-          if (F.turning) {
-            const y = 1000 + 25 * F.turning.epoch;
-            tsent += F.turning.type === "revolt" && rev
-              ? `. It turned on the rising at ${town(rev.region_id).name} in ${y}${F.turning.outcome === "won" ? (rev.arc === "starved" ? ", which won its freedom and then starved" : ", which won and flourished") : ", which was put down"}.` // B8 (#130): the two won-arcs
-              : `. It turned on ${MEAS[F.turning.measure]} in ${y}.`;
-          } else {
-            tsent += `. No reform came and no rising came, and the loops ran unopposed.`;
-          }
-          V.push(tsent);
+          const blocks = composeFindings(model, params, {
+            register: "historian", surface: "chronicle-record",
+            skip: ["class", "sovereignty", "dark"],   // the State act carries these
+          });
+          if (audit) for (const b of blocks) audit.push({ key: "record#" + b.topic, text: b.text, facts: b.facts, names: b.names });
+          // a block that opens on **emphasis** starts with an asterisk, so loomCompose's
+          // capitalization pass did not see a letter to raise. Stripping the markers
+          // for the markdown surface therefore has to raise it here.
+          const plain = (t) => t.replace(/\*\*/g, "").replace(/^([a-z])/, (m, c) => c.toUpperCase());
+          const lead = keep("record_lead", chronicleBeat(CHRONICLE_POOL, "record_lead", null, CC, params.seed, "record_lead"));
+          L.push((lead ? lead.text : `The record closes with what the numbers say.`) + ` ` +
+            blocks.filter(b => b.topic !== "closer").map(b => plain(b.text)).join(` `));
+          L.push(``);
+          const close = blocks.find(b => b.topic === "closer");
+          L.push(close ? plain(close.text)
+            : `No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay.`);
         }
-        // #178: report what the ratio SAYS, rather than framing every value as a
-        // disparity. This sentence used to fire unconditionally in the form "carries N
-        // times the blight of the richest fifth" — which reads as a finding of
-        // injustice even when N is 1.0 (no disparity at all) or below it (the RICHEST
-        // fifth carrying more). Measured over 80 worlds the median is exactly 1.0, so
-        // the commonest thing this line was reporting as an injustice was parity.
-        if (F.blight_ratio !== null) {
-          const towns = "the realm's poorest fifth of towns";
-          V.push(F.blight_ratio > 1.1
-            ? `${towns[0].toUpperCase()}${towns.slice(1)} carries ${F.blight_ratio} times the blight of its richest fifth.`
-            : F.blight_ratio < 0.9
-              ? `The poison did not settle on the poor here: ${towns} carries ${F.blight_ratio} times the blight of its richest fifth. The wealthy end breathes more of it.`
-              : `${towns[0].toUpperCase()}${towns.slice(1)} carries ${F.blight_ratio} times the blight of its richest fifth: in this realm the poison fell on rich and poor alike.`);
-        }
-        if (F.shadow_gap_pct !== null && F.shadow_gap_pct > 0 && model.ridges.length)
-          V.push(`Behind the ${model.ridges[0].name} wall, the median settlement earns ${F.shadow_gap_pct} in the hundred less than the open country at the same distance.`);
-        V.push(`${F.dark_n} regions sit off the grid because the ledgers said serving them would not pay` +
-          (F.dark_burden_ratio !== null && F.dark_burden_ratio > 1 ? `, and sickness runs ${F.dark_burden_ratio} times heavier there than in the lit core.` : `.`));
-        if (F.mouth_region !== null)
-          V.push(`${town(F.mouth_region).name} drinks ${F.mouth_downstream} points of other towns' poison, only because it stands at the mouth.`);
-        if (F.toll_paying_n > 0)
-          V.push(`${F.toll_paying_n} regions pay tariffs at gates whose holders they never chose.`);
-        if (F.owners && F.class_gap !== null)
-          V.push(`And inside every town, the shares were set from the start: ${F.owners.pop_pct} in a hundred hold ${F.owners.coin_pct} of every hundred coins, and live ${F.class_gap} times better than the rest.`);
-        if (F.sky && F.sky.shadow_adv !== null && F.sky.open_adv !== null && F.sky.shadow_adv > F.sky.open_adv)
-          V.push(`The skyway would cut ${F.sky.shadow_adv} parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.`);
-        if (F.sovereignty)
-          V.push(`And the whole realm's ledger is now one column in someone else's book: ${F.sovereignty.occupied_n} regions occupied, the yield assessed at the quay, the free country keeping ${F.sovereignty.retent_ratio} times the share the occupied country keeps. The gap between who is sovereign and who is occupied is the largest one in the realm, and it shapes every other.`);
-        if (F.concessions && F.concessions.concession_n > 0)
-          V.push(`The empire mostly did not invade. It bought in. ${F.concessions.concession_n} ${F.concessions.concession_n === 1 ? "coast is" : "coasts are"} a foreign concession, richer than the realm's median at ${F.concessions.conc_wealth} against ${F.concessions.median_wealth}, and owning barely half of it: ${Math.round(100 * F.concessions.foreign_claim)} in the hundred of the yield is entered in ${esc(model.metropole)}'s books, not the realm's.`);
-        if (F.concessions && F.concessions.abandoned_n > 0)
-          V.push(`And ${F.concessions.abandoned_n} ${F.concessions.abandoned_n === 1 ? "coast was" : "coasts were"} courted, developed, and then let go when the lode ran thin. The attention left with the ore, and the ground got its ruin and its freedom in the same year.`);
-        if (F.rain_split && F.rain_split.wet - F.rain_split.dry >= 8 && model.ridges.length)
-          V.push(`The ${model.ridges[0].name} divides even the weather: the rain falls at ${F.rain_split.wet} on one side and ${F.rain_split.dry} in its lee, and no one on the dry side chose the wind.`);
-        if (F.twins)
-          V.push(`And ${town(F.twins.open).name} and ${town(F.twins.shadow).name} stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.`);
-        L.push(`The record closes with what the numbers say. ` + V.join(` `));
-        L.push(``);
-        L.push(`No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.`);
       }
       if (params.ep === 0) {
         L.push(``);
         L.push(`*The record ends where it began. The world is newly founded, and its years are still to run.*`);
       }
       return L.join("\n").replace(/\n{3,}/g, "\n\n") + "\n";
+    }
+
+    // ---- The chronicle, composed (D4, #140) ---------------------------------
+    //
+    // The historian register, on the loom. The founding and the state of the realm
+    // were single fixed templates: every world said them in the same words and only
+    // the names and figures moved. Measured before any of this was written (24 seeds,
+    // skeleton-masked so a template over different towns scores as the SAME):
+    //
+    //   whole chronicle   0.62      preamble           0.98
+    //   Founding          0.71      State of the Realm 0.76
+    //   What the Record Shows 0.65  The Years          0.50
+    //
+    // The Years is 51% of the words and the LEAST repetitive act, because its event
+    // prose already picks from five variants per type. The fixed acts are where the
+    // sameness lives, so that is where this pool is.
+    //
+    // "What the Record Shows" gets no pool at all: it was the findings panel written
+    // a second time in the historian's voice, and it calls composeFindings now.
+    //
+    // §7.4's WITHIN-SEED ceiling is deliberately NOT pinned, and the reason is
+    // measured: strip every figure and name and a knob at its extreme still leaves
+    // 77-96% of the beat structure standing (iq=100 shares 53 of 54 beats with the
+    // base world). Prose cannot separate two worlds that fired the same beats over
+    // the same values; the only way to hit 0.45 would be keying composition on world
+    // state so a dial rewords a chronicle whose content did not change, which is
+    // tuning to the metric. 0.93 is a statement about how far the dials reach, which
+    // is what sweep.mjs already measures. Run `chronicle-proto.mjs --knobs`.
+
+
+    // The phrasings the flattened lists draw from. Each item of a list draws its own,
+    // so a list is not one sentence repeated with the names swapped.
+    const RUIN_SAID = {
+      delve: [
+        (n, t) => `the delve called ${n} gapes in the old workings by ${t}`,
+        (n, t) => `${n} is a delve, open in the old workings above ${t}`,
+        (n, t) => `there is a hole in the workings by ${t} that the charts call ${n}`,
+        (n, t) => `${n}, a delve past ${t}, has never been surveyed to the bottom`,
+        (n, t) => `the old workings by ${t} are open at ${n} and nobody has closed them`,
+      ],
+      tomb: [
+        (n, t) => `the tomb of ${n} keeps its silence in the barrens by ${t}`,
+        (n, t) => `${n} lies in a tomb out in the barrens past ${t}`,
+        (n, t) => `there is a tomb by ${t} with ${n} in it and nothing else recorded`,
+        (n, t) => `the barrens beyond ${t} hold ${n}, sealed and unentered`,
+        (n, t) => `${n} was buried by ${t} before the founding and has not been disturbed`,
+      ],
+      deadhold: [
+        (n, t) => `the deadhold of ${n} stands empty by ${t}, and its ground is poisoned yet`,
+        (n, t) => `${n} stands empty by ${t} on ground that has not recovered`,
+        (n, t) => `by ${t} the deadhold ${n} keeps its walls and its poison`,
+        (n, t) => `nothing has moved back into ${n} by ${t}, and nothing is going to`,
+        (n, t) => `${n} is roofed and empty by ${t}, which is worse than a ruin`,
+      ],
+    };
+    const AGE_SAID = {
+      wider: ["when the gap widened", "when the spread opened out", "when the distance grew",
+        "in which the gap got wider", "when what separated the top from the middle grew"],
+      narrower: ["when the gap narrowed", "when the spread closed up", "when the distance shrank",
+        "in which the gap got smaller", "when the top and the middle moved toward each other"],
+      held: ["when the gap held", "when nothing in the spread moved", "when the distance stayed put",
+        "in which the gap did not move", "when the shape of the realm sat still"],
+    };
+    const FATE_SAID = {
+      boom: [n => `${n} rose through the years`, n => `${n} gained`, n => `${n} came up`,
+        n => `${n} ended richer than at the founding`, n => `${n} climbed`],
+      stable: [n => `${n} held steady`, n => `${n} neither rose nor fell`, n => `${n} held`,
+        n => `${n} ended where the founding left ${n === 1 ? "it" : "them"}`, n => `${n} stayed put`],
+      decline: [n => `${n} declined`, n => `${n} slid`, n => `${n} lost ground`,
+        n => `${n} ended poorer`, n => `${n} went down`],
+      collapse: [n => `${n} collapsed outright`, n => `${n} went under`, n => `${n} failed`,
+        n => `${n} collapsed`, n => `${n} did not survive the years`],
+    };
+
+    const CHRONICLE_FRAMES = [
+      "{A}. {B}.", "{A}, and {B}.", "{A}; {B}.", "{A}. {B}.",
+      "{A}: {B}.", "{A}, though {B}.", "{A}. And {B}.", "{A}, so {B}.",
+    ];
+
+    const CHRONICLE_POOL = {
+      // ---- the preamble ------------------------------------------------------
+      // the lead into What the Record Shows: one fixed sentence in v1, so every
+      // world in the corpus opened its closing act with the same eight words.
+      record_lead: [
+        { t: "the record closes with what the numbers say about {num:n_regions} regions", req: () => true },
+        { t: "what follows is the arithmetic of {num:n_regions} regions, without commentary", req: () => true },
+        { t: "{name:capital} closes the account with the figures", req: () => true },
+        { t: "the last of it is what the {num:n_regions} regions add up to", req: () => true },
+        { t: "the numbers for all {num:n_regions} regions are set out here, and they are not flattering", req: () => true },
+        { t: "what {name:capital} can count, it counts here", req: () => true },
+        { t: "this is the reckoning: {num:n_regions} regions, measured rather than described", req: () => true },
+        { t: "the figures close the record, as {name:capital} requires", req: () => true },
+        { t: "before the record closes, the arithmetic over {num:n_regions} regions", req: () => true },
+        { t: "what the survey of {num:n_regions} regions supports, and nothing beyond it", req: () => true },
+        { t: "what {num:n_regions} regions come to, in figures", req: () => true },
+        { t: "the arithmetic of the {num:n_regions} regions closes the account", req: () => true },
+        { t: "the last of this record is what can be counted across {num:n_regions} regions", req: () => true },
+      ],
+
+      preamble: [
+        { t: "the world called \"{term:seed}\", written down at {name:capital} in the year {num:close_year}, during the reign of {name:reigning}", req: () => true },
+        { t: "set down at {name:capital} in {num:close_year}, under {name:reigning}, concerning the world called \"{term:seed}\"", req: () => true },
+        { t: "the record of the world called \"{term:seed}\", kept at {name:capital} and closed in {num:close_year} under {name:reigning}", req: () => true },
+        { t: "compiled at {name:capital}, year {num:close_year}, in the reign of {name:reigning}, of the world called \"{term:seed}\"", req: () => true },
+        { t: "of the world called \"{term:seed}\": this copy written at {name:capital}, {num:close_year}, {name:reigning} reigning", req: () => true },
+        { t: "{name:capital} keeps this record of the world called \"{term:seed}\", closed in {num:close_year} while {name:reigning} reigned", req: () => true },
+        { t: "closed at {name:capital} in {num:close_year}, {name:reigning} on the throne, of the world called \"{term:seed}\"", req: () => true },
+        { t: "the world called \"{term:seed}\", as {name:capital} had it in {num:close_year}, {name:reigning} reigning", req: () => true },
+        { t: "a fair copy made at {name:capital} in {num:close_year} under {name:reigning}, of the world called \"{term:seed}\"", req: () => true },
+        { t: "concerning the world called \"{term:seed}\", closed {num:close_year} at {name:capital}, in the reign of {name:reigning}", req: () => true },
+        { t: "{name:reigning} reigning, {num:close_year}, at {name:capital}: the record of the world called \"{term:seed}\"", req: () => true },
+        { t: "this is what {name:capital} wrote down about the world called \"{term:seed}\", up to {num:close_year} and the reign of {name:reigning}", req: () => true },
+      ],
+
+      // ---- the founding ------------------------------------------------------
+      realm: [
+        { t: "this record covers a realm of {num:n_regions} settled regions, with its capital at {name:capital}", req: () => true },
+        { t: "{num:n_regions} settled regions answer to {name:capital}, and this is their record", req: () => true },
+        { t: "the realm is {num:n_regions} regions and one capital, {name:capital}", req: () => true },
+        { t: "what follows concerns {num:n_regions} regions and the capital that counts them, {name:capital}", req: () => true },
+        { t: "{name:capital} sits at the middle of {num:n_regions} settled regions", req: () => true },
+        { t: "a realm of {num:n_regions} regions, kept from {name:capital}", req: () => true },
+        { t: "the survey that opens this record counts {num:n_regions} regions and one capital at {name:capital}", req: () => true },
+        { t: "{num:n_regions} regions were surveyed and {name:capital} was chosen to count them", req: () => true },
+        { t: "this is the account of {num:n_regions} regions as {name:capital} keeps it", req: () => true },
+        { t: "{num:n_regions} regions, one capital at {name:capital}, and this account of both", req: () => true },
+        { t: "the realm in this record is {num:n_regions} regions answering to {name:capital}", req: () => true },
+      ],
+      realm_gloss: [
+        { t: "the wind comes from the {term:compass}, and most of what follows was set by the ground itself: where the aetherstone lies, where the land will carry a road, and where it will not", req: () => true },
+        { t: "the prevailing wind is {term:compass}, and the rest was decided by the rock: where the aetherstone lies, and where a road can be cut", req: () => true },
+        { t: "the weather comes {term:compass} and the rest came from underneath: the ore, the gradient, and what a wagon can climb", req: () => true },
+        { t: "with the wind out of the {term:compass}, almost everything here follows from where the aetherstone lies and where the ground will take a road", req: () => true },
+        { t: "the {term:compass} wind and the shape of the rock between them account for most of this record before anyone in it made a choice", req: () => true },
+        { t: "almost nothing that follows was chosen: the wind sets {term:compass}, the aetherstone lies where it lies, and the roads go where the ground permits", req: () => true },
+        { t: "the ground decided most of this before anyone arrived, and the {term:compass} wind decided the rest", req: () => true },
+        { t: "where the ore sits and where a wagon can climb explain more of the next {num:n_regions} pages than any decree does", req: () => true },
+      ],
+      sizes: [
+        { t: "no one planned the towns' sizes: by year 1000 the largest held {num:pop_top} people to the median town's {num:pop_med}", req: () => true },
+        { t: "the census at the founding runs from {num:pop_top} in the largest town down to {num:pop_med} in the median one, and nobody set that spread", req: () => true },
+        { t: "at the founding the biggest town held {num:pop_top} and the middling one {num:pop_med}", req: () => true },
+        { t: "the towns came out at {num:pop_top} for the largest and {num:pop_med} for the median, unplanned", req: () => true },
+        { t: "{num:pop_top} people in the largest town against {num:pop_med} in the median: a spread nobody decreed", req: () => true },
+        { t: "town sizes at the founding spread from {num:pop_med} at the middle to {num:pop_top} at the top", req: () => true },
+        { t: "nobody sized the towns: the largest closed the founding at {num:pop_top} and the middling one at {num:pop_med}", req: () => true },
+        { t: "the founding census puts {num:pop_top} at the top and {num:pop_med} at the middle, and no charter says why", req: () => true },
+        { t: "from {num:pop_med} at the median to {num:pop_top} at the head, and not a line of it planned", req: () => true },
+        { t: "the largest town closed the founding at {num:pop_top} against {num:pop_med} at the middle", req: () => true },
+        { t: "at the founding the spread ran {num:pop_med} to {num:pop_top}, and nobody set it", req: () => true },
+      ],
+      sizes_gloss: [
+        { t: "they grew that way over centuries across all {num:n_regions} regions: good land paid off, trade pulled people in, and the bigger a town got the faster it grew", req: () => true },
+        { t: "centuries of it across {num:n_regions} regions: good land paid, trade drew, and growth went to whatever was already growing", req: () => true },
+        { t: "the rule was simple and nobody wrote it down, that a town grows in proportion to what it already has, which is how {num:pop_top} and {num:pop_med} came to be that far apart", req: () => true },
+        { t: "good ground and a road to somewhere did the work, compounding, so the lead at {num:pop_top} was built a little at a time", req: () => true },
+        { t: "nothing decided it but arithmetic run for centuries over {num:n_regions} regions, where every town grew by a share of itself", req: () => true },
+        { t: "what a town already had is what it got more of, which is how {num:pop_top} pulled that far clear", req: () => true },
+        { t: "advantage compounds, and over {num:n_regions} regions it compounded into this spread", req: () => true },
+        { t: "nobody was rewarded and nobody was punished: the arithmetic ran, and {num:pop_med} is where the middle of it landed", req: () => true },
+      ],
+      works: [
+        { t: "the aetherworks at {term:works_list} refine aetherstone into lumen, and the trunk lines run from them to {name:capital}", req: c => c.hasWorks && c.worksOffCapital },
+        { t: "aetherstone becomes lumen at {term:works_list}, and the trunk lines carry it to {name:capital}", req: c => c.hasWorks && c.worksOffCapital },
+        { t: "{term:works_list} {term:works_verb} the aetherworks, and the wires run from them to {name:capital}", req: c => c.hasWorks && c.worksOffCapital },
+        { t: "the refining is done at {term:works_list}, from which the trunk lines reach {name:capital}", req: c => c.hasWorks && c.worksOffCapital },
+        { t: "at the founding the aetherworks stand at {term:works_list}, wired through to {name:capital}", req: c => c.hasWorks && c.worksOffCapital },
+        { t: "not one of the {num:n_regions} regions held an aetherworks at the founding, which the ledgers of every neighbouring realm found remarkable", req: c => !c.hasWorks },
+        { t: "the aetherworks are at {term:works_list}, and every trunk line in the realm runs from them to {name:capital}", req: c => c.hasWorks && c.worksOffCapital },
+        { t: "what is dug up becomes lumen at {term:works_list} before it goes anywhere near {name:capital}", req: c => c.hasWorks && c.worksOffCapital },
+        { t: "{term:works_list} {term:works_verb} the refining, and {name:capital} takes the wire from there", req: c => c.hasWorks && c.worksOffCapital },
+        { t: "the {num:n_regions} regions had no aetherworks at all at the founding, which no neighbouring ledger could account for", req: c => !c.hasWorks },
+        { t: "there was aetherstone in the ground of these {num:n_regions} regions and nothing built to refine it", req: c => !c.hasWorks },
+        { t: "the aetherworks stand at {term:works_list}, which is also where the capital is, so nothing has to be carried anywhere", req: c => c.hasWorks && !c.worksOffCapital },
+        { t: "the refining is done at {term:works_list} and consumed where it is made", req: c => c.hasWorks && !c.worksOffCapital },
+        { t: "{term:works_list} {term:works_verb} the aetherworks and the whole of the grid that draws on them", req: c => c.hasWorks && !c.worksOffCapital },
+      ],
+      works_gloss: [
+        { t: "the Temple holds sacred ground at {term:shrine_list}, out where the aetherstone lies and the capital's authority is weak", req: c => c.hasShrines },
+        { t: "sacred ground is held at {term:shrine_list}, which is also where the ore is and where the writ runs thin", req: c => c.hasShrines },
+        { t: "{term:shrine_list} are sanctioned ground, sited where the aetherstone lies and the capital cannot easily reach", req: c => c.hasShrines },
+        { t: "{num:dark0} settlements started off the grid: reachable by road, but with no power line, because the ledgers said wiring them would not pay", req: c => c.dark0 > 0 },
+        { t: "the wire skipped {num:dark0} settlements at the founding, on the grounds that they would not repay the copper", req: c => c.dark0 > 0 },
+        { t: "every one of the {num:n_regions} settlements started on the grid, which the ledgers rarely allow and never for long", req: c => c.dark0 === 0 },
+        { t: "the Temple's sanctioned ground stands at {term:shrine_list}, which is where the ore is and where the writ is thinnest", req: c => c.hasShrines },
+        { t: "faith holds {term:shrine_list}, sited on the aetherstone and out of the capital's easy reach", req: c => c.hasShrines },
+        { t: "{num:dark0} settlements began with a road and no wire, because the copper would not have repaid itself", req: c => c.dark0 > 0 },
+        { t: "the founding left {num:dark0} settlements dark, on an arithmetic nobody in them was shown", req: c => c.dark0 > 0 },
+        { t: "all {num:n_regions} regions began wired, which the ledgers permit only when somebody else is paying", req: c => c.dark0 === 0 },
+      ],
+      skyway: [
+        { t: "there is also the {name:skyway} Lane: lift-barges running between {term:aerie_list}, over the walls and fords and gates below", req: c => c.hasSkyway },
+        { t: "above all of it runs the {name:skyway} Lane, lift-barges between {term:aerie_list} that cross what the roads must go around", req: c => c.hasSkyway },
+        { t: "the {name:skyway} Lane connects {term:aerie_list} by air, over every obstacle the ground puts in the way", req: c => c.hasSkyway },
+        { t: "lift-barges work the {name:skyway} Lane between {term:aerie_list}", req: c => c.hasSkyway },
+        { t: "no skyway was built over these {num:n_regions} regions at all, and the ledgers that refused it found no lane worth the lift", req: c => !c.hasSkyway },
+        { t: "{name:capital} has no lane and no aerie to reach: nowhere in the realm was the cargo valuable enough or the ground hard enough to justify the stones", req: c => !c.hasSkyway },
+        { t: "the {name:skyway} Lane runs above the roads between {term:aerie_list}, crossing what the ground makes wagons go around", req: c => c.hasSkyway },
+        { t: "between {term:aerie_list} the {name:skyway} Lane carries what will pay the lift", req: c => c.hasSkyway },
+        { t: "nothing flies over these {num:n_regions} regions, because no lane in them was worth the stones", req: c => !c.hasSkyway },
+        { t: "the ledgers looked at all {num:n_regions} regions and found no route worth an aerie", req: c => !c.hasSkyway },
+      ],
+      skyway_gloss: [
+        { t: "the {name:skyway} lanes go where the ground is hardest and the cargo most valuable, and you pay to board at the aerie: the road is open to everyone and the sky is not", req: c => c.hasSkyway },
+        { t: "you pay at the aerie to board the {name:skyway}, so the sky belongs to whoever can afford the fare while the road belongs to everyone", req: c => c.hasSkyway },
+        { t: "a {name:skyway} lane is cut where the walk is worst and the freight is richest, and the fare decides who gets the saving", req: c => c.hasSkyway },
+        { t: "everything bound for {name:capital} therefore travels at the speed of the worst road on its route", req: c => !c.hasSkyway },
+        { t: "so every crossing between these {num:n_regions} regions is made on the ground, at the ground's price", req: c => !c.hasSkyway },
+        { t: "the {name:skyway} was cut where the walk is worst and the cargo richest, which is the same place twice", req: c => c.hasSkyway },
+        { t: "a fare at the aerie buys what the {name:skyway} saves, and the saving was never going to be shared", req: c => c.hasSkyway },
+        { t: "every load in these {num:n_regions} regions moves at the pace of the worst stretch of its road", req: c => !c.hasSkyway },
+        { t: "{name:capital} is reached on the ground or not at all", req: c => !c.hasSkyway },
+      ],
+      ridges: [
+        { t: "the {term:ridge_list} wall off the country, and the roads across go through {term:pass_list}", req: c => c.hasRidges && c.hasPasses },
+        { t: "{term:ridge_list} divide the realm, crossed only at {term:pass_list}", req: c => c.hasRidges && c.hasPasses },
+        { t: "the country is cut in two by {term:ridge_list}, and {term:pass_list} are the ways through", req: c => c.hasRidges && c.hasPasses },
+        { t: "{term:ridge_list} stand across the realm and the roads must find {term:pass_list} to get over", req: c => c.hasRidges && c.hasPasses },
+        { t: "the {term:ridge_list} close the country off, and no pass was ever cut through", req: c => c.hasRidges && !c.hasPasses },
+        { t: "no wall of rock crosses the {num:n_regions} regions of this realm, which is rarer than the maps suggest and worth more than any charter", req: c => !c.hasRidges },
+        { t: "{term:ridge_list} run across the country and {term:pass_list} are the only way over", req: c => c.hasRidges && c.hasPasses },
+        { t: "the wall is {term:ridge_list}, and everything that crosses it crosses at {term:pass_list}", req: c => c.hasRidges && c.hasPasses },
+        { t: "nothing crosses {term:ridge_list}, because nothing was ever cut through them", req: c => c.hasRidges && !c.hasPasses },
+        { t: "{term:ridge_list} stand unbroken, and the country behind them is behind them for good", req: c => c.hasRidges && !c.hasPasses },
+        { t: "no rock divides these {num:n_regions} regions from each other, which the maps make look ordinary and is not", req: c => !c.hasRidges },
+        { t: "nothing walls off any part of the {num:n_regions} regions, and that is worth more than any charter granted here", req: c => !c.hasRidges },
+      ],
+      ridges_gloss: [
+        { t: "{num:shadow_n} regions sit in the mountains' shadow, cut off from {name:capital} by the wall, and it costs them", req: c => c.shadowN > 0 },
+        { t: "the wall puts {num:shadow_n} regions behind it, further from {name:capital} than the map alone would say", req: c => c.shadowN > 0 },
+        { t: "being one of the {num:shadow_n} regions behind it is not a thing any of them chose", req: c => c.shadowN > 0 },
+        { t: "as it happened no region ended up cut off from {name:capital} by the wall, which was luck and not fairness", req: c => c.hasRidges && c.shadowN === 0 },
+        { t: "every region here reaches {name:capital} without crossing rock, and no one arranged that", req: c => !c.hasRidges },
+        { t: "{num:shadow_n} regions are on the far side of it, further from {name:capital} in cost than in distance", req: c => c.shadowN > 0 },
+        { t: "the wall does not care who is behind it, and {num:shadow_n} regions are", req: c => c.shadowN > 0 },
+        { t: "the ridges fell where nobody lived behind them, so all {num:n_regions} regions reach {name:capital} anyway", req: c => c.hasRidges && c.shadowN === 0 },
+        { t: "all {num:n_regions} regions reach the capital on the flat, which nobody arranged and everybody benefits from", req: c => !c.hasRidges },
+      ],
+      river: [
+        { t: "the {name:river} runs down from the high ground by {name:river_head} through {num:river_len} regions to the border", req: c => c.hasRiver },
+        { t: "from the high ground at {name:river_head} the {name:river} falls through {num:river_len} regions and out of the realm", req: c => c.hasRiver },
+        { t: "{num:river_len} regions share the {name:river}, which rises by {name:river_head}", req: c => c.hasRiver },
+        { t: "the {name:river} gathers at {name:river_head} and crosses {num:river_len} regions before it leaves", req: c => c.hasRiver },
+        { t: "the {name:river} falls from {name:river_head} and crosses {num:river_len} regions on its way out", req: c => c.hasRiver },
+        { t: "{num:river_len} regions take their water from the {name:river}, which starts above {name:river_head}", req: c => c.hasRiver },
+        { t: "the {name:river} is one river and {num:river_len} claims on it, from {name:river_head} down", req: c => c.hasRiver },
+        { t: "water leaves the high ground at {name:river_head} and does not stop until it has passed {num:river_len} regions", req: c => c.hasRiver },
+      ],
+      river_gloss: [
+        { t: "the towns drink from it in order, so {name:river_head} gets it clean and {name:river_mouth} at the mouth gets whatever every town and aetherworks above has put in it", req: c => c.hasRiver },
+        { t: "the order is fixed by gradient: clean at {name:river_head}, and at {name:river_mouth} whatever the {num:river_len} regions upstream have finished with", req: c => c.hasRiver },
+        { t: "{name:river_mouth} is last on it, which nobody at {name:river_mouth} chose and nobody upstream had to think about", req: c => c.hasRiver },
+        { t: "being upstream of {name:river_mouth} is worth more than any charter, and cost nothing to acquire", req: c => c.hasRiver },
+        { t: "gradient decides the order, and the order puts {name:river_mouth} last", req: c => c.hasRiver },
+        { t: "what {num:river_len} regions put into it, {name:river_mouth} takes out of it", req: c => c.hasRiver },
+        { t: "no charter allocated the {name:river}, and the allocation is the steepest thing in this record", req: c => c.hasRiver },
+        { t: "nobody at {name:river_head} has ever had to think about {name:river_mouth}, and that is the arrangement", req: c => c.hasRiver },
+      ],
+      sea: [
+        { t: "the sea lies to the {term:sea_sides}, and the charts call it {term:chart_names}", req: c => c.hasSea && c.hasCharts },
+        { t: "to the {term:sea_sides} is open water, {term:chart_names} on the charts", req: c => c.hasSea && c.hasCharts },
+        { t: "the realm meets the sea on the {term:sea_sides}", req: c => c.hasSea && !c.hasCharts },
+        { t: "open water lies {term:sea_sides} of the realm", req: c => c.hasSea && !c.hasCharts },
+        { t: "not one of the {num:n_regions} regions touches the sea, and everything the realm sells must go out overland", req: c => !c.hasSea },
+        { t: "open water lies to the {term:sea_sides}, and it is drawn as {term:chart_names}", req: c => c.hasSea && c.hasCharts },
+        { t: "the charts put {term:chart_names} off the {term:sea_sides} coast", req: c => c.hasSea && c.hasCharts },
+        { t: "the {term:sea_sides} edge of the realm is water", req: c => c.hasSea && !c.hasCharts },
+        { t: "the realm runs out at the water on the {term:sea_sides}", req: c => c.hasSea && !c.hasCharts },
+        { t: "the {num:n_regions} regions are landlocked entire, and everything they sell goes out by road", req: c => !c.hasSea },
+        { t: "there is no coast anywhere in these {num:n_regions} regions, so every gate is a gate on land", req: c => !c.hasSea },
+      ],
+      sea_gloss: [
+        { t: "the realm's {term:port_is} {term:port_list}: everything the mines raise and the aetherworks refine leaves through them, and whoever holds the quay collects the tariff", req: c => c.hasPorts },
+        { t: "{term:port_list} {term:port_verb} the whole outward trade, and the tariff belongs to whoever holds the quay", req: c => c.hasPorts },
+        { t: "how far a town sits from the water was luck, decided at the founding like everything else, and {term:port_list} won it", req: c => c.hasPorts },
+        { t: "the quays are sealed by decree, so {name:capital} trades with no one across the water and no one lands: the cost of that safety falls on every coast that could have been a gate", req: c => c.hasSea && !c.hasPorts && c.hbSealed },
+        { t: "no harbour was built at the founding and the {term:sea_sides} coast waits, which is its own kind of decision", req: c => c.hasSea && !c.hasPorts && !c.hbSealed },
+        { t: "sailors keep well clear of the {name:maelstrom}, where the sea turns on itself, and no quay was ever built within its reach", req: c => c.hasMaelstrom },
+        { t: "{term:port_list} {term:port_verb} everything that leaves, and the quay collects before the road does", req: c => c.hasPorts },
+        { t: "the outward trade of the realm goes through {term:port_list} and pays there", req: c => c.hasPorts },
+        { t: "{term:port_list} won the founding lottery, and the winning ticket was a shoreline", req: c => c.hasPorts },
+        { t: "with the quays shut by decree nothing leaves {name:capital} by water and nothing arrives, and every coast that could have been a gate pays for that", req: c => c.hasSea && !c.hasPorts && c.hbSealed },
+        { t: "the {term:sea_sides} coast has no harbour on it, which was decided by not deciding", req: c => c.hasSea && !c.hasPorts && !c.hbSealed },
+        { t: "the {name:maelstrom} keeps its own water, and no quay was built inside its reach", req: c => c.hasMaelstrom },
+      ],
+      ruins: [
+        { t: "the old world is still here: {term:ruin_list}", req: c => c.hasRuins },
+        { t: "what came before has not gone: {term:ruin_list}", req: c => c.hasRuins },
+        { t: "the realm is built over an older one, and {term:ruin_list}", req: c => c.hasRuins },
+        { t: "{term:ruin_list}, and the maps mark them because nothing else will", req: c => c.hasRuins },
+        { t: "nothing older than the founding stands in any of the {num:n_regions} regions, which means either that nothing was here or that nothing survived", req: c => !c.hasRuins },
+        { t: "an older world is underneath this one: {term:ruin_list}", req: c => c.hasRuins },
+        { t: "the survey found what was here before: {term:ruin_list}", req: c => c.hasRuins },
+        { t: "{term:ruin_list}, and none of it is on any charter", req: c => c.hasRuins },
+        { t: "across all {num:n_regions} regions nothing stands that predates the founding, which is either an empty country or a thorough one", req: c => !c.hasRuins },
+        { t: "the {num:n_regions} regions hold no ruin, no tomb and no delve, and the record does not say which of the two reasons applies", req: c => !c.hasRuins },
+      ],
+      ruins_gloss: [
+        { t: "delvers work the {name:delver_town} road every season because it pays when nothing else does, not all of them come back, and what they carry out is sold off the books", req: c => c.hasRuins },
+        { t: "the {name:delver_town} road carries delvers every season, and the trade in what they bring up is not written down anywhere", req: c => c.hasRuins },
+        { t: "there is a living on the {name:delver_town} road for whoever will take the risk, and the ledgers never see a coin of it", req: c => c.hasRuins },
+        { t: "so the oldest thing on the {name:capital} maps is the survey that made them", req: c => !c.hasRuins },
+        { t: "the {name:delver_town} road fills every season with people the ledgers will never count, carrying out what the ledgers will never see", req: c => c.hasRuins },
+        { t: "delving pays at {name:delver_town} when nothing else does, and it is priced accordingly", req: c => c.hasRuins },
+        { t: "what comes up the {name:delver_town} road is sold before anyone official hears of it", req: c => c.hasRuins },
+        { t: "the survey that made the {name:capital} maps is the oldest thing on them", req: c => !c.hasRuins },
+      ],
+      freeport: [
+        { t: "past the last boundary stone, by {name:freeport_town}, the lawless keep their own harbour: {name:freeport}", req: c => c.hasFreeport },
+        { t: "beyond the boundary stones at {name:freeport_town} lies {name:freeport}, which belongs to nobody", req: c => c.hasFreeport },
+        { t: "{name:freeport} sits past the last stone by {name:freeport_town}, on no charter and no map the capital keeps", req: c => c.hasFreeport },
+        { t: "the realm's edge at {name:freeport_town} is where {name:freeport} was allowed to happen", req: c => c.hasFreeport },
+        { t: "{name:freeport} keeps the water past the last stone by {name:freeport_town}, on nobody's charter", req: c => c.hasFreeport },
+        { t: "out past {name:freeport_town} the boundary stops and {name:freeport} begins", req: c => c.hasFreeport },
+        { t: "there is a harbour at {name:freeport} that {name:capital} does not admit exists", req: c => c.hasFreeport },
+        { t: "{name:freeport}, beyond {name:freeport_town}, answers to no charter in the realm", req: c => c.hasFreeport },
+      ],
+      freeport_gloss: [
+        { t: "no charter lists {name:freeport}, no gate taxes it, and assessors who visit do not come back a second time", req: c => c.hasFreeport },
+        { t: "anything the realm will not carry on its books leaves through {name:freeport}, and the ground around it keeps what the gates would have taken", req: c => c.hasFreeport },
+        { t: "with the quays sealed by decree, {name:freeport} is the only working gate left in the realm", req: c => c.hasFreeport && c.hbSealed },
+        { t: "{name:freeport} exists because the realm's own rules made it profitable, which is the only reason anything exists here", req: c => c.hasFreeport },
+        { t: "nothing is taxed at {name:freeport} and nothing is recorded, which are the same service sold twice", req: c => c.hasFreeport },
+        { t: "the ground around {name:freeport} keeps what the gates would have taken from it", req: c => c.hasFreeport },
+        { t: "{name:freeport} is not a failure of the realm's rules, it is what the rules pay for", req: c => c.hasFreeport },
+        { t: "assessors have gone to {name:freeport} and the register does not show them going twice", req: c => c.hasFreeport },
+      ],
+      sanctuary: [
+        { t: "high above the roads, by {name:sanctuary_town}, stands {name:sanctuary}, holy ground the Temple never sanctioned and cannot forgive", req: c => c.hasSanctuary },
+        { t: "{name:sanctuary} keeps the high ground by {name:sanctuary_town}, unsanctioned and unforgiven", req: c => c.hasSanctuary },
+        { t: "above {name:sanctuary_town} is {name:sanctuary}, which the Temple did not consecrate and cannot suppress", req: c => c.hasSanctuary },
+        { t: "there is holy ground at {name:sanctuary} above {name:sanctuary_town} that no authority in this realm authorised", req: c => c.hasSanctuary },
+        { t: "{name:sanctuary} stands above {name:sanctuary_town} on ground no authority granted", req: c => c.hasSanctuary },
+        { t: "high over {name:sanctuary_town} there is holy ground at {name:sanctuary} that the Temple did not make holy", req: c => c.hasSanctuary },
+        { t: "the climb above {name:sanctuary_town} ends at {name:sanctuary}, which was sanctioned by nobody", req: c => c.hasSanctuary },
+        { t: "{name:sanctuary} keeps the height over {name:sanctuary_town}, unlicensed and unmoved", req: c => c.hasSanctuary },
+      ],
+      sanctuary_gloss: [
+        { t: "{name:sanctuary} heals anyone who climbs to it and asks nothing, the census never climbs that far, and the people it shelters go uncounted", req: c => c.hasSanctuary },
+        { t: "the healing at {name:sanctuary} is free and the climb is the price, and nobody who takes it appears in any register", req: c => c.hasSanctuary },
+        { t: "pilgrims walk to {name:sanctuary} alongside the official roads, which the Temple is reminded of every festival", req: c => c.hasSanctuary },
+        { t: "what {name:sanctuary} offers is exactly what the realm's own institutions charge for, which is the whole of the offence", req: c => c.hasSanctuary },
+        { t: "the price at {name:sanctuary} is the walk, and no register records who paid it", req: c => c.hasSanctuary },
+        { t: "nobody healed at {name:sanctuary} appears in any count the realm keeps", req: c => c.hasSanctuary },
+        { t: "the Temple's objection to {name:sanctuary} is not that it fails but that it does not charge", req: c => c.hasSanctuary },
+        { t: "the road to {name:sanctuary} carries more people every festival than the Temple would like recorded", req: c => c.hasSanctuary },
+      ],
+      still: [
+        { t: "over {term:still_list} lies {name:stillname}: ground where the lift-stones simply stop working", req: c => c.hasStill },
+        { t: "{name:stillname} covers {term:still_list}, and no lift-stone will hold there", req: c => c.hasStill },
+        { t: "the air over {term:still_list} is dead to the stones, and the charts name it {name:stillname}", req: c => c.hasStill },
+        { t: "{name:stillname} lies over {term:still_list}, where the lift-stones will not hold", req: c => c.hasStill },
+        { t: "there is dead air over {term:still_list}, and the charts call it {name:stillname}", req: c => c.hasStill },
+        { t: "{term:still_list} lie under {name:stillname}, and nothing rises there", req: c => c.hasStill },
+        { t: "the stones stop working over {term:still_list}, which the charts mark as {name:stillname}", req: c => c.hasStill },
+        { t: "no lift will hold anywhere in {name:stillname}, and {term:still_list} are inside it", req: c => c.hasStill },
+      ],
+      still_gloss: [
+        { t: "no aerie can be built in {name:stillname} and no lane can land: everywhere else the sky costs money, and there it is not for sale at any price", req: c => c.hasStill },
+        { t: "over the {num:still_n} regions in the still the sky is refused rather than priced, which is the one place in the realm where money is not the answer", req: c => (c.hasStill) && c.still_n > 1 },
+        { t: "{name:capital} itself sits in the still, so no skyway flies in this realm at all", req: c => c.capitalInStill },
+        { t: "nothing can be built in {name:stillname} at any price, which makes it unique in this record", req: c => c.hasStill },
+        { t: "the {num:still_n} regions under it are the only ground in the realm money cannot buy its way over", req: c => (c.hasStill) && c.still_n > 1 },
+        { t: "elsewhere the sky is expensive; over those {num:still_n} regions it is simply absent", req: c => (c.hasStill) && c.still_n > 1 },
+        { t: "{name:stillname} refuses the lift rather than pricing it, which nothing else here does", req: c => c.hasStill },
+        { t: "no lane can reach {name:capital}, because {name:capital} is inside the still", req: c => c.capitalInStill },
+        { t: "the one region under {name:stillname} is the only ground in the realm money cannot buy its way over", req: c => c.hasStill && c.still_n === 1 },
+        { t: "elsewhere across {num:n_regions} regions the sky is expensive, and over that one it is simply absent", req: c => c.hasStill && c.still_n === 1 },
+      ],
+      camps: [
+        { t: "where the beasts are worth a bounty and the constabularies never come, hunters keep {term:camp_list}", req: c => c.hasCamps },
+        { t: "{term:camp_list} are kept by hunters, out past where any constabulary rides", req: c => c.hasCamps },
+        { t: "the bounty country holds {term:camp_list}, unpoliced and unbothered", req: c => c.hasCamps },
+        { t: "hunters hold {term:camp_list}, out past the last constabulary", req: c => c.hasCamps },
+        { t: "{term:camp_list} stand where the bounty is worth more than the risk", req: c => c.hasCamps },
+        { t: "the bounty country keeps {term:camp_list} and keeps no records", req: c => c.hasCamps },
+        { t: "out past the writ there are stands at {term:camp_list}", req: c => c.hasCamps },
+        { t: "{term:camp_list} were built by the people who use them and licensed by nobody", req: c => c.hasCamps },
+      ],
+      camps_gloss: [
+        { t: "the stands thin the predation on that ground, the trophies are fenced where nothing is taxed, and for the poorest of the realm's {num:n_regions} regions the bounty is the one rung of a ladder nobody built", req: c => c.hasCamps },
+        { t: "the work at all {num:camp_n} stands is dangerous, untaxed, and for some of the people who do it the only ladder on offer", req: c => (c.hasCamps) && c.camp_n > 1 },
+        { t: "the ground around the {num:camp_n} stands is safer for it and the coin they make is invisible, both of which suit everyone involved", req: c => (c.hasCamps) && c.camp_n > 1 },
+        { t: "those {num:camp_n} stands thin what preys on that country, and nothing they earn is entered anywhere", req: c => (c.hasCamps) && c.camp_n > 1 },
+        { t: "a bounty is the one wage in these {num:n_regions} regions that asks for no charter", req: c => c.hasCamps },
+        { t: "for the poorest the {num:camp_n} stands are the only ladder anyone put up", req: c => (c.hasCamps) && c.camp_n > 1 },
+        { t: "dangerous, untaxed and open to anyone, which is why those {num:camp_n} stands exist at all", req: c => (c.hasCamps) && c.camp_n > 1 },
+        { t: "those {num:camp_n} stands are outside the writ, the tariff and the register alike", req: c => (c.hasCamps) && c.camp_n > 1 },
+        { t: "the one stand thins what preys on the ground around it, and nothing it earns is entered at {name:capital}", req: c => c.hasCamps && c.camp_n === 1 },
+        { t: "it is dangerous, untaxed and open to anyone, which is why the realm's {num:n_regions} regions have exactly one", req: c => c.hasCamps && c.camp_n === 1 },
+        { t: "for the poorest of the {num:n_regions} regions that single stand is the only ladder anyone put up", req: c => c.hasCamps && c.camp_n === 1 },
+        { t: "nothing the one stand earns reaches a register in {name:capital}", req: c => c.hasCamps && c.camp_n === 1 },
+      ],
+      towers: [
+        { t: "{term:tower_holder} {term:tower_list}, out where the constabulary line fails and the grid never came", req: c => c.hasTowers },
+        { t: "beyond the wire and the constabulary, {term:tower_holder} {term:tower_list}", req: c => c.hasTowers },
+        { t: "{term:tower_list} stand where neither the grid nor the law arrived, and {term:tower_holder} them", req: c => c.hasTowers },
+        { t: "{term:tower_holder} {term:tower_list}, past the last wire and the last constabulary", req: c => c.hasTowers },
+        { t: "out where nothing official arrives, {term:tower_holder} {term:tower_list}", req: c => c.hasTowers },
+        { t: "{term:tower_list} were raised where the grid stopped, and {term:tower_holder} them still", req: c => c.hasTowers },
+        { t: "there are towers at {term:tower_list} that no charter permits and no writ reaches", req: c => c.hasTowers },
+        { t: "{term:tower_holder} {term:tower_list} in the dark country, unlicensed", req: c => c.hasTowers },
+      ],
+      towers_gloss: [
+        { t: "they sell in the darkness what the grid across {num:n_regions} regions will not carry, and the Temple calls it heresy, the magnates call it competition, and the people it heals call it the only healer who ever came", req: c => c.hasTowers },
+        { t: "what those {num:tower_n} towers offer is what the wire refuses to deliver, which is why three different authorities have three different words for it", req: c => (c.hasTowers) && c.tower_n > 1 },
+        { t: "all {num:tower_n} towers are heresy to the Temple, competition to the magnates, and to the people they treat simply the only ones who came", req: c => (c.hasTowers) && c.tower_n > 1 },
+        { t: "what those {num:tower_n} towers sell is what the wire never brought, at a price the wire never quoted", req: c => (c.hasTowers) && c.tower_n > 1 },
+        { t: "three authorities have three words for those {num:tower_n} towers, and the people they treat have a fourth", req: c => (c.hasTowers) && c.tower_n > 1 },
+        { t: "the grid across {num:n_regions} regions decided not to come, and something came instead", req: c => c.hasTowers },
+        { t: "nothing about those {num:tower_n} towers is legal, and nothing else was offered", req: c => (c.hasTowers) && c.tower_n > 1 },
+        { t: "those {num:tower_n} towers are illegal and the wire's absence across {num:n_regions} regions is not", req: c => (c.hasTowers) && c.tower_n > 1 },
+        { t: "the one of them sells in the darkness what the grid across {num:n_regions} regions will not carry", req: c => c.hasTowers && c.tower_n === 1 },
+        { t: "what the single tower offers is what the wire refuses to deliver to any of the {num:n_regions} regions", req: c => c.hasTowers && c.tower_n === 1 },
+        { t: "one tower stands against the whole of {name:capital}'s writ, and the writ has not reached it", req: c => c.hasTowers && c.tower_n === 1 },
+        { t: "there is exactly one in {num:n_regions} regions, and the Temple calls it heresy anyway", req: c => c.hasTowers && c.tower_n === 1 },
+      ],
+      bridges: [
+        { t: "the rivers are crossed at {term:bridge_list}", req: c => c.hasBridges },
+        { t: "{term:bridge_list} carry every crossing in the realm", req: c => c.hasBridges },
+        { t: "there are spans at {term:bridge_list} and nowhere else", req: c => c.hasBridges },
+        { t: "every river in the realm is crossed at {term:bridge_list} and nowhere else", req: c => c.hasBridges },
+        { t: "{term:bridge_list} are the spans, and the rest is water", req: c => c.hasBridges },
+        { t: "the water is bridged at {term:bridge_list}", req: c => c.hasBridges },
+        { t: "the realm's crossings are {term:bridge_list}", req: c => c.hasBridges },
+        { t: "there are {num:bridge_n} spans in the realm, at {term:bridge_list}", req: c => (c.hasBridges) && c.bridge_n > 1 },
+        { t: "the realm has one span, at {term:bridge_list}, and no other crossing", req: c => c.hasBridges && c.bridge_n === 1 },
+        { t: "{term:bridge_list} is the only bridge in {num:n_regions} regions", req: c => c.hasBridges && c.bridge_n === 1 },
+      ],
+      bridges_gloss: [
+        { t: "everywhere but at those {num:bridge_n} crossings the banks are marsh and the water must be forded, and the fords are where the wagons drown", req: c => (c.hasBridges) && c.bridge_n > 1 },
+        { t: "whoever holds one of the {num:bridge_n} spans holds a queue of people who cannot go around", req: c => (c.hasBridges) && c.bridge_n > 1 },
+        { t: "the alternative to all {num:bridge_n} spans is a ford, and the fords are counted in wagons rather than in tariffs", req: c => (c.hasBridges) && c.bridge_n > 1 },
+        { t: "a span is a queue that cannot go around, and there are {num:bridge_n} queues", req: c => (c.hasBridges) && c.bridge_n > 1 },
+        { t: "those {num:bridge_n} spans are worth holding for exactly that reason", req: c => (c.hasBridges) && c.bridge_n > 1 },
+        { t: "the fords are free and the fords drown wagons, which is what makes those {num:bridge_n} spans valuable", req: c => (c.hasBridges) && c.bridge_n > 1 },
+        { t: "whoever came to hold one of the {num:bridge_n} spans did not have to build it", req: c => (c.hasBridges) && c.bridge_n > 1 },
+        { t: "the {num:bridge_n} spans were built by the realm and are held by whoever got there first", req: c => (c.hasBridges) && c.bridge_n > 1 },
+        { t: "the one span is worth holding for exactly that reason, and there is no second in {num:n_regions} regions", req: c => c.hasBridges && c.bridge_n === 1 },
+        { t: "the alternative to the single span is a ford, and across {num:n_regions} regions the fords are counted in wagons rather than in tariffs", req: c => c.hasBridges && c.bridge_n === 1 },
+        { t: "whoever came to hold the only span in {num:n_regions} regions did not have to build it", req: c => c.hasBridges && c.bridge_n === 1 },
+        { t: "one crossing serves {num:n_regions} regions, and everywhere else the water must be forded", req: c => c.hasBridges && c.bridge_n === 1 },
+      ],
+      // ---- the years ---------------------------------------------------------
+      ages: [
+        { t: "these years split into ages, each named for what the realm was living through: {term:age_list}", req: c => c.hasAges },
+        { t: "the run divides into {num:n_ages} ages, named from the record itself: {term:age_list}", req: c => (c.hasAges) && c.n_ages > 1 },
+        { t: "the years fall into periods rather than a single stretch: {term:age_list}", req: c => c.hasAges },
+        { t: "cut where the record turns, the years give {term:age_list}", req: c => c.hasAges },
+        { t: "{num:n_ages} ages carry the years between them: {term:age_list}", req: c => (c.hasAges) && c.n_ages > 1 },
+        { t: "the record does not run flat: it falls into {num:n_ages} ages, {term:age_list}", req: c => (c.hasAges) && c.n_ages > 1 },
+        { t: "read at a distance the years are {term:age_list}", req: c => c.hasAges },
+        { t: "{term:age_list}: {num:n_ages} periods the record cuts itself into", req: c => (c.hasAges) && c.n_ages > 1 },
+        { t: "the whole run reads as one age: {term:age_list}", req: c => c.hasAges && c.n_ages === 1 },
+        { t: "the years do not divide: {term:age_list}, start to close", req: c => c.hasAges && c.n_ages === 1 },
+      ],
+      ages_gloss: [
+        { t: "no one decreed the {num:n_ages} names, and they come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back", req: c => (c.hasAges) && c.n_ages > 1 },
+        { t: "the {num:n_ages} names were not granted by anybody; they are what the wealth, the tariffs and the emptied towns add up to", req: c => (c.hasAges) && c.n_ages > 1 },
+        { t: "nothing named those {num:n_ages} periods but the shape of the record: the pile-ups, the levies, and the towns that went dark", req: c => (c.hasAges) && c.n_ages > 1 },
+        { t: "they are cut where the wealth turned, which is the only boundary the {num:n_ages} ages actually have", req: c => (c.hasAges) && c.n_ages > 1 },
+        { t: "the {num:n_ages} boundaries are where the wealth turned, and nothing else marks them", req: c => (c.hasAges) && c.n_ages > 1 },
+        { t: "nobody in the {num:n_regions} regions was told they were living in any of them", req: c => c.hasAges },
+        { t: "the names are descriptions, not decrees, and all {num:n_ages} were derived after the fact", req: c => (c.hasAges) && c.n_ages > 1 },
+        { t: "what separates one from the next is a change in the ledgers of {name:capital} and nothing more ceremonial than that", req: c => c.hasAges },
+        { t: "the single age is less a period than the absence of one, across {num:n_regions} regions", req: c => c.hasAges && c.n_ages === 1 },
+        { t: "one age covers the whole run over {num:n_regions} regions, which is what a record with no turns in it looks like", req: c => c.hasAges && c.n_ages === 1 },
+        { t: "nobody decreed the name, and there was only ever one shape for {num:n_regions} regions to be in", req: c => c.hasAges && c.n_ages === 1 },
+      ],
+      quiet: [
+        { t: "no upheavals are recorded across the {num:n_epochs} epochs, and the years passed as the founding had set them up", req: c => c.noEvents },
+        { t: "the record marks nothing across {num:n_epochs} epochs: no rising, no reform, no calamity", req: c => c.noEvents },
+        { t: "{num:n_epochs} epochs ran without a single upheaval worth the ink", req: c => c.noEvents },
+        { t: "nothing interrupted the {num:n_epochs} epochs, which is not the same as nothing happening", req: c => c.noEvents },
+        { t: "across {num:n_epochs} epochs the record has nothing to enter", req: c => c.noEvents },
+        { t: "the {num:n_epochs} epochs produced no event the clerks thought worth a page", req: c => c.noEvents },
+        { t: "no year in the {num:n_epochs} epochs earned a heading", req: c => c.noEvents },
+        { t: "the founding arrangement ran {num:n_epochs} epochs without being interrupted", req: c => c.noEvents },
+      ],
+      quiet_gloss: [
+        { t: "that does not mean the {num:n_epochs} epochs passed kindly: the grid crawled toward the money, the ore drew down, and the poison settled where it always settles", req: c => c.noEvents },
+        { t: "the loops ran unopposed for {num:n_epochs} epochs, which is its own kind of history", req: c => c.noEvents },
+        { t: "the grid still crawled toward the money over {num:n_regions} regions and the ore still drew down, without anyone recording a year for it", req: c => c.noEvents },
+        { t: "an empty page is not a kind one, and over {num:n_regions} regions the loops ran without a single check on them", req: c => c.noEvents },
+        { t: "nothing was recorded because nothing resisted, which across {num:n_epochs} epochs is the harshest entry available", req: c => c.noEvents },
+        { t: "the ore drew down and the poison settled where it settles, and no clerk in {name:capital} was required to write it down", req: c => c.noEvents },
+        { t: "what happened over {num:n_epochs} epochs happened slowly, which is the one way to happen unrecorded", req: c => c.noEvents },
+        { t: "over {num:n_epochs} epochs nothing pushed back, which is the entry", req: c => c.noEvents },
+      ],
+      bynames: [
+        { t: "the years leave names behind them, and the realm now speaks of {term:byname_list}", req: c => c.hasBynames },
+        { t: "the realm has learned to call places by what happened to them: {term:byname_list}", req: c => c.hasBynames },
+        { t: "{term:byname_list} are what the years left on the map", req: c => c.hasBynames },
+        { t: "bynames settled on the places the years used hardest: {term:byname_list}", req: c => c.hasBynames },
+        { t: "{num:byname_n} places now answer to what happened to them: {term:byname_list}", req: c => (c.hasBynames) && c.byname_n > 1 },
+        { t: "the map carries {term:byname_list}, which no survey put there", req: c => c.hasBynames },
+        { t: "the years wrote on the map, and what they wrote is {term:byname_list}", req: c => c.hasBynames },
+        { t: "people renamed the places the years used hardest, and the names stuck: {term:byname_list}", req: c => c.hasBynames },
+        { t: "one place now answers to what happened to it: {term:byname_list}", req: c => c.hasBynames && c.byname_n === 1 },
+        { t: "the years left one name on the map of {num:n_regions} regions: {term:byname_list}", req: c => c.hasBynames && c.byname_n === 1 },
+      ],
+      bynames_gloss: [
+        { t: "those {num:byname_n} bynames were granted by no charter and can be lifted by no decree, which makes them the plainest record in this document", req: c => (c.hasBynames) && c.byname_n > 1 },
+        { t: "the people kept all {num:byname_n} names on their own, without permission and without a register", req: c => (c.hasBynames) && c.byname_n > 1 },
+        { t: "nobody issued those {num:byname_n} names, which is exactly why they are the part of this record that can be trusted", req: c => (c.hasBynames) && c.byname_n > 1 },
+        { t: "those {num:byname_n} names are the only entries here that nobody in authority approved", req: c => (c.hasBynames) && c.byname_n > 1 },
+        { t: "names given from below survive better than names given from above, and {num:byname_n} of these did", req: c => (c.hasBynames) && c.byname_n > 1 },
+        { t: "nothing in {name:capital} authorised those {num:byname_n} names and nothing in {name:capital} can withdraw them", req: c => (c.hasBynames) && c.byname_n > 1 },
+        { t: "what those {num:byname_n} names record is what people decided a place had become", req: c => (c.hasBynames) && c.byname_n > 1 },
+        { t: "{num:byname_n} names given from below, and every one of them still in use", req: c => (c.hasBynames) && c.byname_n > 1 },
+        { t: "the one byname was granted by no charter and can be lifted by no decree, which makes it the plainest entry in this record of {num:n_regions} regions", req: c => c.hasBynames && c.byname_n === 1 },
+        { t: "nothing in {name:capital} authorised it and nothing in {name:capital} can withdraw it", req: c => c.hasBynames && c.byname_n === 1 },
+        { t: "one name out of {num:n_regions} regions, and it was given from below", req: c => c.hasBynames && c.byname_n === 1 },
+      ],
+      // ---- the state of the realm --------------------------------------------
+      fates: [
+        { t: "of the realm's {num:settled_n} settled regions, {term:fate_parts}", req: c => c.hasFates },
+        { t: "the {num:settled_n} settled regions came out of the years as follows: {term:fate_parts}", req: c => c.hasFates },
+        { t: "counted at the close, the {num:settled_n} settled regions divide: {term:fate_parts}", req: c => c.hasFates },
+        { t: "{term:fate_parts}, out of {num:settled_n} settled regions", req: c => c.hasFates },
+        { t: "the ledger of fates over {num:settled_n} regions reads {term:fate_parts}", req: c => c.hasFates },
+        { t: "by the last epoch, of {num:settled_n} settled regions, {term:fate_parts}", req: c => c.hasFates },
+        { t: "at the close the {num:settled_n} settled regions stand thus: {term:fate_parts}", req: c => c.hasFates },
+        { t: "the years sorted {num:settled_n} settled regions into {term:fate_parts}", req: c => c.hasFates },
+      ],
+      deadholds: [
+        { t: "{num:dead_n} {term:dead_stand} empty now, the deadholds, places where a town once stood and no longer does", req: c => c.deadN > 0 },
+        { t: "the years emptied {num:dead_n} {term:dead_holdings} outright, and the maps still name {term:dead_list}", req: c => c.deadN > 0 },
+        { t: "{term:dead_list} are deadholds now: {num:dead_n} {term:dead_stand} where towns used to", req: c => c.deadN > 0 },
+        { t: "of the ground that was settled at the founding, {num:dead_n} {term:dead_stand} empty at the close", req: c => c.deadN > 0 },
+        { t: "not one of the {num:settled_n} settlements was abandoned across the whole run, which is rarer than the record makes it look", req: c => c.deadN === 0 && c.hasFates },
+        { t: "{num:dead_n} {term:dead_stand} where a town was and is not", req: c => c.deadN > 0 },
+        { t: "the record closes with {num:dead_n} {term:dead_holdings} abandoned outright", req: c => c.deadN > 0 },
+        { t: "what the years emptied comes to {num:dead_n} {term:dead_holdings}", req: c => c.deadN > 0 },
+        { t: "every one of the {num:settled_n} settlements founded here is still standing, which the record makes look ordinary and is not", req: c => c.deadN === 0 && c.hasFates },
+      ],
+      deadholds_gloss: [
+        { t: "the maps still name all {num:dead_n} deadholds, but the roads have stopped going there", req: c => (c.deadN > 0) && c.dead_n > 1 },
+        { t: "those {num:dead_n} deadholds keep their names on the charts and nothing else", req: c => (c.deadN > 0) && c.dead_n > 1 },
+        { t: "nobody struck those {num:dead_n} deadholds from the survey, and the traffic simply stopped", req: c => (c.deadN > 0) && c.dead_n > 1 },
+        { t: "every one of the {num:settled_n} regions that was settled at the founding is settled still", req: c => c.deadN === 0 && c.hasFates },
+        { t: "the roads to those {num:dead_n} deadholds were never closed, they were simply stopped being taken", req: c => (c.deadN > 0) && c.dead_n > 1 },
+        { t: "a deadhold keeps its name because striking it costs a clerk more than leaving it, and {num:dead_n} of them were left", req: c => (c.deadN > 0) && c.dead_n > 1 },
+        { t: "all {num:settled_n} founded regions ended the record settled, which is not the usual shape", req: c => c.deadN === 0 && c.hasFates },
+        { t: "those {num:dead_n} deadholds were not closed, they were left", req: c => (c.deadN > 0) && c.dead_n > 1 },
+        { t: "the maps still name it, and the roads out of {name:capital} have stopped going there", req: c => c.deadN === 1 },
+        { t: "nobody struck the one deadhold from the {name:capital} survey, and the traffic simply stopped", req: c => c.deadN === 1 },
+        { t: "one holding of the {num:settled_n} that were settled keeps its name and nothing else", req: c => c.deadN === 1 },
+      ],
+      reborn: [
+        { t: "{num:reborn_n} {term:reborn_has} come back as something else, and {term:reborn_list} {term:reborn_stand} again on ground that had been left for dead", req: c => c.rebornN > 0 },
+        { t: "{term:reborn_list} were resettled after being abandoned: {num:reborn_n} {term:reborn_has} returned under new names", req: c => c.rebornN > 0 },
+        { t: "ground given up for dead was taken again at {term:reborn_list}", req: c => c.rebornN > 0 },
+        { t: "{num:reborn_n} {term:reborn_has} been resettled: {term:reborn_list}", req: c => c.rebornN > 0 },
+        { t: "ground written off was taken up again at {term:reborn_list}", req: c => c.rebornN > 0 },
+        { t: "what was abandoned came back at {term:reborn_list}, {num:reborn_n} {term:reborn_places} of it", req: c => c.rebornN > 0 },
+        { t: "{term:reborn_list} {term:reborn_stand} on ground the record had already closed", req: c => c.rebornN > 0 },
+        { t: "{num:reborn_n} {term:reborn_has} come back under names nobody there had used before", req: c => c.rebornN > 0 },
+        { t: "one place came back: {term:reborn_list} stands again on ground that had been left for dead", req: c => c.rebornN === 1 },
+        { t: "ground given up for dead was taken again, once, at {term:reborn_list}", req: c => c.rebornN === 1 },
+      ],
+      reborn_gloss: [
+        { t: "all {num:reborn_n} places stand under names in a different tongue than the ones they carried before", req: c => (c.rebornN > 0) && c.reborn_n > 1 },
+        { t: "the {num:reborn_n} names are not the old names, because the people who came back were not the people who left", req: c => (c.rebornN > 0) && c.reborn_n > 1 },
+        { t: "what made those {num:reborn_n} places worth resettling is what made them worth leaving, arriving in a different order", req: c => (c.rebornN > 0) && c.reborn_n > 1 },
+        { t: "those {num:reborn_n} places are proof that nothing here is abandoned for a reason that stays true", req: c => (c.rebornN > 0) && c.reborn_n > 1 },
+        { t: "what emptied those {num:reborn_n} places and what refilled them was the same arithmetic pointing the other way", req: c => (c.rebornN > 0) && c.reborn_n > 1 },
+        { t: "nobody returned out of sentiment, and the {num:reborn_n} names show it", req: c => (c.rebornN > 0) && c.reborn_n > 1 },
+        { t: "the arithmetic that emptied those {num:reborn_n} places refilled them, pointing the other way", req: c => (c.rebornN > 0) && c.reborn_n > 1 },
+        { t: "nobody returned to any of those {num:reborn_n} places out of sentiment", req: c => (c.rebornN > 0) && c.reborn_n > 1 },
+        { t: "it stands under a name in a different tongue than the one the {name:capital} charts carried before", req: c => c.rebornN === 1 },
+        { t: "what emptied that one place and what refilled it was the arithmetic of {num:n_regions} regions, pointing the other way", req: c => c.rebornN === 1 },
+        { t: "nobody returned to it out of sentiment, and the name on the {name:capital} charts shows it", req: c => c.rebornN === 1 },
+      ],
+      ghost: [
+        { t: "{name:ghost_town} is the emptiest of the ghost country, its best years gone and the roads no longer going there", req: c => c.hasGhost },
+        { t: "the emptiest place in the record is {name:ghost_town}, which the roads have given up on", req: c => c.hasGhost },
+        { t: "nothing has hollowed out further than {name:ghost_town}", req: c => c.hasGhost },
+        { t: "{name:ghost_town} has hollowed out further than anywhere else in the record", req: c => c.hasGhost },
+        { t: "the deepest fall in the record is {name:ghost_town}", req: c => c.hasGhost },
+        { t: "{name:ghost_town} kept its name and lost everything the name referred to", req: c => c.hasGhost },
+        { t: "the roads still reach {name:ghost_town} and nothing uses them", req: c => c.hasGhost },
+        { t: "nowhere in these {num:n_regions} regions emptied like {name:ghost_town}", req: c => c.hasGhost },
+      ],
+      riser: [
+        { t: "{name:riser_town} rose further than any other place in the record", req: c => c.hasRiser },
+        { t: "the sharpest rise in the record belongs to {name:riser_town}", req: c => c.hasRiser },
+        { t: "no place gained more across the years than {name:riser_town}", req: c => c.hasRiser },
+        { t: "{name:riser_town} gained more than anywhere else across the years", req: c => c.hasRiser },
+        { t: "nothing in the record climbed like {name:riser_town}", req: c => c.hasRiser },
+        { t: "of all {num:n_regions} regions {name:riser_town} rose furthest", req: c => c.hasRiser },
+        { t: "the record's steepest climb belongs to {name:riser_town}", req: c => c.hasRiser },
+        { t: "{name:riser_town} ended the years further up than it began by more than anywhere else", req: c => c.hasRiser },
+      ],
+      riser_gloss: [
+        { t: "across {num:n_regions} regions that says as much about where {name:riser_town} stood as about anything it did", req: c => c.hasRiser },
+        { t: "where {name:riser_town} stood mattered more than anything {name:riser_town} decided", req: c => c.hasRiser },
+        { t: "the ground under {name:riser_town} did most of the work, as it did everywhere else in this record", req: c => c.hasRiser },
+        { t: "nothing {name:riser_town} decided accounts for as much as where {name:riser_town} was put", req: c => c.hasRiser },
+        { t: "position did the work at {name:riser_town}, as position does everywhere in these {num:n_regions} regions", req: c => c.hasRiser },
+        { t: "what rose was the value of the ground, and {name:riser_town} happened to be standing on it", req: c => c.hasRiser },
+        { t: "no charter, no decree and no decision explains {name:riser_town} as well as the map does", req: c => c.hasRiser },
+        { t: "what rose at {name:riser_town} was the ground's value, and {name:riser_town} was standing on it", req: c => c.hasRiser },
+      ],
+      blocs: [
+        { t: "the Crown holds {num:bloc_crown} regions, the Temple {num:bloc_temple}, the magnates {num:bloc_magnate}", req: () => true },
+        { t: "the realm divides {num:bloc_crown} to the Crown, {num:bloc_temple} to the Temple and {num:bloc_magnate} to the magnates", req: () => true },
+        { t: "of the {num:n_regions} regions, {num:bloc_crown} answer to the Crown, {num:bloc_temple} to the Temple and {num:bloc_magnate} to the magnates", req: () => true },
+        { t: "the three powers hold {num:bloc_crown}, {num:bloc_temple} and {num:bloc_magnate} regions between them", req: () => true },
+        { t: "allegiance at the close runs Crown {num:bloc_crown}, Temple {num:bloc_temple}, magnates {num:bloc_magnate}", req: () => true },
+        { t: "at the close it stands Crown {num:bloc_crown}, Temple {num:bloc_temple}, magnates {num:bloc_magnate}", req: () => true },
+        { t: "the allegiance of the {num:n_regions} regions runs {num:bloc_crown} Crown, {num:bloc_temple} Temple, {num:bloc_magnate} magnate", req: () => true },
+        { t: "{num:bloc_crown} regions to the Crown against {num:bloc_temple} to the Temple and {num:bloc_magnate} to the magnates", req: () => true },
+        { t: "what the three powers hold is {num:bloc_crown}, {num:bloc_temple} and {num:bloc_magnate}", req: () => true },
+        { t: "at the close it is {num:bloc_crown} to the Crown, {num:bloc_temple} to the Temple, {num:bloc_magnate} to the magnates", req: () => true },
+        { t: "the {num:n_regions} regions divide {num:bloc_crown}, {num:bloc_temple} and {num:bloc_magnate} between the three powers", req: () => true },
+      ],
+      blocs_gloss: [
+        { t: "{num:bloc_contested} {term:contest_are} contested between them, and {num:bloc_ungoverned} {term:ungov_answer} to no one at all", req: () => true },
+        { t: "a further {num:bloc_contested} {term:contest_are} disputed and {num:bloc_ungoverned} acknowledge nobody", req: () => true },
+        { t: "{num:bloc_ungoverned} regions {term:ungov_recognise} no authority whatever, and {num:bloc_contested} {term:contest_are} claimed by more than one", req: () => true },
+        { t: "the remainder is {num:bloc_contested} contested and {num:bloc_ungoverned} ungoverned, which the capital counts separately for a reason", req: () => true },
+        { t: "{num:bloc_ungoverned} {term:ungov_answer} to nobody and {num:bloc_contested} answer to more than one, which are different problems", req: () => true },
+        { t: "the capital counts {num:bloc_contested} contested and {num:bloc_ungoverned} ungoverned, and counts them apart on purpose", req: () => true },
+        { t: "a further {num:bloc_ungoverned} of the {num:n_regions} regions acknowledge no authority at all", req: () => true },
+        { t: "{num:bloc_contested} {term:contest_have} two claimants and {num:bloc_ungoverned} {term:ungov_have} none, and the second number is the one the capital dislikes", req: () => true },
+      ],
+      gates: [
+        { t: "of the realm's {num:gate_n} gates, meaning the bridges, the passes and the quays, the Crown keeps {num:gate_crown}, the Temple {num:gate_temple} and the magnates {num:gate_magnate}", req: c => c.gateN > 0 },
+        { t: "there are {num:gate_n} gates in the realm and they are held {num:gate_crown} by the Crown, {num:gate_temple} by the Temple and {num:gate_magnate} by the magnates", req: c => c.gateN > 0 },
+        { t: "the bridges, passes and quays number {num:gate_n}: Crown {num:gate_crown}, Temple {num:gate_temple}, magnates {num:gate_magnate}", req: c => c.gateN > 0 },
+        { t: "every road out of the realm passes one of {num:gate_n} gates, of which the Crown holds {num:gate_crown} and the magnates {num:gate_magnate}", req: c => c.gateN > 0 },
+        { t: "{num:gate_n} gates stand in the realm, held {num:gate_crown} Crown, {num:gate_temple} Temple, {num:gate_magnate} magnate", req: c => c.gateN > 0 },
+        { t: "a gate is a quay, a span or a pass, and of the {num:gate_n} the Crown holds {num:gate_crown}", req: c => c.gateN > 0 },
+        { t: "the count of gates is {num:gate_n}, divided {num:gate_crown} to {num:gate_temple} to {num:gate_magnate}", req: c => c.gateN > 0 },
+        { t: "everything that leaves these {num:n_regions} regions passes one of {num:gate_n} gates", req: c => c.gateN > 0 },
+        { t: "the {num:gate_n} gates are held {num:gate_crown} Crown, {num:gate_temple} Temple, {num:gate_magnate} magnate", req: c => c.gateN > 0 },
+        { t: "nothing leaves these {num:n_regions} regions without passing one of {num:gate_n} gates", req: c => c.gateN > 0 },
+      ],
+      gates_gloss: [
+        { t: "{num:gate_none} stand untolled, and every levy on the list is paid by people who did not choose the road", req: c => c.gateN > 0 && c.gate_none > 1 },
+        { t: "{num:gate_none} of them take nothing, and the rest are paid by whoever had no other way through", req: c => c.gateN > 0 && c.gate_none > 1 },
+        { t: "the {num:gate_none} that charge nothing charge nothing because nobody found them worth holding", req: c => c.gateN > 0 && c.gate_none > 1 },
+        { t: "not one of the {num:gate_n} gates was chosen by the people who pay at it", req: c => c.gateN > 0 },
+        { t: "{num:gate_none} take nothing, and every one of the rest is paid by somebody with no second road", req: c => c.gateN > 0 && c.gate_none > 1 },
+        { t: "of the {num:gate_n}, the {num:gate_none} that charge nothing charge nothing because nobody wanted them", req: c => c.gateN > 0 && c.gate_none > 1 },
+        { t: "nobody who pays at any of the {num:gate_n} agreed to the arrangement", req: c => c.gateN > 0 },
+        { t: "a levy at a gate is not a price, because a price implies a choice, and the {num:gate_n} offer none", req: c => c.gateN > 0 },
+        { t: "every one of the {num:gate_n} charges, and every charge is paid by somebody with no second road", req: c => c.gateN > 0 && c.gate_none === 0 },
+        { t: "every one of the {num:gate_n} charges, and none of them was put there by anyone who pays", req: c => c.gateN > 0 && c.gate_none === 0 },
+        { t: "the one that charges nothing charges nothing because nobody found it worth holding, and the other {num:gate_n} do", req: c => c.gateN > 1 && c.gate_none === 1 },
+      ],
+      treasuries: [
+        { t: "the tariff ledgers run deepest with {term:richest_power}, and coin buys the next gate", req: c => c.hasTreasuries },
+        { t: "{term:richest_power} hold the deepest tariff ledger, and a deep ledger buys the next gate", req: c => c.hasTreasuries },
+        { t: "the coin from the gates has pooled with {term:richest_power}", req: c => c.hasTreasuries },
+        { t: "{term:richest_power} came out of the years with the deepest ledger", req: c => c.hasTreasuries },
+        { t: "the gate money has pooled with {term:richest_power}, and money buys gates", req: c => c.hasTreasuries },
+        { t: "of the three powers it is {term:richest_power} whose ledger runs deepest", req: c => c.hasTreasuries },
+        { t: "what the gates collected went mostly to {term:richest_power}", req: c => c.hasTreasuries },
+        { t: "{term:richest_power} hold the coin, and the coin holds the next gate", req: c => c.hasTreasuries },
+      ],
+      treasuries_gloss: [
+        { t: "more gates mean more coin, which buys more gates, and of the powers {term:worst_pair} stand nearest to blows", req: c => c.hasTreasuries && c.tenseHigh },
+        { t: "the loop is closed: gates pay for gates, and {term:worst_pair} are the pair the capital watches", req: c => c.hasTreasuries && c.tenseHigh },
+        { t: "more gates mean more coin and more coin buys more gates, though for now not one of the {num:gate_n} gates has bought a grievance worth the ink", req: c => c.hasTreasuries && !c.tenseHigh },
+        { t: "gates buy gates across all {num:gate_n} of the realm's, and no quarrel among the powers has yet been worth writing down", req: c => c.hasTreasuries && !c.tenseHigh },
+        { t: "the loop closes on itself: {term:worst_pair} are simply the two nearest to acting on it", req: c => c.hasTreasuries && c.tenseHigh },
+        { t: "what the gates earn buys more gates, and of the powers {term:worst_pair} are the pair worth watching", req: c => c.hasTreasuries && c.tenseHigh },
+        { t: "gates buy gates, and no grievance among the powers has yet been set down about any of the {num:gate_n}", req: c => c.hasTreasuries && !c.tenseHigh },
+        { t: "the loop runs unopposed over all {num:gate_n} gates, and nobody has quarrelled about it in the record", req: c => c.hasTreasuries && !c.tenseHigh },
+      ],
+      classledger: [
+        { t: "every town holds two peoples under one name, the owners' row and the labour it hires: together {num:pop_pct} in every hundred of the realm's people hold {num:coin_pct} of every hundred coins", req: c => c.hasClass },
+        { t: "within every town there are two peoples: {num:pop_pct} in every hundred hold {num:coin_pct} coins in every hundred", req: c => c.hasClass },
+        { t: "the sharper division is not between towns but inside them, where {num:pop_pct} of the people hold {num:coin_pct} of the coin", req: c => c.hasClass },
+        { t: "one name covers two peoples in every town, and {num:pop_pct} in the hundred of them hold {num:coin_pct} in the hundred of the coin", req: c => c.hasClass },
+        { t: "the division that matters is inside the towns, not between them: {num:pop_pct} in the hundred hold {num:coin_pct} in the hundred", req: c => c.hasClass },
+        { t: "a town is two peoples with one name, and {num:pop_pct} in every hundred of them hold {num:coin_pct} coins in every hundred", req: c => c.hasClass },
+        { t: "counted by row rather than by town, {num:pop_pct} in every hundred hold {num:coin_pct} of every hundred coins", req: c => c.hasClass },
+        { t: "the owners' row is {num:pop_pct} in the hundred and holds {num:coin_pct} in the hundred", req: c => c.hasClass },
+        { t: "inside every town, {num:pop_pct} in the hundred hold {num:coin_pct} in the hundred", req: c => c.hasClass },
+        { t: "the division that decides most lives here is {num:pop_pct} against {num:coin_pct}, and it is inside the towns", req: c => c.hasClass },
+      ],
+      classledger_gloss: [
+        { t: "they live {num:class_gap} times better than the people who work for them, and the gap is sharpest at {name:company_town}, where {num:company_share} coins in every hundred belong to the few", req: c => c.hasClass },
+        { t: "the ratio is {num:class_gap} to one, owner to labour, and at {name:company_town} it reaches {num:company_share} coins in the hundred", req: c => c.hasClass },
+        { t: "{name:company_town} is the sharpest of them at {num:company_share} in the hundred, and across the realm the owners live {num:class_gap} times better", req: c => c.hasClass },
+        { t: "a map drawn by region cannot show this, since it sees towns and not rows, and it misses {num:within_pct} parts in a hundred of the whole spread", req: c => c.hasWithin },
+        { t: "owner to labour is {num:class_gap} to one across the realm, and {num:company_share} in the hundred at {name:company_town}", req: c => c.hasClass },
+        { t: "the sharpest of them is {name:company_town} at {num:company_share} coins in the hundred", req: c => c.hasClass },
+        { t: "{num:class_gap} times better is not a figure of speech, it is the ratio, and at {name:company_town} it is worse", req: c => c.hasClass },
+        { t: "a regional map sees towns and not rows, and misses {num:within_pct} parts in a hundred of the spread doing so", req: c => c.hasWithin },
+      ],
+      dominion: [
+        { t: "over all of it stands the Dominion, which holds {num:occ_n} regions from its foothold at {name:foothold} and calls the arrangement trade", req: c => c.hasDominion },
+        { t: "the Dominion holds {num:occ_n} regions from {name:foothold}, and the word it uses for that is trade", req: c => c.hasDominion },
+        { t: "from its foothold at {name:foothold} the Dominion has taken {num:occ_n} regions", req: c => c.hasDominion },
+        { t: "the Dominion holds {num:occ_n} of the realm's regions and calls it trade", req: c => c.hasDominion },
+        { t: "{num:occ_n} regions answer across the water, from the foothold at {name:foothold}", req: c => c.hasDominion },
+        { t: "above the three powers stands a fourth: the Dominion, {num:occ_n} regions and a foothold at {name:foothold}", req: c => c.hasDominion },
+        { t: "what began at {name:foothold} is {num:occ_n} regions now", req: c => c.hasDominion },
+        { t: "{num:occ_n} of the realm's regions answer across the water now", req: c => c.hasDominion },
+      ],
+      dominion_gloss: [
+        { t: "those {num:occ_n} regions keep the smallest share of what they make and carry the best wires in the realm, both for the same reason", req: c => c.hasDominion },
+        { t: "those {num:occ_n} regions retain least and are wired best, which is one fact and not two", req: c => c.hasDominion },
+        { t: "the Crown still reigns, and it no longer rules the {num:occ_n} regions the Dominion holds, and the two are not the same thing", req: c => c.hasDominion },
+        { t: "the best wires in the realm run through the {num:occ_n} regions that keep the least of what they make", req: c => c.hasDominion },
+        { t: "to reign over {num:occ_n} regions and not rule them is a distinction {name:capital} now has to make", req: c => c.hasDominion },
+        { t: "the wire followed the cargo into all {num:occ_n}, and the cargo was never for them", req: c => c.hasDominion },
+        { t: "the best wire in the realm serves the {num:occ_n} regions that keep least of what they make", req: c => c.hasDominion },
+        { t: "reigning over {num:occ_n} regions and ruling them are now two different things at {name:capital}", req: c => c.hasDominion },
+      ],
+      darkgrid: [
+        { t: "{num:dark_now} of the realm's settlements still sit off the grid, in darkness", req: c => c.darkNow > 0 },
+        { t: "the wire still does not reach {num:dark_now} settlements", req: c => c.darkNow > 0 },
+        { t: "{num:dark_now} settlements end the record unwired", req: c => c.darkNow > 0 },
+        { t: "at the record's close the grid reaches every one of the realm's {num:n_regions} regions", req: c => c.darkNow === 0 },
+        { t: "{num:dark_now} settlements are still dark at the close", req: c => c.darkNow > 0 },
+        { t: "the grid has not reached {num:dark_now} of the realm's settlements and has stopped trying", req: c => c.darkNow > 0 },
+        { t: "{num:dark_now} settlements end the years exactly as dark as they began", req: c => c.darkNow > 0 },
+        { t: "every settlement in the {num:n_regions} regions is wired at the close", req: c => c.darkNow === 0 },
+        { t: "the wire ends short of {num:dark_now} settlements and has stopped advancing", req: c => c.darkNow > 0 },
+        { t: "{num:dark_now} settlements are dark at the close and were dark at the founding", req: c => c.darkNow > 0 },
+      ],
+      darkgrid_gloss: [
+        { t: "the grid goes where the ledgers say it pays to go, and across {num:n_regions} regions this record can only mark where that is not", req: c => c.darkNow > 0 },
+        { t: "a projection drew that line and {num:dark_now} settlements fell the wrong side of it", req: c => c.darkNow > 0 },
+        { t: "the ledgers decide the boundary, and the record can only say that {num:dark_now} fell outside it", req: c => c.darkNow > 0 },
+        { t: "that is written here plainly, across all {num:n_regions} regions, so a later reader can check whether it lasted", req: c => c.darkNow === 0 },
+        { t: "the wire goes where a ledger says it repays, and {num:dark_now} settlements do not", req: c => c.darkNow > 0 },
+        { t: "nobody decided against those {num:dark_now}; a projection did, and projections do not have to explain themselves", req: c => c.darkNow > 0 },
+        { t: "the line was drawn in {name:capital} and fell where it fell, with {num:dark_now} on the wrong side", req: c => c.darkNow > 0 },
+        { t: "the grid reached all {num:n_regions} regions, and this record says so plainly so a later one can be checked against it", req: c => c.darkNow === 0 },
+      ],
+    };
+
+    // The founding's beats, in the order they are told. A beat appears only if its
+    // claim class has a fragment whose req passes — the gating does the work the old
+    // `if` ladder did, and an ABSENCE is a fragment like any other rather than the
+    // else-branch of a template (§4: "no wall crosses this realm" should be rare and
+    // startling, not a default).
+    const CHRONICLE_FOUNDING = [
+      ["realm", "realm_gloss"], ["sizes", "sizes_gloss"], ["works", "works_gloss"],
+      ["skyway", "skyway_gloss"], ["ridges", "ridges_gloss"],
+      ["sea", "sea_gloss"], ["ruins", "ruins_gloss"], ["freeport", "freeport_gloss"],
+      ["sanctuary", "sanctuary_gloss"], ["still", "still_gloss"], ["camps", "camps_gloss"],
+      ["towers", "towers_gloss"], ["bridges", "bridges_gloss"],
+    ];
+
+    // The years: the two fixed templates that wrap the event lines. The events
+    // themselves already pick from five variants per type, which is why The Years
+    // measured 0.50 against the fixed acts' 0.65-0.98 before any of this.
+    const CHRONICLE_YEARS_OPEN = [["ages", "ages_gloss"], ["quiet", "quiet_gloss"]];
+    const CHRONICLE_YEARS_CLOSE = [["bynames", "bynames_gloss"]];
+
+    // The state of the realm, at the close. `fates` through `riser` are told only
+    // when the years actually ran; the rest hold at any epoch count.
+    const CHRONICLE_STATE = [
+      ["fates", "deadholds_gloss"], ["deadholds", null], ["reborn", "reborn_gloss"],
+      ["ghost", null], ["riser", "riser_gloss"], ["blocs", "blocs_gloss"],
+      ["gates", "gates_gloss"], ["treasuries", "treasuries_gloss"],
+      ["classledger", "classledger_gloss"], ["dominion", "dominion_gloss"],
+      ["darkgrid", "darkgrid_gloss"],
+    ];
+
+    // Everything the historian may name or count, flattened, with the branch
+    // predicates precomputed so a `req` reads as a claim about the world.
+    function chronicleCtx(model, params) {
+      const STREAMS = {};
+      const rvList = (k) => (STREAMS[k] || (STREAMS[k] = loomStream(params.seed, "chronicle", "list#" + k)));
+      const town = (id) => model.settlements.find(s => s.regionId === id)
+        || { name: ((model.regions.find(r => r.id === id) || {}).placeName) || "the wild", regionId: id };
+      const list = (xs) => xs.length <= 1 ? (xs[0] || "")
+        : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
+      const compass = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"][Math.round(model.windDeg / 45) % 8];
+      const crownLine = model.dynasties.crown;
+      const foundedIds = new Set(model.events.filter(ev => ev.type === "refinery_founded").map(ev => ev.region_id));
+      const collapsedIds = model.events.filter(ev => ev.type === "refinery_collapse").map(ev => ev.region_id);
+      const works0 = model.regions.filter(r => (r.refining > 0 && !foundedIds.has(r.id))).map(r => r.id).concat(collapsedIds);
+      const consIds = new Set(model.events.filter(ev => ev.type === "consecration").map(ev => ev.region_id));
+      const shrines0 = model.sanctionedSites.filter(s => !consIds.has(s.regionId));
+      const pops = model.regions.map(r => r.popT0).sort((a, b) => b - a);
+      const aeries = model.regions.filter(r => r.isSkyport === 1).map(r => town(r.id).name);
+      const ports = model.regions.filter(r => r.isPort === 1);
+      const still = model.regions.filter(r => r.stillair === 1);
+      const towers = model.regions.filter(r => r.hasTower === 1);
+      const busiest = model.regions.reduce((a, b) => a.delverFlux >= b.delverFlux ? a : b);
+      const c = {
+        town, list,
+        seed: params.seed, close_year: 1000 + 25 * params.ep,
+        capital: model.capitalName,
+        reigning: (crownLine[crownLine.length - 1] || {}).name || "an unnamed regent",
+        n_regions: model.regions.length, compass,
+        pop_top: pops[0], pop_med: pops[Math.floor(pops.length / 2)],
+        hasWorks: works0.length > 0, works_list: list(works0.map(id => town(id).name)),
+        // the trunk lines run from the works TO the capital, so a beat that says so
+        // needs at least one works standing somewhere other than the capital
+        worksOffCapital: works0.some(id => !(model.regions.find(r => r.id === id) || {}).isCapital),
+        works_verb: works0.length === 1 ? "holds" : "hold",
+        works_are: works0.length === 1 ? "is" : "are",
+        hasShrines: shrines0.length > 0,
+        shrine_list: list(shrines0.map(s => `${s.name} (by ${town(s.regionId).name})`)),
+        dark0: model.epochSnaps[0].onGrid.filter(v => !v).length,
+        hasSkyway: aeries.length >= 2, skyway: model.skywayName, aerie_list: list(aeries),
+        hasRidges: model.ridges.length > 0,
+        ridge_list: list(model.ridges.map(R => `${R.name} ${R.kind}`)),
+        hasPasses: model.passes.length > 0, pass_list: list(model.passes.map(p => p.name)),
+        shadowN: model.regions.filter(r => r.rangeShadow === 1).length,
+        shadow_n: model.regions.filter(r => r.rangeShadow === 1).length,
+        hasSea: model.seaSides.length > 0, sea_sides: list(model.seaSides),
+        hasCharts: model.seaShapes.some(S => S.name),
+        chart_names: list(model.seaShapes.map(S => S.name).filter(Boolean)),
+        hasPorts: ports.length > 0, port_verb: ports.length === 1 ? "takes" : "take",
+        port_is: ports.length === 1 ? "gate is" : "gates are",
+        port_list: list(ports.map(reg => harborName(town(reg.id).name)
+          + (reg.onRiver === 1 && reg.downstreamBlight > 0 ? " (which drinks the river last and ships it first)" : ""))),
+        hbSealed: params.hb === 0,
+        hasMaelstrom: !!model.maelstrom, maelstrom: model.maelstrom ? model.maelstrom.name : null,
+        hasRuins: model.ruins.length > 0,
+        // A list whose items all run one template says the same nine words once per
+        // item. Each item draws its own phrasing, on the list's own substream, so a
+        // realm with four delves does not read as one delve written four times.
+        ruin_list: list(model.ruins.map(r => {
+          const t = town(model.regions[r.regionIdx].id).name;
+          const V = RUIN_SAID[r.type] || RUIN_SAID.deadhold;
+          return V[Math.floor(rvList("ruins")() * V.length)](r.name, t);
+        })),
+        delver_town: town(busiest.id).name,
+        hasFreeport: !!model.freeport,
+        freeport: model.freeport ? model.freeport.name : null,
+        freeport_town: model.freeport ? town(model.freeport.regionId).name : null,
+        hasSanctuary: !!model.sanctuary,
+        sanctuary: model.sanctuary ? model.sanctuary.name : null,
+        sanctuary_town: model.sanctuary ? town(model.sanctuary.regionId).name : null,
+        hasStill: still.length > 0, stillname: model.stillName,
+        still_list: list(still.map(r => town(r.id).name)),
+        capitalInStill: (model.regions.find(r => r.isCapital) || {}).stillair === 1,
+        hasCamps: model.camps.length > 0,
+        camp_list: list(model.camps.map(cp => `${cp.name} by ${town(cp.regionId).name}`)),
+        hasTowers: towers.length > 0,
+        tower_holder: towers.length > 1 ? "apostates keep" : "an apostate keeps",
+        tower_list: list(towers.map(reg => `${town(reg.id).name} Tower`)),
+        bridge_n: model.bridges.length, camp_n: model.camps.length,
+        tower_n: towers.length, still_n: still.length,
+        hasBridges: model.bridges.length > 0,
+        bridge_list: list(model.bridges.map(b => `${town(model.regions[b.regionIdx].id).name} Bridge`)),
+        // the rivers are told one at a time; the loop fills these per river
+        hasRiver: false, river: null, river_head: null, river_mouth: null, river_len: 0,
+      };
+
+      // ---- the state of the realm, at the close ------------------------------
+      const bb = { boom: 0, stable: 0, decline: 0, collapse: 0 };
+      model.regions.forEach(r => { bb[r.boomBust] = (bb[r.boomBust] || 0) + 1; });
+      const fateParts = [];
+      const said = (key, n) => { const V = FATE_SAID[key]; return V[Math.floor(rvList("fates")() * V.length)](n); };
+      if (bb.boom) fateParts.push(said("boom", bb.boom));
+      if (bb.stable) fateParts.push(said("stable", bb.stable));
+      if (bb.decline) fateParts.push(said("decline", bb.decline));
+      if (bb.collapse) fateParts.push(said("collapse", bb.collapse));
+      const deadholds = model.regions.filter(r => !r.settled && r.abandonedEpoch >= 0);
+      const deadNames = deadholds.slice(0, 4).map(r => r.placeName).filter(Boolean);
+      const reborn = model.regions.filter(r => r.settled && r.rebirths >= 1);
+      const ghost = model.regions.reduce((a, b) => a.abandonment >= b.abandonment ? a : b);
+      const riser = model.regions.reduce((a, b) => (a.wealth - a.wealthT0) >= (b.wealth - b.wealthT0) ? a : b);
+      const bc = { crown: 0, temple: 0, magnate: 0, contested: 0, ungoverned: 0 };
+      model.regions.forEach(r => { bc[r.bloc]++; });
+      const hc = { crown: 0, temple: 0, magnate: 0, none: 0 };
+      model.holdings.forEach(h => { hc[h.heldBy]++; });
+      const tr = model.treasuries, tn = model.tensions;
+      const FN2 = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };
+      const richest = ["crown", "temple", "magnate"].reduce((a, b) => tr[a] >= tr[b] ? a : b);
+      const tPairs = [["crown_magnate", "the Crown and the magnates"], ["crown_temple", "the Crown and the Temple"], ["magnate_temple", "the magnates and the Temple"]];
+      const worstPair = tPairs.reduce((a, b) => tn[a[0]] >= tn[b[0]] ? a : b);
+      const FS = getFindings(model);
+      const occN = model.regions.filter(r => r.occupied).length;
+      Object.assign(c, {
+        hasFates: params.ep > 0, settled_n: model.regions.filter(r => r.settled).length,
+        fate_parts: list(fateParts),
+        deadN: params.ep > 0 ? deadholds.length : 0, dead_n: deadholds.length,
+        dead_stand: deadholds.length === 1 ? "holding stands" : "holdings stand",
+        dead_holdings: deadholds.length === 1 ? "holding" : "holdings",
+        reborn_places: reborn.length === 1 ? "place" : "places",
+        reborn_stand: reborn.length === 1 ? "stands" : "stand",
+        dead_list: list(deadNames) + (deadholds.length > deadNames.length ? " among others" : ""),
+        rebornN: params.ep > 0 ? reborn.length : 0, reborn_n: reborn.length,
+        reborn_has: reborn.length === 1 ? "place has" : "places have",
+        reborn_list: list(reborn.slice(0, 3).map(r => town(r.id).name).filter(Boolean)),
+        hasGhost: params.ep > 0 && ghost.abandonment >= 35, ghost_town: town(ghost.id).name,
+        hasRiser: params.ep > 0 && riser.wealth - riser.wealthT0 > 10, riser_town: town(riser.id).name,
+        bloc_crown: bc.crown, bloc_temple: bc.temple, bloc_magnate: bc.magnate,
+        bloc_contested: bc.contested, bloc_ungoverned: bc.ungoverned,
+        contest_are: bc.contested === 1 ? "is" : "are",
+        contest_have: bc.contested === 1 ? "has" : "have",
+        ungov_have: bc.ungoverned === 1 ? "has" : "have",
+        ungov_answer: bc.ungoverned === 1 ? "answers" : "answer",
+        ungov_recognise: bc.ungoverned === 1 ? "recognises" : "recognise",
+        gateN: model.holdings.length, gate_n: model.holdings.length,
+        gate_crown: hc.crown, gate_temple: hc.temple, gate_magnate: hc.magnate, gate_none: hc.none,
+        gate_none_n: hc.none,
+        hasTreasuries: model.holdings.length > 0 && (tr.crown + tr.temple + tr.magnate) > 0,
+        richest_power: FN2[richest], tenseHigh: tn[worstPair[0]] >= 20, worst_pair: worstPair[1],
+        hasClass: !!(FS.owners && FS.class_gap !== null),
+        pop_pct: FS.owners ? FS.owners.pop_pct : null, coin_pct: FS.owners ? FS.owners.coin_pct : null,
+        class_gap: FS.class_gap, company_share: FS.company_share,
+        company_town: FS.company_town !== undefined && FS.company_town !== null ? town(FS.company_town).name : null,
+        hasWithin: FS.within_pct !== null && FS.within_pct >= 15, within_pct: FS.within_pct,
+        hasDominion: !!(model.dominion && occN > 0), occ_n: occN,
+        foothold: model.dominion ? town(model.regions[model.dominion.foothold].id).name : null,
+        darkNow: model.regions.filter(r => !r.onConduit).length,
+        dark_now: model.regions.filter(r => !r.onConduit).length,
+        // the years
+        n_epochs: params.ep,
+        noEvents: params.ep > 0 && model.events.length === 0,
+        hasAges: !!(FS.ages && FS.ages.length), n_ages: FS.ages ? FS.ages.length : 0,
+        age_list: FS.ages ? list(FS.ages.map(a => {
+          const way = a.gini_end > a.gini_start + 0.02 ? "wider" : a.gini_start > a.gini_end + 0.02 ? "narrower" : "held";
+          const V = AGE_SAID[way];
+          return `**${a.name}** (${1000 + 25 * a.from_epoch}–${1000 + 25 * a.to_epoch}), ` +
+            V[Math.floor(rvList("ages")() * V.length)];
+        })) : null,
+        hasBynames: model.regions.some(r => r.epithet),
+        byname_list: list(model.regions.filter(r => r.epithet).map(r => `${town(r.id).name} ${r.epithet}`)),
+        byname_n: model.regions.filter(r => r.epithet).length,
+      });
+      return c;
+    }
+
+    const CHRONICLE_FIXED = { pop_top: "verbatim", pop_med: "verbatim" };
+    const chronicleResolve = (kind, key, c) => {
+      if (kind === "name" || kind === "term") return c[key];
+      if (kind === "num") { const v = c[key]; return (v === null || v === undefined) ? null : v; }
+      return null;
+    };
+
+    // One beat, composed. Returns "" when the beat has nothing to say for this world,
+    // which is how a conditional act stays conditional.
+    function chronicleBeat(pool, claim, gloss, c, seed, key) {
+      if (!loomGate(pool, claim, c, undefined, new Set()).length) return null;
+      const v = loomCompose({
+        register: "historian", frames: CHRONICLE_FRAMES, pool,
+        classes: [gloss ? [claim, gloss] : [claim]], ctx: c, resolve: chronicleResolve,
+        rv: loomStream(seed, "chronicle", key || claim),
+      });
+      return v.text ? v : null;
+    }
+
+    // ---- the years, composed -------------------------------------------------
+    // D4 (#140): the event lines were the last fixed prose in the chronicle. Six of
+    // the twenty-seven types already picked from five variants; the other twenty-one
+    // were one template each, which is why The Years held at 0.44 after every other
+    // act came down. Each type is now a claim class and one or more gloss classes,
+    // gated the same way the founding is: a branch that used to be an `if` is a
+    // `req` on a fragment, so a world that does not meet it never sees the clause.
+    //
+    // The joins are narrower than the founding's. A chronicle beat can afford
+    // "though"; a year-line cannot, because the reader is being told what happened
+    // and a wrong connective reads as a wrong claim.
+    // A frame's own words are shared by every world that draws it, so a wordy frame
+    // RAISES cross-world sameness even as it varies the sentence: measured, adding
+    // five phrase-frames here moved the corpus from 0.197 to 0.200. Frames stay at
+    // punctuation and the smallest connectives, and the variety is bought in the pool.
+    const EVENT_FRAMES = ["{A}. {B}.", "{A}, and {B}.", "{A}; {B}.", "{A}: {B}.", "{A}. And {B}.", "{A}, so {B}."];
+
+    // Which classes each type composes, in order. A pair whose classes both gate
+    // empty contributes nothing, so an optional coda costs nothing to declare.
+    const EVENT_CLASSES = {
+      blight_plague: [["blight_plague", "blight_plague_gloss"], ["blight_plague_coda", "blight_plague_name"]],
+      ore_strike: [["ore_strike", "ore_strike_gloss"], ["ore_strike_war", null]],
+      war: [["war", "war_powers"], ["war_loss", "war_name"]],
+      revolt: [["revolt", "revolt_gloss"], ["revolt_arc", "revolt_name"]],
+      treaty: [["treaty", "treaty_terms"], ["treaty_gloss", "treaty_name"]],
+      annexation: [["annexation", "annexation_gloss"], ["annexation_gloss2", "annexation_name"]],
+      succession: [["succession", "succession_gloss"], ["succession_coda", null]],
+      reform: [["reform", "reform_gloss"], ["reform_coda", null]],
+      reaction: [["reaction", "reaction_gloss"], ["reaction_coda", null]],
+      imposition: [["imposition", "imposition_gloss"], ["imposition_coda", null]],
+      concession: [["concession", "concession_gloss"], ["concession_coda", null]],
+      refinery_collapse: [["refinery_collapse", "refinery_collapse_gloss"], ["refinery_collapse_coda", null]],
+      refinery_founded: [["refinery_founded", "refinery_founded_gloss"], ["refinery_founded_coda", null]],
+      relic_calamity: [["relic_calamity", "relic_calamity_gloss"], ["relic_calamity_coda", null]],
+      tower_burned: [["tower_burned", "tower_burned_gloss"], ["tower_burned_coda", null]],
+      tower_raised: [["tower_raised", "tower_raised_gloss"], ["tower_raised_coda", null]],
+      embargo: [["embargo", "embargo_gloss"], ["embargo_coda", null]],
+      courting: [["courting", "courting_gloss"], ["courting_coda", null]],
+      abandonment: [["abandonment", "abandonment_gloss"], ["abandonment_coda", null]],
+      drought: [["drought", "drought_gloss"], ["drought_coda", "drought_name"]],
+      flood: [["flood", "flood_gloss"], ["flood_coda", "flood_name"]],
+      quake: [["quake", "quake_gloss"], ["quake_coda", "quake_name"]],
+      storm: [["storm", "storm_gloss"], ["storm_coda", "storm_name"]],
+      discovery: [["discovery", "discovery_gloss"], ["discovery_coda", "discovery_name"]],
+      ascendancy: [["ascendancy", "ascendancy_gloss"], ["ascendancy_coda", "ascendancy_name"]],
+      consecration: [["consecration", "consecration_gloss"], ["consecration_coda", null]],
+      seizure: [["seizure", "seizure_gloss"], ["seizure_coda", null]],
+    };
+    const eventClasses = (type) => EVENT_CLASSES[type] || [[type, type + "_gloss"]];
+
+    const EVENT_POOL = {
+      // -- the aetherworks ----------------------------------------------------
+      refinery_collapse: [
+        { t: "the aetherworks at {name:ev_town} shut down, the fields that fed them worked out", req: () => true },
+        { t: "the aetherworks at {name:ev_town} closed its yards for good", req: () => true },
+        { t: "the last shift at the {name:ev_town} aetherworks clocked out and did not come back", req: () => true },
+        { t: "the magnates pulled their money out of {name:ev_town} when the ore stopped paying", req: () => true },
+        { t: "the aetherworks at {name:ev_town} failed in {num:ev_year}", req: () => true },
+        { t: "the lode under {name:ev_town} was mined to nothing, and the aetherworks stopped with it", req: () => true },
+        { t: "the yards at {name:ev_town} stopped, and the ore they were built on was gone", req: () => true },
+        { t: "{name:ev_town} lost its aetherworks in {num:ev_year}", req: () => true },
+        { t: "the seam under {name:ev_town} ran out and took the yards with it", req: () => true },
+        { t: "the lode under {name:ev_town} was finished, and so was {name:ev_town}", req: () => true },
+        { t: "the aetherworks at {name:ev_town} went cold in {num:ev_year}", req: () => true },
+        { t: "the money that had built {name:ev_town} was withdrawn from it", req: () => true },
+        { t: "the yards at {name:ev_town} shut, and the town shut behind them", req: () => true },
+      ],
+      refinery_collapse_gloss: [
+        { t: "the magnates left as soon as the ore did, and the trunk lines into {name:ev_town} still stand there carrying nothing", req: () => true },
+        { t: "{name:ev_town} kept its wires and lost its wages", req: () => true },
+        { t: "the lumen tanks at {name:ev_town} went cold within the month", req: () => true },
+        { t: "the town the yards had grown around emptied behind them, and the survey still lists {name:ev_town} at its old size", req: () => true },
+        { t: "the wages at {name:ev_town} stopped a season before the wires did", req: () => true },
+        { t: "what the ledgers built at {name:ev_town} in a generation they unbuilt in a year, and nobody took the copper up", req: () => true },
+        { t: "the wire to {name:ev_town} was never taken up, and nothing was ever sent along it again", req: () => true },
+        { t: "everyone at {name:ev_town} who could leave left, in the order their savings allowed", req: () => true },
+        { t: "the charter for {name:ev_town} is still on file at {name:capital} and refers to nothing", req: () => true },
+        { t: "the wire into {name:ev_town} remained and had nothing to carry", req: () => true },
+        { t: "the machinery left {name:ev_town} and the housing stayed", req: () => true },
+        { t: "the wage at {name:ev_town} stopped before the lease did", req: () => true },
+        { t: "what {name:ev_town} had instead of a future was a seam", req: () => true },
+      ],
+      refinery_founded: [
+        { t: "the magnates built new aetherworks at {name:ev_town}, where the money had gone", req: () => true },
+        { t: "new aetherworks fires were lit at {name:ev_town} in {num:ev_year}", req: () => true },
+        { t: "the magnates broke ground on aetherworks at {name:ev_town}", req: () => true },
+        { t: "aetherworks rose at {name:ev_town} on a fresh charter", req: () => true },
+        { t: "{name:capital} chartered aetherworks at {name:ev_town}", req: () => true },
+        { t: "the money that had been looking for ore found it under {name:ev_town}", req: () => true },
+        { t: "aetherworks were chartered at {name:ev_town} in {num:ev_year}", req: () => true },
+        { t: "the money found {name:ev_town}, and the yards went up", req: () => true },
+        { t: "{name:ev_town} was where the next aetherworks were built", req: () => true },
+        { t: "the yards at {name:ev_town} were lit in {num:ev_year}", req: () => true },
+        { t: "the money arrived at {name:ev_town} and the charter followed it", req: () => true },
+        { t: "aetherworks were put up at {name:ev_town} because the assay said so", req: () => true },
+        { t: "{name:capital} chartered what the magnates had already begun at {name:ev_town}", req: () => true },
+      ],
+      refinery_founded_gloss: [
+        { t: "the capital sealed the charter, and the trunk line reached {name:ev_town} within the season", req: () => true },
+        { t: "{name:capital} called it progress, and the towns the new trunk line skipped did not", req: () => true },
+        { t: "where the ore was rich the money followed, and the grid was run out to meet {name:ev_town}", req: () => true },
+        { t: "the lumen came online that year, and {name:ev_town} doubled before the next census could count it", req: () => true },
+        { t: "the wires reached {name:ev_town} fast, because somebody had already decided the ore was worth the copper", req: () => true },
+        { t: "no charter had ever been sealed that quickly for anything {name:ev_town} needed", req: () => true },
+        { t: "the copper to {name:ev_town} was laid faster than any road ever was", req: () => true },
+        { t: "{name:ev_town} was worth wiring the moment it was worth extracting from", req: () => true },
+        { t: "the census could not keep up with {name:ev_town} for a decade", req: () => true },
+        { t: "{name:ev_town} was wired before it was paved", req: () => true },
+        { t: "the census at {name:ev_town} was out of date within the year", req: () => true },
+        { t: "the copper reached {name:ev_town} on the strength of an assay", req: () => true },
+        { t: "everything {name:ev_town} got, it got because the ore was worth it", req: () => true },
+      ],
+
+      // -- the blight and the old power ---------------------------------------
+      blight_plague: [
+        { t: "plague took {name:ev_town}", req: () => true },
+        { t: "sickness came to {name:ev_town} in {num:ev_year}", req: () => true },
+        { t: "a plague settled on {name:ev_town}", req: () => true },
+        { t: "fever ran through {name:ev_town}", req: () => true },
+        { t: "the sickness reached {name:ev_town} and stayed", req: () => true },
+        { t: "{name:ev_town} was taken by the sickness in {num:ev_year}", req: () => true },
+        { t: "the fever found {name:ev_town} on ground already poisoned", req: () => true },
+        { t: "what came to {name:ev_town} was a plague on top of a blight", req: () => true },
+        { t: "{name:ev_town} lost a third of itself to a fever", req: () => true },
+        { t: "the sickness came to {name:ev_town} and the blight had prepared the ground", req: () => true },
+        { t: "in {num:ev_year} the fever reached {name:ev_town} and did not leave", req: () => true },
+        { t: "what arrived at {name:ev_town} finished what the poison had started", req: () => true },
+        { t: "{name:ev_town} was ill before it was infected", req: () => true },
+      ],
+      blight_plague_gloss: [
+        { t: "the blight had sat heavy on {name:ev_town} for years, so the fever arrived to a town already half-poisoned", req: () => true },
+        { t: "a third of {name:ev_town} died or fled", req: () => true },
+        { t: "the registers do not agree on the death count, and the roads out of {name:ev_town} do", req: () => true },
+        { t: "the ground had been fouled long before the fever came, and whole streets of {name:ev_town} went quiet", req: () => true },
+        { t: "the burial rolls at {name:ev_town} ran longer than the tax rolls that year", req: () => true },
+        { t: "those who could walk left {name:ev_town}, and those who could not were counted after", req: () => true },
+        { t: "the healers at {name:ev_town} counted what they could and stopped counting", req: () => true },
+        { t: "the blight had made {name:ev_town} ready for it years before", req: () => true },
+        { t: "the road out of {name:ev_town} was the only remedy anyone could afford", req: () => true },
+        { t: "the healers at {name:ev_town} ran out of everything except paper", req: () => true },
+        { t: "the dead at {name:ev_town} were counted where they could be counted", req: () => true },
+        { t: "the road out of {name:ev_town} was the only treatment on offer", req: () => true },
+        { t: "the tax rolls at {name:ev_town} were shorter the following year and were collected in full", req: () => true },
+        { t: "nothing that reached {name:ev_town} that year came to help", req: () => true },
+      ],
+      blight_plague_name: [
+        { t: "the roads named it {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is what the roads out of {name:ev_town} still call that year", req: c => c.hasEvName },
+        { t: "the scribes wrote it down as {name:ev_name} and moved on", req: c => c.hasEvName },
+        { t: "the year is entered as {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the heading, and the count under it is an estimate", req: c => c.hasEvName },
+        { t: "the clerks called it {name:ev_name} because the year needed a name", req: c => c.hasEvName },
+        { t: "it stands as {name:ev_name} in every copy that survives", req: c => c.hasEvName },
+        { t: "{name:ev_name} is what the burial rolls are filed under", req: c => c.hasEvName },
+      ],
+      relic_calamity: [
+        { t: "the sanctioned ground by {name:ev_town} woke", req: () => true },
+        { t: "something of the old world stirred and broke in the ground by {name:ev_town}", req: () => true },
+        { t: "something old came awake under {name:ev_town} in {num:ev_year}", req: () => true },
+        { t: "the buried power near {name:ev_town} turned over in its sleep", req: () => true },
+        { t: "whatever the old world left under {name:ev_town} broke loose", req: () => true },
+        { t: "the old ground by {name:ev_town} let something out", req: () => true },
+        { t: "in {num:ev_year} something under {name:ev_town} stopped sleeping", req: () => true },
+        { t: "the sanctioned site by {name:ev_town} failed, and what it held did not stay held", req: () => true },
+        { t: "the sanctioned ground by {name:ev_town} gave way in {num:ev_year}", req: () => true },
+        { t: "what was buried under {name:ev_town} did not stay buried", req: () => true },
+      ],
+      relic_calamity_gloss: [
+        { t: "the surviving accounts do not say what the old power did at {name:ev_town}, and the land it touched still carries the scar", req: () => true },
+        { t: "the Temple calls it a test, the survivors did not, and the blight around {name:ev_town} has not faded", req: () => true },
+        { t: "no two accounts agree on what it was, and what it left is plain enough: ground by {name:ev_town} that will not grow", req: () => true },
+        { t: "the Temple sealed the site and said little, and the scar it burned into the country by {name:ev_town} is still there to read", req: () => true },
+        { t: "the records are thin and frightened, and the blighted ring around {name:ev_town} kept everyone honest about that much", req: () => true },
+        { t: "the accounts from {name:ev_town} are short, and they are short because of who wrote them", req: () => true },
+        { t: "the Temple's version and the survivors' version of {name:ev_town} agree on nothing but the scar", req: () => true },
+        { t: "the ring of dead ground around {name:ev_town} is the only part of it nobody disputes", req: () => true },
+        { t: "the ring of dead ground around {name:ev_town} is the only undisputed part of it", req: () => true },
+        { t: "the Temple sealed the site at {name:ev_town} and wrote the account", req: () => true },
+      ],
+
+      // -- ore, and what follows ore ------------------------------------------
+      ore_strike: [
+        { t: "prospectors struck a hidden lode under {name:ev_town}", req: () => true },
+        { t: "a lode no survey had found came up under {name:ev_town} in {num:ev_year}", req: () => true },
+        { t: "diggers hit rich ore under {name:ev_town} where nobody had thought to look", req: () => true },
+        { t: "a new seam opened under {name:ev_town}", req: () => true },
+        { t: "the ground under {name:ev_town} gave up a lode nobody had mapped", req: () => true },
+        { t: "a seam came up under {name:ev_town} that no chart had", req: () => true },
+        { t: "in {num:ev_year} the ground under {name:ev_town} turned out to be worth something", req: () => true },
+        { t: "the ore under {name:ev_town} was found by people who were not looking for it", req: () => true },
+        { t: "{name:ev_town} was standing on a lode and did not know it", req: () => true },
+      ],
+      ore_strike_gloss: [
+        { t: "by winter the roads were full of wagons and {name:ev_town} was full of strangers", req: () => true },
+        { t: "the rush was immediate: retainers, chancers, assayers, and everyone who trails them into {name:ev_town}", req: () => true },
+        { t: "within a season {name:ev_town} had tripled, and the price of a bed had tripled with it", req: () => true },
+        { t: "word travels fast where ore is concerned, and the strangers were on the {name:ev_town} road before the assay was filed", req: () => true },
+        { t: "{name:ev_town} filled overnight with people who had nothing but a shovel and a claim", req: () => true },
+        { t: "the road to {name:ev_town} filled with people who owned a shovel and a claim", req: () => true },
+        { t: "assayers, chancers and retainers were at {name:ev_town} inside a season", req: () => true },
+        { t: "the price of everything at {name:ev_town} moved before the ore did", req: () => true },
+        { t: "{name:ev_town} tripled and none of the tripling was planned for", req: () => true },
+      ],
+      ore_strike_war: [
+        { t: "the ground under {name:ev_town} was already disputed, and every magnate, priest and captain in the realm knew what a lode there meant", req: c => c.strikeWar },
+        { t: "armies were on the {name:ev_town} road inside two epochs, because armies follow ore", req: c => c.strikeWar },
+        { t: "what was found under {name:ev_town} was worth fighting for, and it was fought for", req: c => c.strikeWar },
+        { t: "what came up under {name:ev_town} was worth an army, and an army came", req: c => c.strikeWar },
+        { t: "the claim on the {name:ev_town} ground was disputed before the assay was filed", req: c => c.strikeWar },
+        { t: "every power in the realm read the {name:ev_town} assay the same way", req: c => c.strikeWar },
+      ],
+      war: [
+        { t: "war came to {name:ev_town}", req: c => !c.warChained },
+        { t: "the fighting reached {name:ev_town} in {num:ev_year}", req: c => !c.warChained },
+        { t: "{name:ev_town} became the ground two powers met on", req: c => !c.warChained },
+        { t: "war came to {name:ev_town}, {num:war_gap} years after the strike, because armies follow ore", req: c => c.warChained },
+        { t: "{num:war_gap} years after the lode was found, the armies arrived at {name:ev_town}", req: c => c.warChained },
+        { t: "the ore under {name:ev_town} drew the armies to it within {num:war_gap} years", req: c => c.warChained },
+        { t: "the fighting came to {name:ev_town} and stayed a season", req: c => !c.warChained },
+        { t: "armies met at {name:ev_town} in {num:ev_year}", req: c => !c.warChained },
+        { t: "{name:ev_town} was where two claims came to blows", req: c => !c.warChained },
+        { t: "the strike under {name:ev_town} brought the armies within {num:war_gap} years", req: c => c.warChained },
+        { t: "{name:ev_town} was fought over {num:war_gap} years after the ore was found under it", req: c => c.warChained },
+      ],
+      war_powers: [
+        { t: "the two powers fighting there were {term:war_powers}, and {name:ev_town} was just where they met", req: c => c.hasWarPowers },
+        { t: "{term:war_powers} did the fighting, and {name:ev_town} did the dying", req: c => c.hasWarPowers },
+        { t: "it comes to ground that great powers claim and none can hold, and {name:ev_town} was claimed by two", req: c => !c.hasWarPowers },
+        { t: "war goes where a claim is worth more than the people standing on it, which was the case at {name:ev_town}", req: c => !c.hasWarPowers },
+        { t: "{term:war_powers} met at {name:ev_town}, which had no part in the quarrel", req: c => c.hasWarPowers },
+        { t: "the quarrel belonged to {term:war_powers} and the ground belonged to {name:ev_town}", req: c => c.hasWarPowers },
+        { t: "{name:ev_town} was claimed by more than one power and held by none of them", req: c => !c.hasWarPowers },
+        { t: "nothing about {name:ev_town} caused it except where {name:ev_town} stands", req: c => !c.hasWarPowers },
+      ],
+      war_loss: [
+        { t: "when the fighting stopped, {term:ev_tier} had lost a third of its people and a quarter of its wealth", req: () => true },
+        { t: "the mines and aetherworks at {name:ev_town} were wrecked, and a third of the people were gone", req: () => true },
+        { t: "{term:ev_tier} came out of it a third smaller and a quarter poorer, and the constabulary arrived after the blood and stayed", req: () => true },
+        { t: "a quarter of the wealth of {name:ev_town} was gone and the Crown's constabulary was in the streets by spring", req: () => true },
+        { t: "{term:ev_tier} lost a third of its people and a quarter of what it had", req: () => true },
+        { t: "the yards and the mines at {name:ev_town} were wrecked and the constabulary stayed on", req: () => true },
+        { t: "what {name:ev_town} lost was a third of its people and a quarter of its coin", req: () => true },
+        { t: "{term:ev_tier} was a third emptier at the end of it", req: () => true },
+        { t: "the fighting cost {name:ev_town} a third of its people and the constabulary stayed on", req: () => true },
+        { t: "{term:ev_tier} was poorer by a quarter and emptier by a third when it stopped", req: () => true },
+      ],
+      war_name: [
+        { t: "the scribes titled the page {name:ev_name}", req: c => c.hasEvName },
+        { t: "the fair copy at {name:capital} is headed {name:ev_name}", req: c => c.hasEvName },
+        { t: "it is filed at {name:capital} under {name:ev_name}", req: c => c.hasEvName },
+        { t: "the page at {name:capital} is headed {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is what the clerks agreed to call it", req: c => c.hasEvName },
+        { t: "it survives as {name:ev_name} in both sides' copies", req: c => c.hasEvName },
+      ],
+
+      // -- the gates ----------------------------------------------------------
+      seizure: [
+        { t: "{term:ev_faction} took the gate at {name:ev_town}", req: () => true },
+        { t: "{term:ev_faction} pressed {term:ev_their} claim on the crossing at {name:ev_town}", req: () => true },
+        { t: "{term:ev_faction} seized the crossing at {name:ev_town} in {num:ev_year}", req: () => true },
+        { t: "{term:ev_faction} moved on the gate at {name:ev_town} and held it", req: () => true },
+        { t: "{term:ev_faction} claimed the gate at {name:ev_town} for {term:ev_their} own", req: () => true },
+        { t: "{term:ev_faction} put a claim on the {name:ev_town} crossing and made it stick", req: () => true },
+        { t: "the gate at {name:ev_town} changed hands in {num:ev_year}, to {term:ev_faction}", req: () => true },
+        { t: "{term:ev_faction} came for the narrow ground at {name:ev_town}", req: () => true },
+        { t: "what {term:ev_faction} wanted at {name:ev_town} was the crossing, and {term:ev_faction} got it", req: () => true },
+        { t: "the crossing at {name:ev_town} belonged to {term:ev_faction} by the end of the year", req: () => true },
+        { t: "the crossing at {name:ev_town} was taken in {num:ev_year} and has not changed hands since", req: () => true },
+        { t: "{term:ev_faction} decided the gate at {name:ev_town} was worth having", req: () => true },
+        { t: "the {name:ev_town} gate went to {term:ev_faction} on a claim nobody contested", req: () => true },
+        { t: "{term:ev_faction} arrived at {name:ev_town} with a document and left with a gate", req: () => true },
+        { t: "a claim was filed on the {name:ev_town} crossing and enforced the same season", req: () => true },
+        { t: "{term:ev_faction} put a post on the {name:ev_town} road and called it a gate", req: () => true },
+      ],
+      seizure_gloss: [
+        { t: "a gate is a quay, a span or a pass, and whoever holds one holds a line of people who cannot go around {name:ev_town}", req: () => true },
+        { t: "no blood is recorded, the claim was made on paper, and the tariff at {name:ev_town} kept it", req: () => true },
+        { t: "whoever holds the narrow ground sets the price to pass it, and the price at {name:ev_town} went up that season", req: () => true },
+        { t: "there was no fight worth recording, and the first tariff notice at {name:ev_town} went up before the ink on the claim was dry", req: () => true },
+        { t: "the people who used the {name:ev_town} crossing found the fee waiting the next market day", req: () => true },
+        { t: "nothing about the crossing at {name:ev_town} changed except who collected at it", req: () => true },
+        { t: "the notice went up at {name:ev_town} and the queue formed under it the same week", req: () => true },
+        { t: "{term:ev_faction} did not build the crossing at {name:ev_town} and {term:ev_faction} collects at it", req: () => true },
+        { t: "everyone who crosses at {name:ev_town} still crosses, and now pays for the privilege", req: () => true },
+        { t: "the register at {name:capital} records a transfer and no objection", req: () => true },
+        { t: "the tariff post at {name:ev_town} went up before the claim was answered", req: () => true },
+        { t: "nothing changed at {name:ev_town} except who stands at the far end", req: () => true },
+        { t: "the crossing at {name:ev_town} was built by people who now pay to use it", req: () => true },
+        { t: "{term:ev_faction} collects at {name:ev_town} and maintains nothing", req: () => true },
+        { t: "everyone who goes through {name:ev_town} still goes through, and pays", req: () => true },
+        { t: "the fee at {name:ev_town} was set by whoever could set it", req: () => true },
+      ],
+
+      // -- the towers ---------------------------------------------------------
+      tower_burned: [
+        { t: "{term:ev_burner} burned the tower at {name:ev_town}", req: () => true },
+        { t: "{term:ev_burner} came for the tower at {name:ev_town} and left ash", req: () => true },
+        { t: "the tower at {name:ev_town} was burned out by {term:ev_burner}", req: () => true },
+        { t: "in {num:ev_year} {term:ev_burner} put the {name:ev_town} tower to the torch", req: () => true },
+        { t: "{term:ev_burner} took the {name:ev_town} tower down in {num:ev_year}", req: () => true },
+        { t: "the tower at {name:ev_town} was found and burned", req: () => true },
+        { t: "what stood outside the writ at {name:ev_town} was burned by {term:ev_burner}", req: () => true },
+        { t: "the {name:ev_town} tower came down in {num:ev_year}", req: () => true },
+        { t: "the tower outside {name:ev_town} was found and destroyed", req: () => true },
+        { t: "{term:ev_burner} reached {name:ev_town} and left nothing standing at the tower", req: () => true },
+      ],
+      tower_burned_gloss: [
+        { t: "the writs do not say what this cost, and the one healer the darkness at {name:ev_town} had is gone", req: () => true },
+        { t: "nothing came to replace it, and {name:ev_town} keeps its darkness", req: () => true },
+        { t: "the charge was written down and the loss was not, which is the usual shape of a writ out of {name:capital}", req: () => true },
+        { t: "whoever came to the {name:ev_town} tower for medicine now does without, and the writ has no line for that", req: () => true },
+        { t: "the darkness at {name:ev_town} was there before the tower and is there after it", req: () => true },
+        { t: "nothing was chartered to replace it at {name:ev_town}, and nothing arrived unchartered either", req: () => true },
+        { t: "the {name:capital} writ counted the offence and not the treatment", req: () => true },
+        { t: "the offence was recorded at {name:capital} and the loss was not", req: () => true },
+        { t: "what {name:ev_town} lost was the only medicine that had ever come to it", req: () => true },
+        { t: "the writ records an offence at {name:ev_town} and no consequence", req: () => true },
+      ],
+      tower_raised: [
+        { t: "an apostate raised a tower at {name:ev_town}, out where no writ runs and the grid never came", req: () => true },
+        { t: "a tower went up at {name:ev_town} in {num:ev_year}, unchartered and unwired", req: () => true },
+        { t: "somebody raised a tower on the dark ground at {name:ev_town}", req: () => true },
+        { t: "an apostate set up at {name:ev_town}, past the last wire and the last writ", req: () => true },
+        { t: "a tower was raised beyond the writ at {name:ev_town}", req: () => true },
+        { t: "somebody set up at {name:ev_town} where the grid had never come", req: () => true },
+        { t: "the dark country around {name:ev_town} got a healer in {num:ev_year}", req: () => true },
+        { t: "a healer set up beyond the writ at {name:ev_town}", req: () => true },
+        { t: "a tower stood at {name:ev_town} by the end of {num:ev_year}, chartered by nobody", req: () => true },
+        { t: "somebody came to the dark ground at {name:ev_town} and stayed", req: () => true },
+      ],
+      tower_raised_gloss: [
+        { t: "nobody at {name:ev_town} reported it for a season, and they were its first customers", req: () => true },
+        { t: "nobody at {name:ev_town} reported it, because the alternative was nothing at all", req: () => true },
+        { t: "the writ that would have stopped it does not reach {name:ev_town}, which is why it was raised there", req: () => true },
+        { t: "what it sells is what the grid never carried to {name:ev_town}", req: () => true },
+        { t: "an apostate at {name:ev_town} is what the absence of everything else produces", req: () => true },
+        { t: "it was reported eventually, and by then everyone at {name:ev_town} had used it", req: () => true },
+        { t: "the charter that forbids it does not run as far as {name:ev_town}", req: () => true },
+        { t: "the wire never came to {name:ev_town} and this did", req: () => true },
+        { t: "{name:ev_town} had nothing else and did not report it", req: () => true },
+        { t: "the wire had refused {name:ev_town} and this had not", req: () => true },
+      ],
+
+      // -- the succession -----------------------------------------------------
+      succession: [
+        { t: "the old {term:ev_title} died, and the succession was contested", req: c => c.evContested },
+        { t: "the {term:ev_title} died in {num:ev_year} and left no undisputed heir", req: c => c.evContested },
+        { t: "the death of the {term:ev_title} opened a quarrel that ran for years", req: c => c.evContested },
+        { t: "{term:ev_place} stood empty for a season after the {term:ev_title} died", req: c => c.evContested },
+        { t: "two claims were pressed on {term:ev_place} in {num:ev_year}, and neither would yield", req: c => c.evContested },
+        { t: "the {term:ev_title} died without settling who came next", req: c => c.evContested },
+        { t: "the succession to {term:ev_place} was fought over rather than decided", req: c => c.evContested },
+        { t: "when the {term:ev_title} died the question of {term:ev_place} was open, and it stayed open", req: c => c.evContested },
+        { t: "the {term:ev_title} left an heir and a rival, which is to say no heir at all", req: c => c.evContested },
+        { t: "there was a body in {num:ev_year} and no agreed successor to it", req: c => c.evContested },
+        { t: "the old {term:ev_title} died, and {name:ev_name} took {term:ev_place} without incident", req: c => !c.evContested },
+        { t: "the {term:ev_title} died in {num:ev_year} and the succession went as written, to {name:ev_name}", req: c => !c.evContested },
+        { t: "{name:ev_name} succeeded the old {term:ev_title} and nobody contested it", req: c => !c.evContested },
+        { t: "{term:ev_place} passed to {name:ev_name} in {num:ev_year}, exactly as the charter said it would", req: c => !c.evContested },
+        { t: "the {term:ev_title} died, and {name:ev_name} was already the answer", req: c => !c.evContested },
+        { t: "there was a funeral, and then {name:ev_name} held {term:ev_place}", req: c => !c.evContested },
+        { t: "{name:ev_name} came to {term:ev_place} by the ordinary route", req: c => !c.evContested },
+        { t: "the {term:ev_title} died in {num:ev_year}, and the transfer of {term:ev_place} took a fortnight", req: c => !c.evContested },
+        { t: "no claim was pressed against {name:ev_name}, so {name:ev_name} took {term:ev_place}", req: c => !c.evContested },
+        { t: "the succession of {num:ev_year} was uneventful, and {name:ev_name} is the name it produced", req: c => !c.evContested },
+        { t: "the {term:ev_title} died in {num:ev_year} with two claims outstanding", req: c => c.evContested },
+        { t: "nothing was settled when the {term:ev_title} died, least of all {term:ev_place}", req: c => c.evContested },
+        { t: "the quarrel over {term:ev_place} began at a funeral", req: c => c.evContested },
+        { t: "{term:ev_place} was claimed twice over in {num:ev_year}", req: c => c.evContested },
+        { t: "the {term:ev_title} died and left the question of {term:ev_place} to whoever could take it", req: c => c.evContested },
+        { t: "the succession of {num:ev_year} was decided by force and recorded as a succession", req: c => c.evContested },
+        { t: "{name:ev_name} took {term:ev_place} in {num:ev_year} and the old {term:ev_title} was buried first", req: c => !c.evContested },
+        { t: "the {term:ev_title} died and the charter answered the question", req: c => !c.evContested },
+        { t: "{term:ev_place} passed quietly to {name:ev_name}", req: c => !c.evContested },
+        { t: "nothing was disputed when the {term:ev_title} died, and {name:ev_name} took {term:ev_place}", req: c => !c.evContested },
+        { t: "the {term:ev_title} was buried and {name:ev_name} was installed in the same month", req: c => !c.evContested },
+        { t: "{name:ev_name} inherited {term:ev_place} against no opposition at all", req: c => !c.evContested },
+      ],
+      succession_gloss: [
+        { t: "while the court fought itself the gates went unwatched, and the rivals of {name:capital} moved in", req: c => c.evContested },
+        { t: "in the end {name:ev_name} took {term:ev_place}, and some who objected were killed", req: c => c.evContested },
+        { t: "the objections did not stop, and {name:ev_name} held {term:ev_place} anyway", req: c => c.evContested },
+        { t: "{name:ev_name} came out of it holding {term:ev_place}, which is all this record will commit to", req: c => c.evContested },
+        { t: "nothing was governed for the length of it, and the {num:n_regions} regions noticed", req: c => c.evContested },
+        { t: "the quarrel was settled the way quarrels over {term:ev_place} are settled, and {name:ev_name} settled it", req: c => c.evContested },
+        { t: "{name:ev_name} was not the obvious claimant and is the one who is written down", req: c => c.evContested },
+        { t: "the clerks at {name:capital} recorded the outcome and not the method", req: c => c.evContested },
+        { t: "by the end of it {name:ev_name} held {term:ev_place} and the treasury held less", req: c => c.evContested },
+        { t: "the rivals to {name:ev_name} are not named here, which is itself a kind of record", req: c => c.evContested },
+        { t: "that is rare enough in this record to be worth the ink, and {name:ev_name} held {term:ev_place} for the rest of the reign", req: c => !c.evContested },
+        { t: "no gate changed hands over it, which the clerks at {name:capital} noted as unusual", req: c => !c.evContested },
+        { t: "the {num:n_regions} regions carried on as though nothing had happened, because nothing had", req: c => !c.evContested },
+        { t: "the treasury at {name:capital} paid for a funeral and for nothing else", req: c => !c.evContested },
+        { t: "{name:ev_name} inherited the arrangement whole and changed none of it", req: c => !c.evContested },
+        { t: "the ledgers at {name:capital} did not move, which is the only test of a succession that matters", req: c => !c.evContested },
+        { t: "what {name:ev_name} inherited was the arrangement and not the choosing of it", req: c => !c.evContested },
+        { t: "the entry at {name:capital} runs to one line, and that is generous", req: c => !c.evContested },
+        { t: "nobody in the {num:n_regions} regions was consulted, and nobody expected to be", req: c => !c.evContested },
+        { t: "the peaceful ones are the short entries, and {name:ev_name} got a short entry", req: c => !c.evContested },
+        { t: "the gates went unwatched for as long as it lasted, and the rivals of {name:capital} noticed", req: c => c.evContested },
+        { t: "what settled it was not law, and {name:ev_name} is who it settled on", req: c => c.evContested },
+        { t: "the register at {name:capital} names the survivor and not the dispute", req: c => c.evContested },
+        { t: "nothing in the {num:n_regions} regions was governed while it ran, and it ran for years", req: c => c.evContested },
+        { t: "{name:ev_name} held {term:ev_place} at the end of it and holds it still", req: c => c.evContested },
+        { t: "the objections were entered at {name:capital} and the objectors were not heard from again", req: c => c.evContested },
+        { t: "nothing in the {num:n_regions} regions moved on account of it", req: c => !c.evContested },
+        { t: "the ledgers at {name:capital} carried on without a correction", req: c => !c.evContested },
+        { t: "{name:ev_name} took the arrangement as found and left it as found", req: c => !c.evContested },
+        { t: "what changed at {name:capital} was a name at the head of the page", req: c => !c.evContested },
+        { t: "the {num:n_regions} regions were told and were not asked", req: c => !c.evContested },
+        { t: "a quiet succession gets three lines in the {name:capital} register, and this one got three", req: c => !c.evContested },
+      ],
+
+      succession_coda: [
+        { t: "in none of the {num:n_regions} regions is a {term:ev_title} chosen by the people who live under one, and {name:ev_name} is no exception", req: () => true },
+        { t: "the {term:ev_title} changes and the arrangement does not, and {name:ev_name} inherits it entire", req: () => true },
+        { t: "the {num:n_regions} regions were told afterwards that {name:ev_name} held it", req: () => true },
+        { t: "{name:capital} kept the date and the name {name:ev_name} and dropped everything else", req: () => true },
+        { t: "what a {term:ev_title} inherits is a ledger, and the ledger at {name:capital} did not change hands with {name:ev_name}", req: () => true },
+        { t: "the {num:n_regions} regions were informed by notice that {name:ev_name} had the title", req: () => true },
+        { t: "nothing about the arrangement over {num:n_regions} regions turned on whether the name was {name:ev_name}", req: () => true },
+        { t: "the ledger at {name:capital} did not notice that a {term:ev_title} had become {name:ev_name}", req: () => true },
+        { t: "the title at {name:capital} changed to {name:ev_name} and the arrangement did not", req: () => true },
+        { t: "what {name:ev_name} inherits across {num:n_regions} regions is a ledger, and it did not move", req: () => true },
+        { t: "neither the ledger nor the map at {name:capital} records that {name:ev_name} arrived", req: () => true },
+        { t: "across {num:n_regions} regions the only thing that changed was a name, and the name is {name:ev_name}", req: () => true },
+        { t: "{name:ev_name} inherits a {term:ev_title}'s ledger and none of a {term:ev_title}'s choices", req: () => true },
+        { t: "what {name:ev_name} took was an office, and the office had already been settled", req: () => true },
+        { t: "the {num:n_regions} regions kept paying through it, to {name:ev_name} instead", req: () => true },
+        { t: "nothing in {name:capital} was decided by the arrival of {name:ev_name}", req: () => true },
+      ],
+      seizure_coda: [
+        { t: "a gate is worth what the people who must cross it can be made to pay, and {name:ev_town} could be made to pay", req: () => true },
+        { t: "one more of the realm's {num:n_regions} regions now pays to leave itself", req: () => true },
+        { t: "nobody who crosses at {name:ev_town} was asked, and nobody who crosses there has another way round", req: () => true },
+        { t: "gates are the cheapest thing in the realm to take and the dearest to be under, at {name:ev_town} as anywhere", req: () => true },
+        { t: "the {num:n_regions} regions gained no road that year and lost a free one", req: () => true },
+        { t: "gates are cheap to take and dear to be under, at {name:ev_town} as everywhere", req: () => true },
+        { t: "the crossing at {name:ev_town} cost nothing to build and pays forever", req: () => true },
+        { t: "one more of the {num:n_regions} regions now pays a stranger to leave itself", req: () => true },
+        { t: "nobody who crosses at {name:ev_town} was asked, and nobody has a second road", req: () => true },
+        { t: "the {num:n_regions} regions gained no road that year and lost a free crossing", req: () => true },
+      ],
+
+      // -- what the capital decides -------------------------------------------
+      reform: [
+        { t: "{name:capital} passed {term:ev_measure}", req: () => true },
+        { t: "{term:ev_measure} was passed at {name:capital} in {num:ev_year}", req: () => true },
+        { t: "in {num:ev_year} the capital gave way and passed {term:ev_measure}", req: () => true },
+        { t: "{name:capital} put {term:ev_measure} on the books", req: () => true },
+        { t: "{term:ev_measure} was carried at {name:capital}", req: () => true },
+        { t: "in {num:ev_year} {name:capital} passed {term:ev_measure} and said little about why", req: () => true },
+        { t: "the capital carried {term:ev_measure} in {num:ev_year}", req: () => true },
+        { t: "{term:ev_measure} passed at {name:capital} after years of not passing", req: () => true },
+        { t: "{name:capital} conceded {term:ev_measure}", req: () => true },
+        { t: "after years of refusal, {term:ev_measure} came out of {name:capital}", req: () => true },
+      ],
+      reform_gloss: [
+        { t: "the spoil trains out of {name:capital} now go where the land is empty, not where the people are poor", req: c => c.evMeasure === "dumping_reform" },
+        { t: "the bar for connection dropped, and the wires ran further from {name:capital} than the ledgers alone would ever have carried them", req: c => c.evMeasure === "grid_charter" },
+        { t: "the gates still stand, but their fees are capped by decree out of {name:capital}", req: c => c.evMeasure === "toll_amnesty" },
+        { t: "it set a floor under the ore price, fixed at {name:capital}, so the bottom half of the realm keeps more of what its own ground produces", req: c => c.evMeasure === "retention_act" },
+        { t: "it taxes the fat years to buy bread for the lean ones, and it is the first decree in the history of {name:capital} to move coin downhill", req: c => c.evMeasure === "crown_granary" },
+        { t: "the spoil now goes to empty ground rather than poor ground, by order of {name:capital}", req: c => c.evMeasure === 'dumping_reform' },
+        { t: "where the spoil trains unload was, for the first time, decided at {name:capital} on something other than price", req: c => c.evMeasure === 'dumping_reform' },
+        { t: "the connection bar was lowered and the wire went past the {num:n_regions} regions where it repaid itself", req: c => c.evMeasure === 'grid_charter' },
+        { t: "for once the copper out of {name:capital} was laid ahead of the ledger rather than behind it", req: c => c.evMeasure === 'grid_charter' },
+        { t: "the fees at every gate were capped by decree out of {name:capital}, and the gates were left standing", req: c => c.evMeasure === 'toll_amnesty' },
+        { t: "{name:capital} capped what the gates may charge and did not touch who holds them", req: c => c.evMeasure === 'toll_amnesty' },
+        { t: "a floor was fixed at {name:capital} under the ore price, so the poorer half keeps more of its own ground's yield", req: c => c.evMeasure === 'retention_act' },
+        { t: "the price is now set at {name:capital} rather than at the gate, which moves coin the unusual way", req: c => c.evMeasure === 'retention_act' },
+        { t: "the fat years are taxed at {name:capital} to buy bread for the lean ones", req: c => c.evMeasure === 'crown_granary' },
+        { t: "it is the first measure in the {name:capital} register that moves coin downhill on purpose", req: c => c.evMeasure === 'crown_granary' },
+      ],
+      reform_coda: [
+        { t: "{name:capital} had blocked reform for years and only gave in once the damage was bad enough", req: () => true },
+        { t: "no measure like it had passed at {name:capital} while the harm was merely predictable", req: () => true },
+        { t: "it was not passed because it was right, it was passed because the harm across {num:n_regions} regions had grown more expensive than the remedy", req: () => true },
+        { t: "{name:capital} had heard the argument for years and acted on the arithmetic", req: () => true },
+        { t: "the {num:n_regions} regions had been petitioning about it since before it was cheap to fix", req: () => true },
+        { t: "the {num:n_regions} regions had asked for it before it was cheap to grant", req: () => true },
+        { t: "{name:capital} conceded the arithmetic, not the argument", req: () => true },
+        { t: "nothing in the {name:capital} register credits anyone with having been right earlier", req: () => true },
+      ],
+      reaction: [
+        { t: "{name:capital} met the unrest with force", req: () => true },
+        { t: "the answer out of {name:capital} was force, not remedy", req: () => true },
+        { t: "in {num:ev_year} the capital answered the unrest by hardening", req: () => true },
+        { t: "{name:capital} answered with a decree rather than a remedy", req: () => true },
+        { t: "the unrest was met, in {num:ev_year}, with more of what had caused it", req: () => true },
+        { t: "{name:capital} hardened rather than yielded", req: () => true },
+        { t: "{name:capital} answered the unrest with the instrument that had caused it", req: () => true },
+        { t: "the decree out of {name:capital} in {num:ev_year} went the other way", req: () => true },
+      ],
+      reaction_gloss: [
+        { t: "the dumping was written into the law of {name:capital}, and the spoil trains sought out the poor more openly than before", req: c => c.evMeasure === "dumping_entrenched" },
+        { t: "the tariffs rose by decree, because the gates' holders had paid {name:capital} for their privileges and were owed", req: c => c.evMeasure === "toll_crackdown" },
+        { t: "the spoil trains were licensed to do openly what they had done anyway, and {name:capital} wrote it down", req: c => c.evMeasure === 'dumping_entrenched' },
+        { t: "dumping stopped being a practice at {name:capital} and started being a policy", req: c => c.evMeasure === 'dumping_entrenched' },
+        { t: "the gate holders had bought their privileges from {name:capital} and were paid in tariff", req: c => c.evMeasure === 'toll_crackdown' },
+        { t: "the rates went up because a debt to the gate holders came due at {name:capital}", req: c => c.evMeasure === 'toll_crackdown' },
+      ],
+      reaction_coda: [
+        { t: "there was no debate on record at {name:capital}", req: () => true },
+        { t: "the registers at {name:capital} keep the decree and not one word of argument", req: () => true },
+        { t: "the {num:n_regions} regions were informed rather than consulted", req: () => true },
+        { t: "the {num:n_regions} regions found out afterwards, from the notice", req: () => true },
+        { t: "nothing in the {name:capital} register suggests anybody argued against it", req: () => true },
+        { t: "nobody in the {num:n_regions} regions was asked and nobody expected to be", req: () => true },
+        { t: "the {name:capital} register has the decree and no argument beside it", req: () => true },
+        { t: "what {name:capital} met with force it had met with nothing for a decade", req: () => true },
+      ],
+      // B7 (#129): a measure the realm did not choose, narrated AS imposed.
+      imposition: [
+        { t: "this measure did not come from {name:capital}, it came from the creditors of {name:capital}", req: () => true },
+        { t: "the adjustment of {num:ev_year} was written in another capital and signed in {name:capital}", req: () => true },
+        { t: "the decree of {num:ev_year} was not the realm's to make", req: () => true },
+        { t: "what {name:capital} signed in {num:ev_year} was written by its creditors", req: () => true },
+        { t: "the adjustment reached {name:capital} as a condition and not as a proposal", req: () => true },
+        { t: "the terms reached {name:capital} in {num:ev_year} already written", req: () => true },
+        { t: "{name:capital} was told what its policy would be", req: () => true },
+        { t: "the measure of {num:ev_year} arrived as a condition of credit", req: () => true },
+      ],
+      imposition_gloss: [
+        { t: "the imperial loans had gone unpaid and the doctrine was pressing abroad, so the financiers demanded an adjustment of {name:capital}", req: () => true },
+        { t: "close the granary, order the gates to collect, and balance the books on whichever of the {num:n_regions} regions could least afford it", req: () => true },
+        { t: "the terms were set by people who hold none of the {num:n_regions} regions and are owed by all of them", req: () => true },
+        { t: "the loans were unpaid and the doctrine was fashionable, and between them they set policy for {num:n_regions} regions", req: () => true },
+        { t: "the granary was closed and the gates were ordered to collect, and neither was {name:capital}'s idea", req: () => true },
+        { t: "the granary was closed and the gates were told to collect, and neither came from {name:capital}", req: () => true },
+        { t: "the financiers required an adjustment of {name:capital} and named its terms", req: () => true },
+        { t: "the books of {num:n_regions} regions were balanced on whoever could least object", req: () => true },
+      ],
+      imposition_coda: [
+        { t: "the official term is structural adjustment, and the towns of the {num:n_regions} regions called it a decree written in another capital", req: () => true },
+        { t: "{name:capital} kept its seal on the paper and nothing else", req: () => true },
+        { t: "what {name:capital} could not be argued into it was lent into", req: () => true },
+        { t: "the towns of the {num:n_regions} regions had a word for structural adjustment and it was not that one", req: () => true },
+        { t: "sovereignty at {name:capital} survived the year and did not do anything during it", req: () => true },
+        { t: "sovereignty at {name:capital} survived the year without doing anything in it", req: () => true },
+        { t: "the towns of the {num:n_regions} regions had their own word for structural adjustment", req: () => true },
+        { t: "what {name:capital} would not be argued into it was lent into", req: () => true },
+      ],
+
+      // -- the risings --------------------------------------------------------
+      revolt: [
+        { t: "{name:ev_town} rose against the Dominion itself, and won", req: c => c.evDominion && c.evWon },
+        { t: "{name:ev_town} threw the Dominion out in {num:ev_year}", req: c => c.evDominion && c.evWon },
+        { t: "{name:ev_town} rose against the Dominion, and the imperial constabulary put it down", req: c => c.evDominion && !c.evWon },
+        { t: "the rising at {name:ev_town} was broken by the imperial constabulary, which is what the imperial constabulary is there to do", req: c => c.evDominion && !c.evWon },
+        { t: "{name:ev_town} rose, the constabulary line broke, and the mob held", req: c => !c.evDominion && c.evWon },
+        { t: "{name:ev_town} rose in {num:ev_year} and was not put down", req: c => !c.evDominion && c.evWon },
+        { t: "{name:ev_town} rose in {num:ev_year}, and was put down", req: c => !c.evDominion && !c.evWon },
+        { t: "the rising at {name:ev_town} lasted a season", req: c => !c.evDominion && !c.evWon },
+        { t: "the Dominion was thrown out of {name:ev_town}", req: c => c.evDominion && c.evWon },
+        { t: "what {name:ev_town} rose against was an empire, and {name:ev_town} won", req: c => c.evDominion && c.evWon },
+        { t: "{name:ev_town} rose against the Dominion in {num:ev_year} and did not hold", req: c => c.evDominion && !c.evWon },
+        { t: "the imperial constabulary broke the rising at {name:ev_town}", req: c => c.evDominion && !c.evWon },
+        { t: "{name:ev_town} broke the constabulary line and kept the town", req: c => !c.evDominion && c.evWon },
+        { t: "the rising at {name:ev_town} held", req: c => !c.evDominion && c.evWon },
+        { t: "{name:ev_town} rose and the constabulary ended it", req: c => !c.evDominion && !c.evWon },
+        { t: "what began at {name:ev_town} in {num:ev_year} was over by the autumn", req: c => !c.evDominion && !c.evWon },
+      ],
+      revolt_gloss: [
+        { t: "the factors were thrown into the harbour, the assessment tables were burned, and {name:ev_town} keeps what it makes now", req: c => c.evDominion && c.evWon },
+        { t: "what the assessment tables had taken out of {name:ev_town} for a generation stayed in it", req: c => c.evDominion && c.evWon },
+        { t: "the assessment tables do not mention the rising at {name:ev_town}, so this record does", req: c => c.evDominion && !c.evWon },
+        { t: "the imperial registers carried on assessing {name:ev_town} at the water as though nothing had happened", req: c => c.evDominion && !c.evWon },
+        { t: "{name:ev_town} keeps what it makes now, and its gates charge no one", req: c => !c.evDominion && c.evWon },
+        { t: "no tariff has been collected at {name:ev_town} since", req: c => !c.evDominion && c.evWon },
+        { t: "the constabulary arrived after the hangings at {name:ev_town}", req: c => !c.evDominion && !c.evWon },
+        { t: "the injustice that caused it was written down in full and then left alone, and {name:ev_town} was left with it", req: c => !c.evDominion && !c.evWon },
+        { t: "the assessment tables were burned at {name:ev_town} and nothing has been assessed there since", req: c => c.evDominion && c.evWon },
+        { t: "{name:ev_town} keeps at the water what it used to hand over at the water", req: c => c.evDominion && c.evWon },
+        { t: "nothing in the imperial registers marks the rising at {name:ev_town}, so this entry does", req: c => c.evDominion && !c.evWon },
+        { t: "{name:ev_town} was assessed the following season exactly as before", req: c => c.evDominion && !c.evWon },
+        { t: "no gate at {name:ev_town} has charged anyone since", req: c => !c.evDominion && c.evWon },
+        { t: "what {name:ev_town} makes stays at {name:ev_town}", req: c => !c.evDominion && c.evWon },
+        { t: "the grievance at {name:ev_town} was recorded in full and answered not at all", req: c => !c.evDominion && !c.evWon },
+        { t: "the hangings at {name:ev_town} came first and the constabulary came after", req: c => !c.evDominion && !c.evWon },
+      ],
+      // B8 (#130): the won rising is a distribution, and the chronicle tells both arcs.
+      revolt_arc: [
+        { t: "and it flourished: the aetherworks the charter had held back ran at full tilt, and people came to {name:ev_town} from the tariffed country around it", req: c => c.evWon && c.evArc === "flourished" },
+        { t: "freedom released what the old order had held down, and the crafts the tariffs had taxed to the bone found their feet at {name:ev_town}", req: c => c.evWon && c.evArc === "flourished" },
+        { t: "but freedom is not food: the magnates' capital left with the magnates, and the aetherworks it had funded at {name:ev_town} went dark", req: c => c.evWon && c.evArc === "starved" },
+        { t: "the skilled workers followed the money out of {name:ev_town} and the free town starved, which is the other thing that happens", req: c => c.evWon && c.evArc === "starved" },
+        { t: "the injustice had been real and so was the freedom, and neither one fed anybody in {name:ev_town}", req: c => c.evWon && c.evArc === "starved" },
+        { t: "what the charter had held back at {name:ev_town} ran at full tilt the moment the charter went", req: c => c.evWon && c.evArc === 'flourished' },
+        { t: "people came to {name:ev_town} from the tariffed country around it, which is the plainest verdict available", req: c => c.evWon && c.evArc === 'flourished' },
+        { t: "the money left {name:ev_town} with the people who owned it, and the yards went cold behind them", req: c => c.evWon && c.evArc === 'starved' },
+        { t: "{name:ev_town} was free and hungry in the same year, and the record does not resolve that", req: c => c.evWon && c.evArc === 'starved' },
+      ],
+      revolt_name: [
+        { t: "the people keep the date as {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the date they keep, and they keep it without permission", req: c => c.hasEvName },
+        { t: "the date is kept at {name:ev_town} as {name:ev_name}", req: () => true },
+        { t: "{name:ev_town} keeps the date as {name:ev_name} without asking", req: c => c.hasEvName },
+        { t: "the register at {name:capital} avoids the name {name:ev_name} and the streets do not", req: c => c.hasEvName },
+        { t: "{name:ev_name} is kept where it happened and nowhere else", req: c => c.hasEvName },
+        { t: "the date survives as {name:ev_name}, unofficially", req: c => c.hasEvName },
+      ],
+
+      // -- the terms ----------------------------------------------------------
+      treaty: [
+        { t: "in the winter after the fighting, terms were set at {name:ev_town}", req: () => true },
+        { t: "the war ended at a table in {name:ev_town}", req: () => true },
+        { t: "terms were written at {name:ev_town} in {num:ev_year}", req: () => true },
+        { t: "the fighting stopped when {term:ev_winner} got the paper it wanted at {name:ev_town}", req: () => true },
+        { t: "the terms that ended it were written at {name:ev_town}", req: () => true },
+        { t: "{name:ev_town} is where the paper was signed", req: () => true },
+        { t: "in {num:ev_year} the fighting stopped and the writing started, at {name:ev_town}", req: () => true },
+        { t: "the paper that ended it was signed at {name:ev_town}", req: () => true },
+        { t: "the settlement was written at {name:ev_town} in the winter", req: () => true },
+        { t: "{name:ev_town} was chosen for the table because the fighting had stopped there", req: () => true },
+      ],
+      treaty_terms: [
+        { t: "{term:ev_winner} wrote them: {term:ev_terms}", req: () => true },
+        { t: "the paper says {term:ev_terms}, and {term:ev_winner} chose the words", req: () => true },
+        { t: "{term:ev_terms}, which is what {term:ev_winner} had come to {name:ev_town} for", req: () => true },
+        { t: "the terms are {term:ev_terms}, in the wording {term:ev_winner} chose", req: () => true },
+        { t: "{term:ev_terms}: the terms {term:ev_winner} came for", req: () => true },
+        { t: "on paper and in {term:ev_winner}'s hand, {term:ev_terms}", req: () => true },
+        { t: "the settlement {term:ev_winner} wrote reads {term:ev_terms}", req: () => true },
+        { t: "{term:ev_winner} set it down as {term:ev_terms}", req: () => true },
+      ],
+      treaty_gloss: [
+        { t: "the side with the deeper ledger wrote the terms, at {name:ev_town} as everywhere else", req: () => true },
+        { t: "nothing at {name:ev_town} was settled by argument that had not already been settled by ledger", req: () => true },
+        { t: "what was agreed at {name:ev_town} had been decided before anyone sat down", req: () => true },
+        { t: "the paper at {name:ev_town} records a balance of ledgers and calls it a peace", req: () => true },
+        { t: "the ledgers had settled it before the table did, at {name:ev_town} as elsewhere", req: () => true },
+        { t: "what {term:ev_winner} took at {name:ev_town} it had already won", req: () => true },
+        { t: "no clause at {name:ev_town} surprised anyone who had read the accounts", req: () => true },
+        { t: "the losing side signed at {name:ev_town} because signing was cheaper than continuing", req: () => true },
+      ],
+      treaty_name: [
+        { t: "the clerks filed the fair copy as {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the title on the copy kept at {name:capital}", req: c => c.hasEvName },
+        { t: "the copy at {name:capital} is titled {name:ev_name}", req: c => c.hasEvName },
+        { t: "the fair copy is titled {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the name on the paper", req: c => c.hasEvName },
+        { t: "the archive at {name:capital} files it as {name:ev_name}", req: c => c.hasEvName },
+      ],
+
+      // -- the powers across the water ----------------------------------------
+      annexation: [
+        { t: "the Dominion's fleet stood off {name:ev_harbor} at dawn", req: () => true },
+        { t: "by winter the Dominion held {num:ev_occupied} regions, and it began at {name:ev_harbor}", req: () => true },
+        { t: "the Dominion landed at {name:ev_harbor} in {num:ev_year}", req: () => true },
+        { t: "the Dominion took {name:ev_harbor} and did not have to fight for it", req: () => true },
+        { t: "{name:ev_harbor} was the landing, and {num:ev_occupied} regions followed it", req: () => true },
+        { t: "the fleet arrived off {name:ev_harbor} and the question was settled by its arriving", req: () => true },
+        { t: "the water off {name:ev_harbor} carried a fleet nobody could answer", req: () => true },
+        { t: "{name:ev_harbor} was taken without a shot in {num:ev_year}", req: () => true },
+        { t: "the fleet was off {name:ev_harbor} at first light and ashore by evening", req: () => true },
+        { t: "{name:ev_harbor} changed hands without a shot in {num:ev_year}", req: () => true },
+      ],
+      annexation_gloss: [
+        { t: "there was no fighting at {name:ev_harbor}, and nobody could stop it", req: () => true },
+        { t: "the quays at {name:ev_harbor} collect for a power across the sea now", req: () => true },
+        { t: "the yield of those {num:ev_occupied} regions is assessed at the water, and the wires arrived with the constabulary", req: () => true },
+        { t: "the assessment now happens at the water at {name:ev_harbor}, before anything moves inland", req: () => true },
+        { t: "nothing at {name:ev_harbor} was destroyed, and everything at {name:ev_harbor} changed owner", req: () => true },
+        { t: "the constabulary and the wire reached {name:ev_harbor} together, which is not a coincidence", req: () => true },
+        { t: "the assessment moved to the water at {name:ev_harbor} and stayed there", req: () => true },
+        { t: "the wire and the constabulary reached {name:ev_harbor} in the same season", req: () => true },
+      ],
+      annexation_gloss2: [
+        { t: "it is the first country in the realm wired end to end, because the cargo of those {num:ev_occupied} regions is wanted elsewhere", req: () => true },
+        { t: "those {num:ev_occupied} regions retain least of what they make and carry the best wires in the realm, which is one fact and not two", req: () => true },
+        { t: "the Crown still reigns over {name:ev_harbor} and no longer rules it", req: () => true },
+        { t: "those {num:ev_occupied} regions are the best-connected and worst-paid ground in the realm", req: () => true },
+        { t: "what the Dominion wants out of {num:ev_occupied} regions is why they are wired at all", req: () => true },
+        { t: "the {num:ev_occupied} occupied regions are the best-connected and worst-paid ground in the realm", req: () => true },
+        { t: "what the Dominion wants from {num:ev_occupied} regions is why they were wired at all", req: () => true },
+        { t: "{name:capital} reigns over {name:ev_harbor} and does not govern it", req: () => true },
+      ],
+      annexation_name: [
+        { t: "the Dominion's own registers file it as {name:ev_name}", req: c => c.hasEvName },
+        { t: "the Dominion's registers head it {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the imperial name for it, and the only one written down", req: c => c.hasEvName },
+        { t: "it is entered as {name:ev_name} in a language {name:ev_town} does not use", req: c => c.hasEvName },
+        { t: "the capital's copy calls it {name:ev_name} and says nothing further", req: c => c.hasEvName },
+      ],
+      // B11 (#133): the empire that buys instead of landing.
+      concession: [
+        { t: "{term:ev_power} did not send a fleet to {name:ev_harbor}, it sent factors and a charter", req: () => true },
+        { t: "{term:ev_power} bought its way into {name:ev_harbor} in {num:ev_year}", req: () => true },
+        { t: "the charter at {name:ev_harbor} was signed rather than imposed", req: () => true },
+        { t: "{term:ev_power} arrived at {name:ev_harbor} with money instead of soldiers", req: () => true },
+        { t: "the charter at {name:ev_harbor} was bought in {num:ev_year}", req: () => true },
+        { t: "{term:ev_power} did not need a fleet at {name:ev_harbor}, and did not send one", req: () => true },
+        { t: "{term:ev_power} arrived at {name:ev_harbor} with a charter and a chequebook", req: () => true },
+        { t: "the charter over {name:ev_harbor} was purchased rather than imposed", req: () => true },
+        { t: "{term:ev_power} took {name:ev_harbor} by charter in {num:ev_year}", req: () => true },
+        { t: "no fleet came to {name:ev_harbor}, and the outcome was the same", req: () => true },
+      ],
+      concession_gloss: [
+        { t: "the aetherworks at {name:ev_town} were bought, the coast was wired to the sea within the season, and money came in to build", req: () => true },
+        { t: "{name:ev_town} grew richer than it had ever been", req: () => true },
+        { t: "the yards at {name:ev_town} changed owners and kept their names", req: () => true },
+        { t: "the wire reached {name:ev_town} within the season, because the cargo now had somewhere to go", req: () => true },
+        { t: "{name:ev_town} was built up faster than the capital had ever built it", req: () => true },
+        { t: "the yards at {name:ev_town} kept every worker and changed every owner", req: () => true },
+        { t: "the coast at {name:ev_town} was wired within the season, because the cargo now had a destination", req: () => true },
+        { t: "{name:ev_town} was built up faster by {term:ev_power} than {name:capital} had managed in a century", req: () => true },
+      ],
+      concession_coda: [
+        { t: "the registers at {name:capital} still carry the name of {name:ev_town}, and the registers that matter now are kept in another capital", req: () => true },
+        { t: "half of what the ground at {name:ev_town} yields is entered in a ledger nobody in the realm may read", req: () => true },
+        { t: "nothing was taken from {name:ev_town} that was not first bought", req: () => true },
+        { t: "nothing at {name:ev_town} was seized, which is what makes it difficult to complain about", req: () => true },
+        { t: "the ledger that decides {name:ev_town} is kept where nobody in {name:ev_town} can read it", req: () => true },
+        { t: "the ledger that governs {name:ev_town} is kept where nobody in {name:ev_town} can read it", req: () => true },
+        { t: "nothing at {name:ev_town} was seized, which is what makes it hard to protest", req: () => true },
+        { t: "{name:capital} still lists {name:ev_town} and no longer counts what it makes", req: () => true },
+      ],
+      abandonment: [
+        { t: "{term:ev_power} wound up its concession at {name:ev_town}", req: () => true },
+        { t: "{term:ev_power} left {name:ev_town} in {num:ev_year}, {num:ev_span} years after it opened the concession", req: c => c.hasEvSpan },
+        { t: "the factors sailed from {name:ev_town} and did not come back", req: () => true },
+        { t: "{term:ev_power} closed its books on {name:ev_town}", req: () => true },
+        { t: "the charter over {name:ev_town} was wound up in {num:ev_year}", req: () => true },
+        { t: "{term:ev_power} stopped sending anything to {name:ev_town}", req: () => true },
+        { t: "{term:ev_power} closed its books on {name:ev_town} and sailed", req: () => true },
+        { t: "the concession at {name:ev_town} was wound up without notice", req: () => true },
+        { t: "the concession at {name:ev_town} was closed in {num:ev_year} without ceremony", req: () => true },
+      ],
+      abandonment_gloss: [
+        { t: "the lode under {name:ev_town} had drawn down, and the attention left with the ore", req: () => true },
+        { t: "the credit stopped, and the aetherworks they had built at {name:ev_town} went quiet", req: () => true },
+        { t: "what had been bought was not sold on, it was simply put down and walked away from at {name:ev_town}", req: () => true },
+        { t: "the ore at {name:ev_town} drew down and the interest drew down with it", req: () => true },
+        { t: "what had been built at {name:ev_town} was left standing and left cold", req: () => true },
+        { t: "the factors at {name:ev_town} were gone before the last shift knew", req: () => true },
+        { t: "the interest in {name:ev_town} drew down at the same rate as the lode", req: () => true },
+        { t: "what {term:ev_power} had built at {name:ev_town} was left standing and left cold", req: () => true },
+        { t: "the credit to {name:ev_town} stopped in the same season as the shipping", req: () => true },
+      ],
+      abandonment_coda: [
+        { t: "it cut both ways: the markets that had made {name:ev_town} rich were gone, and so were the levies", req: () => true },
+        { t: "the ground at {name:ev_town} kept what it made for the first time in a generation", req: () => true },
+        { t: "{name:ev_town} got its ruin and its freedom in the same year", req: () => true },
+        { t: "{name:ev_town} kept the buildings and lost the market, and kept the ground and lost the levy", req: () => true },
+        { t: "for the first time in a generation nothing was assessed at {name:ev_town}", req: () => true },
+        { t: "{name:ev_town} kept the buildings and lost the market", req: () => true },
+        { t: "for the first time in a generation nothing left {name:ev_town} to be assessed elsewhere", req: () => true },
+        { t: "the ruin and the freedom arrived at {name:ev_town} together and are hard to tell apart", req: () => true },
+      ],
+      embargo: [
+        { t: "politics in a capital {name:ev_town} had never seen closed the sea lanes to it", req: () => true },
+        { t: "a quarrel between {term:ev_power} and the Metropole became the ruin of {name:ev_town}", req: () => true },
+        { t: "the lanes to {name:ev_town} were shut in {num:ev_year} over a quarrel it had no part in", req: () => true },
+        { t: "the lanes to {name:ev_town} closed over an argument in a capital {name:ev_town} has never seen", req: () => true },
+        { t: "{name:ev_town} was cut off from the water in {num:ev_year}", req: () => true },
+        { t: "a quarrel elsewhere shut the sea to {name:ev_town}", req: () => true },
+        { t: "{name:ev_town} was shut out of the water by a quarrel it had no part in", req: () => true },
+        { t: "the sea closed on {name:ev_town} in {num:ev_year}", req: () => true },
+        { t: "the water closed on {name:ev_town} for reasons made elsewhere", req: () => true },
+        { t: "{name:ev_town} lost its trade to a treaty it never saw", req: () => true },
+        { t: "the lanes to {name:ev_town} were shut and stayed shut", req: () => true },
+      ],
+      embargo_gloss: [
+        { t: "the quays at {name:ev_town} that had built a second fortune on foreign trade stood idle", req: () => true },
+        { t: "the cargoes stopped coming, and the coast that had rivalled {name:capital} went bust in a single year", req: () => true },
+        { t: "the wealth the trade had brought to {name:ev_town} was gone, and the town had no say in any of it", req: () => true },
+        { t: "the second fortune at {name:ev_town} was made on trade and unmade the same way", req: () => true },
+        { t: "{name:ev_town} had no say in the quarrel and paid the whole of the settlement", req: () => true },
+        { t: "the quays at {name:ev_town} stood full and still for a year", req: () => true },
+        { t: "the trade that made {name:ev_town} rich stopped in a single season", req: () => true },
+        { t: "{name:ev_town} was not consulted and was not spared", req: () => true },
+        { t: "{name:ev_town} had built on foreign trade, and foreign trade was withdrawn", req: () => true },
+        { t: "the quays at {name:ev_town} were full and idle in the same season", req: () => true },
+        { t: "the coast that had rivalled {name:capital} was bust inside a year", req: () => true },
+      ],
+      courting: [
+        { t: "{term:ev_power} sent envoys to {name:ev_harbor}, and {name:capital} pretended not to notice", req: () => true },
+        { t: "envoys from {term:ev_power} were received at {name:ev_harbor} in {num:ev_year}", req: () => true },
+        { t: "{term:ev_power} began paying calls at {name:ev_harbor}", req: () => true },
+        { t: "{term:ev_power} began calling at {name:ev_harbor}, and nothing was signed", req: () => true },
+        { t: "envoys were at {name:ev_harbor} through {num:ev_year}", req: () => true },
+        { t: "{term:ev_power} took an interest in {name:ev_harbor} and said so politely", req: () => true },
+        { t: "{term:ev_power} began taking an interest in {name:ev_harbor}", req: () => true },
+        { t: "envoys came to {name:ev_harbor} and the capital looked away", req: () => true },
+        { t: "{term:ev_power} started calling at {name:ev_harbor} and stopped leaving quickly", req: () => true },
+        { t: "the calls at {name:ev_harbor} became regular in {num:ev_year}", req: () => true },
+        { t: "{term:ev_power} found {name:ev_harbor} interesting and said as much", req: () => true },
+      ],
+      courting_gloss: [
+        { t: "nothing was signed at {name:ev_harbor}", req: () => true },
+        { t: "a rich coast the Metropole has not yet claimed is a coast worth courting, and {name:ev_harbor} is rich", req: () => true },
+        { t: "the powers across the sea prefer to be invited, and this is how the next landing at {name:ev_harbor} usually begins", req: () => true },
+        { t: "{name:capital} saw it and chose to see nothing", req: () => true },
+        { t: "an invitation is cheaper than a fleet, and {name:ev_harbor} is being invited", req: () => true },
+        { t: "nothing was agreed at {name:ev_harbor}, which is how these things start", req: () => true },
+        { t: "nothing was agreed at {name:ev_harbor}, which is how these things begin", req: () => true },
+        { t: "a coast the Metropole has not claimed is a coast worth calling on, and {name:ev_harbor} is one", req: () => true },
+        { t: "the capital watched and recorded nothing about {name:ev_harbor}", req: () => true },
+        { t: "{name:ev_harbor} is rich and unclaimed, which is a temporary condition", req: () => true },
+        { t: "nothing binding was signed at {name:ev_harbor}, and nothing needed to be", req: () => true },
+      ],
+
+      // -- the faith ----------------------------------------------------------
+      consecration: [
+        { t: "the Temple came to {name:ev_town}, to the ground of its suffering, and consecrated it as {name:ev_shrine}", req: c => c.hasEvShrine },
+        { t: "{name:ev_shrine} was raised on the ground of the worst year {name:ev_town} ever had", req: c => c.hasEvShrine },
+        { t: "the Temple consecrated the ground at {name:ev_town} in {num:ev_year}", req: c => !c.hasEvShrine },
+        { t: "the Temple took the harmed ground at {name:ev_town} and made it holy", req: c => !c.hasEvShrine },
+        { t: "the ground at {name:ev_town} was consecrated after the harm was done", req: c => !c.hasEvShrine },
+        { t: "the Temple arrived at {name:ev_town} once there was suffering to sanctify", req: c => !c.hasEvShrine },
+        { t: "{name:ev_shrine} stands on the worst ground of the worst year at {name:ev_town}", req: c => c.hasEvShrine },
+        { t: "the Temple raised {name:ev_shrine} where the harm had been", req: c => c.hasEvShrine },
+        { t: "the ground at {name:ev_town} was made holy in {num:ev_year}", req: () => true },
+        { t: "the Temple arrived at {name:ev_town} after everything else had happened to it", req: () => true },
+        { t: "the Temple consecrated the ground at {name:ev_town} as {name:ev_shrine} in {num:ev_year}", req: c => c.hasEvShrine },
+        { t: "the harmed ground at {name:ev_town} was made holy and named {name:ev_shrine}", req: c => c.hasEvShrine },
+        { t: "{name:ev_shrine} was consecrated at {name:ev_town} once there was suffering to sanctify", req: c => c.hasEvShrine },
+      ],
+      consecration_gloss: [
+        { t: "pilgrims walk the {name:ev_town} road now", req: () => true },
+        { t: "the road to {name:ev_town} carries pilgrims where it used to carry the people leaving", req: () => true },
+        { t: "the Crown's writ had failed there, and the magnates' ledgers had seen nothing at {name:ev_town} worth the ink", req: () => true },
+        { t: "the road to {name:ev_town} carries pilgrims now and carried refugees before", req: () => true },
+        { t: "nothing official had come to {name:ev_town} until the faith did", req: () => true },
+        { t: "nothing official had reached {name:ev_town} before the faith did", req: () => true },
+        { t: "the road into {name:ev_town} carries pilgrims now and carried refugees before", req: () => true },
+        { t: "the Crown's writ had failed at {name:ev_town} and the ledgers had never opened there", req: () => true },
+      ],
+      consecration_coda: [
+        { t: "the faith moved in after the harm was done, and claimed the ground at {name:ev_town}", req: () => true },
+        { t: "nothing was prevented at {name:ev_town}, and a great deal was consecrated", req: () => true },
+        { t: "{name:ev_town} got a shrine where it had wanted a constabulary", req: () => true },
+        { t: "the Temple did not prevent what happened at {name:ev_town} and did consecrate it, and the record keeps both", req: () => true },
+        { t: "{name:ev_town} wanted a constabulary and received a shrine", req: () => true },
+        { t: "the Temple takes its share at {name:ev_town} and the share is not small", req: () => true },
+        { t: "what happened at {name:ev_town} is now a pilgrimage, which is one way of not answering for it", req: () => true },
+      ],
+
+      // -- D7: the years' shocks: weather, ground, fortune, and the god --------
+      drought: [
+        { t: "the rains failed over {name:ev_town}, and failed again", req: () => true },
+        { t: "the rains did not come to {name:ev_town} in {num:ev_year}, nor the year after", req: () => true },
+        { t: "{name:ev_town} went two seasons without water", req: () => true },
+        { t: "the sky held over {name:ev_town} for two years running", req: () => true },
+        { t: "the wells at {name:ev_town} were reading low by midsummer and dry by the next", req: () => true },
+        { t: "{num:ev_year} was the first dry year at {name:ev_town} and not the last", req: () => true },
+        { t: "the water went out of the country around {name:ev_town}", req: () => true },
+        { t: "the water failed at {name:ev_town} and kept failing", req: () => true },
+        { t: "nothing fell on {name:ev_town} for two summers together", req: () => true },
+        { t: "the streams above {name:ev_town} were down to stones by {num:ev_year}", req: () => true },
+        { t: "{name:ev_town} had no rain worth the name for two years", req: () => true },
+        { t: "the country around {name:ev_town} dried from the edges inward", req: () => true },
+        { t: "in {num:ev_year} and the year after, nothing fell on {name:ev_town}", req: () => true },
+        { t: "the water table under {name:ev_town} dropped below the wells", req: () => true },
+        { t: "the streams that feed {name:ev_town} ran to gravel", req: () => true },
+        { t: "{name:ev_town} watched its ground go pale and then go hard", req: () => true },
+      ],
+      drought_gloss: [
+        { t: "wells around {name:ev_town} that had been shared were closed off", req: () => true },
+        { t: "the country the water had barely reached went to dust first, as it always does around {name:ev_town}", req: () => true },
+        { t: "there was enough at {name:ev_town} for some, which is how a drought becomes a quarrel", req: () => true },
+        { t: "the fields nearest the channels held, and everything past them at {name:ev_town} did not", req: () => true },
+        { t: "what water there was went where it had always gone, which at {name:ev_town} meant uphill", req: () => true },
+        { t: "the herds were sold off around {name:ev_town} at whatever the buyers cared to offer", req: () => true },
+        { t: "the shared wells at {name:ev_town} stopped being shared inside a season", req: () => true },
+        { t: "the ground furthest from the channels went first, as it does everywhere around {name:ev_town}", req: () => true },
+        { t: "the price of water at {name:ev_town} was set by the people who had some", req: () => true },
+        { t: "the channels at {name:ev_town} carried what there was to whoever owned them", req: () => true },
+        { t: "grazing around {name:ev_town} failed a season before the grain did", req: () => true },
+        { t: "the poorest ground at {name:ev_town} was the first to be given up", req: () => true },
+        { t: "what {name:ev_town} had stored was gone by the second summer", req: () => true },
+        { t: "the price of water at {name:ev_town} was set by whoever still had some", req: () => true },
+        { t: "the wells that had been common at {name:ev_town} stopped being common", req: () => true },
+      ],
+      drought_name: [
+        { t: "the scribes titled the dry page {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is what the dry page is headed", req: c => c.hasEvName },
+        { t: "the clerks headed the year {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the entry, and it is a short one", req: c => c.hasEvName },
+        { t: "the dry page is headed {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the name and the whole of the explanation", req: c => c.hasEvName },
+        { t: "the year went into the register as {name:ev_name}", req: c => c.hasEvName },
+        { t: "it survives as {name:ev_name}, three lines long", req: c => c.hasEvName },
+      ],
+      flood: [
+        { t: "the river rose over {name:ev_town} and took the low ground with it", req: () => true },
+        { t: "the water came up at {name:ev_town} in {num:ev_year} and did not stop at the wharves", req: () => true },
+        { t: "{name:ev_town} lost its low ground to the river", req: () => true },
+        { t: "the river went over its banks at {name:ev_town}", req: () => true },
+        { t: "in {num:ev_year} the river took back everything at {name:ev_town} that had been built on its floor", req: () => true },
+        { t: "the water stood in the streets of {name:ev_town} for a fortnight", req: () => true },
+        { t: "the river took the bottom of {name:ev_town}", req: () => true },
+        { t: "{name:ev_town} was under water to the second street", req: () => true },
+        { t: "the water came through {name:ev_town} in {num:ev_year} and stayed a fortnight", req: () => true },
+        { t: "the river went through {name:ev_town} rather than past it", req: () => true },
+        { t: "{name:ev_town} was under water from the wharves to the second street", req: () => true },
+        { t: "the water rose at {name:ev_town} in {num:ev_year} and took a fortnight to leave", req: () => true },
+        { t: "the {name:ev_town} banks gave and the river took the difference", req: () => true },
+        { t: "everything low at {name:ev_town} went under", req: () => true },
+        { t: "the river reclaimed what {name:ev_town} had built on its floor", req: () => true },
+      ],
+      flood_gloss: [
+        { t: "the fields, the founding wharves, whatever stood in the way at {name:ev_town}", req: () => true },
+        { t: "what the river took at {name:ev_town} it took from the people who could not afford to build higher", req: () => true },
+        { t: "the high streets of {name:ev_town} were dry throughout, as the high streets were built to be", req: () => true },
+        { t: "the warehouses at {name:ev_town} were emptied first, and the houses were not emptied at all", req: () => true },
+        { t: "the survey had marked that ground as floodable and {name:ev_town} had built on it anyway, because it was cheap", req: () => true },
+        { t: "the grain in store at {name:ev_town} was lost, and the grain was the year", req: () => true },
+        { t: "the ground that floods at {name:ev_town} is where the rents were low enough to reach", req: () => true },
+        { t: "everything stored at the {name:ev_town} wharves was a loss, and the stores were the year", req: () => true },
+        { t: "the river had done it before and the survey at {name:ev_town} said so", req: () => true },
+        { t: "the stores at {name:ev_town} were lost, and the stores were the year", req: () => true },
+        { t: "the ground that floods at {name:ev_town} is the only ground the poor could afford", req: () => true },
+        { t: "the {name:ev_town} wharves were rebuilt at public cost and the houses were not", req: () => true },
+        { t: "the survey had marked it and the leases at {name:ev_town} were signed anyway", req: () => true },
+        { t: "nobody at {name:ev_town} was compensated and nobody had expected to be", req: () => true },
+        { t: "the count of what the water took at {name:ev_town} was never completed", req: () => true },
+      ],
+      flood_name: [
+        { t: "the accounts call it {name:ev_name}, and they do not agree on how many it took", req: c => c.hasEvName },
+        { t: "it is filed as {name:ev_name}, with the count left blank", req: c => c.hasEvName },
+        { t: "it is entered as {name:ev_name}", req: c => c.hasEvName },
+        { t: "the accounts head it {name:ev_name} and stop counting there", req: c => c.hasEvName },
+        { t: "the water year is entered as {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the heading and the count is left open", req: c => c.hasEvName },
+        { t: "the clerks filed it under {name:ev_name} and moved on", req: c => c.hasEvName },
+        { t: "it is {name:ev_name} in the register and something shorter in {name:ev_town}", req: c => c.hasEvName },
+      ],
+      quake: [
+        { t: "the ground moved under {name:ev_town}, where the wall's own folding runs closest to the surface", req: () => true },
+        { t: "the ground gave under {name:ev_town} in {num:ev_year}", req: () => true },
+        { t: "the folding under {name:ev_town} slipped", req: () => true },
+        { t: "the rock under {name:ev_town} shifted, as rock under a fold does", req: () => true },
+        { t: "something let go beneath {name:ev_town} in {num:ev_year}", req: () => true },
+        { t: "{name:ev_town} sits on the fold, and in {num:ev_year} the fold moved", req: () => true },
+        { t: "the fold under {name:ev_town} moved for the first time in living memory", req: () => true },
+        { t: "{name:ev_town} felt the rock let go beneath it", req: () => true },
+        { t: "the earth shifted at {name:ev_town} in {num:ev_year}", req: () => true },
+        { t: "{name:ev_town} was shaken in {num:ev_year} and did not recover its shape", req: () => true },
+        { t: "the country under {name:ev_town} moved without warning", req: () => true },
+        { t: "there was an hour at {name:ev_town} when nothing stood still", req: () => true },
+        { t: "the fold beneath {name:ev_town} released what it had been holding", req: () => true },
+        { t: "{name:ev_town} lost streets to the ground itself", req: () => true },
+        { t: "the rock under {name:ev_town} settled by a few feet and took the town with it", req: () => true },
+      ],
+      quake_gloss: [
+        { t: "roads cracked, the pass shifted, and what stood on soft ground at {name:ev_town} did not stand after", req: () => true },
+        { t: "the ground under {name:ev_town} had been folding for longer than the realm has been counting", req: () => true },
+        { t: "what was built well at {name:ev_town} stood, and the rest was where the poor lived", req: () => true },
+        { t: "the pass above {name:ev_town} closed, and with it the only route that did not pay a tariff", req: () => true },
+        { t: "the masons at {name:ev_town} had known which streets would go, and had not been paid to say so", req: () => true },
+        { t: "nothing about it was a surprise to anyone who had read the survey of {name:ev_town}", req: () => true },
+        { t: "the pass above {name:ev_town} was days clearing, and the tariff on it was collected throughout", req: () => true },
+        { t: "the survey had marked the ground under {name:ev_town} and the building went on regardless", req: () => true },
+        { t: "what fell at {name:ev_town} fell where the mortar was cheapest", req: () => true },
+        { t: "the well shafts at {name:ev_town} closed and the water came up brown for a year", req: () => true },
+        { t: "what fell at {name:ev_town} was what had been built cheapest", req: () => true },
+        { t: "the road out of {name:ev_town} was impassable in both directions", req: () => true },
+        { t: "the count at {name:ev_town} was taken by the people who survived to take it", req: () => true },
+        { t: "nothing at {name:ev_town} was insured, because nothing at {name:ev_town} was insurable", req: () => true },
+        { t: "the survey had said what the ground under {name:ev_town} would do", req: () => true },
+      ],
+      quake_name: [
+        { t: "the record keeps it as {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the entry, and the entry is short", req: c => c.hasEvName },
+        { t: "the entry at {name:capital} reads {name:ev_name} and runs three lines", req: c => c.hasEvName },
+        { t: "it is filed as {name:ev_name}, under weather, which is wrong", req: c => c.hasEvName },
+        { t: "the register carries it as {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the entry, and it does not mention the ground", req: c => c.hasEvName },
+        { t: "the year is filed as {name:ev_name}", req: c => c.hasEvName },
+        { t: "the copy at {name:capital} heads it {name:ev_name}", req: c => c.hasEvName },
+      ],
+      storm: [
+        { t: "a storm came off the water and stood over the {name:ev_town} coast for three days", req: () => true },
+        { t: "the weather turned on {name:ev_town} in {num:ev_year} and stayed turned", req: () => true },
+        { t: "three days of storm sat on the coast at {name:ev_town}", req: () => true },
+        { t: "the sea came at {name:ev_town} for three days without stopping", req: () => true },
+        { t: "a storm out of the open water found {name:ev_town} in {num:ev_year}", req: () => true },
+        { t: "the wind held onto the {name:ev_town} shore and would not let go of it", req: () => true },
+        { t: "the water threw a storm at {name:ev_town} and held it there", req: () => true },
+        { t: "{name:ev_town} lost three days to the weather", req: () => true },
+        { t: "the coast at {name:ev_town} was under storm from the {num:ev_year} equinox", req: () => true },
+        { t: "the water came at {name:ev_town} out of a clear autumn", req: () => true },
+        { t: "{name:ev_town} was under weather for three days and under water for one", req: () => true },
+        { t: "the sea rose against {name:ev_town} in {num:ev_year}", req: () => true },
+        { t: "wind and water together took the {name:ev_town} shore apart", req: () => true },
+        { t: "the storm found {name:ev_town} first, as the storms do", req: () => true },
+        { t: "there was nothing between {name:ev_town} and the open water, and there never had been", req: () => true },
+      ],
+      storm_gloss: [
+        { t: "{name:ev_town} took the worst of it, as the exposed shore always does", req: () => true },
+        { t: "the shore that pays for the harbour in the good years paid again at {name:ev_town}", req: () => true },
+        { t: "the boats that could be hauled out were hauled out, and the people at {name:ev_town} who worked from them could not be", req: () => true },
+        { t: "the quay at {name:ev_town} held and the houses behind it did not, which tells you what the money was spent on", req: () => true },
+        { t: "the fleet at {name:ev_town} was insured and the crews were not", req: () => true },
+        { t: "what {name:ev_town} lost was a season, and a season is what most of it lives on", req: () => true },
+        { t: "the exposure that makes {name:ev_town} a harbour is the exposure that cost it the season", req: () => true },
+        { t: "what was insured at {name:ev_town} was replaced and what was not was not", req: () => true },
+        { t: "the wharves at {name:ev_town} were rebuilt within the year, and the houses behind them were not", req: () => true },
+        { t: "the shipping at {name:ev_town} was lost at anchor", req: () => true },
+        { t: "the roofs at {name:ev_town} went in the first night and the wharves in the second", req: () => true },
+        { t: "the crews at {name:ev_town} were not insured and the hulls were", req: () => true },
+        { t: "the exposure that makes {name:ev_town} a harbour is the exposure that emptied it", req: () => true },
+        { t: "the {name:ev_town} defences were built to the standard the ledgers would pay for", req: () => true },
+        { t: "what {name:ev_town} lost it lost in one season and repaid over ten", req: () => true },
+      ],
+      storm_name: [
+        { t: "{name:ev_name} is the name the survivors gave the year", req: c => c.hasEvName },
+        { t: "the year is kept as {name:ev_name}", req: c => c.hasEvName },
+        { t: "the clerks entered it as {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the year in every account that survives", req: c => c.hasEvName },
+        { t: "the year survives as {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the name that stuck", req: c => c.hasEvName },
+        { t: "the clerks wrote {name:ev_name} and the survivors agreed with them", req: c => c.hasEvName },
+        { t: "it is entered as {name:ev_name} and dated to the equinox", req: c => c.hasEvName },
+      ],
+      discovery: [
+        { t: "fortune turned at {name:ev_town}: a lode, a lost road, a relic worth the carrying", req: () => true },
+        { t: "something worth carrying was found at {name:ev_town} in {num:ev_year}", req: () => true },
+        { t: "{name:ev_town} found something the surveys had walked past", req: () => true },
+        { t: "a find was made at {name:ev_town} that nobody had budgeted for", req: () => true },
+        { t: "in {num:ev_year} the luck at {name:ev_town} turned, and turned upward", req: () => true },
+        { t: "what turned up at {name:ev_town} was worth more than the year it turned up in", req: () => true },
+        { t: "{name:ev_town} turned up something the surveys had missed", req: () => true },
+        { t: "a find at {name:ev_town} in {num:ev_year} changed what the ground was worth", req: () => true },
+        { t: "the luck at {name:ev_town} turned upward, and nobody had predicted it", req: () => true },
+        { t: "something under {name:ev_town} turned out to be worth carrying", req: () => true },
+        { t: "{name:ev_town} came into a piece of luck in {num:ev_year}", req: () => true },
+        { t: "what the surveys had walked past at {name:ev_town} was found by accident", req: () => true },
+        { t: "a lost road, a lode, a relic: the accounts of {name:ev_town} do not agree", req: () => true },
+        { t: "the ground at {name:ev_town} was suddenly worth the trouble", req: () => true },
+        { t: "{name:ev_town} found something and did not have to build it", req: () => true },
+      ],
+      discovery_gloss: [
+        { t: "the accounts differ on what it was, and the wagons all came the same way into {name:ev_town}", req: () => true },
+        { t: "people came back to ground at {name:ev_town} they had been leaving", req: () => true },
+        { t: "for one generation {name:ev_town} was worth going to", req: () => true },
+        { t: "the road to {name:ev_town} was repaired within the year, which no petition had managed in fifty", req: () => true },
+        { t: "the money arrived before the assessors did, which is the only order that ever helps {name:ev_town}", req: () => true },
+        { t: "nothing about {name:ev_town} had changed except what was known about it", req: () => true },
+        { t: "the wagons went to {name:ev_town} before the assessors did, which is the only order that helps", req: () => true },
+        { t: "for a while {name:ev_town} was somewhere to go rather than somewhere to leave", req: () => true },
+        { t: "what was found at {name:ev_town} was worth more than everything built there", req: () => true },
+        { t: "the wagons came to {name:ev_town} before anyone official did", req: () => true },
+        { t: "{name:ev_town} stopped being a place people left", req: () => true },
+        { t: "the assessment at {name:ev_town} caught up within three years", req: () => true },
+        { t: "for one generation {name:ev_town} was worth the journey", req: () => true },
+        { t: "what was found at {name:ev_town} outvalued everything built there", req: () => true },
+        { t: "the road to {name:ev_town} was mended by people who wanted to use it", req: () => true },
+      ],
+      discovery_name: [
+        { t: "the clerks file it as {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is how it is filed, without a description", req: c => c.hasEvName },
+        { t: "the register calls it {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the entry and the entry says nothing else", req: c => c.hasEvName },
+        { t: "it goes into the register as {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the heading and the contents are left vague", req: c => c.hasEvName },
+        { t: "the clerks called it {name:ev_name} without saying what it was", req: c => c.hasEvName },
+        { t: "the entry is {name:ev_name}, filed under fortune", req: c => c.hasEvName },
+      ],
+      ascendancy: [
+        { t: "the god's fortune rose at {name:ev_town}, and with it the town's", req: () => true },
+        { t: "the temple at {name:ev_town} came back into favour in {num:ev_year}", req: () => true },
+        { t: "the shrine at {name:ev_town} was busy again", req: () => true },
+        { t: "the pilgrim roads bent toward {name:ev_town} again", req: () => true },
+        { t: "in {num:ev_year} the faithful remembered {name:ev_town}", req: () => true },
+        { t: "what had gone quiet at {name:ev_town} was loud again within a season", req: () => true },
+        { t: "the roads bent back toward {name:ev_town}", req: () => true },
+        { t: "{name:ev_town} was a destination again by {num:ev_year}", req: () => true },
+        { t: "the god remembered {name:ev_town}, or the pilgrims did", req: () => true },
+        { t: "the pilgrim traffic found {name:ev_town} again", req: () => true },
+        { t: "{name:ev_town} became a destination in {num:ev_year} without doing anything", req: () => true },
+        { t: "the god's fortune turned toward {name:ev_town}", req: () => true },
+        { t: "the shrine at {name:ev_town} filled after a generation of standing empty", req: () => true },
+        { t: "what had been quiet at {name:ev_town} was loud again inside a season", req: () => true },
+        { t: "the roads bent, and they bent toward {name:ev_town}", req: () => true },
+      ],
+      ascendancy_gloss: [
+        { t: "pilgrims rerouted, coin followed the pilgrims, and the {name:ev_town} temple that had gone quiet was affluent again", req: () => true },
+        { t: "nothing about {name:ev_town} changed except where the roads decided to bend", req: () => true },
+        { t: "the coin arrived on foot, one pilgrim at a time, and {name:ev_town} counted it as a blessing", req: () => true },
+        { t: "the innkeepers at {name:ev_town} did better out of it than the priests, and said so quietly", req: () => true },
+        { t: "a shrine is a market that does not have to call itself one, and {name:ev_town} had one", req: () => true },
+        { t: "the favour was not asked for and the tariff on it was collected all the same at {name:ev_town}", req: () => true },
+        { t: "coin arrives at {name:ev_town} on foot when it arrives at all, and that year it arrived", req: () => true },
+        { t: "the shrine at {name:ev_town} did what no charter had managed, which was to bring people", req: () => true },
+        { t: "nothing at {name:ev_town} was built or found; the traffic simply changed its mind", req: () => true },
+        { t: "the inns at {name:ev_town} were full and the granaries followed", req: () => true },
+        { t: "coin walks into {name:ev_town} one pilgrim at a time, and it walked", req: () => true },
+        { t: "the {name:ev_town} temple that had been shut was funded again", req: () => true },
+        { t: "nothing was built at {name:ev_town} and everything was worth more", req: () => true },
+        { t: "the assessment at {name:ev_town} rose with the traffic, as it does", req: () => true },
+        { t: "the favour cost {name:ev_town} nothing and was not {name:ev_town}'s to keep", req: () => true },
+      ],
+      ascendancy_name: [
+        { t: "the faithful keep the year as {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is the year in the Temple's own count", req: c => c.hasEvName },
+        { t: "the Temple keeps the year as {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is what the faithful call it, and they call it that still", req: c => c.hasEvName },
+        { t: "the Temple's own count keeps it as {name:ev_name}", req: c => c.hasEvName },
+        { t: "{name:ev_name} is what the faithful call the year", req: c => c.hasEvName },
+        { t: "the pilgrim roads know it as {name:ev_name}", req: c => c.hasEvName },
+        { t: "it stands in the Temple register as {name:ev_name}", req: c => c.hasEvName },
+      ],
+
+      drought_coda: [
+        { t: "the herds around {name:ev_town} were sold at whatever was offered", req: () => true },
+        { t: "nothing at {name:ev_town} was rationed, which is a decision even when nobody makes it", req: () => true },
+        { t: "the water that was left at {name:ev_town} went where water always goes, which is to whoever owns the channel", req: () => true },
+        { t: "two dry years is not a disaster in {name:capital}'s ledgers and is one at {name:ev_town}", req: () => true },
+        { t: "the grain price at {name:ev_town} doubled and the wage did not", req: () => true },
+        { t: "what {name:ev_town} lost was the margin it had never been allowed to build", req: () => true },
+        { t: "the drought at {name:ev_town} was a shortage for some and a market for others", req: () => true },
+        { t: "nothing at {name:ev_town} was rationed, which is a decision even unmade", req: () => true },
+      ],
+
+      flood_coda: [
+        { t: "the survey had the {name:ev_town} floodline on it and the leases ignored it", req: () => true },
+        { t: "the wharves at {name:ev_town} were public and the warehouses were not, and only one of them was rebuilt at public cost", req: () => true },
+        { t: "nobody at {name:ev_town} was compensated, because nobody at {name:ev_town} had insured anything", req: () => true },
+        { t: "the river will do it again, and the {name:ev_town} leases still run to the water", req: () => true },
+        { t: "what stood high at {name:ev_town} stood dry, and what stood high was not where most people lived", req: () => true },
+        { t: "the count of the dead at {name:ev_town} is an estimate and always was", req: () => true },
+        { t: "the leases at {name:ev_town} still run to the water", req: () => true },
+        { t: "nobody at {name:ev_town} was compensated for ground they did not own", req: () => true },
+      ],
+
+      quake_coda: [
+        { t: "the pass above {name:ev_town} was the cheap route, and it was days before it was a route again", req: () => true },
+        { t: "the masons at {name:ev_town} had said which streets would go and had not been asked twice", req: () => true },
+        { t: "nothing under {name:ev_town} has settled, and the record does not pretend otherwise", req: () => true },
+        { t: "the rebuilding at {name:ev_town} used the same ground and the same mortar", req: () => true },
+        { t: "the fold runs the length of these {num:n_regions} regions and {name:ev_town} sits on it", req: () => true },
+        { t: "what the ground did at {name:ev_town} it had done before the realm was surveyed", req: () => true },
+      ],
+
+      storm_coda: [
+        { t: "the fleet at {name:ev_town} was insured and the crews were not", req: () => true },
+        { t: "the season is what {name:ev_town} lives on, and the season was the loss", req: () => true },
+        { t: "the quay at {name:ev_town} held because the quay had money spent on it", req: () => true },
+        { t: "the exposure that makes a harbour is the exposure that empties it, at {name:ev_town} as everywhere", req: () => true },
+        { t: "nothing was rebuilt at {name:ev_town} that did not earn its rebuilding", req: () => true },
+        { t: "the tariff at {name:ev_town} was collected that year on nothing", req: () => true },
+        { t: "what {name:ev_town} lost was a season, and a season is what it lives on", req: () => true },
+      ],
+
+      discovery_coda: [
+        { t: "the road to {name:ev_town} was repaired inside a year, which fifty years of petitions had not managed", req: () => true },
+        { t: "the money reached {name:ev_town} before the assessors, which is the only sequence that ever helps a town", req: () => true },
+        { t: "nothing about {name:ev_town} had changed except what was known about it", req: () => true },
+        { t: "the people who left {name:ev_town} before it came back did not come back", req: () => true },
+        { t: "for a generation {name:ev_town} was somewhere to arrive at", req: () => true },
+        { t: "what was found at {name:ev_town} was worth more than everything anyone had built there", req: () => true },
+        { t: "the people who had already left {name:ev_town} did not come back", req: () => true },
+        { t: "the road to {name:ev_town} was repaired in a year that fifty petitions had not moved", req: () => true },
+      ],
+
+      ascendancy_coda: [
+        { t: "a shrine is a market that need not call itself one, and {name:ev_town} had one", req: () => true },
+        { t: "the innkeepers at {name:ev_town} did better out of it than the priests did", req: () => true },
+        { t: "the coin came on foot, one pilgrim at a time, and {name:ev_town} counted every step of it", req: () => true },
+        { t: "nothing at {name:ev_town} was built, found or decided; the traffic changed its mind", req: () => true },
+        { t: "the Temple took its share at {name:ev_town} and the share was not small", req: () => true },
+        { t: "favour is not a resource anyone at {name:ev_town} can hold on to, and they knew it", req: () => true },
+        { t: "favour is not a thing anyone at {name:ev_town} can hold on to", req: () => true },
+        { t: "the Temple's share of what came to {name:ev_town} was taken first", req: () => true },
+      ],
+
+      blight_plague_coda: [
+        { t: "the burial rolls at {name:ev_town} were kept and the cause was not", req: () => true },
+        { t: "the ground around {name:ev_town} was fouled by a decision, and the fever was not", req: () => true },
+        { t: "nothing came to {name:ev_town} from {name:capital} except the assessment, on time", req: () => true },
+        { t: "those who could leave {name:ev_town} left, in the order their savings allowed", req: () => true },
+        { t: "the blight at {name:ev_town} was decades old and nobody had been charged for it", req: () => true },
+        { t: "what killed {name:ev_town} arrived last and is what the entry names", req: () => true },
+        { t: "nothing reached {name:ev_town} from {name:capital} except the assessment, on time", req: () => true },
+        { t: "the blight at {name:ev_town} was decades old and nobody was ever charged for it", req: () => true },
+      ],
+
+      refinery_collapse_coda: [
+        { t: "the charter for {name:ev_town} is still on file and refers to nothing standing", req: () => true },
+        { t: "the wire into {name:ev_town} was never taken up and never used again", req: () => true },
+        { t: "the magnates who left {name:ev_town} took the machinery and left the housing", req: () => true },
+        { t: "what {name:ev_town} was built for lasted one lode", req: () => true },
+        { t: "nobody at {name:ev_town} was paid to plan for this, and so nobody did", req: () => true },
+        { t: "the census still carries {name:ev_town} at the size it never returned to", req: () => true },
+        { t: "the census still carries {name:ev_town} at a size it never came back to", req: () => true },
+        { t: "nobody at {name:ev_town} was paid to think about the seam ending, so nobody thought about it", req: () => true },
+      ],
+
+      refinery_founded_coda: [
+        { t: "the copper to {name:ev_town} was laid faster than any road to {name:ev_town} ever was", req: () => true },
+        { t: "{name:ev_town} was worth wiring the moment it was worth taking from", req: () => true },
+        { t: "the towns the trunk line passed on the way to {name:ev_town} are not named in the charter", req: () => true },
+        { t: "what {name:ev_town} got was a decade, and it was told it was getting a future", req: () => true },
+        { t: "the assessment at {name:ev_town} was raised in the same season as the wages", req: () => true },
+        { t: "nothing was asked of {name:ev_town} and nothing was offered to it either", req: () => true },
+        { t: "the towns the trunk line passed on its way to {name:ev_town} are not in the charter", req: () => true },
+        { t: "the assessment at {name:ev_town} rose in the same season as the wages", req: () => true },
+      ],
+
+      relic_calamity_coda: [
+        { t: "the site by {name:ev_town} is sealed and the seal is the whole of the response", req: () => true },
+        { t: "nothing grows in the ring around {name:ev_town} and nothing is expected to", req: () => true },
+        { t: "the Temple's account of {name:ev_town} was written by the Temple", req: () => true },
+        { t: "what the old world left under {name:ev_town} was not surveyed before it was built over", req: () => true },
+        { t: "the people who lived nearest {name:ev_town} are the ones the record has least of", req: () => true },
+        { t: "the people nearest {name:ev_town} are the ones this record has least of", req: () => true },
+        { t: "the seal on the {name:ev_town} site is the whole of the response", req: () => true },
+        { t: "nothing was surveyed under {name:ev_town} before it was built on", req: () => true },
+      ],
+
+      tower_burned_coda: [
+        { t: "the darkness at {name:ev_town} predates the tower and outlasts it", req: () => true },
+        { t: "what was destroyed at {name:ev_town} was the only thing that had ever come", req: () => true },
+        { t: "the writ out of {name:capital} counts the offence and has no column for the treatment", req: () => true },
+        { t: "nothing chartered arrived at {name:ev_town} afterwards, and nothing unchartered did either", req: () => true },
+        { t: "the cost of it at {name:ev_town} is not written down anywhere in this record but here", req: () => true },
+        { t: "the darkness at {name:ev_town} was there before the tower and remains after it", req: () => true },
+        { t: "what was burned at {name:ev_town} was the only thing that ever came", req: () => true },
+        { t: "no charter offered {name:ev_town} an alternative and none was expected", req: () => true },
+      ],
+
+      tower_raised_coda: [
+        { t: "the grid never came to {name:ev_town}, and something did", req: () => true },
+        { t: "an apostate is what the absence of everything else produces at {name:ev_town}", req: () => true },
+        { t: "the writ that would have stopped it never reached {name:ev_town} in the first place", req: () => true },
+        { t: "the charter that forbids it does not reach as far as {name:ev_town}", req: () => true },
+        { t: "nothing legal was on offer at {name:ev_town} and this was", req: () => true },
+        { t: "an apostate at {name:ev_town} is what the absence of everything else produces", req: () => true },
+        { t: "the charter forbidding it does not reach as far as {name:ev_town}", req: () => true },
+      ],
+
+      embargo_coda: [
+        { t: "{name:ev_town} had no voice in the quarrel and paid the whole settlement", req: () => true },
+        { t: "the second fortune at {name:ev_town} was made on trade and unmade the same way", req: () => true },
+        { t: "the quays at {name:ev_town} stood full and still for a year", req: () => true },
+        { t: "nothing at {name:ev_town} was destroyed and everything at {name:ev_town} stopped", req: () => true },
+        { t: "the capital that closed the lanes has never heard of {name:ev_town}", req: () => true },
+        { t: "{name:ev_town} discovered what a fortune built on somebody else's politics is worth", req: () => true },
+      ],
+
+      courting_coda: [
+        { t: "an invitation costs less than a fleet, and {name:ev_harbor} is being invited", req: () => true },
+        { t: "{name:capital} saw it and chose to see nothing", req: () => true },
+        { t: "nothing signed at {name:ev_harbor} is still a change in what {name:ev_harbor} is", req: () => true },
+        { t: "the powers across the water prefer a charter at {name:ev_harbor} to a landing, and prefer both to neither", req: () => true },
+        { t: "what happens at {name:ev_harbor} next is not {name:ev_harbor}'s to decide", req: () => true },
+        { t: "what happens at {name:ev_harbor} next will not be decided at {name:ev_harbor}", req: () => true },
+        { t: "{name:capital} saw the envoys and recorded nothing", req: () => true },
+      ],
+    };
+
+    // One event's context: the chronicle's, plus what this event alone can name or
+    // count. Everything a `req` reads is precomputed here, so a predicate in the
+    // pool is a claim about the event and never a lookup into the model.
+    function eventCtx(c, ev, model, params, strikeEv) {
+      const FN = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };
+      const TITLE = { crown: "Sovereign", temple: "Hierarch", magnate: "First Magnate" };
+      const PLACE = { crown: "the throne", temple: "the censer", magnate: "the chair" };
+      const MEASURE = {
+        dumping_reform: "a Dumping Reform", grid_charter: "a Grid Charter",
+        toll_amnesty: "a Tariff Amnesty", retention_act: "a Retention Act",
+        crown_granary: "the Crown Granary",
+      };
+      const t = ev.region_id !== undefined ? c.town(ev.region_id) : null;
+      const reg = ev.region_id !== undefined ? model.regions.find(r => r.id === ev.region_id) : null;
+      const e = Object.create(c);
+      e.ev_town = t ? t.name : null;
+      e.ev_harbor = t ? harborName(t.name) : null;
+      e.ev_year = 1000 + 25 * ev.epoch;
+      e.ev_tier = t ? ({ metropolis: "the capital", city: "the city", "works-town": "the aetherworks town", "frontier-post": "the frontier post" }[t.tier] || t.name) : null;
+      e.hasEvName = !!ev.name; e.ev_name = ev.name || null;
+      e.ev_faction = FN[ev.faction] || "the Crown";
+      e.ev_their = ev.faction === "magnate" ? "their" : "its";
+      e.ev_burner = ev.faction === "crown" ? "the Crown's soldiers" : "the Temple's censors";
+      e.ev_title = TITLE[ev.faction] || "Sovereign";
+      e.ev_place = PLACE[ev.faction] || "the capital";
+      e.evContested = !!ev.contested;
+      e.evMeasure = ev.measure || null;
+      e.ev_measure = MEASURE[ev.measure] || "a measure the clerks did not title";
+      e.ev_power = ev.power || (ev.type === "courting" ? "the Rival" : "the Metropole");
+      e.ev_occupied = ev.occupied !== undefined ? ev.occupied : null;
+      e.hasEvSpan = ev.since !== undefined;
+      e.ev_span = ev.since !== undefined ? 25 * (ev.epoch - ev.since) : null;
+      // war: chained to a strike within two epochs, and who was fighting
+      e.warChained = !!(strikeEv && ev.type === "war" && ev.epoch > strikeEv.epoch && ev.epoch <= strikeEv.epoch + 2);
+      e.war_gap = strikeEv ? 25 * (ev.epoch - strikeEv.epoch) : null;
+      e.hasWarPowers = !!(ev.factions && ev.factions.length === 2);
+      e.war_powers = ev.factions ? `${FN[ev.factions[0]]} and ${FN[ev.factions[1]]}` : null;
+      // a strike that a war followed within two epochs
+      e.strikeWar = ev.type === "ore_strike" &&
+        model.events.some(w => w.type === "war" && w.epoch > ev.epoch && w.epoch <= ev.epoch + 2);
+      // the risings
+      e.evDominion = !!(reg && reg.occupiedEpoch !== -1 && reg.occupiedEpoch < ev.epoch);
+      e.evWon = ev.outcome === "won";
+      e.evArc = ev.arc || null;
+      // the terms
+      if (ev.type === "treaty" && ev.factions) {
+        const loser = ev.factions.find(f => f !== ev.winner);
+        e.ev_winner = FN[ev.winner] || "the winning side";
+        const their = loser === "magnate" ? "their" : "its";   // the magnates are plural and the ledger is theirs
+        e.ev_terms = (ev.ceded > 0 ? `${FN[loser]} ceded ${ev.ceded === 1 ? "a gate" : ev.ceded + " gates"}` : `${FN[loser]} ceded nothing but ${their} claim`) +
+          (ev.tribute > 0 ? ` and paid ${ev.tribute} in tribute out of ${their} ledger` : ` and kept ${their} ledger, which held little`);
+      }
+      const shrine = ev.type === "consecration" ? model.sanctionedSites.find(s => s.regionId === ev.region_id) : null;
+      e.hasEvShrine = !!shrine; e.ev_shrine = shrine ? shrine.name : null;
+      return e;
+    }
+
+    // One year-line, composed. Returns "" when the type has nothing gated true,
+    // which is how an unrecognized event still leaves no line.
+    function eventLine(ev, i, c, model, params, strikeEv, used) {
+      const e = eventCtx(c, ev, model, params, strikeEv);
+      const v = loomCompose({
+        register: "historian", frames: EVENT_FRAMES, pool: EVENT_POOL,
+        classes: eventClasses(ev.type), ctx: e, resolve: chronicleResolve,
+        rv: loomStream(params.seed, "chronicle", `ev#${i}#${ev.type}`),
+        used,
+      });
+      return v;
     }
 
     // ---- The findings, composed (D3, #139) ----------------------------------
@@ -7049,16 +8950,16 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       // -- the periodization ---------------------------------------------------
       ages: [
         { t: "the record divides into ages: {term:ages}", req: f => f.hasAges },
-        { t: "the run does not read as one period but as {num:n_ages}: {term:ages}", req: f => f.hasAges },
+        { t: "the run does not read as one period but as {num:n_ages}: {term:ages}", req: f => f.hasAges && f.n_ages > 1 },
         { t: "cut at the turns, the record gives {term:ages}", req: f => f.hasAges },
-        { t: "the epochs group into {num:n_ages} ages, {term:ages}", req: f => f.hasAges },
+        { t: "the epochs group into {num:n_ages} ages, {term:ages}", req: f => f.hasAges && f.n_ages > 1 },
         { t: "read as periods rather than years, it runs {term:ages}", req: f => f.hasAges },
-        { t: "the run breaks into {num:n_ages} periods rather than reading as one: {term:ages}", req: f => f.hasAges },
-        { t: "by the gini's own turns the record is {num:n_ages} ages: {term:ages}", req: f => f.hasAges },
+        { t: "the run breaks into {num:n_ages} periods rather than reading as one: {term:ages}", req: f => f.hasAges && f.n_ages > 1 },
+        { t: "by the gini's own turns the record is {num:n_ages} ages: {term:ages}", req: f => f.hasAges && f.n_ages > 1 },
       ],
       ages_gloss: [
-        { t: "the {num:n_ages} ages are cut from the same epoch series the timeline draws, so the two surfaces cannot disagree", req: () => true },
-        { t: "the {num:n_ages} cut points are the series' own, not an editor's", req: () => true },
+        { t: "the {num:n_ages} ages are cut from the same epoch series the timeline draws, so the two surfaces cannot disagree", req: f => f.n_ages > 1 },
+        { t: "the {num:n_ages} cut points are the series' own, not an editor's", req: f => f.n_ages > 1 },
         { t: "nothing chose those boundaries but the turns of the gini itself, {num:gini_t0} to {num:gini}", req: () => true },
         { t: "the same {num:n_epochs} epochs, grouped by where the curve bent", req: () => true },
       ],
@@ -7219,7 +9120,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       ],
       toll_gloss: [
         { t: "the drag those tariffs put on trade across the realm reads {num:trade_drag}", req: f => f.hasDrag && f.trade_drag > 0 },
-        { t: "{num:crossings_decayed} of {num:crossings} crossings are past their upkeep, which raises the charge again", req: f => f.hasDecay },
+        { t: "the upkeep has lapsed on {num:crossings_decayed} of {num:crossings} crossings, which raises the charge again", req: f => f.hasDecay },
         { t: "at every one of the {num:crossings} crossings the holder was decided by where the rock narrowed", req: f => f.hasCrossings },
         { t: "{num:crossings_decayed} of {num:crossings} crossings have fallen past their upkeep, which raises what the passage costs again", req: f => f.hasDecay },
         { t: "geology chose the {num:crossings} narrow places and whoever held them at the founding still does", req: f => f.hasCrossings },
@@ -7271,7 +9172,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         { t: "the reach here is commercial: **{num:conc_n}** {term:coast_is} a concession of {name:metropole}", req: f => f.hasConc },
         { t: "no fleet was needed for **{num:conc_n}** {term:coast_is}; a contract with {name:metropole} did it", req: f => f.hasConc },
         { t: "**{num:aband_n}** {term:coast_was} developed and then dropped", req: f => f.hasAband && !f.hasConc },
-        { t: "the empire came to **{num:aband_n}** {term:coast_was} and then stopped coming", req: f => f.hasAband && !f.hasConc },
+        { t: "the empire came to **{num:aband_n}** of these coasts and then stopped coming", req: f => f.hasAband && !f.hasConc },
       ],
       concessions_gloss: [
         { t: "richer than the median at **{num:conc_wealth}** against {num:median_wealth}, with **{num:foreign_claim}%** of the yield entered in {name:metropole}'s books: **it was developed and owned in the same ledger**", req: f => f.hasConc && f.concRicher },
@@ -7436,17 +9337,26 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
 
     // Compose the panel. Returns blocks, each with its own facts[], so the caller
     // can render and the suite can audit without either one parsing prose.
-    function composeFindings(model, params) {
+    // D4 (#140) parameterises the register and the surface. "What the Record Shows"
+    // was this same argument written a SECOND time in the historian's voice: same
+    // facts, same conditions, different words, maintained twice. The chronicle calls
+    // this now instead of carrying its own copy, which is also the only way the two
+    // surfaces cannot drift — a hazard the app already worried about for its pull
+    // quotes ("COMPUTED from the findings, never parsed from prose").
+    function composeFindings(model, params, opts) {
+      const o = opts || {};
+      const register = o.register || "analyst", surface = o.surface || "findings";
       const c = findingsCtx(model, params);
       const blocks = [];
       let factN = 0;
       for (const [claim, gloss] of FINDINGS_ORDER) {
+        if (o.skip && o.skip.includes(claim)) continue;
         if (!loomGate(FINDINGS_POOL, claim, c, undefined, new Set()).length) continue;
         if (claim === "closer") c.n_facts = factN;
         const v = loomCompose({
-          register: "analyst", frames: FINDINGS_FRAMES, pool: FINDINGS_POOL,
+          register, frames: FINDINGS_FRAMES, pool: FINDINGS_POOL,
           classes: [gloss ? [claim, gloss] : [claim]], ctx: c, resolve: findingsResolve,
-          rv: loomStream(params.seed, "findings", claim),
+          rv: loomStream(params.seed, surface, claim),
         });
         if (!v.text) continue;
         factN += v.facts.filter(f => f.path.startsWith("num:")).length;
@@ -7669,10 +9579,18 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     // else, so the whole paragraph is a pure function of (seed, surface, key, ctx).
     function loomCompose(spec) {
       const { register, frames, pool, classes, ctx, resolve, rv, band, open, close } = spec;
-      const facts = [], names = [], used = new Set(), surfaces = [], drawn = [];
+      const facts = [], names = [], surfaces = [], drawn = [];
+      // `spec.used` lets a caller share one tally across many composes, so a document
+      // that composes the same class fifty times does not say one clause twice. A
+      // shared tally can run a class dry, and an exhausted class is not the same as a
+      // class with nothing to say: it reuses rather than falling silent, because
+      // silence here would drop a beat the world actually has. Refusal stays with the
+      // gate, which is the only thing entitled to it.
+      const used = spec.used || new Set();
       const pick = (a) => a[Math.floor(rv() * a.length)];
       const draw = (cls) => {
-        const cands = loomGate(pool, cls, ctx, band, used);
+        let cands = loomGate(pool, cls, ctx, band, used);
+        if (!cands.length && spec.used) cands = loomGate(pool, cls, ctx, band, null);
         if (!cands.length) return null;
         const f = pick(cands);
         used.add(f.t); drawn.push(cls);
@@ -7820,6 +9738,15 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     function loomLint(pool) {
       const problems = [];
       for (const cls in pool) {
+        // A fragment repeated inside its own class is invisible to every other check
+        // here: it lints clean, it audits clean, and it quietly doubles its own draw
+        // probability. #140 shipped nine of them before this looked for them.
+        const said = new Set();
+        for (const f of pool[cls]) {
+          const key = String(f && f.t === undefined ? f : f.t).toLowerCase().replace(/[^a-z ]/g, "");
+          if (said.has(key)) problems.push(`${cls}: ${JSON.stringify(key.slice(0, 48))} — appears twice in its own class`);
+          said.add(key);
+        }
         for (const f of pool[cls]) {
           const t = String(f && f.t === undefined ? f : f.t);
           const at = `${cls}: ${JSON.stringify(t.slice(0, 48))}`;
@@ -7921,4 +9848,10 @@ export {
   loomSkeleton, loomDiversity, loomDiversityFloor, loomMeetsFloor, loomLint,
   // The findings, composed on the loom (D3, #139)
   FINDINGS_POOL, FINDINGS_ORDER, FINDINGS_FRAMES, composeFindings, findingsCtx,
+  // The chronicle, composed on the loom (D4, #140)
+  CHRONICLE_POOL, CHRONICLE_FOUNDING, CHRONICLE_STATE,
+  CHRONICLE_YEARS_OPEN, CHRONICLE_YEARS_CLOSE, CHRONICLE_FRAMES, chronicleCtx, chronicleBeat,
+  EVENT_POOL, EVENT_FRAMES, EVENT_CLASSES, eventClasses, eventCtx, eventLine,
+  chronicleResolve, CHRONICLE_FIXED,
+  RUIN_SAID, AGE_SAID, FATE_SAID,
 };

@@ -1,106 +1,109 @@
 # A Chronicle of the Hinterland
 
-*The world called "fix-3". Written down at Comfre in the year 1250, during the reign of Larkholl.*
+*The record of the world called "fix-3", kept at Comfre and closed in 1250 under Larkholl.*
 
 ## The Founding, Year 1000
 
-This record covers a realm of 12 settled regions, with its capital at Comfre. The wind comes from the northeast. Most of what follows was set by the ground itself: where the aetherstone lies, where the land will carry a road, and where it won't.
+12 regions, one capital at Comfre, and this account of both, so where the ore sits and where a wagon can climb explain more of the next 12 pages than any decree does.
 
-No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held 12,856 people to the median town's 3,050. The bigger a town got, the faster it grew.
+At the founding the biggest town held 12856 and the middling one 3050. Centuries of it across 12 regions: good land paid, trade drew, and growth went to whatever was already growing.
 
-The aetherworks at Comfre refine aetherstone into lumen, and the trunk lines run from them to the capital. The Temple holds sacred ground at Velle (by Mariellenne Delf), out where the aetherstone lies and the Crown's authority is weak. 6 settlements started off the grid: reachable by road, but with no power line, because the ledgers said wiring them wouldn't pay.
+The refining is done at Comfre and consumed where it is made. The founding left 6 settlements dark, on an arithmetic nobody in them was shown.
 
-There is also the Tanneyholt Lane: lift-barges running between Comfre and Mariellenne Delf, over the walls, fords, and gates below. The lanes go where the ground is hardest and the cargo most valuable, and you pay to board at the aerie. The road is open to everyone; the sky isn't.
+Above all of it runs the Tanneyholt Lane, lift-barges between Comfre and Mariellenne Delf that cross what the roads must go around; a fare at the aerie buys what the Tanneyholt saves, and the saving was never going to be shared.
 
-The Vrathul Teeth, Zolgrak Teeth, Skornathul Teeth and Rumkelth Teeth wall off the country, and the roads across them go through Tral Stair, Krak Stair and Drak Pass. 6 regions sit in the mountains' shadow, cut off from Comfre by the wall. That costs them, as the record will show.
+The Vrathul Teeth, Zolgrak Teeth, Skornathul Teeth and Rumkelth Teeth wall off the country, and the roads across go through Tral Stair, Krak Stair and Drak Pass, and the wall puts 6 regions behind it, further from Comfre than the map alone would say.
 
-The Lindenholt Beck runs down from the high ground by Osterewick through 3 regions to the border. The towns drink from it in order: Osterewick gets it clean; Quillton, at the mouth, gets whatever every town and aetherworks upstream have dumped in. Nobody at the mouth chose to be last. The land decided that.
+Open water lies to the south, and it is drawn as Brook Waters, though the outward trade of the realm goes through Comfre Harbor and pays there.
 
-The sea lies to the south, and the charts call it Brook Waters. The realm's gate is Comfre Harbor: everything the mines raise and the aetherworks refine leaves through it, and whoever holds the quay collects the tariff. How far a town sits from the water was luck, decided at the founding like everything else.
+3 regions take their water from the Lindenholt Beck, which starts above Osterewick. No charter allocated the Lindenholt Beck, and the allocation is the steepest thing in this record.
 
-The old world is still here: the delve called Zarrek gapes in the old workings by Gruggath, the tomb of Kyrisiel keeps its silence in the barrens by Drennath and the deadhold of Santhe stands empty by Mariellenne Delf, and its ground is poisoned yet. Delvers work the Mariellenne Delf road every season, because it pays when nothing else does. Not all of them come back, and what they carry out is sold off the books.
+What came before has not gone: the delve called Zarrek gapes in the old workings by Gruggath, Kyrisiel was buried by Drennath before the founding and has not been disturbed and the deadhold of Santhe stands empty by Mariellenne Delf, and its ground is poisoned yet. Delvers work the Mariellenne Delf road every season because it pays when nothing else does, not all of them come back, and what they carry out is sold off the books.
 
-Past the last boundary stone, by Mariellenne Delf, the lawless keep their own harbor: Wolt Quay. No charter lists it, no gate taxes it, and assessors who visit don't come back a second time. Anything the realm won't carry on its books leaves through here, and the ground around it keeps what the gates would have taken.
+Wolt Quay keeps the water past the last stone by Mariellenne Delf, on nobody's charter, and Wolt Quay exists because the realm's own rules made it profitable, which is the only reason anything exists here.
 
-High above the roads, by Surzethrak, stands Lorne Refuge, holy ground the Temple never sanctioned and can't forgive. It heals anyone who climbs to it and asks nothing. The census never climbs that far, so the people it shelters go uncounted. Pilgrims walk to it alongside the official roads, which the Temple is reminded of every festival.
+Lorne Refuge stands above Surzethrak on ground no authority granted. Pilgrims walk to Lorne Refuge alongside the official roads, which the Temple is reminded of every festival.
 
-The rivers are crossed at Quillton Bridge alone; everywhere else the banks are marsh and the water must be forded, and the fords are where the wagons drown. Whoever holds a bridge holds a queue of people who cannot go around.
+The realm's crossings are Quillton Bridge. The alternative to the single span is a ford, and across 12 regions the fords are counted in wagons rather than in tariffs.
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1025), when the gap narrowed, **the Gated Age** (1050–1100), when the gap held, **the Return** (1125–1150), when the gap widened and **the Age of Tariffs** (1175–1250), when the gap held. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+Read at a distance the years are **the Quiet Years** (1000–1025), when the distance shrank, **the Gated Age** (1050–1100), when the shape of the realm sat still, **the Return** (1125–1150), in which the gap got wider and **the Age of Tariffs** (1175–1250), when the gap held. And nothing named those 4 periods but the shape of the record: the pile-ups, the levies, and the towns that went dark.
 
-**Year 1025.** Politics in a capital Comfre had never seen closed the sea lanes to it. A quarrel between the Vantreth Imperium and the Metropole became Comfre's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
+**Year 1025.** A quarrel between the Vantreth Imperium and the Metropole became the ruin of Comfre, so Comfre had built on foreign trade, and foreign trade was withdrawn. The capital that closed the lanes has never heard of Comfre.
 
-**Year 1025.** The magnates pressed their claim on the crossing at Comfre. No blood is recorded. The claim was made on paper, and the tariff kept it.
+**Year 1025.** The magnates seized the crossing at Comfre in 1025, so the magnates collects at Comfre and maintains nothing. Nobody who crosses at Comfre was asked, and nobody who crosses there has another way round.
 
-**Year 1025.** The rains failed over Comfre, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1025.
+**Year 1025.** The rains failed over Comfre, and failed again; the country the water had barely reached went to dust first, as it always does around Comfre. The grain price at Comfre doubled and the wage did not, so the Drought of 1025 is the entry, and it is a short one.
 
-**Year 1050.** The rains failed over Comfre, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1050.
+**Year 1050.** The country around Comfre dried from the edges inward. What water there was went where it had always gone, which at Comfre meant uphill. Nothing at Comfre was rationed, which is a decision even when nobody makes it: the Drought of 1050 is what the dry page is headed.
 
-**Year 1075.** The aetherworks at Comfre failed. The seam it drew from was mined to nothing, and the wages stopped a season before the wires did.
+**Year 1075.** Comfre lost its aetherworks in 1075. The charter for Comfre is still on file at Comfre and refers to nothing. The census still carries Comfre at a size it never came back to.
 
-**Year 1075.** The Crown moved on the gate at Comfre and held it. There was no fight worth recording. The first tariff notice went up before the ink on the claim was dry.
+**Year 1075.** The Crown put a claim on the Comfre crossing and made it stick: the fee at Comfre was set by whoever could set it. One more of the realm's 12 regions now pays to leave itself.
 
-**Year 1100.** Diggers hit rich ore under Surzethrak where no one had thought to look. Within a season the town had tripled, and the price of a bed had tripled with it.
+**Year 1100.** A lode no survey had found came up under Surzethrak in 1100. And Surzethrak filled overnight with people who had nothing but a shovel and a claim.
 
-**Year 1100.** The old First Magnate died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Dhordruk took the chair. Some who objected were killed, and the objections did not stop.
+**Year 1100.** The succession of 1100 was decided by force and recorded as a succession. The quarrel was settled the way quarrels over the chair are settled, and Dhordruk settled it. Nothing about the arrangement over 12 regions turned on whether the name was Dhordruk.
 
-**Year 1100.** The rains failed over Coltby, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1100.
+**Year 1100.** Coltby went two seasons without water; there was enough at Coltby for some, which is how a drought becomes a quarrel. The water that was left at Coltby went where water always goes, which is to whoever owns the channel; the scribes titled the dry page the Drought of 1100.
 
-**Year 1125.** The capital chartered aetherworks at Comfre. The wires reached it fast, because someone had already decided the ore was worth the copper.
+**Year 1125.** Aetherworks were chartered at Comfre in 1125. The census at Comfre was out of date within the year. Comfre was worth wiring the moment it was worth taking from.
 
-**Year 1125.** The old Sovereign died, and Evere took the capital without incident. That is rare enough to be worth recording.
+**Year 1125.** The Sovereign died in 1125, and the transfer of the throne took a fortnight, and the peaceful ones are the short entries, and Evere got a short entry. The 12 regions were informed by notice that Evere had the title.
 
-**Year 1125.** The magnates took the gate at Comfre. A gate is a quay, a span, or a pass, and whoever holds it holds a line of people who cannot go around. The tariff was posted by winter.
+**Year 1125.** The crossing at Comfre belonged to the magnates by the end of the year, and the people who used the Comfre crossing found the fee waiting the next market day. One more of the 12 regions now pays a stranger to leave itself.
 
-**Year 1125.** The ground moved under Drennath, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Drennath Quake.
+**Year 1125.** The country under Drennath moved without warning: roads cracked, the pass shifted, and what stood on soft ground at Drennath did not stand after. The pass above Drennath was the cheap route, and it was days before it was a route again, so the Drennath Quake is the entry, and it does not mention the ground.
 
-**Year 1125.** The god's fortune rose at Mariellenne Delf, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Mariellenne Delf.
+**Year 1125.** The god remembered Mariellenne Delf, or the pilgrims did. The shrine at Mariellenne Delf did what no charter had managed, which was to bring people. The innkeepers at Mariellenne Delf did better out of it than the priests did. And the faithful keep the year as the Rise of Mariellenne Delf.
 
-**Year 1150.** the Vantreth Imperium sent envoys to Comfre Harbor, and the capital pretended not to notice. Nothing was signed. A rich coast the Metropole has not yet claimed is a coast worth courting, and the powers across the sea prefer to be invited. This is how the next annexation usually begins.
+**Year 1150.** The Vantreth Imperium found Comfre Harbor interesting and said as much. And a rich coast the Metropole has not yet claimed is a coast worth courting, and Comfre Harbor is rich. What happens at Comfre Harbor next is not Comfre Harbor's to decide.
 
-**Year 1150.** The old Hierarch died, and Rosane took the censer without incident. That is rare enough to be worth recording.
+**Year 1150.** The Hierarch was buried and Rosane was installed in the same month, so what changed at Comfre was a name at the head of the page. Across 12 regions the only thing that changed was a name, and the name is Rosane.
 
-**Year 1150.** The rains failed over Mariellenne Delf, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1150.
+**Year 1150.** The water table under Mariellenne Delf dropped below the wells: the shared wells at Mariellenne Delf stopped being shared inside a season. What Mariellenne Delf lost was the margin it had never been allowed to build, and the Drought of 1150 is the name and the whole of the explanation.
 
-**Year 1150.** The ground moved under Drennath, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Drennath Quake.
+**Year 1150.** Drennath lost streets to the ground itself, so the count at Drennath was taken by the people who survived to take it. Nothing under Drennath has settled, and the record does not pretend otherwise, so the Drennath Quake is the entry, and the entry is short.
 
-**Year 1150.** A storm came off the water and stood over the coast for three days. Comfre took the worst of it, as the exposed shore always does; the Great Storm of 1150 is the name the survivors gave the year.
+**Year 1150.** The water came at Comfre out of a clear autumn. And the shore that pays for the harbour in the good years paid again at Comfre. What Comfre lost was a season, and a season is what it lives on. The year survives as the Great Storm of 1150.
 
-**Year 1150.** Surzethrak rose, and was put down. The constabulary arrived after the hangings. The injustice that caused the rising was written down in full and then left alone. The people keep the date as the Surzethrak Rising.
+**Year 1150.** What began at Surzethrak in 1150 was over by the autumn. The injustice that caused it was written down in full and then left alone, and Surzethrak was left with it. The people keep the date as the Surzethrak Rising.
 
-**Year 1175.** The ground moved under Drennath, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Drennath Quake.
+**Year 1175.** The ground gave under Drennath in 1175; the masons at Drennath had known which streets would go, and had not been paid to say so. What the ground did at Drennath it had done before the realm was surveyed, and the year is filed as the Drennath Quake.
 
-**Year 1200.** The old Sovereign died, and Larkholl took the capital without incident. That is rare enough to be worth recording.
+**Year 1200.** Nothing was disputed when the Sovereign died, and Larkholl took the throne; no gate changed hands over it, which the clerks at Comfre noted as unusual. In none of the 12 regions is a Sovereign chosen by the people who live under one, and Larkholl is no exception.
 
-**Year 1225.** The old First Magnate died, and Vralgrok took the chair without incident. That is rare enough to be worth recording.
+**Year 1225.** Vralgrok succeeded the old First Magnate and nobody contested it, so Vralgrok inherited the arrangement whole and changed none of it. The 12 regions kept paying through it, to Vralgrok instead.
 
-**Year 1225.** The river rose over Quillton and took the low ground with it: the fields, the founding wharves, whatever stood in the way. The accounts call it the Quillton Flood, and they do not agree on how many it took.
+**Year 1225.** Quillton lost its low ground to the river, so the stores at Quillton were lost, and the stores were the year. What stood high at Quillton stood dry, and what stood high was not where most people lived: it is entered as the Quillton Flood.
 
-**Year 1225.** A storm came off the water and stood over the coast for three days. Comfre took the worst of it, as the exposed shore always does; the Great Storm of 1225 is the name the survivors gave the year.
+**Year 1225.** There was nothing between Comfre and the open water, and there never had been, so the quay at Comfre held and the houses behind it did not, which tells you what the money was spent on. The quay at Comfre held because the quay had money spent on it. And the Great Storm of 1225 is the name the survivors gave the year.
 
-The years leave names behind them. The realm now speaks of Comfre the Open, Gruggath the Open, Tarkfiere the Shadowed, Quillton the Steadfast, Mariellenne Delf the Hollow, Drennath the Hollow, Osterewick the Shadowed, Wordmere the Open, Surzethrak the Ashen, Coltby the Shadowed and Tarrewood the Shadowed: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
+11 places now answer to what happened to them: Comfre the Open, Gruggath the Open, Tarkfiere the Shadowed, Quillton the Steadfast, Mariellenne Delf the Hollow, Drennath the Hollow, Osterewick the Shadowed, Wordmere the Open, Surzethrak the Ashen, Coltby the Shadowed and Tarrewood the Shadowed. And those 11 bynames were granted by no charter and can be lifted by no decree, which makes them the plainest record in this document.
 
 ## The State of the Realm, Year 1250
 
-Of the realm's 10 settled regions, 1 rose through the years, 7 held steady, 1 declined and 1 collapsed outright.
-2 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Drennath and Surzethrak, but the roads have stopped going there.
-And 1 place has come back as something else. Mariellenne Delf stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
-Mariellenne Delf is the emptiest of the ghost country. Its best years are gone, and the roads no longer go there.
+The 10 settled regions came out of the years as follows: 1 ended richer than at the founding, 7 stayed put, 1 slid and 1 failed, though the roads to those 2 deadholds were never closed, they were simply stopped being taken.
 
-The Crown holds 9 regions, the Temple 1, the magnates 0; 1 are contested between them, and 1 answer to no one at all.
+What the years emptied comes to 2 holdings.
 
-Of the realm's 5 gates, meaning the bridges, the passes, and the quays, the Crown keeps 3, the Temple 0, and the magnates 1. 1 stand untolled. Every levy on the list is paid by people who did not choose the road.
+Mariellenne Delf stands on ground the record had already closed. And it stands under a name in a different tongue than the one the Comfre charts carried before.
 
-The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the magnates stand nearest to blows.
+The emptiest place in the record is Mariellenne Delf, which the roads have given up on.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.8 in every hundred of the realm's people hold 38.6 of every hundred coins, and live 16 times better than the people who work for them. The gap is sharpest at Comfre, where 66 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 31 parts in a hundred of the whole spread.
+The realm divides 9 to the Crown, 1 to the Temple and 0 to the magnates. A further 1 of the 12 regions acknowledge no authority at all.
 
-2 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
+The bridges, passes and quays number 5: Crown 3, Temple 0, magnates 1. The one that charges nothing charges nothing because nobody found it worth holding, and the other 5 do.
+
+The Crown came out of the years with the deepest ledger: what the gates earn buys more gates, and of the powers the Crown and the magnates are the pair worth watching.
+
+The division that decides most lives here is 3.8 against 38.6, and it is inside the towns. And the ratio is 16 to one, owner to labour, and at Comfre it reaches 66 coins in the hundred.
+
+The wire still does not reach 2 settlements. A projection drew that line and 2 settlements fell the wrong side of it.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.39. It turned on the rising at Surzethrak in 1150, which was put down. The realm's poorest fifth of towns carries 1.7 times the blight of its richest fifth. Behind the Vrathul wall, the median settlement earns 50 in the hundred less than the open country at the same distance. 2 regions sit off the grid because the ledgers said serving them would not pay. Quillton drinks 7 points of other towns' poison, only because it stands at the mouth. 9 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.8 in a hundred hold 38.6 of every hundred coins, and live 16 times better than the rest. The skyway would cut 32 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it.
+The record closes with what the numbers say about 12 regions. The gap kept its place, 0.38 to 0.39 across the whole run, and the founding roll set 0.38 and the centuries did the rest. The hinge is 1150, when the rising came and was crushed. The record divides into ages: the Quiet Years (1000–1025, gini 0.42 → 0.33), the Gated Age (1050–1100, gini 0.31 → 0.33), the Return (1125–1150, gini 0.37 → 0.41), the Age of Tariffs (1175–1250, gini 0.43 → 0.43). The 4 cut points are the series' own, not an editor's. Sorted by wealth, the towns give a blight ratio of 1.7×, poorest fifth to richest. Nobody sited an aetherworks to reach 1.7×; the ratio is what the siting rule produced. Wealth clusters at Moran's I 0.240 and blight at -0.005, where no structure would give -0.091, and so neighbouring cells resemble each other by construction here, so treat the figure as a property of the generated map (p 0.030 / 0.245). At equal distance from the capital, the country behind the Vrathul earns 50% less, though the roads across it go through 4 crossings and no further. Quillton drinks what 12 regions upstream of it discard: 7 points: nobody in Quillton chose to be last in the queue. A tariff falls on 9 regions at gates chosen by geology and held by someone else, and geology chose the 4 narrow places and whoever held them at the founding still does. The size distribution is a rank-size hierarchy, fitted at α 1.66 overall and α 0.80 in the tail, and so the law was written in at the founding by proportional growth, so it is not evidence of anything; the slope is, at α 0.80 and fit 0.99. Measured in distance saved, the skyway gives the shadow 32% and the open country 0%. The fare sorts who gets the 32%, and it is not the country that needs it.
 
-No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.
+Not one of the 25 figures here was chosen; each is what the rules returned, and each recomputes from the exported columns.

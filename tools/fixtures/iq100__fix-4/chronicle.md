@@ -1,115 +1,117 @@
 # A Chronicle of the Hinterland
 
-*The world called "fix-4". Written down at Rushold in the year 1250, during the reign of Calden.*
+*Compiled at Rushold, year 1250, in the reign of Calden, of the world called "fix-4".*
 
 ## The Founding, Year 1000
 
-This record covers a realm of 12 settled regions, with its capital at Rushold. The wind comes from the southeast. Most of what follows was set by the ground itself: where the aetherstone lies, where the land will carry a road, and where it won't.
+What follows concerns 12 regions and the capital that counts them, Rushold, so with the wind out of the southeast, almost everything here follows from where the aetherstone lies and where the ground will take a road.
 
-No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held 11,598 people to the median town's 3,160. The bigger a town got, the faster it grew.
+At the founding the spread ran 3160 to 11598, and nobody set it. Centuries of it across 12 regions: good land paid, trade drew, and growth went to whatever was already growing.
 
-The aetherworks at Rushold refine aetherstone into lumen, and the trunk lines run from them to the capital. The Temple holds sacred ground at Delle (by Drolvek Diggings), out where the aetherstone lies and the Crown's authority is weak. 5 settlements started off the grid: reachable by road, but with no power line, because the ledgers said wiring them wouldn't pay.
+Rushold holds the aetherworks and the whole of the grid that draws on them. The Temple holds sacred ground at Delle (by Drolvek Diggings), out where the aetherstone lies and the capital's authority is weak.
 
-No skyway was built here. The ledgers found no lane worth the lift.
+The ledgers looked at all 12 regions and found no route worth an aerie: every load in these 12 regions moves at the pace of the worst stretch of its road.
 
-The Thulvek Teeth and Murgek Teeth wall off the country, and the roads across them go through Skarruk Stair. 3 regions sit in the mountains' shadow, cut off from Rushold by the wall. That costs them, as the record will show.
+Thulvek Teeth and Murgek Teeth divide the realm, crossed only at Skarruk Stair. The wall does not care who is behind it, and 3 regions are.
 
-The Glenmook Rill runs down from the high ground by Coldbeck through 2 regions to the border. The towns drink from it in order: Coldbeck gets it clean; Asteaderen, at the mouth, gets whatever every town and aetherworks upstream have dumped in. Nobody at the mouth chose to be last. The land decided that.
+The sea lies to the north and east, and the charts call it Wick Expanse and Gord Reach, and the outward trade of the realm goes through Rushold Harbor and pays there.
 
-The sea lies to the north and east, and the charts call it Wick Expanse and Gord Reach. The realm's gate is Rushold Harbor: everything the mines raise and the aetherworks refine leaves through it, and whoever holds the quay collects the tariff. How far a town sits from the water was luck, decided at the founding like everything else. Sailors keep well clear of the Lyane, where the sea turns on itself; no quay was ever built within its reach.
+The Glenmook Rill falls from Coldbeck and crosses 2 regions on its way out, so the towns drink from it in order, so Coldbeck gets it clean and Asteaderen at the mouth gets whatever every town and aetherworks above has put in it.
 
-The old world is still here: the delve called Dovruk gapes in the old workings by Drolvek Diggings, the tomb of Kyrivalene keeps its silence in the barrens by Comfre Fell and the delve called Vornhek gapes in the old workings by Nether Gnathok. Delvers work the Dunhold road every season, because it pays when nothing else does. Not all of them come back, and what they carry out is sold off the books.
+The old world is still here: the delve called Dovruk gapes in the old workings by Drolvek Diggings, the tomb of Kyrivalene keeps its silence in the barrens by Comfre Fell and the delve called Vornhek gapes in the old workings by Nether Gnathok, so delvers work the Dunhold road every season because it pays when nothing else does, not all of them come back, and what they carry out is sold off the books.
 
-High above the roads, by Nether Gnathok, stands Ysethe Refuge, holy ground the Temple never sanctioned and can't forgive. It heals anyone who climbs to it and asks nothing. The census never climbs that far, so the people it shelters go uncounted. Pilgrims walk to it alongside the official roads, which the Temple is reminded of every festival.
+Ysethe Refuge stands above Nether Gnathok on ground no authority granted; Ysethe Refuge heals anyone who climbs to it and asks nothing, the census never climbs that far, and the people it shelters go uncounted.
 
-Apostates keep Comfre Fell Tower and Coldbeck Tower, out where the constabulary line fails and the grid never came, selling in the darkness what the grid will not carry. The Temple calls it heresy; the magnates call it competition; the people it heals call it the only healer who ever came.
+Apostates keep Comfre Fell Tower and Coldbeck Tower, past the last wire and the last constabulary, so what those 2 towers offer is what the wire refuses to deliver, which is why three different authorities have three different words for it.
 
-The rivers are crossed at Coldbeck Bridge and Asteaderen Bridge; everywhere else the banks are marsh and the water must be forded, and the fords are where the wagons drown. Whoever holds a bridge holds a queue of people who cannot go around.
+There are spans at Coldbeck Bridge and Asteaderen Bridge and nowhere else, though a span is a queue that cannot go around, and there are 2 queues.
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Quiet Years** (1000–1000), when the gap held, **the Emptying** (1025–1125), when the gap widened and **the Ordinary Age** (1150–1250), when the gap narrowed. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+The run divides into 3 ages, named from the record itself: **the Quiet Years** (1000–1000), when the shape of the realm sat still, **the Emptying** (1025–1125), when the distance grew and **the Ordinary Age** (1150–1250), when the spread closed up. Nobody in the 12 regions was told they were living in any of them.
 
-**Year 1025.** Politics in a capital Rushold had never seen closed the sea lanes to it. A quarrel between the Corvine League and the Metropole became Rushold's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
+**Year 1025.** A quarrel between the Corvine League and the Metropole became the ruin of Rushold. And the cargoes stopped coming, and the coast that had rivalled Rushold went bust in a single year. The second fortune at Rushold was made on trade and unmade the same way.
 
-**Year 1025.** The magnates took the gate at Rushold. A gate is a quay, a span, or a pass, and whoever holds it holds a line of people who cannot go around. The tariff was posted by winter.
+**Year 1025.** The magnates took the gate at Rushold: nothing about the crossing at Rushold changed except who collected at it. Gates are the cheapest thing in the realm to take and the dearest to be under, at Rushold as anywhere.
 
-**Year 1025.** The rains failed over Drolvek Diggings, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1025.
+**Year 1025.** Drolvek Diggings watched its ground go pale and then go hard, and the fields nearest the channels held, and everything past them at Drolvek Diggings did not. The herds around Drolvek Diggings were sold at whatever was offered. The Drought of 1025 is what the dry page is headed.
 
-**Year 1050.** Fortune turned at Rushold: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Rushold Find.
+**Year 1050.** Rushold came into a piece of luck in 1050, and Rushold stopped being a place people left. Nothing about Rushold had changed except what was known about it, so the Rushold Find is the heading and the contents are left vague.
 
-**Year 1075.** The old Sovereign died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Kelmook took the capital. Some who objected were killed, and the objections did not stop.
+**Year 1075.** The Sovereign died without settling who came next. The quarrel was settled the way quarrels over the throne are settled, and Kelmook settled it. The 12 regions kept paying through it, to Kelmook instead.
 
-**Year 1075.** The old First Magnate died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Brolt took the chair. Some who objected were killed, and the objections did not stop.
+**Year 1075.** The succession of 1075 was decided by force and recorded as a succession. And nothing in the 12 regions was governed while it ran, and it ran for years. The First Magnate changes and the arrangement does not, and Brolt inherits it entire.
 
-**Year 1075.** A storm came off the water and stood over the coast for three days. Rushold took the worst of it, as the exposed shore always does; the Great Storm of 1075 is the name the survivors gave the year.
+**Year 1075.** The wind held onto the Rushold shore and would not let go of it, so the boats that could be hauled out were hauled out, and the people at Rushold who worked from them could not be. Nothing was rebuilt at Rushold that did not earn its rebuilding. And the Great Storm of 1075 is the year in every account that survives.
 
-**Year 1100.** the Vantic Crown did not send a fleet to Rushold Harbor. It sent factors and a charter. The aetherworks were bought, the coast was wired to the sea within the season, and money came in to build. The town grew richer than it had ever been. The registers at the capital still carry the town's name. The registers that matter now are kept in another capital, and half of what the ground yields is entered there.
+**Year 1100.** No fleet came to Rushold Harbor, and the outcome was the same, so the yards at Rushold changed owners and kept their names. The registers at Rushold still carry the name of Rushold, and the registers that matter now are kept in another capital.
 
-**Year 1100.** The aetherworks at Rushold failed. The seam it drew from was mined to nothing, and the wages stopped a season before the wires did.
+**Year 1100.** The last shift at the Rushold aetherworks clocked out and did not come back, and the magnates left as soon as the ore did, and the trunk lines into Rushold still stand there carrying nothing. What Rushold was built for lasted one lode.
 
-**Year 1100.** The Crown moved on the gate at Rushold and held it. There was no fight worth recording. The first tariff notice went up before the ink on the claim was dry.
+**Year 1100.** What the Crown wanted at Rushold was the crossing, and the Crown got it; the Crown collects at Rushold and maintains nothing. Nobody who crosses at Rushold was asked, and nobody who crosses there has another way round.
 
-**Year 1100.** An apostate raised a tower at Coldbeck, out where no writ runs and the grid never came. The neighbors did not report it for a season. They were its first customers.
+**Year 1100.** Somebody set up at Coldbeck where the grid had never come. The writ that would have stopped it does not reach Coldbeck, which is why it was raised there. An apostate is what the absence of everything else produces at Coldbeck.
 
-**Year 1100.** The buried power near Drolvek Diggings turned over in its sleep. The Temple sealed the site and said little. The scar it burned into the country is still there to read.
+**Year 1100.** Something of the old world stirred and broke in the ground by Drolvek Diggings; the Temple's version and the survivors' version of Drolvek Diggings agree on nothing but the scar. The people nearest Drolvek Diggings are the ones this record has least of.
 
-**Year 1100.** Drolvek Diggings rose. The constabulary line broke and the mob held. Drolvek Diggings keeps what it makes now, and its gates charge no one. And it flourished. The aetherworks the charter had held back ran at full tilt, the crafts the tariffs had taxed to the bone found their feet, and people came to the free town from the tariffed country around it. Freedom released what the old order had held down. The people keep the date as the Drolvek Diggings Rising.
+**Year 1100.** Drolvek Diggings broke the constabulary line and kept the town. No tariff has been collected at Drolvek Diggings since. Freedom released what the old order had held down, and the crafts the tariffs had taxed to the bone found their feet at Drolvek Diggings, so the register at Rushold avoids the name the Drolvek Diggings Rising and the streets do not.
 
-**Year 1125.** The old Hierarch died, and Haine took the censer without incident. That is rare enough to be worth recording.
+**Year 1125.** The censer passed to Haine in 1125, exactly as the charter said it would: that is rare enough in this record to be worth the ink, and Haine held the censer for the rest of the reign. Rushold kept the date and the name Haine and dropped everything else.
 
-**Year 1125.** A storm came off the water and stood over the coast for three days. Rushold took the worst of it, as the exposed shore always does; the Great Storm of 1125 is the name the survivors gave the year.
+**Year 1125.** The sea rose against Rushold in 1125. The Rushold defences were built to the standard the ledgers would pay for. The fleet at Rushold was insured and the crews were not, and it is entered as the Great Storm of 1125 and dated to the equinox.
 
-**Year 1125.** Fortune turned at Rushold: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Rushold Find.
+**Year 1125.** In 1125 the luck at Rushold turned, and turned upward, so the wagons went to Rushold before the assessors did, which is the only order that helps. What was found at Rushold was worth more than everything anyone had built there, so the clerks called it the Rushold Find without saying what it was.
 
-**Year 1150.** The capital chartered aetherworks at Rushold. The wires reached it fast, because someone had already decided the ore was worth the copper.
+**Year 1150.** Rushold was where the next aetherworks were built, so the lumen came online that year, and Rushold doubled before the next census could count it. Rushold was worth wiring the moment it was worth taking from.
 
-**Year 1150.** The old First Magnate died, and Vralvek took the chair without incident. That is rare enough to be worth recording.
+**Year 1150.** Vralvek came to the chair by the ordinary route; what changed at Rushold was a name at the head of the page. The ledger at Rushold did not notice that a First Magnate had become Vralvek.
 
-**Year 1150.** The magnates moved on the gate at Rushold and held it. There was no fight worth recording. The first tariff notice went up before the ink on the claim was dry.
+**Year 1150.** The magnates arrived at Rushold with a document and left with a gate: a gate is a quay, a span or a pass, and whoever holds one holds a line of people who cannot go around Rushold. One more of the realm's 12 regions now pays to leave itself.
 
-**Year 1150.** The rains failed over Oxenholt Cove, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1150.
+**Year 1150.** Oxenholt Cove went two seasons without water, so the channels at Oxenholt Cove carried what there was to whoever owned them. The grain price at Oxenholt Cove doubled and the wage did not: the Drought of 1150 is the entry, and it is a short one.
 
-**Year 1150.** The ground moved under Nether Gnathok, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Nether Gnathok Quake.
+**Year 1150.** The country under Nether Gnathok moved without warning, and the survey had marked the ground under Nether Gnathok and the building went on regardless. The masons at Nether Gnathok had said which streets would go and had not been asked twice. The entry at Rushold reads the Nether Gnathok Quake and runs three lines.
 
-**Year 1150.** The capital passed the Crown Granary. It taxes the fat years to buy bread for the lean ones. It is the first decree in the realm's history to move coin downhill. It had blocked reform for years, and only gave in once the damage was bad enough.
+**Year 1150.** In 1150 Rushold passed the Crown Granary and said little about why: it is the first measure in the Rushold register that moves coin downhill on purpose. No measure like it had passed at Rushold while the harm was merely predictable.
 
-**Year 1175.** War came to Rushold. It comes to ground that great powers claim and none can hold. The two powers fighting there were the Crown and the magnates. The town was just where they met. When the fighting stopped, the capital had lost a third of its people and a quarter of its wealth, and the mines and aetherworks were wrecked. The Crown's constabulary arrived after the blood, and stayed. The scribes titled the page the War of 1175.
+**Year 1175.** The fighting came to Rushold and stayed a season. And the Crown and the magnates met at Rushold, which had no part in the quarrel. When the fighting stopped, the capital had lost a third of its people and a quarter of its wealth, so it is filed at Rushold under the War of 1175.
 
-**Year 1200.** The old Sovereign died, and Calden took the capital without incident. That is rare enough to be worth recording.
+**Year 1200.** The Sovereign died and the charter answered the question. And the treasury at Rushold paid for a funeral and for nothing else. What Calden inherits across 12 regions is a ledger, and it did not move.
 
-**Year 1200.** In the winter after the fighting, terms were set at Rushold. The Crown wrote them: the magnates ceded a gate and paid 3 in tribute out of its ledger. The side with the deeper ledger wrote the terms, which is how terms are usually written. The clerks filed the fair copy as the Peace of Rushold.
+**Year 1200.** The war ended at a table in Rushold. The Crown wrote them: the magnates ceded a gate and paid 3 in tribute out of their ledger. The losing side signed at Rushold because signing was cheaper than continuing, so the copy at Rushold is titled the Peace of Rushold.
 
-**Year 1200.** A storm came off the water and stood over the coast for three days. Rushold took the worst of it, as the exposed shore always does; the Great Storm of 1200 is the name the survivors gave the year.
+**Year 1200.** A storm came off the water and stood over the Rushold coast for three days. And the shipping at Rushold was lost at anchor. The quay at Rushold held because the quay had money spent on it, so the Great Storm of 1200 is the name that stuck.
 
-**Year 1225.** The magnates claimed the gate at Rushold for their own. The people who used the crossing found the fee waiting the next market day.
+**Year 1225.** The magnates claimed the gate at Rushold for their own. Everyone who crosses at Rushold still crosses, and now pays for the privilege. The 12 regions gained no road that year and lost a free one.
 
-**Year 1225.** The ground moved under Nether Gnathok, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Nether Gnathok Quake.
+**Year 1225.** The folding under Nether Gnathok slipped. And the pass above Nether Gnathok closed, and with it the only route that did not pay a tariff. Nothing under Nether Gnathok has settled, and the record does not pretend otherwise; the Nether Gnathok Quake is the entry, and the entry is short.
 
-**Year 1250.** The ground moved under Nether Gnathok, where the wall's own folding runs closest to the surface. Roads cracked, the pass shifted, and what stood on soft ground did not stand after. The record keeps it as the Nether Gnathok Quake.
+**Year 1250.** The fold beneath Nether Gnathok released what it had been holding; the masons at Nether Gnathok had known which streets would go, and had not been paid to say so. The rebuilding at Nether Gnathok used the same ground and the same mortar, so the Nether Gnathok Quake is the entry, and it does not mention the ground.
 
-**Year 1250.** The god's fortune rose at Drolvek Diggings, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Drolvek Diggings.
+**Year 1250.** In 1250 the faithful remembered Drolvek Diggings: pilgrims rerouted, coin followed the pilgrims, and the Drolvek Diggings temple that had gone quiet was affluent again. The innkeepers at Drolvek Diggings did better out of it than the priests did. And the faithful keep the year as the Rise of Drolvek Diggings.
 
-The years leave names behind them. The realm now speaks of Drolvek Diggings the Free, Rushold the Gilded, Comfre Fell the Hollow, Oxenholt Cove the Steadfast, Quillby the Open, Coldbeck the Shadowed, Dunhold the Shadowed and Nether Gnathok the Ashen: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
+The years wrote on the map, and what they wrote is Drolvek Diggings the Free, Rushold the Gilded, Comfre Fell the Hollow, Oxenholt Cove the Steadfast, Quillby the Open, Coldbeck the Shadowed, Dunhold the Shadowed and Nether Gnathok the Ashen, and 8 names given from below, and every one of them still in use.
 
 ## The State of the Realm, Year 1250
 
-Of the realm's 10 settled regions, 9 held steady and 1 collapsed outright.
-2 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Drolvek Diggings and Nether Gnathok, but the roads have stopped going there.
-And 1 place has come back as something else. Comfre Fell stand again on ground that had been left for dead, under names in a different tongue than the one they carried before.
+9 stayed put and 1 did not survive the years, out of 10 settled regions. Nobody struck those 2 deadholds from the survey, and the traffic simply stopped.
 
-The Crown holds 8 regions, the Temple 2, the magnates 0; 1 are contested between them, and 1 answer to no one at all.
+What the years emptied comes to 2 holdings.
 
-Of the realm's 4 gates, meaning the bridges, the passes, and the quays, the Crown keeps 1, the Temple 0, and the magnates 1. 2 stand untolled. Every levy on the list is paid by people who did not choose the road.
+Ground written off was taken up again at Comfre Fell, so nobody returned to it out of sentiment, and the name on the Rushold charts shows it.
 
-The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the magnates stand nearest to blows.
+What the three powers hold is 8, 2 and 0, though 1 answers to nobody and 1 answer to more than one, which are different problems.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 3.4 in every hundred of the realm's people hold 35.4 of every hundred coins, and live 15.7 times better than the people who work for them. The gap is sharpest at Rushold, where 83 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 45 parts in a hundred of the whole spread.
+The 4 gates are held 1 Crown, 0 Temple, 1 magnate. Not one of the 4 gates was chosen by the people who pay at it.
 
-3 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
+The Crown came out of the years with the deepest ledger, and the loop is closed: gates pay for gates, and the Crown and the magnates are the pair the capital watches.
+
+Within every town there are two peoples: 3.4 in every hundred hold 35.4 coins in every hundred, so a regional map sees towns and not rows, and misses 45 parts in a hundred of the spread doing so.
+
+3 settlements end the years exactly as dark as they began. The line was drawn in Rushold and fell where it fell, with 3 on the wrong side.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world held its shape. The wealth gap stayed at 0.31. It turned on the rising at Drolvek Diggings in 1100, which won and flourished. The poison did not settle on the poor here: the realm's poorest fifth of towns carries 0.6 times the blight of its richest fifth. The wealthy end breathes more of it. Behind the Thulvek wall, the median settlement earns 25 in the hundred less than the open country at the same distance. 3 regions sit off the grid because the ledgers said serving them would not pay, and sickness runs 1.9 times heavier there than in the lit core. Asteaderen drinks 6 points of other towns' poison, only because it stands at the mouth. 9 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 3.4 in a hundred hold 35.4 of every hundred coins, and live 15.7 times better than the rest. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 46 against 12, and owning barely half of it: 50 in the hundred of the yield is entered in the Vantic Crown's books, not the realm's. The Thulvek divides even the weather: the rain falls at 58 on one side and 46 in its lee, and no one on the dry side chose the wind.
+What the survey of 12 regions supports, and nothing beyond it. Nothing moved the shape of this world: the gap sat at 0.31 and sits at 0.31, and so few of the worlds these rules can roll come out under 0.31. 1100 carried the rising, and what followed was better. The record divides into ages: the Quiet Years (1000–1000, gini 0.34 → 0.34), the Emptying (1025–1125, gini 0.29 → 0.45), the Ordinary Age (1150–1250, gini 0.45 → 0.31); the same 10 epochs, grouped by where the curve bent. The ratio of the poorest fifth's blight to the richest fifth's is 0.6×. The poison did not settle on the poor across these 12 regions: the wealthy end breathes more of it. Over the region adjacency, wealth returns Moran's I 0.295 and blight 0.134, and so some of that is guaranteed by construction, since the terrain is laid down with smoothing kernels and neighbours resemble each other before any economy runs (p 0.005 / 0.095, 199 permutations). The shadow of the Thulvek is worth 25% of a median settlement's earnings, and so the Thulvek was there before the capital chose its site. Asteaderen stands at the river mouth and takes 6 points of other towns' poison with the water. The land set Asteaderen last in that order before anyone built anything. 9 of 12 regions pay to pass ground held by a party they never selected: 1 of 3 crossings have fallen past their upkeep, which raises what the passage costs again. The Thulvek takes the rain: 58 on the windward side, 46 in the lee. And a 58-to-46 split in the rain is upstream of every settlement decision that followed. The towns fall into a rank-size hierarchy, and the big-town tail runs at slope α 0.77. Primacy 2.0× and fit 0.99: the regularity was decreed at the founding, the steepness was not. The empire took 1 coast is by contract, which is cheaper than taking coast is by force. The Vantic Crown books 50% of what comes out, and the ground keeps the rest and the ruin.
 
-No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.
+None of this was painted: it fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, and every one of these 27 figures recomputes from the exported columns.

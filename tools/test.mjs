@@ -29,6 +29,49 @@ let failures = 0;
 const fail = (m) => { console.error("FAIL: " + m); failures++; };
 const ok = (m) => console.log("ok  : " + m);
 
+// ---- asserting a COMPOSED surface (D4, #140) --------------------------------
+// A composed chronicle cannot be asserted by grepping for a sentence: the sentence
+// is one of many the pool can produce for this world, and which one comes up is a
+// draw. What CAN be asserted, and is the thing the acceptance actually means, is
+// that the BEAT FIRED — that some realization of the class is on the page. So fill
+// every fragment of the class against this world's own context and require one of
+// them to appear. A reword of any fragment leaves this green; DROPPING the beat
+// turns it red, which is the failure the old greps were reaching for and the one
+// they could no longer tell apart from a rewrite.
+const LOOM = await setupEngine();
+const beatSurfaces = (pool, cls, ctx) => (pool[cls] || [])
+  .filter(f => typeof f.req !== "function" || f.req(ctx))
+  .map(f => LOOM.loomFill(f.t, ctx, "historian", LOOM.chronicleResolve, [], []))
+  .filter(t => t && t.trim());
+// The frames capitalize whatever lands in {A}, so compare case-insensitively.
+const beatFired = (chron, pool, cls, ctx) => {
+  const hay = chron.toLowerCase();
+  return beatSurfaces(pool, cls, ctx).some(t => hay.includes(t.toLowerCase()));
+};
+// The chronicle context for a world the suite already generated. genEngine returns
+// the export, not the model, so rebuild the model from the same hash.
+const chronCtxOf = (hash) => {
+  const S = LOOM.parseHash(hash);
+  const regions = LOOM.buildTopology(S), geo = LOOM.buildGeology(regions, S);
+  const model = LOOM.applyAttributes(regions, S, geo);
+  return { ctx: LOOM.chronicleCtx(model, S), model, S };
+};
+// ...and the per-event context, for the classes that live in EVENT_POOL.
+const eventCtxOf = (model, S, type) => {
+  const ev = model.events.find(e => e.type === type);
+  if (!ev) return null;
+  const strike = model.events.find(e => e.type === "ore_strike");
+  return LOOM.eventCtx(LOOM.chronicleCtx(model, S), ev, model, S, strike);
+};
+const eventBeatFired = (chron, model, S, type, cls) => {
+  const hay = chron.toLowerCase();
+  const strike = model.events.find(e => e.type === "ore_strike");
+  const base = LOOM.chronicleCtx(model, S);
+  return model.events.filter(e => e.type === type).every(ev =>
+    beatSurfaces(LOOM.EVENT_POOL, cls, LOOM.eventCtx(base, ev, model, S, strike))
+      .some(t => hay.includes(t.toLowerCase())));
+};
+
 // ---- Structural validity ---------------------------------------------------
 // The 1138-line validate() that used to live here was DELETED (audit, see CHANGELOG).
 // It was never called: no call site, no export, no reference of any kind, only three
@@ -440,10 +483,18 @@ console.log("# The strata H1 acceptance: class exists within the walls");
   if (/the owners/.test(A1.doc.getElementById("info").textContent))
     ok("THIS WORLD reads out the owners' share");
   else fail("readout silent on owners");
-  const RC = RA10;
-  if (RC.chron.includes("two peoples under one name") && RC.chron.includes("the shares were set from the start"))
-    ok("the chronicle counts the owners' row and the verdict closes on it");
-  else fail("chronicle silent on class");
+  // D4 (#140): the chronicle is composed, so this asserts the BEAT rather than the
+  // sentence — the state act must still count the owners' row, in whichever of the
+  // pool's realizations this world drew.
+  {
+    const { ctx } = chronCtxOf("#seed=alpha&regions=24&ep=10");
+    const fired = beatFired(RA10.chron, LOOM.CHRONICLE_POOL, "classledger", ctx);
+    const figures = ctx.hasClass &&
+      RA10.chron.includes(String(ctx.pop_pct)) && RA10.chron.includes(String(ctx.coin_pct));
+    if (fired && figures)
+      ok(`the chronicle counts the owners' row: the class beat fired and quotes ${ctx.pop_pct} in the hundred holding ${ctx.coin_pct}`);
+    else fail(`chronicle silent on class (beat ${fired}, figures ${figures})`);
+  }
 }
 
 console.log("# The two levers P2: the seat's ear and the sealed quays");
@@ -537,9 +588,12 @@ console.log("# The two levers P2: the seat's ear and the sealed quays");
       C2.window.location.hash.includes("iq=80") && C2.window.location.hash.includes("openness=0"))
     ok("both levers ride the hash and the provenance (share links carry the policy)");
   else fail("levers not persisted");
-  if (C2.chron.includes("The quays are sealed by decree"))
-    ok("the chronicle records the sealing and where its price falls");
-  else fail("chronicle silent on the sealed quays");
+  {
+    const { ctx } = chronCtxOf("#seed=alpha&ep=0&iq=80&openness=0");
+    if (beatFired(C2.chron, LOOM.CHRONICLE_POOL, "sea_gloss", ctx))
+      ok("the chronicle records the sealing and where its price falls");
+    else fail("chronicle silent on the sealed quays");
+  }
 }
 
 console.log("# The surface catches up U2: inspector, lenses, legends, menus, flows");
@@ -921,10 +975,14 @@ console.log("# The founding centuries Z1 acceptance: the census is grown, not pa
   }
   if (/rank-size/.test(A1.doc.getElementById("info").textContent)) ok("THIS WORLD reads out the rank-size fit");
   else fail("readout silent on rank-size");
-  const RZ = RA10;
-  if (RZ.chron.includes("The bigger a town got, the faster it grew"))
-    ok("the chronicle knows how the towns got their sizes");
-  else fail("chronicle silent on the grown census");
+  {
+    const { ctx } = chronCtxOf("#seed=alpha&regions=24&ep=10");
+    const fired = beatFired(RA10.chron, LOOM.CHRONICLE_POOL, "sizes", ctx) &&
+      beatFired(RA10.chron, LOOM.CHRONICLE_POOL, "sizes_gloss", ctx);
+    if (fired && RA10.chron.includes(String(ctx.pop_top)) && RA10.chron.includes(String(ctx.pop_med)))
+      ok(`the chronicle knows how the towns got their sizes: the founding spread ${ctx.pop_med} to ${ctx.pop_top} is quoted and the compounding is glossed`);
+    else fail("chronicle silent on the grown census");
+  }
 }
 
 console.log("# The Dominion X1 acceptance: sovereignty is the last inequality");
@@ -937,7 +995,7 @@ console.log("# The Dominion X1 acceptance: sovereignty is the last inequality");
   const N = 40; // B0.5: a rising on OCCUPIED ground is a ~5% event (occupation is a minority of regions, and the revolt fires once); 40 seeds catch it reliably where 24 could miss
   let arrived = 0, corridorFull = 0, occRise = 0;
   const retent = [], growth = [], compr = [], occShare = [];
-  let domWorld = null, domProv = null;
+  let domWorld = null, domProv = null, domHash = null;
   for (let i = 0; i < N; i++) {
     const R = await gen(`#seed=x1-${i}&regions=${18 + (i % 30)}&ep=10&gt=${(i * 13) % 101}&db=${(i * 17) % 101}`, true);
     const D = R.gj.hinterland.dominion;
@@ -951,7 +1009,7 @@ console.log("# The Dominion X1 acceptance: sovereignty is the last inequality");
       retent.push(F.sovereignty.retent_ratio);
       growth.push(F.sovereignty.growth_gap);
       compr.push(F.sovereignty.comprador_ratio);
-      if (!domWorld) { domWorld = R; domProv = D; }
+      if (!domWorld) { domWorld = R; domProv = D; domHash = `#seed=x1-${i}&regions=${18 + (i % 30)}&ep=10&gt=${(i * 13) % 101}&db=${(i * 17) % 101}`; }
     }
     const rv = (R.gj.hinterland.events || []).find(ev => ev.type === "revolt");
     if (rv) {
@@ -1001,10 +1059,18 @@ console.log("# The Dominion X1 acceptance: sovereignty is the last inequality");
     if (/THE DOMINION/.test(domWorld.doc.getElementById("findingsText").textContent))
       ok("the findings panel argues the sovereignty ledger");
     else fail("panel silent on sovereignty");
-    if (domWorld.chron.includes("The Dominion's fleet stood off") &&
-        domWorld.chron.includes("who is sovereign and who is occupied is the largest one in the realm"))
-      ok("the chronicle records the annexation and the verdict closes on sovereignty");
-    else fail("chronicle silent on the Dominion");
+    // D4 (#140): the sovereignty ledger was stated TWICE in v1 — once by the state
+    // act and once by the closing act, which is why the Record act now skips it. So
+    // the annexation is asserted on its own beat and the ledger on the state act's.
+    {
+      const { ctx, model: dm, S: dS } = chronCtxOf(domHash);
+      const annexed = eventBeatFired(domWorld.chron, dm, dS, "annexation", "annexation");
+      const ledger = beatFired(domWorld.chron, LOOM.CHRONICLE_POOL, "dominion", ctx) &&
+        domWorld.chron.includes(String(ctx.occ_n)) && domWorld.chron.includes(ctx.foothold);
+      if (annexed && ledger)
+        ok(`the chronicle records the annexation and the state of the realm closes on sovereignty: ${ctx.occ_n} regions held from ${ctx.foothold}`);
+      else fail(`chronicle silent on the Dominion (annexation ${annexed}, ledger ${ledger})`);
+    }
     // the series shows the occupation beginning
     const fhSeries = (e) => domWorld.series.features.find(f =>
       f.properties.kind === "region" && f.properties.region_id === domProv.foothold && f.properties.epoch === e).properties.occupied;
@@ -1091,10 +1157,12 @@ console.log("# The skyway S1 acceptance: geography is destiny only for those who
   if (/the skyway/.test(A1.doc.getElementById("info").textContent))
     ok("THIS WORLD reads out the skyway charter");
   else fail("readout silent on the skyway");
-  const RS = RA10;
-  if (RS.chron.includes("the sky isn't") || RS.chron.includes("no lane worth the lift"))
-    ok("the chronicle records the charter: the road below is for everyone; the sky is not");
-  else fail("chronicle silent on the skyway");
+  {
+    const { ctx } = chronCtxOf("#seed=alpha&regions=24&ep=10");
+    if (beatFired(RA10.chron, LOOM.CHRONICLE_POOL, "skyway_gloss", ctx))
+      ok("the chronicle records the charter: the road below is for everyone; the sky is not");
+    else fail("chronicle silent on the skyway");
+  }
 }
 
 console.log("# The argument surface A1 acceptance: the app says what it measures");
@@ -1122,9 +1190,20 @@ console.log("# The argument surface A1 acceptance: the app says what it measures
   const R = RA10;
   // R7: the close now concedes the rules were authored, and claims only that this
   // world's particular outcome was unsteered.
-  if (R.chron.includes("What the Record Shows") && R.chron.includes("no villain in the record") && R.chron.includes("rules an author chose"))
-    ok("the chronicle closes with a verdict that owns its authorship: What the Record Shows");
-  else fail("the chronicle does not conclude");
+  // D4 (#140): the closing act is composeFindings in the historian register, so the
+  // close is one of the closer pool's realizations rather than one fixed sentence.
+  // What is asserted is that the act is there and that it closes on the closer.
+  {
+    const { model, S } = chronCtxOf("#seed=alpha&regions=24&ep=10");
+    const blocks = LOOM.composeFindings(model, S, {
+      register: "historian", surface: "chronicle-record", skip: ["class", "sovereignty", "dark"],
+    });
+    const close = blocks.find(b => b.topic === "closer");
+    const hasClose = close && R.chron.includes(close.text.replace(/\*\*/g, ""));
+    if (R.chron.includes("What the Record Shows") && hasClose && close.facts.length)
+      ok(`the chronicle closes with a verdict that owns its authorship: What the Record Shows, and the close carries ${close.facts.length} audited figures`);
+    else fail(`the chronicle does not conclude (close present ${!!close}, on page ${hasClose})`);
+  }
   // #185: THE TWINS MUST BOTH BE TOWNS. The exhibit's whole claim is "same distance
   // from the seat, different fate", and a fate needs somebody to suffer it. The pair
   // used to be drawn from every region and picked by the widest wealth gap, so an
@@ -1168,7 +1247,11 @@ console.log("# Dynasties E5 acceptance: the powers have faces");
     const evs = (R.gj.hinterland.events || []).filter(ev => ev.type === "succession");
     if (evs.length) succWorlds++;
     if (evs.some(ev => ev.contested)) crisisWorlds++;
-    if (R.chron.includes("the reign of")) reignDated++;
+    // the preamble names the reigning Sovereign and the close year; both are slots,
+    // so assert the VALUES rather than the sentence that carries them
+    const line = R.gj.hinterland.rulers.crown;
+    const reigning = line[line.length - 1].name;
+    if (R.chron.includes(reigning) && R.chron.includes(String(1000 + 25 * 10))) reignDated++;
     if (evs.length) {
       narratedTested++;
       if (evs.every(ev => R.chron.includes(ev.name))) narrated++;
@@ -1178,7 +1261,7 @@ console.log("# Dynasties E5 acceptance: the powers have faces");
   else fail(`immortal rulers: ${succWorlds}/${N}`);
   if (crisisWorlds >= 3) ok(`contested successions divide the house in ${crisisWorlds}/${N} worlds (the rivals circle)`);
   else fail(`no crises: ${crisisWorlds}/${N}`);
-  if (reignDated === N) ok("every chronicle is dated by the reigning Sovereign");
+  if (reignDated === N) ok("every chronicle is dated by the reigning Sovereign and the year it closes on");
   else fail(`undated chronicles: ${reignDated}/${N}`);
   if (narratedTested > 0 && narrated === narratedTested)
     ok(`every succession is narrated by name (${narrated}/${narratedTested})`);
@@ -1206,7 +1289,12 @@ console.log("# Peace terms F3 acceptance: defeat is an institution");
     treatyWorlds++;
     if (t.ceded > 0) cessionWorlds++;
     if (t.tribute > 0) tributeWorlds++;
-    if (R.chron.includes("terms were set at")) chronOK++;
+    // #140: the terms beat fired, in whichever wording this world drew, and it
+    // named its author — F3's acceptance is that defeat has an author, not that
+    // the chronicle owns a particular sentence.
+    const { model: tm, S: tS } = chronCtxOf(`#seed=f2-${i}&regions=24&ep=10`);
+    if (eventBeatFired(R.chron, tm, tS, "treaty", "treaty") &&
+        eventBeatFired(R.chron, tm, tS, "treaty", "treaty_terms")) chronOK++;
   }
   if (treatyWorlds >= 8) ok(`the wars end in terms: treaties in ${treatyWorlds}/${_f2N} worlds`);
   else fail(`terms rare: ${treatyWorlds}/${_f2N}`);
@@ -1241,7 +1329,11 @@ console.log("# Escalation F2 acceptance: money begets reach, wars become policy"
     }
     if (evs.some(ev => ev.type === "war")) {
       warWorlds++;
-      if (R.chron.includes("The two powers fighting there were")) warNamed++;
+      // #140: assert the two powers are NAMED, not the sentence that names them
+      const FN2 = { crown: "the Crown", temple: "the Temple", magnate: "the magnates" };
+      const w = evs.find(ev => ev.type === "war" && ev.factions && ev.factions.length === 2);
+      if (!w) warNamed++;                                  // no factions to name
+      else if (R.chron.includes(FN2[w.factions[0]]) && R.chron.includes(FN2[w.factions[1]])) warNamed++;
     }
   }
   if (paidTested > 0 && paid === paidTested)
@@ -1273,7 +1365,11 @@ console.log("# The faction turn F1 acceptance: the blocs become agents");
     if (evs.some(ev => ev.type === "seizure")) {
       seizeWorlds++;
       chronTested++;
-      if (/took the gate|pressed (its|their) claim|seized the crossing|moved on the gate|claimed the gate/.test(R.chron)) chronOK++;
+      // #140: EVERY seizure must be on the page, in whichever wording it drew — the
+      // old alternation listed five v1 sentences and passed if any world matched any
+      // of them, which a composed pool breaks and a dropped beat did not.
+      const { model: sm, S: sS } = chronCtxOf(`#seed=f1-${i}&regions=24&ep=10`);
+      if (eventBeatFired(R.chron, sm, sS, "seizure", "seizure")) chronOK++;
     }
     if (evs.some(ev => ev.type === "tower_raised")) raiseWorlds++;
     if (evs.some(ev => ev.type === "tower_burned")) burnWorlds++;
@@ -1360,7 +1456,8 @@ console.log("# The wild layer P1 acceptance: anomalies warp the ledger");
 {
   const R = RA0;
   const ruinNames = ruinsOf(R.gj).map(r => r.properties.ruin_name);
-  if (R.chron.includes("The old world is still here") && ruinNames.every(nm => R.chron.includes(nm)) &&
+  const { ctx: wildCtx } = chronCtxOf("#seed=alpha&regions=24&ep=0");
+  if (beatFired(R.chron, LOOM.CHRONICLE_POOL, "ruins", wildCtx) && ruinNames.every(nm => R.chron.includes(nm)) &&
       (towersOf(R.gj).length === 0 || R.chron.includes(" Tower")) &&
       (bridgesOf(R.gj).length === 0 || R.chron.includes(" Bridge")))
     ok(`the chronicle tells the wild map (${ruinNames.join(", ")})`);
@@ -1407,7 +1504,8 @@ console.log("# The sea G3 acceptance: the double lottery");
 // the chronicle knows where the sea lies
 {
   const R = RA0;
-  if (R.chron.includes("The sea lies to the") && / Harbor| Haven| Strand/.test(R.chron))
+  const { ctx: seaCtx } = chronCtxOf("#seed=alpha&regions=24&ep=0");
+  if (beatFired(R.chron, LOOM.CHRONICLE_POOL, "sea", seaCtx) && / Harbor| Haven| Strand/.test(R.chron))
     ok("the chronicle places the sea and names the harbor");
   else fail("chronicle silent on the sea");
 }
@@ -1493,9 +1591,18 @@ const R1S = { rivN: 0, seaMouth: 0, borderMouth: 0, confMouth: 0, corridorBad: n
 // the chronicle knows the water
 {
   const R = RA0;
+  // #140: every river is named and the DRINKING ORDER is told — the mouth town of
+  // each chain has to appear, which is the claim "gets it clean" was standing in for.
   const names = riversOf(R.gj).map(r => r.properties.river_name);
-  if (names.length && names.every(nm => R.chron.includes(nm)) && R.chron.includes("gets it clean"))
-    ok(`the chronicle tells the drinking order (${names.map(n => "the " + n).join(", ")})`);
+  const { model: rvm } = chronCtxOf("#seed=alpha&regions=24&ep=0");
+  const townOf = (id) => {
+    const st = rvm.settlements.find(x => x.regionId === id);
+    return st ? st.name : ((rvm.regions.find(x => x.id === id) || {}).placeName || null);
+  };
+  const mouths = rvm.rivers.map(RV => townOf(rvm.regions[RV.chain[RV.chain.length - 1]].id)).filter(Boolean);
+  if (names.length && names.every(nm => R.chron.includes(nm)) &&
+      mouths.length && mouths.every(nm => R.chron.includes(nm)))
+    ok(`the chronicle tells the drinking order (${names.map(n => "the " + n).join(", ")}, last at ${mouths.join(", ")})`);
   else fail("chronicle silent on the rivers");
 }
 
@@ -1862,13 +1969,17 @@ console.log("# The chronicle E4 acceptance: the world narrating itself");
   const cons = (C.gj.hinterland.events || []).find(ev => ev.type === "consecration");
   const consSite = cons ? sanctOf(C.gj).find(st => st.properties.region_id === cons.region_id) : null;
   const shrineName = consSite ? consSite.properties.site_name : null;
-  if (cons && shrineName && C.chron.includes("consecrated it as " + shrineName))
+  // #140: a consecration names what it consecrated — the pool guarantees it (every
+  // claim that does not name the shrine is gated on there being no shrine), so the
+  // assertion is on the DEDICATION and not on the sentence that carries it.
+  if (cons && shrineName && C.chron.includes(shrineName) &&
+      /consecrat|made it holy|made holy/.test(C.chron))
     ok(`the consecration is narrated with its dedication (${shrineName} on seed d6-5)`);
   else fail(`consecration not narrated (cons=${!!cons}, shrine=${shrineName})`);
 
   // the founding snapshot has no years to tell
   const Z = RA0;
-  if (!Z.chron.includes("## The Years") && Z.chron.includes("newly founded") && Z.chron.includes("year 1000"))
+  if (!Z.chron.includes("## The Years") && Z.chron.includes("newly founded") && Z.chron.includes("The Founding, Year 1000"))
     ok("ep=0 chronicle ends at its beginning (no Years section)");
   else fail("ep=0 chronicle malformed");
 }
@@ -2422,7 +2533,11 @@ console.log("# Reform long edges B7 (#129): every mercy can curdle, every levy c
   // epoch 5. Condition unchanged.
   const g = await genEngine("#seed=le-15&regions=24&ep=10&iq=0");
   const imps = (g.gj.hinterland.events || []).filter(e => e.type === "imposition");
-  const narrated = g.chron.includes("creditors") && g.chron.includes("structural adjustment") && g.chron.includes("another capital");
+  // #140: the beat, not the sentence. The claim class says the measure did not come
+  // from this capital; the coda says what the towns called it. Both must be on the page.
+  const { model: im, S: iS } = chronCtxOf("#seed=le-15&regions=24&ep=10&iq=0");
+  const narrated = eventBeatFired(g.chron, im, iS, "imposition", "imposition") &&
+    eventBeatFired(g.chron, im, iS, "imposition", "imposition_gloss");
   if (imps.length >= 1 && imps[0].imposed_by === "creditors" && narrated)
     ok(`THE MEASURE IMPOSED (le-7): the deaf seat reformed nothing, so its creditors DEMANDED a structural adjustment (epoch ${imps[0].epoch}) — the chronicle names it a decree written in another capital, not the realm's own`);
   else fail(`imposition exhibit failed: ${imps.length} impositions, narrated ${narrated}`);
@@ -2666,12 +2781,16 @@ console.log("# Imperial reach B11 (#133): the empire mostly never comes, it buys
     // the ABANDONMENT ARC, narrated END-TO-END: the same world's chronicle carries
     // both the concession's opening and its winding-up (attention leaving with the ore)
     const concEv = ev.find(e => e.type === "concession"), abEv = ev.find(e => e.type === "abandonment");
-    if (concEv && abEv && /sent factors and a charter/.test(chron) && /wound up its concession/.test(chron) && /attention left with the ore/.test(chron)) {
+    const _ir = (concEv || abEv || ev.some(e => e.type === "embargo")) ? chronCtxOf(`#seed=ir-${i}&regions=24&ep=10`) : null;
+    if (concEv && abEv &&
+        eventBeatFired(chron, _ir.model, _ir.S, "concession", "concession") &&
+        eventBeatFired(chron, _ir.model, _ir.S, "abandonment", "abandonment") &&
+        eventBeatFired(chron, _ir.model, _ir.S, "abandonment", "abandonment_gloss")) {
       arcNarrated++;
       if (!arcEx) arcEx = `ir-${i}: concession opened e${concEv.epoch}, wound up e${abEv.epoch}`;
     }
     // the EMBARGO bust: a hostile regime shut the lanes and the chronicle records it
-    if (ev.some(e => e.type === "embargo") && /closed the sea lanes to it/.test(chron)) {
+    if (ev.some(e => e.type === "embargo") && eventBeatFired(chron, _ir.model, _ir.S, "embargo", "embargo")) {
       embargoNarrated++;
       if (!embEx) embEx = `ir-${i}`;
     }
@@ -4540,6 +4659,252 @@ console.log("# The findings composed D3 (#139): the analyst stops reciting");
     if (a === b && a !== c && chronBefore === chronAfter)
       ok(`the composed panel is deterministic per world and lives on its own substream: two compositions of one seed are identical, a different seed differs, and composing the findings twice leaves the chronicle byte-identical`);
     else fail(`findings determinism: same-seed ${a === b}, cross-seed ${a !== c}, chronicle untouched ${chronBefore === chronAfter}`);
+  }
+}
+
+console.log("# The chronicle composed D4 (#140): the historian stops reciting");
+
+{
+  const E = LOOM;
+  const world = (seed, hash = `#seed=${seed}&regions=20&ep=10`) => {
+    const S = E.parseHash(hash);
+    const regions = E.buildTopology(S), geo = E.buildGeology(regions, S);
+    const model = E.applyAttributes(regions, S, geo);
+    const audit = [];
+    const text = E.composeChronicle(model, S, audit);
+    return { text, audit, model, S };
+  };
+  const nameSet = (model) => {
+    const n = new Set();
+    for (const st of model.settlements) n.add(st.name);
+    for (const r of model.regions) if (r.placeName) n.add(r.placeName);
+    for (const R of model.ridges) n.add(R.name);
+    for (const P of model.passes) n.add(P.name);
+    for (const RV of model.rivers) n.add(RV.name);
+    for (const R of model.ruins) n.add(R.name);
+    for (const c of model.camps) n.add(c.name);
+    for (const st of model.sanctionedSites) n.add(st.name);
+    for (const F of ["crown", "temple", "magnate"])
+      for (const d of (model.dynasties[F] || [])) n.add(d.name);
+    for (const ev of model.events) if (ev.name) n.add(ev.name);
+    if (model.metropole) n.add(model.metropole);
+    if (model.capitalName) n.add(model.capitalName);
+    if (model.skywayName) n.add(model.skywayName);
+    if (model.stillName) n.add(model.stillName);
+    if (model.freeport) n.add(model.freeport.name);
+    if (model.sanctuary) n.add(model.sanctuary.name);
+    if (model.maelstrom) n.add(model.maelstrom.name);
+    // Two name slots print a DERIVED form rather than an export string, and both
+    // derive by rule: a river is named `${name} ${kind}` (the kind comes from the
+    // export too) and a harbour is the town's name plus Harbor, unless the town
+    // already ends in Haven or Strand. The audit's claim is that every name traces
+    // to the export, so the traceable forms belong in the set.
+    for (const RV of model.rivers) n.add(RV.name + (RV.kind === "River" ? "" : " " + RV.kind));
+    for (const nm of [...n]) if (nm) n.add(/ (Haven|Strand)$/.test(nm) ? nm : nm + " Harbor");
+    return n;
+  };
+  const SEEDS = Array.from({ length: 16 }, (_, i) => `d4-${i}`);
+  const worlds = SEEDS.map(s => world(s));
+
+  // (i) THE POOLS OBEY THE HOUSE LAW. `loomLint` is the mechanical form of it: a
+  //     fragment is a CLAUSE (no leading capital, no terminal stop, frames own the
+  //     punctuation) and every fragment carries at least one region-varying slot,
+  //     because #136 measured that slot density and not pool size is what bounds
+  //     the worst-surface repeat.
+  {
+    const cp = E.loomLint(E.CHRONICLE_POOL), ep = E.loomLint(E.EVENT_POOL);
+    const nC = Object.values(E.CHRONICLE_POOL).reduce((a, v) => a + v.length, 0);
+    const nE = Object.values(E.EVENT_POOL).reduce((a, v) => a + v.length, 0);
+    if (!cp.length && !ep.length && nC > 400 && nE > 900)
+      ok(`the historian's pools lint clean under the house law: ${nC} fragments over ${Object.keys(E.CHRONICLE_POOL).length} chronicle classes and ${nE} over ${Object.keys(E.EVENT_POOL).length} event classes, every one a clause carrying a region-varying slot`);
+    else fail(`pool lint: ${cp.length + ep.length} problems (${[...cp, ...ep].slice(0, 3).join(" | ")}), sizes ${nC}/${nE}`);
+  }
+
+  // (ii) EVERY SLOT RESOLVES. A fragment whose `req` passes but whose slot has no
+  //      value leaves a hole in the sentence. Gating should prevent it; "should"
+  //      is what an audit is for, so check every gated fragment of every class
+  //      against every world's own context, chronicle-wide and per event.
+  {
+    const RE = /\{(name|num|coin|term):([a-z0-9_]+)\}/g;
+    const holes = [];
+    let slots = 0;
+    for (const { model, S } of worlds.slice(0, 6)) {
+      const CC = E.chronicleCtx(model, S);
+      for (const [cls, frs] of Object.entries(E.CHRONICLE_POOL))
+        for (const f of frs) {
+          if (typeof f.req === "function" && !f.req(CC)) continue;
+          for (const m of String(f.t).matchAll(RE)) {
+            slots++;
+            const v = E.chronicleResolve(m[1], m[2], CC);
+            if (v === null || v === undefined) holes.push(`${cls} ${m[0]}`);
+          }
+        }
+      const strike = model.events.find(e => e.type === "ore_strike");
+      for (const ev of model.events) {
+        const ec = E.eventCtx(CC, ev, model, S, strike);
+        for (const pair of E.eventClasses(ev.type)) for (const cls of pair) {
+          if (!cls) continue;
+          for (const f of (E.EVENT_POOL[cls] || [])) {
+            if (typeof f.req === "function" && !f.req(ec)) continue;
+            for (const m of String(f.t).matchAll(RE)) {
+              slots++;
+              const v = E.chronicleResolve(m[1], m[2], ec);
+              if (v === null || v === undefined) holes.push(`${cls} ${m[0]}`);
+            }
+          }
+        }
+      }
+    }
+    if (!holes.length)
+      ok(`no gated fragment can leave a hole: ${slots} slot occurrences across 6 worlds, chronicle pool and event pool, every one resolvable against the context that gated it`);
+    else fail(`${holes.length} unresolvable slots: ${[...new Set(holes)].slice(0, 5).join(", ")}`);
+  }
+
+  // (iii) THE SLOT AUDIT. Every figure the chronicle prints is recomputed from its
+  //       source value under the rule its fact declares, and every proper name is
+  //       checked against the model's own names. And the audit is not vacuous: move
+  //       one digit and it must come back as the one offender.
+  {
+    let facts = 0; const offenders = [];
+    for (const { audit, model } of worlds) {
+      const names = nameSet(model);
+      for (const b of audit) {
+        facts += b.facts.length;
+        const r = E.loomAudit({ text: b.text.replace(/\*\*/g, ""), facts: b.facts, names: b.names }, "historian", { names });
+        for (const o of r.offenders) offenders.push(`${b.key}: ${o.why}`);
+      }
+    }
+    const donor = worlds[0].audit.find(b => b.facts.some(f => f.rule === "verbatim" && Number.isFinite(Number(f.true))));
+    const planted = JSON.parse(JSON.stringify({ text: donor.text, facts: donor.facts, names: donor.names }));
+    const f0 = planted.facts.find(f => f.rule === "verbatim" && Number.isFinite(Number(f.true)));
+    f0.told = String(Number(f0.told) + 1);
+    const caught = E.loomAudit(planted, "historian", null);
+    if (!offenders.length && facts > 1500 && !caught.ok && caught.offenders.length === 1)
+      ok(`every figure in the composed chronicle traces to its source: ${facts} facts over ${SEEDS.length} seeds recomputed under their declared rules, 0 offenders, and a single planted digit (${f0.path}) comes back as the one offender`);
+    else fail(`chronicle audit: ${offenders.length} offenders over ${facts} facts (${offenders.slice(0, 3).join("; ")}), plant caught ${!caught.ok}`);
+  }
+
+  // (iv) NO FIXED SENTENCE SURVIVES. The v1 chronicle was one template per beat and
+  //      one per event type, so every beat's sentence appeared in EVERY world and only
+  //      the names and figures moved. Grepping for the v1 wording is the wrong
+  //      instrument for that claim now, because a composed pool may legitimately keep
+  //      a v1 sentence as ONE of its realizations — and does. What distinguishes a
+  //      template from a fragment is not the words, it is the FREQUENCY: a template is
+  //      a sentence every world says. So mask the names and figures out and measure
+  //      how often the corpus's most-repeated sentence recurs.
+  {
+    const STOP = new Set(["the","a","an","and","but","or","of","in","on","at","to","by","for","from","with",
+      "no","not","this","that","these","those","it","its","they","their","them","there","here",
+      "what","when","where","which","who","whom","whose","why","how","all","every","each","some","most",
+      "one","two","three","four","five","six","seven","eight","nine","ten","year","years","past","over",
+      "high","low","above","below","under","after","before","since","until","while","as","if","so","then",
+      "crown","temple","magnates","magnate","dominion","apostates","apostate","pilgrims","assessors",
+      "nobody","nothing","anyone","anything","everywhere","somewhere","north","south","east","west",
+      "northeast","northwest","southeast","southwest","chronicle","record","realm","founding","state"]);
+    const mask = (t) => String(t)
+      .replace(/\d[\d,.]*/g, " NUM ")
+      .replace(/\b([A-Z][a-zA-Z'’-]+)\b/g, (m, w) => STOP.has(w.toLowerCase()) ? w.toLowerCase() : " NAME ")
+      .toLowerCase().replace(/[^a-z\s]/g, " ").replace(/\s+/g, " ").trim();
+    const df = new Map();
+    for (const { text } of worlds) {
+      const seen = new Set();
+      for (const line of text.split("\n")) {
+        if (!line.trim() || line.startsWith("#") || line.startsWith("---")) continue;
+        for (const sent of line.replace(/^\*\*Year \d+\.\*\* /, "").split(/(?<=[.;:])\s+/)) {
+          const k = mask(sent);
+          if (k.split(" ").length >= 7) seen.add(k);
+        }
+      }
+      for (const k of seen) df.set(k, (df.get(k) || 0) + 1);
+    }
+    const top = [...df.entries()].sort((a, b) => b[1] - a[1])[0];
+    const share = top[1] / worlds.length;
+    // and the ladder that produced the v1 year-lines is gone from the engine
+    const src = readFileSync(new URL("../src/engine/engine.mjs", import.meta.url), "utf8");
+    const ladder = /ev\.type === "[a-z_]+"\)?\s*line = /.test(src);
+    // the three sentences that were DELETED rather than pooled, as a direct check
+    const DELETED = [
+      "No one steered this world in particular",
+      "no villain in the record",
+      "rules an author chose",
+      "The two powers fighting there were",
+      "This measure did not come from the capital",
+      "The capital met the unrest with force",
+      "In the winter after the fighting, terms were set at",
+    ];
+    const corpus = worlds.map(w => w.text).join("\n");
+    const survivors = DELETED.filter(v => corpus.includes(v));
+    // Pinned at two thirds. v1 sat at 1.00 by construction: every beat was one
+    // sentence, so every world said it. Measured here at 0.25 over 16 seeds, and the sentence that
+    // holds the record is a succession claim, and successions are the commonest
+    // event the model produces: about five per world.
+    if (share <= 2 / 3 && !ladder && !survivors.length)
+      ok(`no sentence is a template any more: over ${worlds.length} chronicles the most-repeated masked sentence appears in ${top[1]} of them (${share.toFixed(2)}, pinned at 0.67 against v1's 1.00 by construction), the twenty-seven-branch event ladder is gone from the engine, and none of the ${DELETED.length} deleted v1 sentences survives`);
+    else fail(`a template survives: worst masked sentence in ${top[1]}/${worlds.length} worlds ("${top[0].slice(0, 70)}"), ladder ${ladder}, survivors ${survivors.slice(0, 2).join(" | ")}`);
+  }
+
+  // (v) NO CLAUSE IS WRITTEN TWICE IN ONE CHRONICLE. The Years composes the same
+  //     class once per event, and a world with five successions used to be able to
+  //     draw the same coda twice. One tally now runs the length of the act.
+  {
+    let worst = 0, where = "";
+    for (const { text } of worlds) {
+      const seen = new Map();
+      for (const line of text.split("\n")) {
+        if (!/^\*\*Year /.test(line)) continue;
+        for (const cl of line.replace(/^\*\*Year \d+\.\*\* /, "").split(/(?<=[.;:])\s+/)) {
+          const k = cl.trim().toLowerCase().replace(/[^a-z ]/g, "");
+          if (k.length < 25) continue;
+          const n = (seen.get(k) || 0) + 1;
+          seen.set(k, n);
+          if (n > worst) { worst = n; where = k.slice(0, 70); }
+        }
+      }
+    }
+    if (worst <= 1)
+      ok(`no clause is written twice in one chronicle's Years across ${SEEDS.length} worlds — the act carries one tally, and an exhausted class reuses rather than falling silent`);
+    else fail(`a clause repeats ${worst}× inside one chronicle: "${where}"`);
+  }
+
+  // (vi) THE SAMENESS CEILING, MEASURED AND PINNED. §4 pins cross-seed chronicle
+  //      template overlap below 0.20, measured on skeletons so that one template
+  //      run over different town names scores as the SAME prose rather than as
+  //      different prose. That is the whole point of the mask: the raw line-level
+  //      Jaccard the sweep prints reads 0.05 on this corpus and flatters it.
+  //
+  //      The WITHIN-SEED cross-knob ceiling (§4: 0.45) is deliberately NOT pinned
+  //      here, and the reason is a measurement rather than a shortfall. A knob at
+  //      its extreme leaves 77–96% of the beat structure standing (iq=100 shares
+  //      53 of 54 beats with the default), and the composition substream is keyed
+  //      on the seed, so two knob settings of one seed draw the SAME fragments for
+  //      the beats they share. Reaching 0.45 would mean keying composition on world
+  //      state and rewording a chronicle whose content did not change — tuning to
+  //      the metric. It is reported below as measured and left unpinned; #140's
+  //      write-up carries the finding.
+  {
+    const STOP = new Set(["the","a","an","and","but","or","of","in","on","at","to","by","for","from","with",
+      "no","not","this","that","these","those","it","its","they","their","them","there","here",
+      "what","when","where","which","who","whom","whose","why","how","all","every","each","some","most",
+      "one","two","three","four","five","six","seven","eight","nine","ten","year","years","past","over",
+      "high","low","above","below","under","after","before","since","until","while","as","if","so","then",
+      "crown","temple","magnates","magnate","dominion","apostates","apostate","pilgrims","assessors",
+      "nobody","nothing","anyone","anything","everywhere","somewhere","north","south","east","west",
+      "northeast","northwest","southeast","southwest","chronicle","record","realm","founding","state"]);
+    const mask = (t) => String(t)
+      .replace(/\d[\d,.]*/g, " NUM ")
+      .replace(/\b([A-Z][a-zA-Z'’-]+)\b/g, (m, w) => STOP.has(w.toLowerCase()) ? w.toLowerCase() : " NAME ")
+      .toLowerCase().replace(/[^a-z\s]/g, " ").replace(/\s+/g, " ").trim();
+    const cross = E.loomDiversity(worlds.map(w => mask(w.text)));
+    const KNOBS = [["db", 0], ["gt", 0], ["iq", 100], ["wg", 0], ["we", 100], ["wf", 100], ["wt", 100], ["bias", 0], ["hb", 0]];
+    const knobTexts = [world("d4-knob").text]
+      .concat(KNOBS.map(([k, v]) => world("d4-knob", `#seed=d4-knob&regions=20&ep=10&${k}=${v}`).text));
+    const within = E.loomDiversity(knobTexts.map(mask));
+    const shortfalls = [];
+    if (cross.overlap >= 0.20) shortfalls.push(`cross-seed overlap ${cross.overlap} is not below §4's 0.20`);
+    if (cross.distinct < worlds.length) shortfalls.push(`${cross.distinct}/${worlds.length} distinct chronicles`);
+    if (!shortfalls.length)
+      ok(`the sameness ceiling holds: ${worlds.length} chronicles all distinct, skeleton-masked cross-seed overlap ${cross.overlap} inside §4's pinned 0.20 (the v1 chronicle measured 0.62 on this instrument). Within-seed cross-knob reads ${within.overlap} against §4's 0.45 and is REPORTED, NOT PINNED: the knobs move 4–23% of the beats, so the ceiling is a knob-reach result and not a prose one`);
+    else fail(`chronicle sameness above the pin: ${shortfalls.join("; ")}`);
   }
 }
 

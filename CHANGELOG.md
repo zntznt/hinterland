@@ -1,6 +1,100 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the chronicle is composed now, not recited** (issue #140, D4; **no schema change and
+  no exported byte moves** — the fixture regeneration touched 30 `chronicle.md` files
+  and 0 `geojson`/`events.csv`, which is the pin proving the export did not move).
+  The chronicle was one fixed template per beat and one per event type: a
+  twenty-seven-branch `if` ladder for the years, four hand-written acts around it, and
+  every world saying all of it in the same words with only the names and figures
+  changed. It composes on the loom (#137) now, in the historian register, from
+  **CHRONICLE_POOL (56 classes) and EVENT_POOL (92 classes)**. The branches that used
+  to choose a template — contested or not, won or lost, chained to an ore strike or
+  not, shrine or no shrine — are `req` predicates on fragments, so a world that does
+  not meet one never sees the clause, and an ABSENCE ("no wall of rock crosses this
+  realm") is a fragment like any other rather than the else-branch of a template.
+  Sample at [docs/chronicle-sample.md](docs/chronicle-sample.md); the instrument is
+  `tools/proto/chronicle-proto.mjs`, which measured the baseline before anything was
+  authored and measures the result with the same mask.
+  **The closing act was the findings panel written a second time.** "What the Record
+  Shows" restated, in the historian's voice, what `findingsHTML` already argued —
+  fifteen findings, two independent copies to keep in step. It calls `composeFindings`
+  now on its own substream, skipping the three topics the State of the Realm already
+  carries (class, sovereignty, dark grid), which were being stated twice in one
+  document. One pool to maintain instead of two, and the two surfaces cannot drift.
+  **The sameness ceiling, measured and earned.** §4 pins cross-seed chronicle overlap
+  below 0.20, skeleton-masked so one template run over different town names scores as
+  the SAME prose. The v1 chronicle measured **0.62**; it measures **0.197** now (0.1968
+  over 40 seeds), and by act: preamble 0.98 → 0.47, The Years 0.50 → 0.19, State of the
+  Realm 0.76 → 0.17, The Founding 0.71 → 0.15, What the Record Shows 0.65 → 0.18. The
+  instrument's own floor was measured rather than assumed: two acts of the SAME
+  chronicle, sharing register and subject but no template, score 0.045–0.073, and a
+  chronicle against another world's findings panel scores 0.092. 0.20 is well clear of
+  that floor, so the ceiling is a claim about the prose and not about the measure.
+  **The within-seed cross-knob ceiling (§4: 0.45) is reported and deliberately NOT
+  pinned, and the reason is a measurement.** It reads 0.76 against a v1 baseline of
+  0.93. A knob at its extreme leaves 77–96% of the beat structure standing — `iq=100`
+  shares 53 of 54 beats with the default — and the composition substream is keyed on
+  the seed, so two knob settings of one seed draw the same fragments for the beats they
+  share. Reaching 0.45 would mean keying composition on world state and rewording a
+  chronicle whose content did not change: tuning to the metric. The number is in the
+  suite's message where a later reader can see it move.
+  **Nine defects, and two of them are about the measure itself.**
+  (1) *A wordy frame RAISES cross-world sameness.* A frame's own words are shared by
+  every world that draws it, so adding five phrase-frames ("{A}. What followed: {B}.")
+  moved the corpus from 0.197 to 0.200 even as it varied the sentences. Frames stay at
+  punctuation and the smallest connectives; the variety is bought in the pool.
+  (2) *The metric rewards a chronicle that repeats itself.* Sharing one clause tally
+  across The Years — so that no clause is written twice in one chronicle, however many
+  droughts or successions a world has — moved cross-seed overlap from 0.21 to 0.22,
+  because suppressing within-world repeats raises each world's coverage of the pool.
+  The tally stayed. The prose is what ships, and a reader meeting the same sentence
+  twice in one document notices something no cross-seed statistic can see.
+  (3) *A gloss that restated the claim's list.* Seven classes had claim and gloss both
+  printing the same flattened list; the bynames pair printed a fifteen-name list twice
+  in one paragraph. The glosses carry the COUNT now, which keeps the region-varying
+  slot the house law requires without saying it twice.
+  (4) *A list that ran one template per item.* The ruins, the ages and the fates each
+  built every item from a single template, so a realm with four delves said the same
+  nine words four times. Each item draws its own phrasing now, on the list's own
+  substream.
+  (5) *A plural written into a fragment whose list can hold one item.* "the work at all
+  1 of them", "Vonkar Camp by Dhurn are kept by hunters", "1 ended richer than they
+  began". The plural fragments gate on there being more than one and the singular ones
+  are their own fragments, which is how every other branch in the pool is written.
+  (6) *Two agreement bugs in the FINDINGS pool, found by reading the chronicle.* "the
+  empire came to **1** coast was and then stopped coming" (a slot that renders a
+  subject and its verb, used where the sentence wanted a bare noun) and "**1** of **5**
+  crossings are past their upkeep". Both shipped in #139's panel; composing a second
+  surface off the same pool is what made them visible.
+  (7) *A beat that could contrast the capital with itself.* "The refining is done at
+  Herow Ford, from which the trunk lines reach Herow Ford", and the same shape in the
+  concession and writ beats. Gated now on the works standing somewhere other than the
+  capital, and on the event's town not being the capital.
+  (8) *Three guarantees the v1 templates gave by accident.* A contested succession
+  could be narrated without naming who took the place; a treaty could state its terms
+  without naming their author; a consecration could consecrate without naming the
+  shrine. E5, F3 and D6 all require those by name. They are properties of the pool now:
+  every succession coda carries the successor, every terms fragment carries the winner,
+  and every consecration claim that does not name the shrine is gated on there being no
+  shrine to name.
+  (9) *The C1 vocabulary ban caught the tier name.* `\bthe works\b` matches "the
+  works-town", which the war beat prints whenever a works-town is fought over. The tier
+  reads "the aetherworks town" now. Two more fragments ("took the works with it", a
+  "toll-post") were caught by the same tripwire.
+  **The suite stopped grepping the chronicle for phrases — nineteen checks.** They
+  asserted a beat's ARGUMENT by matching its WORDING, which a composed surface breaks
+  by design and a *dropped beat* does not. They assert the beat now: fill every
+  fragment of the class against this world's own context and require one of them to be
+  on the page (`beatFired`), or assert the figures and names directly — the reigning
+  ruler and the close year rather than "the reign of", each river's mouth town rather
+  than "gets it clean", the two war powers rather than "The two powers fighting there
+  were". A reword leaves them green; dropping the beat turns them red.
+  **And the "no fixed sentence survives" check does not grep either.** A composed pool
+  may legitimately keep a v1 sentence as one of its realizations, and does. What
+  separates a template from a fragment is frequency, not wording: a template is a
+  sentence every world says. Masked and measured, the corpus's most-repeated sentence
+  now appears in **0.58** of worlds against v1's 1.00 by construction, pinned at 0.67.
 - **the findings are composed now, not recited** (issue #139, D3; **no schema change and
   no exported byte moves** — the panel is a UI surface, so no fixture regeneration was
   called for and the golden pin proves it). `findingsHTML` held about fifteen canned

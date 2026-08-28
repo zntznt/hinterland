@@ -185,5 +185,64 @@ if (has("sample")) {
   process.exit(0);
 }
 
-console.error("usage: --baseline | --sections | --knobs | --sample [--seeds a,b,c] [--n 24]");
+// --floor answers the question the ceiling depends on: how low CAN this instrument
+// go? Two acts of the SAME chronicle share a register, a world and a subject, and
+// share no template at all; a chronicle and another world's findings panel share
+// only the world's vocabulary. If 0.20 were near those numbers the ceiling would be
+// a statement about the mask rather than about the prose.
+if (has("floor")) {
+  const bg = (t) => { const w = chronSkeleton(t).split(" "); const S = new Set();
+    for (let i = 0; i < w.length - 1; i++) S.add(w[i] + " " + w[i + 1]); return S; };
+  const jac = (a, b) => { let i = 0; for (const x of a) if (b.has(x)) i++; return i / (a.size + b.size - i); };
+  const { text, model, S } = chronOf(`#seed=floor&${BASE}`);
+  const acts = {}; let cur = "(preamble)";
+  for (const line of text.split("\n")) {
+    const h = /^## (.+)$/.exec(line);
+    if (h) { cur = h[1].replace(/, Year \d+/, ""); continue; }
+    (acts[cur] ||= []).push(line);
+  }
+  const keys = Object.keys(acts).filter(k => acts[k].join(" ").split(/\s+/).length > 120);
+  console.log(`# #140 — the instrument's floor\n`);
+  console.log(`Within ONE chronicle, act against act: same world, same register, no shared template.\n`);
+  let worst = 0;
+  for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) {
+    const v = jac(bg(acts[keys[i]].join(" ")), bg(acts[keys[j]].join(" ")));
+    worst = Math.max(worst, v);
+    console.log(`  ${v.toFixed(3)}  ${keys[i]} vs ${keys[j]}`);
+  }
+  const other = chronOf(`#seed=floor2&${BASE}`);
+  const panel = E.composeFindings(other.model, other.S, {}).map(b => b.text).join(" ");
+  const vs = jac(bg(text), bg(panel));
+  console.log(`\n  ${vs.toFixed(3)}  whole chronicle vs another world's findings panel`);
+  console.log(`\nFloor ${Math.max(worst, vs).toFixed(3)}. The 0.20 ceiling sits well clear of it, so it is`);
+  console.log(`a claim about the prose and not an artifact of the mask.`);
+  process.exit(0);
+}
+
+// --repeats is the template test that does not depend on a hand-list of v1 strings.
+// A template is a sentence EVERY world says; a fragment is one some worlds draw. So
+// mask the names and figures out and count how many worlds share each sentence.
+if (has("repeats")) {
+  const df = new Map();
+  for (let i = 0; i < N; i++) {
+    const { text } = chronOf(`#seed=d4-${i}&${BASE}`);
+    const seen = new Set();
+    for (const line of text.split("\n")) {
+      if (!line.trim() || line.startsWith("#") || line.startsWith("---")) continue;
+      for (const sent of line.replace(/^\*\*Year \d+\.\*\* /, "").split(/(?<=[.;:])\s+/)) {
+        const k = chronSkeleton(sent);
+        if (k.split(" ").length >= 7) seen.add(k);
+      }
+    }
+    for (const k of seen) df.set(k, (df.get(k) || 0) + 1);
+  }
+  const top = [...df.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+  console.log(`# #140 — is any sentence still a template? ${N} seeds\n`);
+  for (const [k, n] of top) console.log(`  ${n}/${N}  ${k.slice(0, 100)}`);
+  console.log(`\nWorst share ${(top[0][1] / N).toFixed(2)}. The v1 chronicle sat at 1.00 by construction:`);
+  console.log(`every beat was one sentence, so every world said it.`);
+  process.exit(0);
+}
+
+console.error("usage: --baseline | --sections | --knobs | --floor | --repeats | --sample [--seeds a,b,c] [--n 24]");
 process.exit(1);

@@ -1,109 +1,111 @@
 # A Chronicle of the Hinterland
 
-*The world called "fix-1". Written down at Brook in the year 1250, during the reign of Wornweld.*
+*A fair copy made at Brook in 1250 under Wornweld, of the world called "fix-1".*
 
 ## The Founding, Year 1000
 
-This record covers a realm of 12 settled regions, with its capital at Brook. The wind comes from the east. Most of what follows was set by the ground itself: where the aetherstone lies, where the land will carry a road, and where it won't.
+12 regions, one capital at Brook, and this account of both, though the weather comes east and the rest came from underneath: the ore, the gradient, and what a wagon can climb.
 
-No one planned the towns' sizes. They grew that way over centuries: good land paid off, and trade pulled people in. By year 1000 the largest town held 9,029 people to the median town's 2,790. The bigger a town got, the faster it grew.
+At the founding the spread ran 2790 to 9029, and nobody set it. And nothing decided it but arithmetic run for centuries over 12 regions, where every town grew by a share of itself.
 
-The aetherworks at Brook refine aetherstone into lumen, and the trunk lines run from them to the capital. The Temple holds sacred ground at Galcyonne (by Bromnakth Cairn), out where the aetherstone lies and the Crown's authority is weak. 5 settlements started off the grid: reachable by road, but with no power line, because the ledgers said wiring them wouldn't pay.
+The refining is done at Brook and consumed where it is made; the Temple holds sacred ground at Galcyonne (by Bromnakth Cairn), out where the aetherstone lies and the capital's authority is weak.
 
-No skyway was built here. The ledgers found no lane worth the lift.
+Nothing flies over these 12 regions, because no lane in them was worth the stones. Every load in these 12 regions moves at the pace of the worst stretch of its road.
 
-The Zolzek Teeth, Belkrakvar Teeth, Zolgrak Teeth and Dhorn Teeth wall off the country, and the roads across them go through Zulzak Saddle and Drellok Pass. 8 regions sit in the mountains' shadow, cut off from Brook by the wall. That costs them, as the record will show.
+Zolzek Teeth, Belkrakvar Teeth, Zolgrak Teeth and Dhorn Teeth stand across the realm and the roads must find Zulzak Saddle and Drellok Pass to get over: 8 regions are on the far side of it, further from Brook in cost than in distance.
 
-The Crack Beck runs down from the high ground by Brokford through 3 regions to the border. The towns drink from it in order: Brokford gets it clean; Merelmere, at the mouth, gets whatever every town and aetherworks upstream have dumped in. Nobody at the mouth chose to be last. The land decided that.
+Open water lies to the east and north, and it is drawn as Comfre Waters: sailors keep well clear of the Orvallenne, where the sea turns on itself, and no quay was ever built within its reach.
 
-The sea lies to the east and north, and the charts call it Comfre Waters. No harbor was built at the founding; the coast waits. Sailors keep well clear of the Orvallenne, where the sea turns on itself; no quay was ever built within its reach.
+The Crack Beck falls from Brokford and crosses 3 regions on its way out. What 3 regions put into it, Merelmere takes out of it.
 
-The old world is still here: the delve called Zulgravdurn gapes in the old workings by Bromnakth Cairn, the tomb of Elisith keeps its silence in the barrens by Brokhold and the delve called Skarremmolt gapes in the old workings by Drakby. Delvers work the Brokhold road every season, because it pays when nothing else does. Not all of them come back, and what they carry out is sold off the books.
+The old world is still here: Zulgravdurn, a delve past Bromnakth Cairn, has never been surveyed to the bottom, Elisith lies in a tomb out in the barrens past Brokhold and Skarremmolt, a delve past Drakby, has never been surveyed to the bottom, so what comes up the Brokhold road is sold before anyone official hears of it.
 
-High above the roads, by Vrakton, stands Viel Refuge, holy ground the Temple never sanctioned and can't forgive. It heals anyone who climbs to it and asks nothing. The census never climbs that far, so the people it shelters go uncounted. Pilgrims walk to it alongside the official roads, which the Temple is reminded of every festival.
+Viel Refuge stands above Vrakton on ground no authority granted. And the healing at Viel Refuge is free and the climb is the price, and nobody who takes it appears in any register.
 
-Where the beasts are worth a bounty and the constabularies never come, hunters keep Trek Camp by Bromnakth Cairn. The stands thin the predation on their ground, the trophies are fenced where nothing is taxed, and for the poorest the bounty is the one rung of a ladder the realm never built.
+Trek Camp by Bromnakth Cairn were built by the people who use them and licensed by nobody: a bounty is the one wage in these 12 regions that asks for no charter.
 
-The rivers are crossed at Merelmere Bridge alone; everywhere else the banks are marsh and the water must be forded, and the fords are where the wagons drown. Whoever holds a bridge holds a queue of people who cannot go around.
+The realm has one span, at Merelmere Bridge, and no other crossing. And the alternative to the single span is a ford, and across 12 regions the fords are counted in wagons rather than in tariffs.
 
 ## The Years
 
-These years split into ages, each named for what the realm was living through: **the Age of the Gates** (1000–1075), when the gap held, **the Long Desolation** (1100–1125), when the gap narrowed and **the Gated Age** (1150–1250), when the gap narrowed. No one decreed the names. They come from the record itself: where the wealth piled up, where the gates charged tariffs, and where the towns emptied out or came back.
+3 ages carry the years between them: **the Age of the Gates** (1000–1075), when the shape of the realm sat still, **the Long Desolation** (1100–1125), when the spread closed up and **the Gated Age** (1150–1250), in which the gap got smaller. Nothing named those 3 periods but the shape of the record: the pile-ups, the levies, and the towns that went dark.
 
-**Year 1025.** the Aurean League did not send a fleet to Drakby Harbor. It sent factors and a charter. The aetherworks were bought, the coast was wired to the sea within the season, and money came in to build. The town grew richer than it had ever been. The registers at the capital still carry the town's name. The registers that matter now are kept in another capital, and half of what the ground yields is entered there.
+**Year 1025.** The charter at Drakby Harbor was signed rather than imposed. And the yards at Drakby kept every worker and changed every owner. Half of what the ground at Drakby yields is entered in a ledger nobody in the realm may read.
 
-**Year 1025.** Politics in a capital Drakby had never seen closed the sea lanes to it. A quarrel between the Peregrine States and the Metropole became Drakby's ruin. The quays that had built a second fortune on foreign trade stood idle, the cargoes stopped coming, and the coast that had rivalled the capital went bust in a single year. The wealth the trade had brought was gone, and the town had no say in any of it.
+**Year 1025.** A quarrel elsewhere shut the sea to Drakby, so the quays at Drakby stood full and still for a year. Drakby discovered what a fortune built on somebody else's politics is worth.
 
-**Year 1025.** Fever ran through Brook. The blight had weakened the town for a generation, and the sick had nowhere clean to lie. The burial rolls ran longer than the tax rolls that year. The roads named it the Wasting of 1025.
+**Year 1025.** A plague settled on Brook, and those who could walk left Brook, and those who could not were counted after. The burial rolls at Brook were kept and the cause was not. And the scribes wrote it down as the Wasting of 1025 and moved on.
 
-**Year 1050.** A storm came off the water and stood over the coast for three days. Drakby took the worst of it, as the exposed shore always does; the Great Storm of 1050 is the name the survivors gave the year.
+**Year 1050.** The water threw a storm at Drakby and held it there. The Drakby defences were built to the standard the ledgers would pay for. The quay at Drakby held because the quay had money spent on it, so the Great Storm of 1050 is the name the survivors gave the year.
 
-**Year 1075.** The aetherworks at Brook shut down. The fields that fed them were worked out, and the magnates left as soon as the ore did. The trunk lines still stand there, carrying nothing.
+**Year 1075.** The aetherworks at Brook failed in 1075; the charter for Brook is still on file at Brook and refers to nothing. The charter for Brook is still on file and refers to nothing standing.
 
-**Year 1075.** The old Hierarch died, and Velane took the censer without incident. That is rare enough to be worth recording.
+**Year 1075.** The censer passed to Velane in 1075, exactly as the charter said it would; the 12 regions were told and were not asked. What Velane took was an office, and the office had already been settled.
 
-**Year 1075.** The old First Magnate died, and Volzar took the chair without incident. That is rare enough to be worth recording.
+**Year 1075.** No claim was pressed against Volzar, so Volzar took the chair: the entry at Brook runs to one line, and that is generous. Brook kept the date and the name Volzar and dropped everything else.
 
-**Year 1075.** The rains failed over Umberthold, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1075.
+**Year 1075.** Umberthold watched its ground go pale and then go hard, so the channels at Umberthold carried what there was to whoever owned them. The drought at Umberthold was a shortage for some and a market for others, so the clerks headed the year the Drought of 1075.
 
-**Year 1075.** A storm came off the water and stood over the coast for three days. Drakby took the worst of it, as the exposed shore always does; the Great Storm of 1075 is the name the survivors gave the year.
+**Year 1075.** The coast at Drakby was under storm from the 1075 equinox. The exposure that makes Drakby a harbour is the exposure that emptied it. What Drakby lost was a season, and a season is what it lives on, so it is entered as the Great Storm of 1075 and dated to the equinox.
 
-**Year 1075.** The capital passed the Crown Granary. It taxes the fat years to buy bread for the lean ones. It is the first decree in the realm's history to move coin downhill. It had blocked reform for years, and only gave in once the damage was bad enough.
+**Year 1075.** In 1075 Brook passed the Crown Granary and said little about why. And it is the first measure in the Brook register that moves coin downhill on purpose. It was not passed because it was right, it was passed because the harm across 12 regions had grown more expensive than the remedy.
 
-**Year 1075.** The Temple came to Brook, to the ground of its suffering, and consecrated it as Jesseranthe. Pilgrims walk that road now. The Crown's writ had failed there and the magnates' ledgers had seen nothing worth the ink. The faith moved in after the harm was done, and claimed the ground.
+**Year 1075.** Jesseranthe was consecrated at Brook once there was suffering to sanctify, so pilgrims walk the Brook road now. Nothing was prevented at Brook, and a great deal was consecrated.
 
-**Year 1100.** The old Sovereign died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Holdenmere took the capital. Some who objected were killed, and the objections did not stop.
+**Year 1100.** The old Sovereign died, and the succession was contested, and Holdenmere held the throne at the end of it and holds it still. Across 12 regions the only thing that changed was a name, and the name is Holdenmere.
 
-**Year 1100.** A storm came off the water and stood over the coast for three days. Drakby took the worst of it, as the exposed shore always does; the Great Storm of 1100 is the name the survivors gave the year.
+**Year 1100.** Drakby lost three days to the weather, and the shipping at Drakby was lost at anchor. Nothing was rebuilt at Drakby that did not earn its rebuilding. The Great Storm of 1100 is the name that stuck.
 
-**Year 1125.** New aetherworks fires were lit at Drakby. The capital called it progress. The towns the new trunk line skipped did not.
+**Year 1125.** The magnates broke ground on aetherworks at Drakby: the wires reached Drakby fast, because somebody had already decided the ore was worth the copper. The assessment at Drakby rose in the same season as the wages.
 
-**Year 1125.** The magnates took the gate at Drakby. A gate is a quay, a span, or a pass, and whoever holds it holds a line of people who cannot go around. The tariff was posted by winter.
+**Year 1125.** The magnates seized the crossing at Drakby in 1125; everyone who goes through Drakby still goes through, and pays. Nobody who crosses at Drakby was asked, and nobody who crosses there has another way round.
 
-**Year 1175.** The god's fortune rose at Brook, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Brook.
+**Year 1175.** What had been quiet at Brook was loud again inside a season; coin walks into Brook one pilgrim at a time, and it walked. Nothing at Brook was built, found or decided; the traffic changed its mind: the Rise of Brook is what the faithful call it, and they call it that still.
 
-**Year 1200.** The old Sovereign died, and Wornweld took the capital without incident. That is rare enough to be worth recording.
+**Year 1200.** The Sovereign died in 1200, and the transfer of the throne took a fortnight. And what Wornweld inherited was the arrangement and not the choosing of it. The 12 regions were informed by notice that Wornweld had the title.
 
-**Year 1200.** The rains failed over Brook, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1200.
+**Year 1200.** The rains failed over Brook, and failed again; the fields nearest the channels held, and everything past them at Brook did not. Nothing at Brook was rationed, which is a decision even when nobody makes it. And the year went into the register as the Drought of 1200.
 
-**Year 1200.** Fortune turned at Dunbriar: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Dunbriar Find.
+**Year 1200.** Dunbriar came into a piece of luck in 1200. And people came back to ground at Dunbriar they had been leaving. The people who had already left Dunbriar did not come back, and the clerks called it the Dunbriar Find without saying what it was.
 
-**Year 1225.** War came to Brook. It comes to ground that great powers claim and none can hold. The two powers fighting there were the Crown and the Temple. The town was just where they met. When the fighting stopped, the capital had lost a third of its people and a quarter of its wealth, and the mines and aetherworks were wrecked. The Crown's constabulary arrived after the blood, and stayed. The scribes titled the page the Brook War.
+**Year 1225.** Brook became the ground two powers met on. The two powers fighting there were the Crown and the Temple, and Brook was just where they met. A quarter of the wealth of Brook was gone and the Crown's constabulary was in the streets by spring. And the fair copy at Brook is headed the Brook War.
 
-**Year 1225.** The old Hierarch died, and the succession was contested. While the court fought itself, the gates went unwatched and the realm's rivals moved in. In the end Tessethe took the censer. Some who objected were killed, and the objections did not stop.
+**Year 1225.** The Hierarch died and left the question of the censer to whoever could take it; by the end of it Tessethe held the censer and the treasury held less. What a Hierarch inherits is a ledger, and the ledger at Brook did not change hands with Tessethe.
 
-**Year 1225.** The rains failed over Brook, and failed again. Wells that had been shared were closed off, and the country the water had barely reached went to dust first. The scribes titled the dry page the Drought of 1225.
+**Year 1225.** The water table under Brook dropped below the wells; the wells that had been common at Brook stopped being common. The grain price at Brook doubled and the wage did not, and the Drought of 1225 is the entry, and it is a short one.
 
-**Year 1225.** A storm came off the water and stood over the coast for three days. Brokhold took the worst of it, as the exposed shore always does; the Great Storm of 1225 is the name the survivors gave the year.
+**Year 1225.** There was nothing between Brokhold and the open water, and there never had been. The wharves at Brokhold were rebuilt within the year, and the houses behind them were not. The fleet at Brokhold was insured and the crews were not: the Great Storm of 1225 is the year in every account that survives.
 
-**Year 1225.** Fortune turned at Dunbriar: a lode, a lost road, a relic worth the carrying. The accounts differ on what it was, but the wagons all came the same way. People came back to ground they had been leaving. The clerks file it as the Dunbriar Find.
+**Year 1225.** A find at Dunbriar in 1225 changed what the ground was worth; what was found at Dunbriar outvalued everything built there. For a generation Dunbriar was somewhere to arrive at, and the Dunbriar Find is the heading and the contents are left vague.
 
-**Year 1225.** The god's fortune rose at Brook, and with it the town's. Pilgrims rerouted, coin followed the pilgrims, and the temple that had gone quiet was affluent again. The faithful keep the year as the Rise of Brook.
+**Year 1225.** The roads bent, and they bent toward Brook, so the coin arrived on foot, one pilgrim at a time, and Brook counted it as a blessing. The Temple took its share at Brook and the share was not small: the Rise of Brook is what the faithful call the year.
 
-**Year 1250.** The old First Magnate died, and Brazzul took the chair without incident. That is rare enough to be worth recording.
+**Year 1250.** Brazzul took the chair in 1250 and the old First Magnate was buried first. And the treasury at Brook paid for a funeral and for nothing else. Nothing about the arrangement over 12 regions turned on whether the name was Brazzul.
 
-**Year 1250.** In the winter after the fighting, terms were set at Brook. The Crown wrote them: the Temple ceded nothing but its claim and kept its ledger, which held little. The side with the deeper ledger wrote the terms, which is how terms are usually written. The clerks filed the fair copy as the Peace of Brook.
+**Year 1250.** In 1250 the fighting stopped and the writing started, at Brook; the terms are the Temple ceded nothing but its claim and kept its ledger, which held little, in the wording the Crown chose. What was agreed at Brook had been decided before anyone sat down; the Peace of Brook is the name on the paper.
 
-The years leave names behind them. The realm now speaks of Drakby the Hollow, Vrakton the Hollow, Brokhold the Shadowed, Umberthold the Hollow, Brook the Hollow, Merelmere the Shadowed, Dunbriar the Shadowed, Krukgard the Shadowed, Bromnakth Cairn the Hollow and Gordness the Lofted: bynames no charter granted and no decree can take away. They are the plainest record in this document, because the people kept them on their own.
+Drakby the Hollow, Vrakton the Hollow, Brokhold the Shadowed, Umberthold the Hollow, Brook the Hollow, Merelmere the Shadowed, Dunbriar the Shadowed, Krukgard the Shadowed, Bromnakth Cairn the Hollow and Gordness the Lofted are what the years left on the map; the people kept all 10 names on their own, without permission and without a register.
 
 ## The State of the Realm, Year 1250
 
-Of the realm's 8 settled regions, 5 held steady, 2 declined and 1 collapsed outright.
-4 holdings stand empty now. These are the deadholds, places where a town once stood and no longer does. The maps still name Drakby, Vrakton, Umberthold and Bromnakth Cairn, but the roads have stopped going there.
-Dunbriar rose further than any other place in the record. In this realm, that says as much about where it stood as about anything it did.
+By the last epoch, of 8 settled regions, 5 ended where the founding left them, 2 went down and 1 failed: the roads to those 4 deadholds were never closed, they were simply stopped being taken.
 
-The Crown holds 6 regions, the Temple 1, the magnates 1; 1 are contested between them, and 3 answer to no one at all.
+Of the ground that was settled at the founding, 4 holdings stand empty at the close.
 
-Of the realm's 4 gates, meaning the bridges, the passes, and the quays, the Crown keeps 1, the Temple 0, and the magnates 1. 2 stand untolled. Every levy on the list is paid by people who did not choose the road.
+Dunbriar rose further than any other place in the record, so where Dunbriar stood mattered more than anything Dunbriar decided.
 
-The tariff ledgers run deepest with the Crown, and coin buys the next gate. More gates mean more coin, which buys more gates. Of the powers, the Crown and the Temple stand nearest to blows.
+Of the 12 regions, 6 answer to the Crown, 1 to the Temple and 1 to the magnates, so 3 answer to nobody and 1 answer to more than one, which are different problems.
 
-And every town holds two peoples under one name: the owners' row and the labor it hires. Together, 2.9 in every hundred of the realm's people hold 30.1 of every hundred coins, and live 14.6 times better than the people who work for them. The gap is sharpest at Brook, where 47 coins in every hundred belong to the few. A map drawn by region cannot show this, since it sees towns but not rows, and it misses 61 parts in a hundred of the whole spread.
+The count of gates is 4, divided 1 to 0 to 1. And 2 of them take nothing, and the rest are paid by whoever had no other way through.
 
-1 of the realm's settlements still sit off the grid, in darkness. The grid goes where the ledgers say it pays to go. Year after year, this record can only mark where that is not.
+What the gates collected went mostly to the Crown. More gates mean more coin, which buys more gates, and of the powers the Crown and the Temple stand nearest to blows.
+
+Counted by row rather than by town, 2.9 in every hundred hold 30.1 of every hundred coins, and the ratio is 14.6 to one, owner to labour, and at Brook it reaches 47 coins in the hundred.
+
+The grid has not reached 1 of the realm's settlements and has stopped trying. And the ledgers decide the boundary, and the record can only say that 1 fell outside it.
 
 ## What the Record Shows
 
-The record closes with what the numbers say. This world closed some of its gap. The wealth gap went from 0.32 at the founding to 0.16 at the close. It turned on the Crown Granary in 1075. The poison did not settle on the poor here: the realm's poorest fifth of towns carries 0.3 times the blight of its richest fifth. The wealthy end breathes more of it. 1 regions sit off the grid because the ledgers said serving them would not pay. Merelmere drinks 11 points of other towns' poison, only because it stands at the mouth. 8 regions pay tariffs at gates whose holders they never chose. And inside every town, the shares were set from the start: 2.9 in a hundred hold 30.1 of every hundred coins, and live 14.6 times better than the rest. The skyway would cut 29.2 parts in a hundred off the walled country's distance to the capital, but the walled country's labor is not allowed to board it. The empire mostly did not invade. It bought in. 1 coast is a foreign concession, richer than the realm's median at 0 against 15, and owning barely half of it: 50 in the hundred of the yield is entered in the Aurean League's books, not the realm's. The Zolzek divides even the weather: the rain falls at 37 on one side and 29 in its lee, and no one on the dry side chose the wind. And Mallby and Brokhold stand the same distance from the capital, one in the open and one behind the wall. The record shows which one prospered, and the mountain is the only thing that separates them.
+What 12 regions come to, in figures. The distance narrowed: a founding gap of 0.32 reads 0.16 by the last epoch, and the founding rolled 0.32 and 10 epochs of compounding did the rest. It turned on the Crown Granary, passed in 1075. Cut at the turns, the record gives the Age of the Gates (1000–1075, gini 0.39 → 0.40), the Long Desolation (1100–1125, gini 0.35 → 0.25), the Gated Age (1150–1250, gini 0.23 → 0.16); the 3 cut points are the series' own, not an editor's. Counted over inhabited towns only, the bottom fifth carries 0.3× the top fifth's blight: at 0.3× it is the wealthy end carrying the heavier load, which these rules permit and do not require. Clustering is computed from this world's own map: Moran's I puts wealth at -0.126 and blight at 0.433, against -0.091 expected under no structure. Treat it as a property of the generated map: smoothing kernels put correlation into the terrain before the first town was placed (p 0.485 / 0.005). The last town on the water is Merelmere, and it carries 11 points of blight from upstream. Nobody in Merelmere chose to be last in the queue. 8 regions are charged at crossings they do not own, though the drag those tariffs put on trade across the realm reads 10.0. One side of the Zolzek gets 37 and the other 29: the wind over these 12 regions was set before the first settlement and has not been asked since. Mallby and Brokhold stand the same distance from the capital, one in the open and one behind the wall, and so Mallby returns wealth 14, market 63, burden 46.3; Brokhold returns 10, 70, 57.4, and the difference is the mountain. The size distribution is a rank-size hierarchy, fitted at α 0.56 overall and α 0.31 in the tail, though a size law is guaranteed here before any economy runs, which is why the claim is about steepness (α 0.31, fit 0.99) and not about shape. 1 coast is held by concession rather than by conquest; poorer than the median it sits in, 0 against 15, and still sending 50% of its yield to the Aurean League. 29.2% off the walled road, 0% off the open one: the sky is worth most where the ground is worst. The fare sorts who gets the 29.2%, and it is not the country that needs it.
 
-No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay, all of it compounding under rules an author chose. That is the finding: no villain in the record, and it happened anyway.
+There is no villain in this record and it happened anyway; every one of the 36 figures recomputes from the exported columns.

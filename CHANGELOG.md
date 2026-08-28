@@ -1,6 +1,40 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the voices prototype gate: V1-V5 hold, V6 caught the spec** (issue #136; no schema
+  change; no app change; nothing in `tools/proto/` runs in CI). The gate asked for 50
+  voices, the six invariants, and a judgement. The invariants are in
+  [docs/voices-sample.md](docs/voices-sample.md); the judgement is written up as
+  [docs/voices-spec.md](docs/voices-spec.md) §7.
+  **V1-V5 pass on all three seeds** — every digit in a written voice traces to an export
+  value in its `facts[]`, no oral voice contains a digit, every name traces to the export
+  under the shortening rules, the divergence law holds exactly including the censor's
+  corridor, and the worst surface repeat is **3** against V5's ceiling of 3 (950 distinct
+  realized surfaces over 1022 draws).
+  **V6 failed, and it failed on the spec rather than on the prototype.** Across 20 seeds
+  and 386 settled regions, §3's sentiment formula applied verbatim puts **65% of towns in
+  `weary`** and reaches `proud` in **1.3%**. The G side is well scaled; the C side is
+  starved, and one term is why. `wealth` is nominally 0-100 but realized p50 **13**, p90
+  29, max **55**, so `0.30·wealth` contributes a mean of **4.5 points, 15% of C**, and
+  `social_trust` supplies most of what pride exists. The tell is in §4: the worked
+  examples the spec calls "the quality bar" assume `wealth` 31 (the **91st percentile**)
+  and `wealth` 71 (**above the observed maximum**). Example (d) exists precisely so the
+  spec's own example set can pass V6, and it is built on a column value the engine does
+  not produce.
+  **Measured and deliberately not applied**, the same move as #185: entering `wealth` as
+  its within-sample percentile, changing nothing else, moves those 386 regions to steady
+  **42.5%** and proud **5.2%** and V6 passes strictly. The sentiment model is the owner's
+  and §0 already schedules its re-derivation for Phase D2, so `--diag` prints both
+  distributions side by side and the formula stays as written. **The gate stays shut**,
+  which is what a gate is for.
+  Four more spec defects fell out of building it, all in §7: the ground-truth column list
+  has drifted (`toll_burden`/`refining_capacity`/`on_conduit` do not exist under those
+  names); §1's collision math assumes every fragment carries slots and the fragments did
+  not, which is the whole of V5's failure at half scale (max repeat **14**) and at full
+  scale (**8**) — pool size was never the binding constraint, slot density was; V3 as
+  literally worded forbids the shortening rules §1 and §2 require; and v2 added the
+  `elsewhere` layer to §1 and §2 but never gave it a row in §3's sign table, so **12% of
+  written voices carry no skew at all** in the one register whose purpose is to diverge.
 - **the environmental limb of the disease burden was decorative; it is now derived from
   the epidemiology** (issue #192; no schema change; all 30 golden cells moved, atlas
   regenerated). `burdenEnv`'s coefficient came out of a units conversion in #180

@@ -4910,6 +4910,151 @@ console.log("# The chronicle composed D4 (#140): the historian stops reciting");
   }
 }
 
+console.log("# The verdict composed D5 (#141): twelve stories where three were");
+
+{
+  const E = LOOM;
+  const world = (seed, hash) => {
+    const h = hash || `#seed=${seed}&regions=24&ep=10`;
+    const S = E.parseHash(h);
+    const regions = E.buildTopology(S), geo = E.buildGeology(regions, S);
+    const model = E.applyAttributes(regions, S, geo);
+    return { model, S, F: E.getFindings(model) };
+  };
+  const SEEDS = Array.from({ length: 80 }, (_, i) => `v5-${i}`);
+  const worlds = SEEDS.map(s => world(s));
+  const verdicts = worlds.map(w => E.composeVerdict(w.model, w.S));
+
+  // (i) THE JUDGE'S POOL OBEYS THE HOUSE LAW, and every cell of §3.5's matrix has
+  //     prose. A cell with no fragment is a world the app cannot describe.
+  {
+    const probs = E.loomLint(E.VERDICT_POOL);
+    const n = Object.values(E.VERDICT_POOL).reduce((a, v) => a + v.length, 0);
+    const CELLS = ["shared rise", "leveling down", "quiet growth", "quiet decay", "unequal growth", "extraction"];
+    const bare = CELLS.filter(c => !(E.VERDICT_POOL.claim || []).some(f => f.req({ cell: c })));
+    if (!probs.length && !bare.length && n > 70)
+      ok(`the judge's pool lints clean under the house law: ${n} fragments over ${Object.keys(E.VERDICT_POOL).length} classes, and all ${CELLS.length} cells of §3.5's matrix have prose`);
+    else fail(`verdict pool: ${probs.length} lint problems (${probs.slice(0, 2).join(" | ")}), cells with no prose: ${bare.join(", ") || "none"}`);
+  }
+
+  // (ii) THE SPELLED LAW. The judge register forbids a numeral on the page — that is
+  //      §4's per-register digits law, and it is the whole character of the voice:
+  //      the analyst quotes to two decimals, the historian to the digit, and the
+  //      judge argues, in words. A figure still has to be a figure underneath, so
+  //      every spelled quantity is an integer the export can be checked against.
+  {
+    const withDigits = verdicts.filter(v => /\d/.test(v.text));
+    // and the law is enforced, not merely observed: plant a numeral and the audit
+    // must reject it on the register alone.
+    const planted = E.loomAudit({ text: verdicts[0].text + " 0.42", facts: [], names: [] }, "judge", null);
+    if (!withDigits.length && !planted.ok)
+      ok(`the judge keeps the spelled law across ${verdicts.length} worlds: not one numeral on the page, and a planted digit is rejected on the register alone`);
+    else fail(`spelled law broken: ${withDigits.length} verdicts carry a numeral; planted digit caught ${!planted.ok}`);
+  }
+
+  // (iii) THE SLOT AUDIT. Every spelled quantity recomputes from its source integer
+  //       under the rule its fact declares, and a moved digit comes back as the one
+  //       offender.
+  {
+    let facts = 0; const offenders = [];
+    for (const v of verdicts) {
+      facts += v.facts.length;
+      const r = E.loomAudit(v, "judge", null);
+      for (const o of r.offenders) offenders.push(o.why);
+    }
+    const donor = JSON.parse(JSON.stringify({ text: verdicts[0].text, facts: verdicts[0].facts, names: verdicts[0].names }));
+    const f0 = donor.facts.find(f => f.rule === "spelled");
+    if (f0) f0.told = "one hundred and one";
+    const caught = f0 ? E.loomAudit(donor, "judge", null) : { ok: true, offenders: [] };
+    if (!offenders.length && facts > 400 && f0 && !caught.ok && caught.offenders.length === 1)
+      ok(`every quantity in the composed verdict traces to its source: ${facts} facts over ${verdicts.length} worlds recomputed under the spelled rule, 0 offenders, and a tampered word comes back as the one offender`);
+    else fail(`verdict audit: ${offenders.length} offenders over ${facts} facts (${offenders.slice(0, 2).join("; ")}), plant caught ${!caught.ok}`);
+  }
+
+  // (iv) §7.3, PINNED FOR REAL. The issue names the instrument: the 80-world
+  //      calibration sweep at defaults, ep=10. No verdict class over 40%, at least
+  //      six present. This is the capstone — a verdict space that collapses into one
+  //      story is a templated verdict wearing a matrix.
+  {
+    const cls = new Map();
+    for (const w of worlds) cls.set(w.F.verdict.class, (cls.get(w.F.verdict.class) || 0) + 1);
+    const tot = [...cls.values()].reduce((a, b) => a + b, 0);
+    const max = Math.max(...cls.values());
+    const share = max / tot;
+    if (cls.size >= 6 && share <= 0.40)
+      ok(`§7.3 holds on the 80-world sweep at defaults: ${cls.size} distinct §3.5 classes, the commonest only ${(100 * share).toFixed(0)}% — the possibility space stays open`);
+    else fail(`verdict space collapsed: ${cls.size} classes over ${tot} worlds, largest ${(100 * share).toFixed(0)}%`);
+  }
+
+  // (v) ONE VERDICT FUNCTION. The point of D5 is that three surfaces stopped each
+  //     doing their own read. The findings band, the chronicle's close and the judge
+  //     all draw on their own substreams — different WORDS by design — but none of
+  //     them may claim a different VERDICT. So every surface's prose has to be a
+  //     realization of the class this world's verdict function gated.
+  {
+    const disagree = [];
+    for (let i = 0; i < 12; i++) {
+      const { model, S, F } = worlds[i];
+      const vc = E.verdictCtx(model, S);
+      const chron = E.composeChronicle(model, S).toLowerCase();
+      const said = (E.VERDICT_POOL.claim || []).filter(f => f.req(vc))
+        .map(f => E.loomFill(f.t, vc, "judge", E.verdictResolve, [], []).toLowerCase());
+      if (!said.some(t => chron.includes(t))) disagree.push(`${SEEDS[i]}: the chronicle's close is not a ${vc.cell} verdict`);
+      // and the analyst's lead is gated on the same cell
+      const fc = E.findingsCtx(model, S);
+      const lead = E.composeFindings(model, S).find(b => b.topic === "lead");
+      const leadSaid = (E.FINDINGS_POOL.lead || []).filter(f => f.req(fc))
+        .map(f => E.loomFill(f.t, fc, "analyst", E.findingsResolve, [], []));
+      if (!lead || !leadSaid.some(t => lead.text === t)) disagree.push(`${SEEDS[i]}: the band's lead is not gated on ${fc.cell}`);
+      if (fc.cell !== F.verdict.cell || vc.cell !== F.verdict.cell) disagree.push(`${SEEDS[i]}: contexts disagree with the export`);
+    }
+    if (!disagree.length)
+      ok(`one verdict function, three surfaces: over 12 worlds the findings band, the chronicle's close and the judge each draw their own wording and none of them claims a verdict other than the world's own cell`);
+    else fail(`the surfaces disagree: ${disagree.slice(0, 3).join(" | ")}`);
+  }
+
+  // (vi) THE MORAL COLOUR IS GONE. The lead used to be painted green when the gap
+  //      closed and red when it widened — the app grading a world on one axis of
+  //      three, and grading at all. A world that closed its gap by emptying its
+  //      poorest ground was painted green. The acceptance names its removal.
+  {
+    const appSrc = readFileSync(new URL("../src/app.mjs", import.meta.url), "utf8");
+    const hexes = ["#8fbf7f", "#e08268"].filter(h => appSrc.includes(h));
+    // and no surface may reconstruct the three-way read from the gini delta alone
+    const threeWay = /d\s*<=\s*-0\.04\s*\?[^:]*:\s*d\s*>=\s*0\.04/.test(appSrc);
+    if (!hexes.length && !threeWay)
+      ok(`the moral colour-coding is gone: neither the green nor the red survives in app.mjs, and no surface reconstructs the three-way gini read the verdict space replaced`);
+    else fail(`the old banner survives: colours ${hexes.join(",") || "none"}, three-way read ${threeWay}`);
+  }
+
+  // (vii) WHAT THE MODEL RARELY SAYS. Five of §3.5's six cells turn up in this
+  //       sweep. `unequal growth` — a widening gap over a RISING floor — does not,
+  //       and the honest statement of that is narrower than it first looked: it is
+  //       absent from these 80 worlds and from a 400-world sweep of a second seed
+  //       family, but it is NOT impossible — hunting a third family turned one up at
+  //       `v5s-194`. So the cell is rare, on the order of one world in several
+  //       hundred at defaults, and the reason is visible in the axes: among the
+  //       worlds whose gap widens, the floor move is positive in about one in
+  //       twenty-five. A widening gap in this model almost always takes the floor
+  //       down with it.
+  //
+  //       The check asserts only what this sweep measures. Its value is as a
+  //       tripwire: if a later mechanism makes the cell common, this turns red and
+  //       the claim above gets re-measured instead of being inherited.
+  {
+    const reached = new Set(worlds.map(w => w.F.verdict.cell));
+    const CELLS = ["shared rise", "leveling down", "quiet growth", "quiet decay", "unequal growth", "extraction"];
+    const missing = CELLS.filter(c => !reached.has(c));
+    // and the rarity has a mechanism, which is checkable here rather than asserted:
+    // of the worlds whose gap widened, how many also raised their floor?
+    const widened = worlds.filter(w => w.F.verdict.gap === "widened");
+    const alsoRose = widened.filter(w => w.F.verdict.floor === "rose").length;
+    if (reached.size === 5 && missing.length === 1 && missing[0] === "unequal growth" && alsoRose === 0)
+      ok(`five of §3.5's six cells appear in ${worlds.length} worlds at defaults and the sixth does not: of the ${widened.length} whose gap widened, ${alsoRose} also raised their floor — \`unequal growth\` is rare rather than impossible (one turns up at seed v5s-194), because in this model a widening gap takes the floor down with it`);
+    else fail(`the reachable cell set moved: ${reached.size} reached (${[...reached].join(", ")}), missing ${missing.join(", ") || "none"}, widened-and-rose ${alsoRose}/${widened.length}`);
+  }
+}
+
 console.log("# The suite audits itself: no assertion may sit in dead code");
 {
   // The audit that produced this check found a 1138-line validate() in THIS file

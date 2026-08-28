@@ -6594,8 +6594,15 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
             blocks.filter(b => b.topic !== "closer").map(b => plain(b.text)).join(` `));
           L.push(``);
           const close = blocks.find(b => b.topic === "closer");
-          L.push(close ? plain(close.text)
-            : `No one steered this world in particular. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay.`);
+          if (close) L.push(plain(close.text));
+          // D5 (#141): and then the verdict, in the judge's register, from the same
+          // verdict function the findings band reads. The chronicle used to close on
+          // the analyst's closer alone, which reports and does not judge; the record
+          // is entitled to a judgement as long as it is a judgement about THIS world.
+          L.push(``);
+          const vv = composeVerdict(model, params, { surface: "chronicle-verdict" });
+          if (audit) audit.push({ key: "verdict", text: vv.text, facts: vv.facts, names: vv.names });
+          L.push(`*${vv.text}*`);
         }
       }
       if (params.ep === 0) {
@@ -8900,17 +8907,27 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     const FINDINGS_POOL = {
       // -- the lead: which way the gap moved, and on what ----------------------
       lead: [
-        { t: "**this world closed the gap**: the wealth gap ran {num:gini_t0} at the founding and {num:gini} at the close", req: f => f.dG <= -0.04 },
-        { t: "**this world closed the gap**, from {num:gini_t0} at the founding down to {num:gini}", req: f => f.dG <= -0.04 },
-        { t: "the gap this world was founded with, {num:gini_t0}, is not the gap it closes on: **{num:gini}**", req: f => f.dG <= -0.04 },
-        { t: "**the distance narrowed**: a founding gap of {num:gini_t0} reads {num:gini} by the last epoch", req: f => f.dG <= -0.04 },
-        { t: "**this world got more unequal**: the wealth gap ran {num:gini_t0} at the founding and {num:gini} at the close", req: f => f.dG >= 0.04 },
-        { t: "**this world got more unequal**, from {num:gini_t0} at the founding up to {num:gini}", req: f => f.dG >= 0.04 },
-        { t: "what began at {num:gini_t0} ends at **{num:gini}**: **the gap widened**", req: f => f.dG >= 0.04 },
-        { t: "**the distance opened**: a founding gap of {num:gini_t0} reads {num:gini} by the last epoch", req: f => f.dG >= 0.04 },
-        { t: "**this world held its shape**: the wealth gap stayed at {num:gini}", req: f => Math.abs(f.dG) < 0.04 },
-        { t: "**nothing moved the shape of this world**: the gap sat at {num:gini_t0} and sits at {num:gini}", req: f => Math.abs(f.dG) < 0.04 },
-        { t: "**the gap kept its place**, {num:gini_t0} to {num:gini} across the whole run", req: f => Math.abs(f.dG) < 0.04 },
+        { t: "**this world closed the gap and raised its floor**: the spread ran {num:gini_t0} at the founding and {num:gini} at the close", req: f => f.cell === "shared rise" },
+        { t: "**the distance narrowed and the bottom rose with it**, from {num:gini_t0} to {num:gini}", req: f => f.cell === "shared rise" },
+        { t: "**a shared rise**: the gap went {num:gini_t0} to {num:gini} and the poorest tenth went up too", req: f => f.cell === "shared rise" },
+        { t: "the gap closed from {num:gini_t0} to **{num:gini}**, and it closed by lifting the floor rather than lowering the top", req: f => f.cell === "shared rise" },
+        { t: "**this world levelled down**: the gap closed from {num:gini_t0} to {num:gini} and the poorest tenth fell with it", req: f => f.cell === "leveling down" },
+        { t: "**the gap closed downward**, {num:gini_t0} to {num:gini}, with the floor lower at the close than at the founding", req: f => f.cell === "leveling down" },
+        { t: "**levelling down**: a narrower spread at {num:gini} against {num:gini_t0}, over a floor that dropped", req: f => f.cell === "leveling down" },
+        { t: "the spread narrowed to **{num:gini}** from {num:gini_t0}, and the bottom of the realm is worse off for it", req: f => f.cell === "leveling down" },
+        { t: "**this world held its shape and raised its floor**: the gap sat at {num:gini_t0} and sits at {num:gini}", req: f => f.cell === "quiet growth" },
+        { t: "**quiet growth**: nothing redistributed, the gap holding at {num:gini}, and the poorest tenth still rose", req: f => f.cell === "quiet growth" },
+        { t: "the gap kept its place at **{num:gini}** and the floor came up underneath it", req: f => f.cell === "quiet growth" },
+        { t: "**this world held its shape and lost its floor**: the gap sat at {num:gini_t0} and sits at {num:gini}", req: f => f.cell === "quiet decay" },
+        { t: "**quiet decay**: the spread did not move, {num:gini_t0} to {num:gini}, and the poorest tenth sank anyway", req: f => f.cell === "quiet decay" },
+        { t: "the gap held at **{num:gini}** while the bottom of the realm gave way", req: f => f.cell === "quiet decay" },
+        { t: "**nothing moved the shape of this world** and the floor fell under it, {num:gini_t0} to {num:gini}", req: f => f.cell === "quiet decay" },
+        { t: "**this world grew apart while its floor rose**: the gap ran {num:gini_t0} at the founding and {num:gini} at the close", req: f => f.cell === "unequal growth" },
+        { t: "**unequal growth**: the poorest tenth gained and the spread widened over it, {num:gini_t0} to {num:gini}", req: f => f.cell === "unequal growth" },
+        { t: "**this world got more unequal and poorer at the bottom**: the gap ran {num:gini_t0} at the founding and {num:gini} at the close", req: f => f.cell === "extraction" },
+        { t: "**extraction**: the spread opened from {num:gini_t0} to {num:gini} and the poorest tenth fell", req: f => f.cell === "extraction" },
+        { t: "what began at {num:gini_t0} ends at **{num:gini}**, and **the floor fell with the widening**", req: f => f.cell === "extraction" },
+        { t: "**the distance opened and the bottom dropped**: {num:gini_t0} to {num:gini} across the run", req: f => f.cell === "extraction" },
       ],
       lead_gloss: [
         { t: "that is unusually level for a world of {num:n_regions} regions", req: f => f.gini < 0.35 },
@@ -9253,6 +9270,11 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         : t.type === "reform" ? "reform" : "reaction";
       return {
         F, dG: F.gini - F.gini_t0, gini: F.gini, gini_t0: F.gini_t0,
+        // D5 (#141): the lead read dG alone, so a world whose gap closed while its
+        // poorest ground emptied still opened with "this world closed the gap". The
+        // band reads the same verdict function the judge and the chronicle read.
+        cell: F.verdict.cell, gapDir: F.verdict.gap, floorDir: F.verdict.floor, growthQ: F.verdict.growth,
+        floor_now: F.floor.p10, floor_t0: F.floor.p10_t0,
         n_regions: model.regions.length, n_epochs: model.epochSnaps.length - 1,
         realm: model.capitalName,
         turnKind: (t || params.ep > 0) ? turnKind : "none",
@@ -9363,6 +9385,209 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         blocks.push({ topic: claim, text: v.text, facts: v.facts, names: v.names });
       }
       return blocks;
+    }
+
+    // ---- The verdict, composed (D5, #141) -----------------------------------
+    //
+    // §3.5's verdict space already exists as a CLASS (B11, #133): the gap's move
+    // crossed with the floor's, qualified by growth. Nothing has ever read it. The
+    // three surfaces that pass judgement — the findings band's lead, the chronicle's
+    // close, and (E1) the reign panel — each did their own three-way read of the
+    // gini delta alone, which is why a world whose gap closed while its poorest
+    // ground emptied still opened with "this world closed the gap".
+    //
+    // The judge register is on the SPELLED law: no numeral may appear on the page.
+    // That is the register's whole character rather than an inconvenience. The
+    // analyst quotes to two decimal places and the historian to the digit; the judge
+    // argues, and an argument that leans on a third decimal is not an argument. So
+    // the judge speaks in counts and in parts of a hundred, spelled out, and every
+    // one of them is still audited against the same export column.
+    //
+    // CONTINGENT CONVICTION (§3.5): the judge argues hard about THIS world and holds
+    // no opinion about worlds in general. Nothing here says "usually", "worlds like
+    // this", or "as always" — the pool has no vocabulary for a comparison it cannot
+    // make, because the app measures one world at a time and a claim across worlds
+    // would be a claim the export cannot support.
+    const VERDICT_FRAMES = [
+      "{A}. {B}.", "{A}, and {B}.", "{A}; {B}.", "{A}: {B}.", "{A}. And {B}.",
+      "{A}, though {B}.", "{A}, so {B}.",
+    ];
+
+    const VERDICT_POOL = {
+      // -- the six cells of §3.5's matrix -------------------------------------
+      claim: [
+        // closed | rose
+        { t: "{name:realm} shared what it gained, and the distance between its regions closed while its poorest ground rose with it", req: c => c.cell === "shared rise" },
+        { t: "the gap across {num:settled_n} regions narrowed and the floor came up underneath it, which are two different achievements and this realm managed both", req: c => c.cell === "shared rise" },
+        { t: "what {name:realm} closed it closed from below, and the bottom of the ledger moved with the middle", req: c => c.cell === "shared rise" },
+        { t: "the distance across {num:settled_n} settled regions narrowed, and it narrowed by lifting rather than by levelling", req: c => c.cell === "shared rise" },
+        { t: "both of the things a realm can get right went right across these {num:settled_n} regions, the spread closing and the floor rising", req: c => c.cell === "shared rise" },
+        { t: "{name:realm} ends the record less unequal and less poor at the bottom than it began", req: c => c.cell === "shared rise" },
+        { t: "the poorest ground in {name:realm} is better off than at the founding, and so is its position relative to the rest", req: c => c.cell === "shared rise" },
+        { t: "across {num:settled_n} regions the spread closed while the floor rose, which is the harder of the two ways to close a spread", req: c => c.cell === "shared rise" },
+        // closed | fell
+        { t: "the gap in {name:realm} closed downward, the distance shrinking because the top came down and not because the bottom came up", req: c => c.cell === "leveling down" },
+        { t: "{name:realm} levelled by losing, the spread narrowing and the floor falling with it", req: c => c.cell === "leveling down" },
+        { t: "equality arrived here as a subtraction, with the poorest ground of {num:settled_n} regions lower at the close than at the founding", req: c => c.cell === "leveling down" },
+        { t: "the distance closed in {name:realm} and nobody at the bottom is better for it", req: c => c.cell === "leveling down" },
+        { t: "a narrower spread and a lower floor is what {name:realm} has to show, and only one of those is worth having", req: c => c.cell === "leveling down" },
+        { t: "the ledger of {name:realm} is more even and less full, its gap closed and its floor gone down", req: c => c.cell === "leveling down" },
+        { t: "what closed the gap across these {num:settled_n} regions was loss at the top, and loss at the bottom came with it", req: c => c.cell === "leveling down" },
+        { t: "levelling down is the whole of the verdict on {name:realm}, which has less distance and less floor than it started with", req: c => c.cell === "leveling down" },
+        // held | rose
+        { t: "the shape of {name:realm} did not move and its floor did, the spread holding while the poorest ground gained", req: c => c.cell === "quiet growth" },
+        { t: "nothing in {name:realm} redistributed and something in it improved, which the record is obliged to report as two separate facts", req: c => c.cell === "quiet growth" },
+        { t: "the distance across {num:settled_n} regions kept its place and the bottom rose beneath it", req: c => c.cell === "quiet growth" },
+        { t: "{name:realm} did not become more equal and did become less poor at the bottom", req: c => c.cell === "quiet growth" },
+        { t: "the spread across {num:settled_n} regions stood still while the floor came up, so what improved improved without anything being rearranged", req: c => c.cell === "quiet growth" },
+        { t: "the ordering of {name:realm} is what it was, and the ground under the ordering is higher", req: c => c.cell === "quiet growth" },
+        { t: "held distance and a risen floor, so the arrangement of these {num:settled_n} regions survived intact and paid better", req: c => c.cell === "quiet growth" },
+        // held | fell
+        { t: "{name:realm} kept its shape and lost its floor, the spread holding while the poorest ground gave way", req: c => c.cell === "quiet decay" },
+        { t: "nothing in the arrangement of these {num:settled_n} regions moved, and the bottom of it sank anyway", req: c => c.cell === "quiet decay" },
+        { t: "the distance across {num:settled_n} regions held steady while the ground beneath it fell, which is a decline no spread can show", req: c => c.cell === "quiet decay" },
+        { t: "the record closes on the same shape and a lower floor across {num:settled_n} regions", req: c => c.cell === "quiet decay" },
+        { t: "{name:realm} is no more unequal than it was and its poorest ground is poorer", req: c => c.cell === "quiet decay" },
+        { t: "the spread of {name:realm} did not move and its floor did, downward, which no measure of distance was ever going to catch", req: c => c.cell === "quiet decay" },
+        { t: "held distance and a fallen floor, so everyone in {name:realm} kept their place and the place got worse", req: c => c.cell === "quiet decay" },
+        // widened | rose
+        { t: "{name:realm} grew apart while its floor rose, which the record can report and cannot reconcile", req: c => c.cell === "unequal growth" },
+        { t: "the poorest ground of these {num:settled_n} regions gained and the distance to the rest grew faster", req: c => c.cell === "unequal growth" },
+        { t: "the bottom of {name:realm} rose and the top rose further, so the spread widened over a floor that was going up", req: c => c.cell === "unequal growth" },
+        { t: "everyone in {name:realm} gained and the gains were not shared evenly enough to hold the spread", req: c => c.cell === "unequal growth" },
+        { t: "a rising floor and a widening gap is what these {num:settled_n} regions produced, and the two are not in contradiction", req: c => c.cell === "unequal growth" },
+        // widened | fell
+        { t: "{name:realm} took from the bottom and widened at the top, its gap opening and its floor falling", req: c => c.cell === "extraction" },
+        { t: "the distance across these {num:settled_n} regions grew, and the poorest ground paid for the growing", req: c => c.cell === "extraction" },
+        { t: "both measures went the wrong way in {name:realm}, which closes on a wider spread over a lower floor", req: c => c.cell === "extraction" },
+        { t: "the ledger of {name:realm} closes further apart and lower down than it opened", req: c => c.cell === "extraction" },
+        { t: "what the top of {name:realm} gained across the record, the bottom of it did not", req: c => c.cell === "extraction" },
+        { t: "the spread across {num:settled_n} regions opened and the floor sank, which is the shape the record was built to be able to show", req: c => c.cell === "extraction" },
+        { t: "widened distance and a fallen floor, leaving {num:settled_n} regions further apart and worse off at the bottom", req: c => c.cell === "extraction" },
+        { t: "{name:realm} concentrated, and what left the bottom did not leave the realm", req: c => c.cell === "extraction" },
+      ],
+
+      // -- the gap, quantified, in the register's own numerals ----------------
+      gap: [
+        { t: "the spread ran {term:gap_t0_words} in the hundred at the founding and {term:gap_words} at the close", req: () => true },
+        { t: "from {term:gap_t0_words} parts in the hundred to {term:gap_words}, measured on the same {num:settled_n} regions", req: () => true },
+        { t: "the founding spread of {term:gap_t0_words} in the hundred reads {term:gap_words} now", req: () => true },
+        { t: "measured in parts of a hundred the distance moved {term:gap_move_words}, from {term:gap_t0_words} to {term:gap_words}", req: c => c.gap !== "held" },
+        { t: "the distance is {term:gap_words} in the hundred, against {term:gap_t0_words} when {name:realm} was surveyed", req: () => true },
+        { t: "{term:gap_move_words} parts in the hundred separate the founding spread from the closing one", req: c => c.gap !== "held" },
+        { t: "the spread across {num:settled_n} regions sits at {term:gap_words} in the hundred", req: c => c.gap === "held" },
+        { t: "neither the founding {term:gap_t0_words} nor the closing {term:gap_words} is far from the other", req: c => c.gap === "held" },
+      ],
+
+      // -- the floor, which is the axis the old banner could not see ----------
+      floor: [
+        { t: "the poorest tenth of {name:realm} stood at {term:floor_t0_words} at the founding and stands at {term:floor_words} now", req: () => true },
+        { t: "the floor moved from {term:floor_t0_words} to {term:floor_words}, counted on the poorest tenth of {num:settled_n} regions", req: () => true },
+        { t: "at the bottom tenth the reading is {term:floor_words}, against {term:floor_t0_words} at the founding", req: () => true },
+        { t: "{term:rose_words} of the {num:settled_n} settled regions {term:rose_verb} than at the founding, and the rest do not", req: c => c.roseN > 0 && c.roseN < c.settledN },
+        { t: "not one of the {num:settled_n} settled regions ends richer than it began", req: c => c.roseN === 0 },
+        { t: "every one of the {num:settled_n} settled regions ends richer than it began", req: c => c.roseN === c.settledN },
+        { t: "the bottom tenth of {name:realm} reads {term:floor_words} where it read {term:floor_t0_words}", req: () => true },
+        { t: "{term:fell_words} of the {num:settled_n} regions {term:fell_are} poorer at the close than at the founding", req: c => c.fellN > 0 && c.fellN < c.settledN },
+        // The floor is the poorest tenth of the regions still standing, measured at
+        // both ends on that same set — which is the right way to measure a change and
+        // the wrong way to be quiet about. A realm that abandoned its poorest ground
+        // can show a risen floor because the ground that would have dragged it down
+        // stopped being counted: measured, that flips the sign in eight of the eighty-
+        // nine risen-floor worlds in a two-hundred-world sweep. The judge says so.
+        { t: "the floor is counted on ground still standing, and {term:dead_words} of the founding settlements {term:dead_are} not", req: c => c.deadN > 0 && c.floorDir === "rose" },
+        { t: "{term:dead_words} {term:dead_settle} left the count between the founding and the close, so the tenth being measured is not the tenth that was surveyed", req: c => c.deadN > 0 && c.floorDir === "rose" },
+        { t: "the poorest tenth reads better partly because {term:dead_words} of the settlements that would have sat in it {term:dead_were} abandoned", req: c => c.deadN > 0 && c.floorDir === "rose" },
+        { t: "no settlement in {name:realm} was abandoned, so the tenth measured at the close is the tenth that was surveyed", req: c => c.deadN === 0 },
+      ],
+
+      // -- growth: the qualifier, and the honest size of it -------------------
+      growth: [
+        { t: "the realm as a whole is richer at the close by {term:growth_words} parts in the hundred", req: c => c.growth === "boom" },
+        { t: "there was more to divide at the end than at the start, by {term:growth_words} in the hundred", req: c => c.growth === "boom" },
+        { t: "{name:realm} gained {term:growth_words} parts in the hundred across the run", req: c => c.growth === "boom" },
+        { t: "the pie of {name:realm} neither grew nor shrank by as much as a twelfth", req: c => c.growth === "stagnant" },
+        { t: "there is no more and no less to divide across {num:settled_n} regions than there was", req: c => c.growth === "stagnant" },
+        { t: "the ledger of {name:realm} held its size while its distribution did the moving", req: c => c.growth === "stagnant" },
+        { t: "the realm is poorer at the close than at the founding by {term:growth_words} parts in the hundred", req: c => c.growth === "collapse" },
+        { t: "there is {term:growth_words} in the hundred less to divide than {name:realm} began with", req: c => c.growth === "collapse" },
+        { t: "the ledger of {num:settled_n} regions shrank by {term:growth_words} parts in the hundred while it was being redistributed", req: c => c.growth === "collapse" },
+        { t: "what {name:realm} had to share fell by {term:growth_words} in the hundred", req: c => c.growth === "collapse" },
+      ],
+
+      // -- contingent conviction: hard about THIS world, silent about others ---
+      conviction: [
+        { t: "that is what these {num:settled_n} regions did, and this record makes no claim about any other realm", req: () => true },
+        { t: "the verdict is on {name:realm} and on nothing else, and every figure in it recomputes from the exported columns", req: () => true },
+        { t: "none of {name:realm} was steered, and all of it is chargeable to rules written down before the first settlement", req: () => true },
+        { t: "the record holds {name:realm} to what it did and holds no opinion about what a realm ought to do", req: () => true },
+        { t: "this is a reading of {num:settled_n} regions and not a rule about realms", req: () => true },
+        { t: "the two axes above are the whole of the judgement, and both are recomputable from the export of {name:realm}", req: () => true },
+        { t: "what is said here is said about {name:realm} at this close and about no other world and no other year", req: () => true },
+        { t: "the arithmetic of {name:realm} is not in dispute, and the reading of it is offered as a reading", req: c => c.settledN > 0 },
+        { t: "nothing in the {num:settled_n} regions was arranged to produce this, which is the part worth sitting with", req: () => true },
+        { t: "this is what {name:realm} came to, argued from its own columns and from nothing outside them", req: () => true },
+      ],
+    };
+
+    // Everything the judge may count, as integers, because the register's law
+    // forbids a numeral and `loomSpell` rounds. A gini to two places has no spelled
+    // form worth reading, so the gap is carried in PARTS OF A HUNDRED — the same
+    // number the analyst prints as a decimal, times a hundred, and audited as such.
+    function verdictCtx(model, params) {
+      const F = getFindings(model);
+      const v = F.verdict;
+      const settled = model.regions.filter(r => r.settled);
+      const roseN = settled.filter(r => r.wealth > r.wealthT0).length;
+      const gr = F.growth.per_capita_t0 > 0 ? F.growth.per_capita / F.growth.per_capita_t0 : 1;
+      const c = {
+        cell: v.cell, gap: v.gap, floorDir: v.floor, growth: v.growth, class: v.class,
+        realm: model.capitalName,
+        settledN: settled.length, settled_n: settled.length,
+        n_regions: model.regions.length,
+        roseN, fellN: settled.length - roseN,
+        deadN: model.regions.filter(r => !r.settled && r.abandonedEpoch >= 0).length,
+        rose_verb: roseN === 1 ? "ends richer" : "end richer",
+        fell_are: (settled.length - roseN) === 1 ? "is" : "are",
+        // the spelled quantities, each one an integer the export can be checked against
+        gap_pts: Math.round(100 * F.gini), gap_t0_pts: Math.round(100 * F.gini_t0),
+        gap_move_pts: Math.abs(Math.round(100 * F.gini) - Math.round(100 * F.gini_t0)),
+        floor_pts: Math.round(F.floor.p10), floor_t0_pts: Math.round(F.floor.p10_t0),
+        growth_pts: Math.abs(Math.round(100 * (gr - 1))),
+      };
+      // The judge's numerals are words. They are `term` slots rather than `num` so
+      // that the audit checks the INTEGER behind each one under the spelled rule and
+      // the page still carries no digit.
+      c.dead_are = c.deadN === 1 ? "is" : "are";
+      c.dead_were = c.deadN === 1 ? "was" : "were";
+      c.dead_settle = c.deadN === 1 ? "settlement" : "settlements";
+      for (const [k, n] of [["gap_words", c.gap_pts], ["gap_t0_words", c.gap_t0_pts],
+        ["gap_move_words", c.gap_move_pts], ["floor_words", c.floor_pts],
+        ["floor_t0_words", c.floor_t0_pts], ["growth_words", c.growth_pts],
+        ["rose_words", c.roseN], ["fell_words", c.fellN], ["dead_words", c.deadN]])
+        c[k] = loomSpell(n);
+      return c;
+    }
+
+    const verdictResolve = (kind, key, c) => {
+      if (kind === "name" || kind === "term") return c[key];
+      if (kind === "num") { const x = c[key]; return (x === null || x === undefined) ? null : x; }
+      return null;
+    };
+
+    // The one verdict function every judging surface reads. The findings band, the
+    // chronicle's close and (E1) the reign panel all call this, so a world cannot be
+    // told it closed its gap on one surface and levelled down on another.
+    const VERDICT_ORDER = [["claim", "gap"], ["floor", "growth"], ["conviction", null]];
+    function composeVerdict(model, params, opts) {
+      const o = opts || {};
+      const c = verdictCtx(model, params);
+      const v = loomCompose({
+        register: "judge", frames: VERDICT_FRAMES, pool: VERDICT_POOL,
+        classes: VERDICT_ORDER, ctx: c, resolve: verdictResolve,
+        rv: loomStream(params.seed, o.surface || "verdict", o.key || "verdict"),
+      });
+      return { text: v.text, facts: v.facts, names: v.names, cell: c.cell, class: c.class, ctx: c };
     }
 
     // ---- The loom: one prose engine for every register (D1, #137) -----------
@@ -9847,11 +10072,12 @@ export {
   loomGate, loomFill, loomCompose, loomAudit,
   loomSkeleton, loomDiversity, loomDiversityFloor, loomMeetsFloor, loomLint,
   // The findings, composed on the loom (D3, #139)
-  FINDINGS_POOL, FINDINGS_ORDER, FINDINGS_FRAMES, composeFindings, findingsCtx,
+  FINDINGS_POOL, FINDINGS_ORDER, FINDINGS_FRAMES, composeFindings, findingsCtx, findingsResolve,
   // The chronicle, composed on the loom (D4, #140)
   CHRONICLE_POOL, CHRONICLE_FOUNDING, CHRONICLE_STATE,
   CHRONICLE_YEARS_OPEN, CHRONICLE_YEARS_CLOSE, CHRONICLE_FRAMES, chronicleCtx, chronicleBeat,
   EVENT_POOL, EVENT_FRAMES, EVENT_CLASSES, eventClasses, eventCtx, eventLine,
   chronicleResolve, CHRONICLE_FIXED,
+  VERDICT_POOL, VERDICT_FRAMES, VERDICT_ORDER, verdictCtx, verdictResolve, composeVerdict,
   RUIN_SAID, AGE_SAID, FATE_SAID,
 };

@@ -1,7 +1,7 @@
 // Calibration sweep: measure many worlds, find the archetypal extremes,
 // and write docs/atlas.md with share-links and each world's own words.
 import { writeFileSync } from "node:fs";
-import { genEngine, giniOf, pearson } from "./lib.mjs";
+import { genEngine, giniOf, pearson, settlesOf } from "./lib.mjs";
 
 const worlds = [];
 const N = 80;
@@ -15,8 +15,26 @@ for (let i = 0; i < N; i++) {
   const held = { crown: 0, temple: 0, magnate: 0, none: 0 };
   gj.features.filter(f => ["bridge", "pass", "port"].includes(f.properties.kind)).forEach(f => held[f.properties.held_by]++);
   const gates = held.crown + held.temple + held.magnate + held.none;
-  const capName = (chron.match(/set down at ([A-Z][a-z]+)/) || [])[1] || "?";
-  const reign = (chron.match(/in the reign of ([A-Z][a-z]+)/) || [])[1] || "?";
+  // D5 (#141): these used to be grepped out of the chronicle's preamble, which
+  // worked only while the preamble was one fixed sentence. D4 (#140) composed it
+  // from twelve, and this tool then read "?" for the capital in every world — the
+  // same defect the suite's nineteen chronicle greps had, outside the suite's reach
+  // because a docs generator is not a test. Both facts are in the export; read them
+  // from there, where a rewording cannot move them.
+  const capSettle = settlesOf(gj).find(f => {
+    const reg = R.find(r => r.region_id === f.properties.region_id);
+    return reg && reg.is_capital_region === 1;
+  });
+  const capName = capSettle ? capSettle.properties.name : "?";
+  const townOf = (rid) => {
+    if (rid === null || rid === undefined) return null;
+    const f = settlesOf(gj).find(x => x.properties.region_id === rid);
+    if (f) return f.properties.name;
+    const reg = R.find(r => r.region_id === rid);
+    return reg ? (reg.place_name || null) : null;
+  };
+  const crownLine = (gj.hinterland.rulers && gj.hinterland.rulers.crown) || [];
+  const reign = crownLine.length ? crownLine[crownLine.length - 1].name : "?";
   const F = gj.hinterland.findings;
   worlds.push({
     seed, hash, capName, reign, chron,
@@ -67,6 +85,21 @@ for (let i = 0; i < N; i++) {
     concWorld: evs.some(e => e.type === "concession"),
     abandWorld: evs.some(e => e.type === "abandonment"),
     embargoWorld: evs.some(e => e.type === "embargo"),
+    // D5 (#141): the values each archetype's quotation is anchored on. Names and
+    // counts the export already carries, so a reworded pool cannot silence them.
+    companyTown: townOf(F.company_town),
+    popTop: Math.max(...R.map(r => r.population || 0)),
+    richestPower: (() => { const t = gj.hinterland.treasuries;
+      const k = ["crown", "temple", "magnate"].reduce((a, b) => t[a] >= t[b] ? a : b);
+      return { crown: "the Crown", temple: "the Temple", magnate: "the magnates" }[k]; })(),
+    darkNow: R.filter(r => r.on_conduit === 0).length,
+    ridgeName: (gj.features.find(f => f.properties.kind === "ridge") || { properties: {} }).properties.ridge_name || null,
+    warTown: townOf((evs.find(e => e.type === "war") || {}).region_id),
+    mouthTown: townOf((R.slice().sort((a, b) => b.downstream_blight - a.downstream_blight)[0] || {}).region_id),
+    ghostTown: townOf((R.slice().sort((a, b) => b.abandonment_index - a.abandonment_index)[0] || {}).region_id),
+    revoltTown: townOf((evs.find(e => e.type === "revolt" && e.outcome === "won") || {}).region_id),
+    concTown: townOf((evs.find(e => e.type === "concession") || {}).region_id),
+    abandTown: townOf((evs.find(e => e.type === "abandonment") || {}).region_id),
     concWealth: F.concessions ? F.concessions.conc_wealth : null,
     concMedian: F.concessions ? F.concessions.median_wealth : null,
     foreignClaim: F.concessions ? F.concessions.foreign_claim : null,
@@ -107,53 +140,69 @@ rows.forEach(([k, s]) => console.log(`  ${k}: min ${fmt(s.min)} / med ${fmt(s.me
 // pick the archetypes
 const pickMax = (key, fn) => worlds.reduce((a, b) => (fn ? fn(b) > fn(a) : b[key] > a[key]) ? b : a);
 const pickMin = (key) => worlds.reduce((a, b) => b[key] < a[key] ? b : a);
-const line = (w, re, fallback) => {
-  const m = w.chron.split("\n").find(l => re.test(l));
-  return (m || fallback || "").replace(/\*\*/g, "").trim();
+// D5 (#141): every archetype used to quote its world by matching a v1 chronicle
+// sentence. D4 (#140) composed the chronicle from pools, and eight of the nine
+// regexes then matched nothing: measured over thirty worlds they ran 0/30 to 5/30
+// where they had been 30/30. A docs generator is not covered by the suite, so this
+// rotted silently through a green CI. The lesson is the same one D4's nineteen
+// suite rewrites learned — do not grep composed prose for a fact the export holds.
+//
+// So a quotation is anchored on a VALUE the world exports (a town's name, a figure
+// the archetype is chosen by) and falls back to the world's own composed verdict,
+// which every chronicle now carries and which is always on the subject.
+const verdictLine = (w) => {
+  const m = w.chron.split("\n").map(l => l.trim()).reverse().find(l => /^\*[^*].*\*$/.test(l));
+  return m ? m.replace(/^\*|\*$/g, "").trim() : "";
+};
+const about = (w, ...needles) => {
+  const keys = needles.filter(x => x !== null && x !== undefined && String(x).length);
+  const ls = w.chron.split("\n").filter(l => l.trim() && !l.startsWith("#") && !l.startsWith("*"));
+  const hit = keys.length ? ls.find(l => keys.every(k => l.includes(String(k)))) : null;
+  return (hit || verdictLine(w)).replace(/\*\*/g, "").trim();
 };
 const picks = [
   ["The World That Closed Its Gap", pickMin("dGini"), "the deepest gini fall of the sweep. Find its turning point",
-    (w) => line(w, /closed some of its gap/)],
+    (w) => verdictLine(w)],
   ["The Entrenched World", pickMax("dGini"), "the steepest entrenchment. The loops ran and nothing pushed back",
-    (w) => line(w, /got more unequal/)],
+    (w) => verdictLine(w)],
   ["The Company Country", pickMax("withinPct"), "the world a region map lies about most: its inequality lives INSIDE the walls",
-    (w) => line(w, /two peoples under one name/)],
+    (w) => about(w, w.companyTown)],
   ["The Occupied Realm", pickMax("occupiedN"), "the Dominion's deepest hold of the sweep",
-    (w) => line(w, /Dominion/)],
+    (w) => about(w, "Dominion")],
   ["The Primate City", pickMax("primacy"), "one town swallowed the centuries",
-    (w) => line(w, /No one planned the towns/)],
+    (w) => about(w, w.popTop)],
   ["The Ledger's Realm", pickMax("gateConc"), "the most oligarchic world: one power holds the gates",
-    (w) => line(w, /ledgers run deepest/)],
+    (w) => about(w, w.richestPower)],
   ["The Unequal Country", pickMax("gini"), "the widest wealth gap of the sweep",
-    (w) => line(w, /wealth gap/)],
+    (w) => verdictLine(w)],
   ["The Level Country", pickMin("gini"), "the narrowest wealth gap. Note what it still fails to level",
-    (w) => line(w, /gates, meaning the bridges/)],
+    (w) => verdictLine(w)],
   ["The Dark Realm", pickMax("offShare"), "the most off-grid world: the ledgers said no, everywhere",
-    (w) => line(w, /off the grid, in darkness/)],
+    (w) => about(w, w.darkNow)],
   ["The Walled Realm", pickMax("shadowShare"), "the most mountain-shadowed world",
-    (w) => line(w, /mountains' shadow/)],
+    (w) => about(w, w.ridgeName)],
   ["The Burning Years", pickMax(null, w => w.wars * 10 + w.seizures + w.crises), "the most violent history of the sweep",
-    (w) => line(w, /War came to/)],
+    (w) => about(w, w.warTown)],
   ["The Quiet Years", pickMin("eventsN"), "the calmest history. The founding order simply compounded",
-    (w) => line(w, /No upheavals are recorded/, "No upheavals are recorded.")],
+    (w) => verdictLine(w)],
   ["The Poisoned Mouth", pickMax("maxDownstream"), "the heaviest downstream blight",
-    (w) => line(w, /upstream have dumped in/)],
+    (w) => about(w, w.mouthTown)],
   ["The Ghost Country", pickMax("maxAband"), "the deepest abandonment scar",
-    (w) => line(w, /emptiest of the ghost country/)],
+    (w) => about(w, w.ghostTown)],
   ["The Tariffed Road", pickMax("maxToll"), "the most gate-taxed region of the sweep",
-    (w) => line(w, /did not choose the road/)],
+    (w) => verdictLine(w)],
 ];
 const lib = worlds.find(w => w.liberation);
 if (lib) picks.push(["The Town That Freed Itself", lib, "a rising won on ground the Dominion had claimed",
-  (w) => line(w, /rose against the Dominion|rose\. The constabulary line broke/)]);
+  (w) => about(w, w.revoltTown)]);
 // B11 (#133): the reach archetypes: the empire that buys, and the one it leaves.
 const conc = worlds.filter(w => w.concN > 0 && w.concWealth !== null && w.concWealth > w.concMedian)
   .sort((a, b) => (b.concWealth - b.concMedian) - (a.concWealth - a.concMedian))[0];
 if (conc) picks.push(["The Concession Coast", conc, "richer than the realm, and owned. A foreign power keeps half of what its ground yields",
-  (w) => line(w, /did not send a fleet|sent factors and a charter/i)]);
+  (w) => about(w, w.concTown)]);
 const aband = worlds.find(w => w.abandWorld);
 if (aband) picks.push(["The Abandoned Coast", aband, "courted, developed, then let go when the lode ran thin. Ruin and freedom in one year",
-  (w) => line(w, /wound up its concession|attention left with the ore/i)]);
+  (w) => about(w, w.abandTown)]);
 
 // #180: read the schema version off the sweep's own output. It was hardcoded, so it
 // said v54 through a version bump that changed what blight_load MEANS.

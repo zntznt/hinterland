@@ -468,6 +468,41 @@ the sweep harness before pinning, per house rule.
 > chronicle, sharing register and subject and no template, score 0.045–0.073, and a
 > chronicle against another world's findings panel scores 0.092. The 0.20 ceiling is
 > a claim about prose, not an artifact of the mask.
+>
+> **D5 (#141) closed the strand**: the verdict is composed, and the three surfaces
+> that used to pass judgement independently now read one function. §3.5's class space
+> was already exported (B11, #133) and no surface read it; the findings band, the
+> chronicle's close and the article's pull quote each ran their own three-way read of
+> the gini delta, so a realm that closed its gap by emptying its poorest ground opened
+> with "this world closed the gap". **The moral colour-coding went with it** — the lead
+> was painted green for a closing gap and red for a widening one, which is the app
+> grading a world on one axis of three.
+>
+> The judge register is on the SPELLED law: no numeral in verdict prose. That is the
+> voice, not a limitation. The analyst quotes decimals, the historian quotes digits,
+> and the judge argues in counts and parts of a hundred — each of them an integer
+> audited against the same export column (680 facts over 80 worlds, 0 offenders).
+> **Contingent conviction** is enforced by the pool's vocabulary: there is no fragment
+> that says "usually" or "worlds like this", because the app measures one world and a
+> claim across worlds is one the export cannot carry.
+>
+> §7.3 is pinned on the instrument the issue names — the 80-world sweep at defaults —
+> at eleven classes with the commonest at 20% against a 40% ceiling.
+>
+> **Two things the strand learned about itself, recorded here because the next surface
+> will meet them.** First, **a composed surface can break a tool that no test runs**:
+> #140's migration silently broke `tools/atlas.mjs`, which parsed the capital's name
+> out of the preamble and quoted each archetype by matching a v1 sentence. Measured
+> after the fact, the capital parsed in 0 of 20 worlds and eight of nine quotations
+> matched nothing, and CI was green throughout because a docs generator is not a test.
+> Anything that reads prose for a fact the export holds is a latent break; the atlas
+> reads the export now. Second, **the sixth verdict cell is rare rather than absent**:
+> a widening gap over a rising floor appears in 0 of 80 worlds in the calibration
+> sweep and 0 of 400 in a second seed family, and a third family turns one up. The
+> checkable part is the mechanism behind the rarity — among the worlds whose gap
+> widens, the floor rises in about one in twenty-five — so in this model a widening
+> gap almost always takes the floor down with it. Whether that is a property worth
+> keeping belongs to Phase B.
 
 ---
 

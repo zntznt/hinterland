@@ -1,6 +1,74 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the verdict is composed now, and the app stopped grading worlds** (issue #141, D5;
+  **no schema change and no exported byte moves** — the regen touched 30 `chronicle.md`
+  files and 0 `geojson`/`events.csv`, the same shape as #140 and for the same reason:
+  `findings.verdict` already existed and did not move, only the prose did).
+  §3.5's verdict space has existed as a CLASS since B11 (#133): the gap's move crossed
+  with the floor's, qualified by growth. **Nothing read it.** The findings band, the
+  chronicle's close and the article's pull quote each did their own three-way read of
+  the gini delta alone, which is why a world whose gap closed while its poorest ground
+  emptied still opened with "this world closed the gap". All three read one verdict
+  function now, and the judge register composes the verdict itself from an 83-fragment
+  pool. Sample at [docs/verdict-sample.md](docs/verdict-sample.md).
+  **The judge is on the SPELLED law and that is the register, not an inconvenience.**
+  No numeral may appear in verdict prose. The analyst quotes to two decimals and the
+  historian to the digit; the judge argues, and an argument leaning on a third decimal
+  is not an argument. So the judge speaks in counts and parts of a hundred, spelled
+  out, and every one of them is still an integer audited against the export: 680 facts
+  over 80 worlds, 0 offenders, and the suite plants a tampered number-word and requires
+  it back as the one offender.
+  **CONTINGENT CONVICTION (§3.5).** The pool has no vocabulary for "usually", "worlds
+  like this", or "as always" — the app measures one world at a time, and a claim across
+  worlds is a claim the export cannot support. The judge argues hard about this realm
+  and holds no opinion about realms.
+  **The moral colour-coding is gone.** The findings lead was painted green when the gap
+  closed and red when it widened: the app grading a world on one axis of three, and
+  grading at all. A world that closed its gap by emptying its poorest ground was
+  painted green. The words are the whole of the reading now.
+  **§7.3 pinned on the instrument the issue names**: the 80-world calibration sweep at
+  defaults, ep=10. Eleven distinct §3.5 classes, the commonest 20% against a 40%
+  ceiling.
+  **Three findings, and the first is the one that matters.**
+  (1) *#140 broke `tools/atlas.mjs` and CI could not see it.* The atlas parsed the
+  capital's name and the reigning ruler out of the chronicle's preamble with regexes,
+  and quoted each archetype by matching a v1 chronicle sentence. D4 composed the
+  chronicle from pools, and measured afterwards: the capital name parsed in **0 of 20**
+  worlds, the reign in 2 of 20, and **eight of the nine archetype quotations matched
+  nothing** (0/30 to 5/30, from 30/30). The atlas is a docs generator, so nothing in
+  the suite ran it and #140 went green and merged with the tool broken. It is the same
+  defect the nineteen chronicle greps inside the suite had, sitting just outside the
+  suite's reach. Both facts now come from the export, and every quotation is anchored
+  on a value the world exports — a town's name, the figure the archetype was chosen by
+  — falling back to the world's own composed verdict, which every chronicle now carries
+  and which is always on the subject.
+  (2) *`unequal growth` is rare, and the acceptance asked to display it.* The sixth
+  cell of §3.5's matrix — a gap that widens over a RISING floor — appears in **0 of 80**
+  worlds in the calibration sweep and **0 of 400** in a second seed family. It is not
+  impossible: hunting a third family turned one up at `v5s-194`. The mechanism behind
+  the rarity is visible in the axes, and is what the suite actually asserts: among the
+  worlds whose gap widens, **the floor rises in roughly one in twenty-five**. In this
+  model a widening gap almost always takes the floor down with it. That is a finding
+  about the world-model rather than the prose, so the cell's prose is authored and the
+  check is written as a tripwire: if a later mechanism makes the cell common it turns
+  red and the claim is re-measured instead of inherited.
+  (*Stated as "unreachable" in an earlier draft of this entry on the strength of one
+  seed family; the sample then found a world in another. The narrower claim above is
+  what the measurements support.*)
+  (3) *The floor axis is measured on survivors, and the verdict never said so.* The
+  floor is the poorest tenth of the regions still standing, taken at both ends on that
+  same set — which is the right way to measure a change and the wrong way to be quiet
+  about. A realm that abandoned its poorest ground can show a risen floor because the
+  ground that would have dragged it down stopped being counted: measured, that flips
+  the sign in **8 of the 89 risen-floor worlds** in a 200-world sweep. The measure is
+  unchanged, because comparing the same regions at two times is correct; what changed
+  is that the judge now says how many settlements left the count, whenever the floor
+  rose and any did.
+  The register's own laws caught two more in passing: eleven fragments carried their
+  own colon or semicolon into frames that own the punctuation, and a plural was written
+  into clauses whose count can be one ("one of the eighteen settled regions end richer
+  than they began").
 - **the chronicle is composed now, not recited** (issue #140, D4; **no schema change and
   no exported byte moves** — the fixture regeneration touched 30 `chronicle.md` files
   and 0 `geojson`/`events.csv`, which is the pin proving the export did not move).

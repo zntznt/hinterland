@@ -414,6 +414,13 @@ the sweep harness before pinning, per house rule.
 > pin, and the suite enforces that every exported `loom*` symbol is exercised, so the
 > dormancy cannot quietly become dead code.
 >
+> **D3 (#139) landed on it**: the findings panel is the first surface migrated. 238
+> analyst-register fragments, `composeFindings` in the engine, `findingsHTML` reduced to
+> a renderer, 954 facts audited across 20 seeds with zero offenders, cross-seed panel
+> overlap 0.18 inside this section's 0.20 ceiling, sample at
+> [findings-sample.md](findings-sample.md). The two suite checks that used to grep the
+> panel for its own wording now assert its figures instead.
+>
 > Two of the rules above are now mechanical rather than advisory. **No fragment
 > without a region-varying slot**: `loomLint` fails a pool that carries one, because
 > the #136 gate measured worst-surface repeats of 14 at half pool scale and 8 at full

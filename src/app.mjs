@@ -13,7 +13,7 @@ import {
   buildTopology, buildGeology, applyAttributes,
   edgeCost, costDistances,
   toGeoJSON, toEpochSeries, toCsvTables, epochDate,
-  computeFindings, getFindings, composeChronicle,
+  computeFindings, getFindings, composeChronicle, composeFindings,
   parseHash,
 } from './engine/engine.mjs';
 
@@ -281,94 +281,40 @@ const d3 = globalThis.d3;
       return d;
     };
 
-    function findingsHTML(model) {
-      const F = getFindings(model);
-      const town = (id) => model.settlements.find(st => st.regionId === id) || { name: ((model.regions.find(r => r.id === id) || {}).placeName) || "the wild", regionId: id, tier: "none", population: 0 };
-      const reg = (id) => model.regions.find(r => r.id === id);
-      const L = [];
-      {
-        const dG = F.gini - F.gini_t0;
-        const EP = model.epochSnaps.length - 1;
-        const MEASURES = { dumping_reform: "a Dumping Reform", grid_charter: "a Grid Charter", toll_amnesty: "a Tariff Amnesty",
-          retention_act: "a Retention Act", crown_granary: "the Crown Granary", dumping_entrenched: "the dumping entrenched in law", toll_crackdown: "a tariff crackdown" };
-        let lead = dG <= -0.04
-          ? `<span style="color:#8fbf7f; font-weight:700">THIS WORLD CLOSED THE GAP.</span> The wealth gap went from ${F.gini_t0.toFixed(2)} at the founding to ${F.gini.toFixed(2)} at the close.`
-          : dG >= 0.04
-          ? `<span style="color:#e08268; font-weight:700">THIS WORLD GOT MORE UNEQUAL.</span> The wealth gap went from ${F.gini_t0.toFixed(2)} at the founding to ${F.gini.toFixed(2)} at the close.`
-          : `<b>This world held its shape.</b> The wealth gap stayed at ${F.gini.toFixed(2)}` +
-            (F.gini < 0.35 ? ". That is unusually level." : F.gini > 0.62 ? ". That is about as unequal as these worlds get." : ". That is near the middle of all possible worlds.");
-        if (F.turning) {
-          const y = 1000 + 25 * F.turning.epoch;
-          lead += F.turning.type === "revolt"
-            ? ` It turned on the revolt of ${y}. ${F.turning.outcome === "won" ? (F.turning.arc === "starved" ? "<b>The revolt won, then the town starved.</b>" : "<b>The revolt won, and the town flourished.</b>") : "<b>The revolt was crushed.</b>"}` // B8 (#130): the two won-arcs
-            : F.turning.type === "reform"
-            ? ` It turned on ${MEASURES[F.turning.measure]} in ${y}.`
-            : ` It turned on a reaction, ${MEASURES[F.turning.measure]}, in ${y}.`;
-        } else if (EP > 0) {
-          lead += ` No reform came and no revolt came. The loops ran unopposed.`;
+    // D3 (#139): the findings are COMPOSED, not recited. The fifteen canned
+    // sentences that used to live here moved to the loom as an analyst-register
+    // pool (engine.mjs, composeFindings), so this function does what a renderer
+    // should and nothing else: markdown emphasis to HTML, the topic's accent
+    // colour where the panel had one, escaping, and the joins.
+    //
+    // The engine emits **emphasis** the way composeChronicle already does and
+    // stays DOM-free, which is what lets the whole surface be tested without
+    // jsdom and audited slot by slot against the export.
+    const FINDINGS_ACCENT = {
+      twins: "#d9b96c", sovereignty: "#8a7a68", concessions: "#8a7a68", sky: "#8fa8d9",
+    };
+    const FINDINGS_LABEL = {
+      twins: "THE TWINS:", sovereignty: "THE DOMINION:", concessions: "THE REACH:", sky: "THE SKYWAY:",
+    };
+    function findingsHTML(model, params) {
+      const blocks = composeFindings(model, params || { seed: model.seed, ep: model.epochSnaps.length - 1 });
+      const mark = (t) => esc(t).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+      return blocks.map(b => {
+        // the lead keeps its verdict colour: green when the gap closed, red when it
+        // widened, plain when it held. The words are the loom's; the colour is the
+        // panel's reading of the same number.
+        if (b.topic === "lead") {
+          const F = getFindings(model), d = F.gini - F.gini_t0;
+          const col = d <= -0.04 ? "#8fbf7f" : d >= 0.04 ? "#e08268" : null;
+          const html = mark(b.text);
+          return col ? html.replace(/<b>/, `<b style="color:${col}">`) : html;
         }
-        L.push(lead);
-      }
-      // #86: the periodization, argued up front — the ages are computed from the
-      // same epoch series the timeline draws, so the two surfaces always agree
-      if (F.ages && F.ages.length > 1) {
-        L.push(`The record divides into ages: ` + F.ages.map(a =>
-          `<b>${a.name}</b> (${1000 + 25 * a.from_epoch}–${1000 + 25 * a.to_epoch}, gini ${a.gini_start.toFixed(2)} → ${a.gini_end.toFixed(2)})`).join(", ") + `.`);
-      }
-      if (F.owners && F.class_gap !== null) {
-        const ct = town(F.company_town);
-        L.push(`The gap runs inside each town, not only between them. <b>${F.owners.pop_pct}%</b> of this realm's people hold <b>${F.owners.coin_pct}%</b> of its coin, and the owners' row lives <b>${F.class_gap}×</b> better than the labor it hires` +
-          (F.within_pct !== null && F.within_pct >= 15 ? `. A map drawn by region misses much of it: <b>${F.within_pct}%</b> of the spread sits inside the towns` : ``) +
-          `. The sharpest company town is <b>${esc(ct.name)}</b>, where ${F.company_share} of every 100 coins belong to its owners' row.`);
-      }
-      // #178: over the realm's TOWNS, and reporting what the ratio says rather than
-      // framing every value as a disparity. The old form fired unconditionally and
-      // read as a finding of injustice even at 1.0 (parity — which is the median over
-      // 80 worlds) or below it (the richest fifth carrying more).
-      if (F.blight_ratio !== null) {
-        L.push(F.blight_ratio > 1.1
-          ? `The poorest fifth of this realm's towns carries <b>${F.blight_ratio}×</b> the blight of its richest fifth.`
-          : F.blight_ratio < 0.9
-            ? `The poison did not settle on the poor here: the poorest fifth of this realm's towns carries <b>${F.blight_ratio}×</b> the blight of its richest fifth. The wealthy end breathes more of it.`
-            : `The poorest fifth of this realm's towns carries <b>${F.blight_ratio}×</b> the blight of its richest fifth: here the poison fell on rich and poor alike.`);
-      }
-      if (F.moran && F.moran_blight)
-        L.push(`The clustering is computed from this world's own map. Global Moran's I puts wealth at <b>${F.moran.I.toFixed(3)}</b> and blight at <b>${F.moran_blight.I.toFixed(3)}</b>, against ${F.moran.expected.toFixed(3)} expected under no structure (p ${F.moran.p.toFixed(3)} / ${F.moran_blight.p.toFixed(3)}, ${F.moran.n_perm} permutations over the region adjacency). Read it as a statement about this generated map's internal structure, not about the world outside: the terrain is laid down with smoothing kernels, so neighbouring cells resemble each other by construction, and some spatial correlation is guaranteed before any economy runs.`);
-      if (F.shadow_gap_pct !== null && F.shadow_gap_pct > 0 && model.ridges.length)
-        L.push(`Behind the ${esc(model.ridges[0].name)} wall, the median settlement earns <b>${F.shadow_gap_pct}% less</b> than the open country at the same distance from the capital.`);
-      L.push(`<b>${F.dark_n}</b> of ${model.regions.length} regions sit off the grid because serving them would not pay` +
-        (F.dark_burden_ratio !== null && F.dark_burden_ratio > 1 ? `. They carry <b>${F.dark_burden_ratio}×</b> the disease burden of the lit core.` : `.`));
-      if (F.mouth_region !== null)
-        L.push(`${esc(town(F.mouth_region).name)}, at the river's mouth, drinks <b>${F.mouth_downstream} points</b> of other towns' poison. The land set that order before anyone built anything.`);
-      if (F.toll_paying_n > 0)
-        L.push(`<b>${F.toll_paying_n}</b> regions pay a tariff at gates whose holders they never chose.`);
-      if (F.rain_split && F.rain_split.wet - F.rain_split.dry >= 8 && model.ridges.length)
-        L.push(`The ${esc(model.ridges[0].name)} splits the rain: median rainfall <b>${F.rain_split.wet}</b> on its wet side and <b>${F.rain_split.dry}</b> in its shadow. The farms followed the rain.`);
-      if (F.twins) {
-        const a = reg(F.twins.shadow), b = reg(F.twins.open);
-        L.push(`<span style="color:#d9b96c">THE TWINS:</span> <b>${esc(town(b.id).name)}</b> and <b>${esc(town(a.id).name)}</b> stand the same distance from the capital. ` +
-          `${esc(town(b.id).name)}: wealth ${b.wealth}, market ${b.marketAccess}, burden ${b.burden}. ` +
-          `${esc(town(a.id).name)}, behind the wall: wealth ${a.wealth}, market ${a.marketAccess}, burden ${a.burden}. ` +
-          `<b>The difference is the mountain.</b> The red line on the map joins them.`);
-      }
-      if (F.zipf)
-        L.push(`The towns fall into a <b>rank-size hierarchy</b>, and the regularity itself is built in: the founding centuries grow every town by proportional random increments, which is Gibrat's rule, and that rule produces a size law on its own. What is <b>not</b> decided in advance is how STEEP it comes out. Here the big-town tail runs at slope α ${F.zipf.tail_alpha.toFixed(2)} (α ${F.zipf.alpha.toFixed(2)} fitted across the whole system), straight to a fit of ${F.zipf.tail_r2.toFixed(2)}, with the largest town holding ${F.zipf.primacy}× the second. The steepness is the finding, not the law.`);
-      if (F.sovereignty) {
-        L.push(`<span style="color:#8a7a68">THE DOMINION:</span> <b>${F.sovereignty.occupied_n}</b> regions are occupied ground, and every levy in them is paid to a power no one here can petition. ` +
-          `The free country keeps <b>${F.sovereignty.retent_ratio}×</b> the share of its own value that the occupied country keeps. Yet the occupied zone is the realm's best-wired country (${F.sovereignty.corridor_wired}/${F.sovereignty.occupied_n} on the grid): <b>the grid reaches you when someone else wants what you have</b>.` +
-          (F.sovereignty.comprador_ratio > 1 ? ` And the occupied owners' row holds ${F.sovereignty.comprador_ratio}× the free realm's share. The occupation did not replace the owners; it hired them.` : ``));
-      }
-      if (F.concessions && (F.concessions.concession_n > 0 || F.concessions.abandoned_n > 0)) {
-        L.push(`<span style="color:#8a7a68">THE REACH:</span> the empire mostly did not invade. It bought in. ` +
-          (F.concessions.concession_n > 0 ? `<b>${F.concessions.concession_n}</b> ${F.concessions.concession_n === 1 ? "coast is" : "coasts are"} a foreign concession, richer than the median (<b>${F.concessions.conc_wealth}</b> vs ${F.concessions.median_wealth}), with <b>${Math.round(100 * F.concessions.foreign_claim)}%</b> of the yield sent home to ${esc(model.metropole)}. <b>It was developed and owned in the same ledger.</b> ` : ``) +
-          (F.concessions.abandoned_n > 0 ? `<b>${F.concessions.abandoned_n}</b> ${F.concessions.abandoned_n === 1 ? "coast was" : "coasts were"} wound up when the lode ran thin. <b>The attention left with the ore</b>, and the ground got its ruin and its freedom in the same year.` : ``));
-      }
-      if (F.sky && F.sky.shadow_adv !== null && F.sky.open_adv !== null && F.sky.shadow_adv >= F.sky.open_adv + 5)
-        L.push(`<span style="color:#8fa8d9">THE SKYWAY:</span> behind the wall the lanes would cut the road to the capital by <b>${F.sky.shadow_adv}%</b> (the open country gains ${F.sky.open_adv}%). But boarding is an owners' privilege. ` +
-          (F.twins && F.sky.twin_sky !== null && F.sky.twin_sky > 0 ? `The owners' row of the shadow twin measures the wall at <b>${F.sky.twin_sky}% less</b>; its labor still walks the pass. ` : ``) +
-          `<b>The sky would help the walled country most, but only its owners can board.</b>`);
-      L.push(`<span style="opacity:0.75; font-size:13px">None of this was painted. It fell out of where the ore lay, where the wall stood, which way the water ran, and what the ledgers said would pay. Every number recomputes from the exported columns.</span>`);
-      return L.join("<br>");
+        const label = FINDINGS_LABEL[b.topic];
+        const accent = FINDINGS_ACCENT[b.topic];
+        return (label ? `<span style="color:${accent}">${label}</span> ` : "") + mark(b.text);
+      }).concat([
+        `<span style="opacity:0.75; font-size:13px">Every figure above recomputes from the exported columns, and each one is carried with the rule that produced it.</span>`
+      ]).join("<br>");
     }
 
     // U1: the chronicle reader renders its own minimal markdown (the
@@ -407,7 +353,7 @@ const d3 = globalThis.d3;
 
     function render(model, params) {
       document.getElementById("chronText").innerHTML = chronicleArticleHTML(composeChronicle(model, params), model, params);
-      document.getElementById("findingsText").innerHTML = findingsHTML(model);
+      document.getElementById("findingsText").innerHTML = findingsHTML(model, params);
       const lensId = LENSES[view] ? view : "wealth"; // an unknown lens (hand-edited hash) falls back
       const LENS = LENSES[lensId];
       const ramp = RAMPS[lensId]; // undefined for traj/biome — categoricals never dereference it

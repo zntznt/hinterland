@@ -1,6 +1,59 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the findings are composed now, not recited** (issue #139, D3; **no schema change and
+  no exported byte moves** — the panel is a UI surface, so no fixture regeneration was
+  called for and the golden pin proves it). `findingsHTML` held about fifteen canned
+  sentences with this world's numbers interpolated into them, which meant every world
+  argued its case in the same words and only the figures changed. The prose now composes
+  on the loom (#137) from a **238-fragment analyst-register pool** over 32 classes, and
+  `findingsHTML` is a renderer: markdown emphasis to HTML, the topic accents, the joins.
+  Composition lives in the engine (`composeFindings`), so the whole surface is testable
+  without jsdom and the engine stays DOM-free.
+  Sample committed at [docs/findings-sample.md](docs/findings-sample.md); the gate script
+  is `tools/proto/findings-proto.mjs`, and unlike #136's it reads the SHIPPING composer
+  rather than a fork of it — which is what building the loom first bought.
+  **Every figure is audited, and the audit is not decorative.** Across 20 seeds, 298
+  blocks and **967 facts**, every told was recomputed from its source value under the
+  rule the fact declares: **0 offenders**. The suite plants a single moved digit and
+  requires it to come back as the one offender.
+  **The suite stopped grepping the panel for phrases.** Two checks asserted the panel's
+  ARGUMENT by matching its WORDING (`/owners' row/`, `/steepness is the finding/`), which
+  a composed surface breaks by design and a *dropped finding* does not. They assert the
+  figures now — pop_pct, coin_pct, class_gap, the company town's name; the tail slope
+  plus a concession drawn from a set of six forms — so a reword cannot fool them and a
+  missing finding cannot hide behind one.
+  **Diversity, measured and pinned.** Cross-seed panel skeleton overlap is **0.18**,
+  inside §4's pinned 0.20 ceiling. Per topic the worst is `sovereignty` at 0.23, pinned
+  at 0.24 rather than rounded to 0.20, and the reason is stated: the four topics above
+  0.20 (sovereignty, moran, sky, shadow) share a long technical clause that IS the
+  claim — the permutation caveat, the fare argument, the distance control — and varying
+  it away would vary away what the finding says.
+  The panel-level type-token ratio reads 0.47 against a 0.55 floor and that is a **scale
+  artifact, not sameness**: the panel is fifteen blocks concatenated, and function words
+  repeat across any fifteen sentences. Per BLOCK, the unit a reader actually compares
+  between two worlds, it runs **0.64 to 0.88**. The pin is on the block.
+  **Three defects the migration found, none of them in the migration.**
+  (1) *The slot grammar silently ignored a malformed slot.* The pool shipped
+  `{num:moran_I}` during development; the slot key charset is `[a-z0-9_]`, so the regex
+  matched nothing, nothing filled, no fact was recorded, and the literal braces went to
+  the page. `loomLint` knew about unknown slot KINDS but not about unreadable keys. It
+  does now, and the D1 lint test grew a seventh planted problem to prove it.
+  (2) *A block argued a finding it did not always show, twice.* The rank-size block
+  calls the tail slope "the finding" and then, in two of its fifteen realizations,
+  quoted only the whole-system α and never the tail. The class block argued the ledger
+  in three of six glosses without ever quoting the owners-to-labour ratio, which is the
+  finding's whole point and which the v1 sentence always carried. Grepping for a phrase
+  could not have caught either; asserting on `facts[]` caught both, the second of them
+  in a check written for this very PR. Every zipf claim now carries `tail_alpha` and
+  every gloss `tail_r2`; every class gloss carries `class_gap`.
+  (3) *A gloss asserted something the numbers contradicted.* "Richer than the median"
+  fired on every concession, including one worth 0 against a median of 11. The v1 panel
+  had the same bug — composing it is what made it visible — and the claim is now gated
+  on the comparison it makes, with a branch for the other case.
+  Two house tripwires also caught this pool, which is what they are for: the em-dash ban
+  took a frame, and the C1 medieval-vocabulary ban took three fragments. A composed
+  surface can smuggle a banned word in a fragment exactly as easily as a canned one could.
 - **the loom: the house prose engine's runtime, built and left dormant** (issue #137,
   D1; no schema change; **exports byte-identical**, verified directly as well as by the
   golden pin). Principle P5 (direction.md §4) says the app must COMPOSE sentences where

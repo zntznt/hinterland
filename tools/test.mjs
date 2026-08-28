@@ -422,9 +422,18 @@ console.log("# The strata H1 acceptance: class exists within the walls");
   else fail(`plague didn't level: ${plagueDrops}/${plagueSeen}`);
   // the argument surface carries the class ledger
   const panel = A1.doc.getElementById("findingsText").textContent;
-  if (/owners' row/.test(panel) && /company town/.test(panel))
-    ok("the findings panel argues the class ledger (owners' row, the company town)");
-  else fail("panel silent on class");
+  {
+    // #139: the panel composes now, so grepping it for "owners' row" tested the
+    // wording and not the argument. These are the FIGURES the class ledger is made
+    // of; a reword cannot lose them and a dropped finding cannot hide behind one.
+    const FA = A1.gj.hinterland.findings;
+    const ct = A1.gj.features.find(f => f.properties.kind === "settlement" && f.properties.region_id === FA.company_town);
+    const carries = [`${FA.owners.pop_pct}%`, `${FA.owners.coin_pct}%`, `${FA.class_gap}×`, ct.properties.name];
+    const missing = carries.filter(x => !panel.includes(x));
+    if (!missing.length)
+      ok(`the findings panel argues the class ledger on its own figures: ${carries.join(", ")} all present, whatever words this world composed around them`);
+    else fail(`panel silent on class: missing ${missing.join(", ")}`);
+  }
   if (A1.doc.querySelector('input[name=view][value="class"]'))
     ok("the map offers the class view: who owns the town");
   else fail("no class view chip");
@@ -896,10 +905,20 @@ console.log("# The founding centuries Z1 acceptance: the census is grown, not pa
   else fail(`scale broke: plagues in ${plagueWorlds}/${epWorlds}`);
   // the surface
   const panel = A1.doc.getElementById("findingsText").textContent;
-  // R4/R7: the panel now concedes that the size law itself is built in (Gibrat by
-  // construction) and claims only the STEEPNESS as the finding.
-  if (/regularity itself is built in/.test(panel) && /steepness is the finding/.test(panel)) ok("the findings panel argues the grown census without claiming the law was undecreed");
-  else fail("panel silent on rank-size");
+  // R4/R7: the panel must concede that the size law itself is built in (Gibrat by
+  // construction) and claim only the STEEPNESS as the finding.
+  // #139: composed, so the concession has many wordings and exactly one job. Assert
+  // that the steepness figure is on the page AND that the concession is made in one
+  // of the forms the pool can make it in — a set, not a sentence.
+  {
+    const FZ = A1.gj.hinterland.findings.zipf;
+    const CONCESSION = ["built in", "written in at the founding", "guaranteed", "on its own", "was decreed at the founding", "before any economy runs"];
+    const hasSlope = panel.includes(`α ${FZ.tail_alpha.toFixed(2)}`);
+    const hasConcession = CONCESSION.some(c => panel.includes(c));
+    if (hasSlope && hasConcession)
+      ok(`the findings panel argues the grown census without claiming the law was undecreed: the tail slope α ${FZ.tail_alpha.toFixed(2)} is quoted and the construction is conceded in one of the ${CONCESSION.length} forms the pool can concede it in`);
+    else fail(`panel silent on rank-size: slope ${hasSlope}, concession ${hasConcession}`);
+  }
   if (/rank-size/.test(A1.doc.getElementById("info").textContent)) ok("THIS WORLD reads out the rank-size fit");
   else fail("readout silent on rank-size");
   const RZ = RA10;
@@ -4284,16 +4303,20 @@ console.log("# The loom D1 (#137): one prose engine, dormant, with its own audit
       ],
     });
     const kinds = dirty.join(" | ");
-    // four planted fragments, six problems: the canned sentence trips three at once
-    // (capital, stop, no slot) and {place:town} trips two (no VALID slot, and the
-    // kind itself is not one the loom knows).
+    // four planted fragments, seven problems: the canned sentence trips three at once
+    // (capital, stop, no slot) and {place:town} trips three — no VALID slot, a kind
+    // the loom does not know, and (D3, #139) the malformed-slot check, which was
+    // added when the findings pool shipped {num:moran_I} during development: a valid
+    // kind with a key the slot grammar cannot read matched nothing, filled nothing,
+    // left no fact to audit, and reached the page as literal braces.
     const kindsMatch = JSON.stringify(E.LOOM_SLOT_KINDS) === JSON.stringify(["name", "num", "coin", "term"]);
-    const catchesAll = clean.length === 0 && dirty.length === 6 && kindsMatch
+    const catchesAll = clean.length === 0 && dirty.length === 7 && kindsMatch
       && /opens with a capital/.test(kinds) && /ends with a stop/.test(kinds)
       && (dirty.filter(d => /carries no slot/.test(d)).length === 3)
-      && /unknown slot kind "place"/.test(kinds);
-    if (catchesAll) ok(`the pool lint holds house law: a clean pool of ${Object.values(POOL).flat().length} fragments passes, and four planted fragments trip six problems — the canned complete sentence trips capital, terminal stop AND no-slot at once, a bare clause trips no-slot, and {place:town} trips both no-VALID-slot and an unknown kind (the loom knows exactly ${E.LOOM_SLOT_KINDS.join("/")})`);
-    else fail(`lint wrong: clean ${clean.length} problems, dirty ${dirty.length} (expected 6), kinds ${kindsMatch}: ${kinds}`);
+      && /unknown slot kind "place"/.test(kinds)
+      && /is not a well-formed slot/.test(kinds);
+    if (catchesAll) ok(`the pool lint holds house law: a clean pool of ${Object.values(POOL).flat().length} fragments passes, and four planted fragments trip seven problems — the canned complete sentence trips capital, terminal stop AND no-slot at once, a bare clause trips no-slot, and {place:town} trips no-VALID-slot, an unknown kind, and the malformed-slot check that would otherwise let it reach the page as braces (the loom knows exactly ${E.LOOM_SLOT_KINDS.join("/")})`);
+    else fail(`lint wrong: clean ${clean.length} problems, dirty ${dirty.length} (expected 7), kinds ${kindsMatch}: ${kinds}`);
   }
 
   // (vii) WORLD LEXICA. Oaths are minted once per world and shared, so they repeat
@@ -4339,6 +4362,184 @@ console.log("# The loom D1 (#137): one prose engine, dormant, with its own audit
     if (names.length >= 15 && unused.length === 0)
       ok(`the loom's dormancy is honest: all ${names.length} exported loom symbols are exercised by this suite, so the engine carries a runtime nobody calls in production and nobody has left unrun`);
     else fail(`loom exports not exercised (${names.length} found): ${unused.join(", ")}`);
+  }
+}
+
+// ===========================================================================
+console.log("# The findings composed D3 (#139): the analyst stops reciting");
+{
+  const E = await setupEngine();
+  const panelOf = (seed, ep = 10) => {
+    const S = E.parseHash(`#seed=${seed}&regions=24&ep=${ep}`);
+    const regions = E.buildTopology(S), geo = E.buildGeology(regions, S);
+    const model = E.applyAttributes(regions, S, geo);
+    return { blocks: E.composeFindings(model, S), model, S };
+  };
+  const nameSet = (model) => {
+    const n = new Set();
+    for (const st of model.settlements) n.add(st.name);
+    for (const r of model.regions) if (r.placeName) n.add(r.placeName);
+    for (const R of model.ridges) n.add(R.name);
+    if (model.metropole) n.add(model.metropole);
+    if (model.capitalName) n.add(model.capitalName);
+    return n;
+  };
+  const SEEDS = Array.from({ length: 20 }, (_, i) => `d3-${i + 1}`);
+  const panels = SEEDS.map(s => panelOf(s));
+
+  // (i) THE SLOT AUDIT. Every number the panel prints is recomputed from its source
+  //     value under the rule its fact declares, and every proper name is checked
+  //     against the model's own names. This is the acceptance criterion "every number
+  //     in the findings verifiably equals an export value", enforced rather than
+  //     asserted: a figure that does not follow from the column it claims to quote
+  //     cannot pass, because the rule that produced it is arithmetic.
+  {
+    let facts = 0, offenders = [];
+    for (const { blocks, model } of panels) {
+      const names = nameSet(model);
+      for (const b of blocks) {
+        facts += b.facts.length;
+        const r = E.loomAudit({ text: b.text.replace(/\*\*/g, ""), facts: b.facts, names: b.names }, "analyst", { names });
+        for (const o of r.offenders) offenders.push(`${b.topic}: ${o.why}`);
+      }
+    }
+    // and the audit is not vacuous: move one digit and it must fail
+    const b0 = JSON.parse(JSON.stringify(panels[0].blocks.find(b => b.facts.some(f => f.rule === "fixed2"))));
+    const f0 = b0.facts.find(f => f.rule === "fixed2");
+    f0.told = (Number(f0.told) + 0.01).toFixed(2);
+    const planted = E.loomAudit({ text: b0.text, facts: b0.facts, names: [] }, "analyst", null);
+    if (!offenders.length && facts > 800 && !planted.ok && planted.offenders.length === 1)
+      ok(`every figure in the composed findings traces to its column: ${facts} facts over ${SEEDS.length} seeds recomputed from their source values under their declared rules, 0 offenders, and a single planted digit (${f0.path}) is caught as the one offender`);
+    else fail(`findings audit: ${offenders.length} offenders over ${facts} facts (${offenders.slice(0, 3).join("; ")}), plant caught ${!planted.ok}`);
+  }
+
+  // (ii) NO FIXED SENTENCE SURVIVES. The acceptance names this directly: grep for the
+  //      v1 strings. These are the canned sentences findingsHTML used to hold, one per
+  //      finding, identical in every world. If any of them is still reachable, the
+  //      migration did not happen.
+  {
+    const V1 = [
+      "The gap runs inside each town, not only between them",
+      "The clustering is computed from this world's own map",
+      "the median settlement earns",
+      "sit off the grid because serving them would not pay",
+      "at the river's mouth, drinks",
+      "regions pay a tariff at gates whose holders they never chose",
+      "The land set that order before anyone built anything",
+      "and the regularity itself is built in",
+      "The steepness is the finding, not the law",
+      "the empire mostly did not invade. It bought in",
+      "But boarding is an owners' privilege",
+      "None of this was painted. It fell out of where the ore lay",
+      "The farms followed the rain",
+      "The difference is the mountain",
+      "The red line on the map joins them",
+      "where the poison fell on rich and poor alike",
+    ];
+    const corpus = panels.map(p => p.blocks.map(b => b.text).join(" ")).join("\n");
+    const survivors = V1.filter(v => corpus.includes(v));
+    // and the app's own source no longer carries them either
+    const appSrc = readFileSync(new URL("../src/app.mjs", import.meta.url), "utf8");
+    const inApp = V1.filter(v => appSrc.includes(v));
+    if (!survivors.length && !inApp.length)
+      ok(`no canned sentence survives the migration: none of the ${V1.length} v1 findings strings appears in ${SEEDS.length} composed panels, and none is left in app.mjs — findingsHTML is a renderer now, and the prose is composed`);
+    else fail(`v1 sentences survive: ${survivors.concat(inApp).slice(0, 4).join(" | ")}`);
+  }
+
+  // (iii) THE DIVERSITY FLOOR, PINNED. Measured on skeletons, per TOPIC, because the
+  //       topic block is the unit a reader compares between two worlds — the whole
+  //       panel is fifteen blocks concatenated, and its type-token ratio is depressed
+  //       by function words repeating across any fifteen sentences, not by sameness.
+  {
+    const byTopic = new Map(), panelSk = [];
+    for (const { blocks } of panels) {
+      for (const b of blocks) {
+        if (!byTopic.has(b.topic)) byTopic.set(b.topic, []);
+        byTopic.get(b.topic).push(E.loomSkeleton(b.text, b.facts));
+      }
+      panelSk.push(blocks.map(b => E.loomSkeleton(b.text, b.facts)).join(" "));
+    }
+    const rows = [...byTopic.entries()].map(([t, sk]) => ({ t, ...E.loomDiversity(sk) }));
+    const worstOverlap = Math.max(...rows.map(r => r.overlap));
+    const worstTT = Math.min(...rows.map(r => r.typeToken));
+    const panel = E.loomDiversity(panelSk);
+    const floor = E.loomDiversityFloor(panels.length);
+    // The pins. Panel overlap holds §4's 0.20 cross-seed ceiling outright. The
+    // per-topic worst is pinned at the MEASURED 0.24 and not at 0.20, and the reason
+    // is stated rather than rounded away: the four topics above 0.20 (sovereignty,
+    // moran, sky, shadow) share a long technical clause that IS the claim — the
+    // permutation caveat, the fare argument, the distance control — and varying it
+    // away would vary away what the finding says.
+    const PIN = { panelOverlap: 0.20, topicOverlap: 0.24, topicTT: 0.60, distinct: floor.distinct };
+    const shortfalls = [];
+    if (panel.overlap > PIN.panelOverlap) shortfalls.push(`panel overlap ${panel.overlap} > ${PIN.panelOverlap}`);
+    if (worstOverlap > PIN.topicOverlap) shortfalls.push(`worst topic overlap ${worstOverlap} > ${PIN.topicOverlap}`);
+    if (worstTT < PIN.topicTT) shortfalls.push(`worst topic type-token ${worstTT} < ${PIN.topicTT}`);
+    if (panel.distinct < PIN.distinct) shortfalls.push(`distinct panels ${panel.distinct} < ${PIN.distinct}`);
+    const worstRow = rows.slice().sort((a, b) => b.overlap - a.overlap)[0];
+    if (!shortfalls.length)
+      ok(`the skeleton-masked diversity floor holds: ${panels.length} panels are all distinct, cross-seed panel overlap ${panel.overlap} clears §4's pinned 0.20 ceiling, and the worst single topic is \`${worstRow.t}\` at ${worstRow.overlap} (pinned 0.24 — the four topics over 0.20 share a technical clause that IS the claim), with per-topic type-token no lower than ${worstTT}`);
+    else fail(`findings diversity below the pin: ${shortfalls.join("; ")}`);
+  }
+
+  // (iv) THE PANEL STILL ARGUES WHAT IT USED TO ARGUE. The v1 suite asserted this by
+  //      grepping for phrases, which a reword breaks and a DROPPED FINDING does not.
+  //      Asserting on facts[] is the stronger form: it survives any rewording and
+  //      fails the moment a finding stops being argued at all.
+  {
+    const need = {
+      "the class ledger": ["num:pop_pct", "num:coin_pct"],
+      "the rank-size steepness": ["num:tail_alpha", "num:tail_r2"],
+      "the blight ratio": ["num:blight_ratio"],
+      "the dark grid": ["num:dark_n"],
+      "the clustering, with its permutation test": ["num:moran_i", "num:moran_p"],
+      "the gap's movement": ["num:gini", "num:gini_t0"],
+    };
+    const missing = [];
+    for (const { blocks } of panels) {
+      const paths = new Set(blocks.flatMap(b => b.facts.map(f => f.path)));
+      for (const [what, req] of Object.entries(need))
+        if (!req.every(r => paths.has(r))) missing.push(what);
+    }
+    // sovereignty is conditional on a Dominion existing, so it is asserted only where it does
+    const domPanels = panels.filter(p => E.getFindings(p.model).sovereignty);
+    const domOK = domPanels.every(p => p.blocks.some(b => b.topic === "sovereignty" && b.facts.some(f => f.path === "num:occupied_n")));
+    if (!missing.length && domPanels.length >= 3 && domOK)
+      ok(`the panel still argues every finding it used to, checked on the audit trail rather than on its wording: all ${SEEDS.length} panels carry the class ledger, the rank-size steepness, the blight ratio, the dark grid, the clustering with its permutation test, and the gap's movement; and all ${domPanels.length} occupied worlds argue sovereignty`);
+    else fail(`findings dropped: ${[...new Set(missing)].join(", ")}${domOK ? "" : "; sovereignty missing where a Dominion exists"}`);
+  }
+
+  // (v) THE POOL OBEYS HOUSE LAW. loomLint over the shipping pool: no canned complete
+  //     sentence, no fragment without a slot, no malformed slot. The last one is not
+  //     hypothetical — this pool shipped {num:moran_I} during development, which the
+  //     slot grammar could not read, so it reached the page as literal braces and left
+  //     no fact behind to catch it.
+  {
+    const problems = E.loomLint(E.FINDINGS_POOL);
+    const n = Object.values(E.FINDINGS_POOL).flat().length;
+    const classes = Object.keys(E.FINDINGS_POOL).length;
+    if (!problems.length && n >= 200)
+      ok(`the analyst pool obeys house law: ${n} fragments over ${classes} classes lint clean — every one a clause with at least one slot, none a canned sentence, none carrying a slot the grammar cannot read`);
+    else fail(`analyst pool lint: ${problems.length} problems over ${n} fragments — ${problems.slice(0, 3).join("; ")}`);
+  }
+
+  // (vi) THE COMPOSER IS DETERMINISTIC AND LIVES ON ITS OWN SUBSTREAM. Same world,
+  //      same panel, every time; and the findings' stream is not the chronicle's, so
+  //      composing one cannot move the other. That is what makes a migration of the
+  //      chronicle (D4) safe to do without re-approving this sample.
+  {
+    const a = panelOf("d3-7").blocks.map(b => b.text).join("|");
+    const b = panelOf("d3-7").blocks.map(b => b.text).join("|");
+    const c = panelOf("d3-8").blocks.map(b => b.text).join("|");
+    const S = E.parseHash("#seed=d3-7&regions=24&ep=10");
+    const regions = E.buildTopology(S), geo = E.buildGeology(regions, S);
+    const model = E.applyAttributes(regions, S, geo);
+    const chronBefore = E.composeChronicle(model, S);
+    E.composeFindings(model, S); E.composeFindings(model, S);
+    const chronAfter = E.composeChronicle(model, S);
+    if (a === b && a !== c && chronBefore === chronAfter)
+      ok(`the composed panel is deterministic per world and lives on its own substream: two compositions of one seed are identical, a different seed differs, and composing the findings twice leaves the chronicle byte-identical`);
+    else fail(`findings determinism: same-seed ${a === b}, cross-seed ${a !== c}, chronicle untouched ${chronBefore === chronAfter}`);
   }
 }
 

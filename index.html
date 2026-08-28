@@ -1673,6 +1673,22 @@
         "ashgroth","umbrareth","syrgane","thrennoth","ossureth","gethmoth",
         "skarngrim","vaunmoth","cindgrim","vraethoth","gloamdeep","dravemoth",
         "haldreth","murkgrim","ossvane","baelreth"
+      ],
+      // D1 (#137): the IMPERIAL tier — the Concordat tongue. §3.6 and voices-spec §5
+      // both call for a register deliberately unlike every regional phonology, so a
+      // loanword is audible as foreign the moment it lands in a local voice: romance
+      // stress, doubled consonants, -ine/-ec/-o finals, no -mere/-holt/-grim at all.
+      // Nothing selects this register as a place-name register (nameRegister returns
+      // only frontier/lowland/temple), so its presence moves no exported byte; it
+      // exists for the loom's imperial coin tier.
+      imperial: [
+        "calderine","vetriax","solmara","quirinal","aurelio","tessarine","obrecht",
+        "pallavine","cinquert","marovec","ostravin","belmiro","trascendo","juvarra",
+        "cortalis","sabrenne","delvarro","murazzi","lenticor","praetine",
+        "argenzo","corvalle","dominex","ferraline","grazzano","interdicto",
+        "lucressa","mandevin","novarro","perpetua","quadrante","rescissio",
+        "santerre","tribunal","ultrimo","valdesco","zerbino","assessore",
+        "brancato","concordat"
       ]
     };
     const buildChain = (names) => {
@@ -8278,6 +8294,379 @@
         L.push(`*The record ends where it began. The world is newly founded, and its years are still to run.*`);
       }
       return L.join("\n").replace(/\n{3,}/g, "\n\n") + "\n";
+    }
+
+    // ---- The loom: one prose engine for every register (D1, #137) -----------
+    //
+    // Principle P5 (direction.md §4): the app SELECTS sentences today; it must
+    // COMPOSE them. This is the loom's RUNTIME and nothing else — frames, typed
+    // slots, column-predicate gating, per-surface substreams, world-level lexica,
+    // the slot audit, the skeleton-masked diversity measure, and the pool linter.
+    //
+    // No surface consumes it and no fragment pool ships with it, so an export made
+    // with the loom present is byte-identical to one made without it. That is D1's
+    // acceptance, and it is deliberate: the pools arrive with each surface's own
+    // migration, behind its own prototype gate — voices D2 (#138), findings D3
+    // (#139), chronicle D4 (#140), verdict D5 (#141). Until then the suite is the
+    // loom's only consumer, and the suite checks that it really is one: every
+    // exported `loom*` symbol must be exercised by a test, or the dormancy has
+    // quietly become dead code.
+    //
+    // House law, inherited from docs/voices-spec.md §1 and enforced by loomLint:
+    // a fragment is a CLAUSE, never a complete sentence (frames own the opening
+    // capital and the terminal stop); every fragment carries at least one slot;
+    // classes gate on real columns; slots fill from true facts and are audited
+    // against the export; coined words come from world lexica minted once per world,
+    // so an oath repeats like culture instead of being re-invented per speaker.
+    //
+    // The one-slot rule is not decoration, and it is the #136 gate's finding
+    // promoted to law. That gate ran first at half pool scale and then at full
+    // scale with mostly slotless fragments; worst surface repeat was 14, then 8,
+    // against V5's ceiling of 3. Pool size was never the binding constraint. A
+    // slotless fragment has exactly one surface per skin and collides with itself
+    // on every draw, which no amount of authoring fixes.
+
+    // §4's table, made executable. `digits` generalises the voices spec's V1/V2
+    // pair into a per-register law about what may appear on the page as a numeral:
+    //   exact   — the export value, verbatim, and every one of them audited;
+    //   folk    — a folk form, never a numeral (the street does not quote figures);
+    //   spelled — number words, not numerals, at every magnitude a column reaches.
+    // Which register gets which is a judgement about the surface, not a symmetry:
+    // the chronicle quotes figures today and D4 is not going to stop it, so the
+    // historian is on the exact law; the verdict composes a sentence rather than a
+    // table, so the judge spells.
+    // `coin` is the DEFAULT lexicon a register draws coined words from. A surface
+    // that has a better answer overrides it — the street's oaths should come from
+    // the speaker's own `name_register`, not from a house default.
+    const LOOM_REGISTERS = {
+      historian:   { surface: "chronicle", digits: "exact",   coin: "lowland",   voice: "the state record" },
+      analyst:     { surface: "findings",  digits: "exact",   coin: "corporate", voice: "numbers, forward" },
+      judge:       { surface: "verdict",   digits: "spelled", coin: "precinct",  voice: "measured, both-edged" },
+      ministerial: { surface: "dilemma",   digits: "exact",   coin: "precinct",  voice: "the brief" },
+      street:      { surface: "voices",    digits: "folk",    coin: "lowland",   voice: "the street" },
+      ledger:      { surface: "voices",    digits: "exact",   coin: "precinct",  voice: "the censorate" },
+      gazette:     { surface: "gazette",   digits: "exact",   coin: "gazette",   voice: "the world arriving" },
+    };
+
+    // Every surface draws its own substream, so a sentence added to the chronicle
+    // cannot move a word of the findings. The key carries the region (or whatever
+    // the surface iterates) so a voice is recomputable from the export alone.
+    const loomStream = (seed, surface, key) => streams(seed)(`${surface}#${key}`);
+
+    // ---- world lexica --------------------------------------------------------
+    // Minted once per world per lexicon and shared by every surface: oaths and
+    // slang are culture, not per-speaker invention. `imperial` is the third tier —
+    // the Concordat tongue, audible as foreign wherever it lands. A walk that
+    // reproduces a corpus word is rejected: a coin that is already a place name is
+    // not a coin. Deterministic in the seed, so two runs mint the same lexicon.
+    const LOOM_CORPUS_WORDS = (() => {
+      const s = new Set();
+      for (const reg in NAME_CORPUS) for (const w of NAME_CORPUS[reg]) s.add(w.toLowerCase());
+      return s;
+    })();
+    function loomMint(register, r, minL, maxL, seen) {
+      for (let a = 0; a < 24; a++) {
+        const w = markovWord(register, r, minL, maxL);
+        if (!w) continue;
+        const k = w.toLowerCase();
+        if (LOOM_CORPUS_WORDS.has(k)) continue;             // already a place name
+        if (seen && seen.has(k)) continue;                  // one lexicon, distinct entries
+        if (seen) seen.add(k);
+        return w;
+      }
+      return null;
+    }
+    // { oath: [..3], slang: [..3] } per name register, plus imperial: [..4].
+    // `n` is fixed rather than a parameter so the lexicon is a property of the
+    // world, not of whoever asked for it.
+    function loomLexicon(seed) {
+      const cap = (w) => w[0].toUpperCase() + w.slice(1);
+      const out = {};
+      for (const reg in NAME_CORPUS) {
+        if (reg === "imperial") continue;
+        const ro = loomStream(seed, "lexicon", `${reg}#oath`);
+        const rs = loomStream(seed, "lexicon", `${reg}#slang`);
+        const so = new Set(), ss = new Set();
+        out[reg] = {
+          oath:  [0, 1, 2].map(() => loomMint(reg, ro, 3, 6, so)).filter(Boolean).map(cap),
+          slang: [0, 1, 2].map(() => loomMint(reg, rs, 3, 6, ss)).filter(Boolean).map(w => w.toLowerCase()),
+        };
+      }
+      const ri = loomStream(seed, "lexicon", "imperial");
+      const si = new Set();
+      out.imperial = [0, 1, 2, 3].map(() => loomMint("imperial", ri, 4, 9, si)).filter(Boolean).map(cap);
+      return out;
+    }
+
+    // ---- typed slots ---------------------------------------------------------
+    // A slot is `{kind:key}`. The kind decides how it fills AND how it is audited:
+    //   name    — a proper noun, verbatim from the export, never distorted;
+    //   num     — a quantity, rendered per the register's `digits` law;
+    //   coin    — a word from the world lexicon;
+    //   term    — a derived phrase (a trade, a holder, a compass point), which is a
+    //             pure function of columns and is audited as such.
+    // The caller supplies the resolvers; the loom supplies the discipline.
+    const LOOM_SLOT_KINDS = ["name", "num", "coin", "term"];
+    const LOOM_SLOT_RE = /\{(name|num|coin|term):([a-z0-9_]+)\}/g;
+
+    // Renderers for the `digits` laws. `folk` is the voices spec's §2 ladder; a
+    // register on the folk law may not emit a numeral at all, which loomAudit
+    // checks rather than trusts.
+    const LOOM_LADDER = [[5, "a twentieth"], [10, "a tithe"], [25, "a quarter part"],
+      [33, "a third part"], [50, "half"], [67, "two parts in three"],
+      [75, "three parts in four"], [90, "nine parts in ten"], [97, "all but the sweepings"]];
+    const loomFolk = (x) => { let out = "next to none"; for (const L of LOOM_LADDER) if (x >= L[0]) out = L[1]; return out; };
+    const LOOM_ONES = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+      "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+    const LOOM_TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+    const LOOM_SCALES = [[1e9, "billion"], [1e6, "million"], [1e3, "thousand"]];
+    function loomSpell(n) {
+      const v = Math.round(n);
+      if (!Number.isFinite(v)) return "an unreckoned number";
+      if (v < 0) return "minus " + loomSpell(-v);
+      if (v < 20) return LOOM_ONES[v];
+      if (v < 100) return LOOM_TENS[Math.floor(v / 10)] + (v % 10 ? "-" + LOOM_ONES[v % 10] : "");
+      if (v < 1000) return LOOM_ONES[Math.floor(v / 100)] + " hundred" + (v % 100 ? " and " + loomSpell(v % 100) : "");
+      for (const [mag, word] of LOOM_SCALES) {
+        if (v >= mag) {
+          const rest = v % mag;
+          return loomSpell(Math.floor(v / mag)) + " " + word +
+            (rest ? (rest < 100 ? " and " : " ") + loomSpell(rest) : "");
+        }
+      }
+      return String(v);
+    }
+    // The rule table the audit inverts. Each entry recomputes `told` from `true`,
+    // so a fact whose told does not follow from its true is caught by arithmetic
+    // rather than by inspection.
+    const LOOM_RULES = {
+      verbatim: (v) => String(v),
+      folk:     (v) => loomFolk(Math.round(v)),
+      spelled:  (v) => loomSpell(v),
+      share:    (v, ctx) => loomFolk(Math.round(100 * v / Math.max(1, ctx.of))),
+    };
+    const loomRuleFor = (register) => ({ exact: "verbatim", folk: "folk", spelled: "spelled" }[
+      (LOOM_REGISTERS[register] || {}).digits] || "verbatim");
+
+    // ---- gating --------------------------------------------------------------
+    // A fragment whose `req` fails does not exist for this context — it is not a
+    // fragment that scores low, it is a fragment that is not there. `band`, where a
+    // surface has one, gates the same way.
+    function loomGate(pool, cls, ctx, band, used) {
+      const cands = (pool[cls] || []).filter(f =>
+        (typeof f.req !== "function" || f.req(ctx)) &&
+        (typeof f.band !== "function" || band === undefined || f.band(band)) &&
+        !(used && used.has(f.t)));
+      return cands;
+    }
+
+    // ---- filling + the audit trail -------------------------------------------
+    // Fills a clause and records one fact per slot: {path, true, told, rule}. The
+    // facts are the whole point — a surface that cannot say where a word came from
+    // has no business putting it in front of a reader.
+    function loomFill(text, ctx, register, resolve, facts, names) {
+      const rule = loomRuleFor(register);
+      return String(text).replace(LOOM_SLOT_RE, (_, kind, key) => {
+        const got = resolve(kind, key, ctx);
+        // A slot the caller cannot fill leaves a hole in the sentence. Gating should
+        // have kept the fragment out, but "should have" is what the audit is for:
+        // record the miss so it fails loudly instead of reading as a typo.
+        if (got === null || got === undefined) {
+          if (facts) facts.push({ path: `${kind}:${key}`, true: null, told: "", rule: "unresolved" });
+          return "";
+        }
+        if (kind === "name") {
+          const told = String(got);
+          if (names) names.push({ told, raw: told, rule: "verbatim" });
+          if (facts) facts.push({ path: `${kind}:${key}`, true: told, told, rule: "verbatim" });
+          return told;
+        }
+        if (kind === "num") {
+          const of = (got && typeof got === "object") ? got.of : undefined;
+          const val = (got && typeof got === "object") ? got.value : got;
+          const r = (got && typeof got === "object" && got.rule) ? got.rule : (of !== undefined ? "share" : rule);
+          const told = LOOM_RULES[r](val, { of });
+          if (facts) facts.push({ path: `${kind}:${key}`, true: val, told, rule: r, of });
+          return told;
+        }
+        const told = String(got);
+        if (facts) facts.push({ path: `${kind}:${key}`, true: told, told, rule: kind === "coin" ? "minted" : "derived" });
+        return told;
+      });
+    }
+
+    // ---- composition ---------------------------------------------------------
+    // Frames own the sentence: the capital, the stop, and the join. Fragments are
+    // clauses dropped into {A} and {B}. Every draw comes from `rv` and nothing
+    // else, so the whole paragraph is a pure function of (seed, surface, key, ctx).
+    function loomCompose(spec) {
+      const { register, frames, pool, classes, ctx, resolve, rv, band, open, close } = spec;
+      const facts = [], names = [], used = new Set(), surfaces = [], drawn = [];
+      const pick = (a) => a[Math.floor(rv() * a.length)];
+      const draw = (cls) => {
+        const cands = loomGate(pool, cls, ctx, band, used);
+        if (!cands.length) return null;
+        const f = pick(cands);
+        used.add(f.t); drawn.push(cls);
+        return f;
+      };
+      const say = (f, cls) => { const t = loomFill(f.t, ctx, register, resolve, facts, names); surfaces.push(cls + "|" + t); return t; };
+      const out = [];
+      if (open) { const f = draw(open); if (f) out.push(say(f, open) + "."); }
+      for (const pair of classes) {
+        const [ca, cb] = Array.isArray(pair) ? pair : [pair, null];
+        const fa = draw(ca), fb = cb ? draw(cb) : null;
+        if (!fa && !fb) continue;
+        const A = fa ? say(fa, ca) : null, B = fb ? say(fb, cb) : null;
+        const fr = (A && B) ? pick(frames) : "{A}.";
+        out.push(fr.replace("{A}", A || B).replace("{B}", B || ""));
+      }
+      if (close) { const f = draw(close); if (f) out.push(say(f, close) + "."); }
+      const seen = new Set(), kept = [];
+      for (const sIt of out) { const k = sIt.toLowerCase(); if (seen.has(k)) continue; seen.add(k); kept.push(sIt); }
+      const text = kept.join(" ").replace(/(^|[.!?]\s+)([a-z])/g, (_, p, c) => p + c.toUpperCase()).replace(/\s+/g, " ").trim();
+      return { text, facts, names, surfaces, classes: drawn };
+    }
+
+    // ---- the slot audit ------------------------------------------------------
+    // Recomputes every told from its true under its declared rule and reports what
+    // does not follow. This is what catches a planted false fact: a surface can lie
+    // about the world only by writing a told the rule cannot produce, and the rule
+    // is arithmetic, so the lie is arithmetic too.
+    //
+    // `digits` is audited separately and is not a matter of opinion: a register on
+    // the folk law that puts a numeral on the page has broken its own law, whatever
+    // its facts say.
+    function loomAudit(voice, register, world) {
+      const bad = [];
+      for (const f of (voice.facts || [])) {
+        const rule = LOOM_RULES[f.rule];
+        if (f.rule === "unresolved") { bad.push({ why: `slot ${f.path} could not be filled and left a hole in the sentence`, fact: f }); continue; }
+        if (!rule) { if (f.rule !== "minted" && f.rule !== "derived") bad.push({ why: `unknown rule ${JSON.stringify(f.rule)}`, fact: f }); continue; }
+        const expect = rule(f.true, { of: f.of });
+        if (String(f.told) !== String(expect)) bad.push({ why: `told ${JSON.stringify(f.told)}, rule gives ${JSON.stringify(expect)}`, fact: f });
+      }
+      const law = (LOOM_REGISTERS[register] || {}).digits;
+      if (law === "folk" || law === "spelled") {
+        if (/\d/.test(voice.text)) bad.push({ why: `register "${register}" is on the ${law} law and the text carries a numeral`, fact: null });
+      }
+      if (world && world.names) {
+        for (const n of (voice.names || [])) if (!world.names.has(n.raw)) bad.push({ why: `name not in the export: ${JSON.stringify(n.raw)}`, fact: null });
+      }
+      return { ok: bad.length === 0, offenders: bad };
+    }
+
+    // ---- skeleton-masked diversity -------------------------------------------
+    // Measuring raw text flatters the loom: two paragraphs built from one template
+    // look different because the town names differ. Strip the fills back to their
+    // slot tokens and what is left is the SKELETON, which is what a reader actually
+    // notices repeating. Type-token ratio over skeletons and bigram entropy over
+    // skeleton words; the floor is the value a corpus must clear.
+    function loomSkeleton(text, facts) {
+      let s = String(text);
+      const fills = (facts || []).map(f => String(f.told)).filter(t => t.length > 1)
+        .sort((a, b) => b.length - a.length);                  // longest first: no partial masking
+      for (const t of fills) s = s.split(t).join("•");
+      return s.toLowerCase().replace(/[^a-z•\s]/g, " ").replace(/\s+/g, " ").trim();
+    }
+    // Four numbers, and the choice of which four is the whole measurement:
+    //   typeToken     — mean WITHIN-skeleton type-token ratio. Pooling it across the
+    //                   corpus was the first version and it was wrong: types grow
+    //                   sublinearly in tokens (Heaps), so a pooled ratio falls as the
+    //                   corpus grows and a fixed floor on it fails good corpora for
+    //                   being large. Per-skeleton, it is stable in n and measures what
+    //                   it should — a clause that repeats itself inside one sentence.
+    //   bigramEntropy — pooled over skeleton word-bigrams. Grows with n, so its floor
+    //                   must grow with n too (below).
+    //   distinct      — how many of the n skeletons are unique at all, the blunt half.
+    //   overlap       — mean pairwise Jaccard of skeleton bigram sets. This is the
+    //                   quantity direction.md §4 actually pins ("cross-seed chronicle
+    //                   template overlap < 0.20"), and it is a CEILING, not a floor:
+    //                   entropy can look healthy while every pair still shares most
+    //                   of its skeleton.
+    function loomDiversity(skeletons) {
+      const texts = skeletons.filter(Boolean);
+      if (!texts.length) return { n: 0, typeToken: 0, bigramEntropy: 0, distinct: 0, overlap: 0 };
+      const bigrams = new Map(), sets = [];
+      let ttSum = 0;
+      for (const t of texts) {
+        const w = t.split(" ").filter(Boolean);
+        ttSum += w.length ? new Set(w).size / w.length : 0;
+        const set = new Set();
+        for (let i = 0; i + 1 < w.length; i++) {
+          const k = w[i] + " " + w[i + 1];
+          bigrams.set(k, (bigrams.get(k) || 0) + 1);
+          set.add(k);
+        }
+        sets.push(set);
+      }
+      const total = [...bigrams.values()].reduce((a, b) => a + b, 0);
+      let H = 0;
+      for (const c of bigrams.values()) { const p = c / total; H -= p * Math.log2(p); }
+      let jSum = 0, pairs = 0;
+      for (let i = 0; i < sets.length; i++) for (let j = i + 1; j < sets.length; j++) {
+        let inter = 0;
+        for (const k of sets[i]) if (sets[j].has(k)) inter++;
+        const uni = sets[i].size + sets[j].size - inter;
+        jSum += uni ? inter / uni : 1; pairs++;
+      }
+      return {
+        n: texts.length,
+        typeToken: round2(ttSum / texts.length),
+        bigramEntropy: round2(H),
+        distinct: new Set(texts).size,
+        overlap: round2(pairs ? jSum / pairs : 0),
+      };
+    }
+    // What a corpus of `n` skeletons must clear to be worth shipping. Entropy grows
+    // with corpus size whatever the generator does, so its floor grows too —
+    // log2(n) is the entropy of n equiprobable outcomes, and a share of it is the
+    // honest bar. `overlap` is the one ceiling: §4 pins cross-seed chronicle
+    // template overlap below 0.20 (today 0.36-0.52), and that number is what a
+    // migration has to beat, not a number a migration gets to choose.
+    function loomDiversityFloor(n, opts) {
+      const o = opts || {};
+      const share = o.entropyShare === undefined ? 0.55 : o.entropyShare;
+      const distinctFrac = o.distinctFrac === undefined ? 0.80 : o.distinctFrac;
+      return {
+        n,
+        typeToken: o.typeToken === undefined ? 0.55 : o.typeToken,
+        bigramEntropy: round2(share * Math.log2(Math.max(2, n))),
+        distinct: Math.ceil(distinctFrac * n),
+        overlap: o.overlap === undefined ? 0.20 : o.overlap,
+      };
+    }
+    function loomMeetsFloor(measured, floor) {
+      const short = [];
+      if (measured.typeToken < floor.typeToken) short.push(`within-skeleton type-token ${measured.typeToken} < ${floor.typeToken}`);
+      if (measured.bigramEntropy < floor.bigramEntropy) short.push(`bigram entropy ${measured.bigramEntropy} < ${floor.bigramEntropy}`);
+      if (measured.distinct < floor.distinct) short.push(`distinct skeletons ${measured.distinct} < ${floor.distinct}`);
+      if (measured.overlap > floor.overlap) short.push(`pairwise skeleton overlap ${measured.overlap} > ${floor.overlap}`);
+      return { ok: short.length === 0, short };
+    }
+
+    // ---- the pool linter -----------------------------------------------------
+    // House law, checked mechanically. A canned complete sentence in a pool is the
+    // failure mode the whole loom exists to end, so it is a lint error and not a
+    // style note.
+    function loomLint(pool) {
+      const problems = [];
+      for (const cls in pool) {
+        for (const f of pool[cls]) {
+          const t = String(f && f.t === undefined ? f : f.t);
+          const at = `${cls}: ${JSON.stringify(t.slice(0, 48))}`;
+          if (/^[A-Z]/.test(t)) problems.push(`${at} — opens with a capital; frames own the capital`);
+          if (/[.!?]$/.test(t)) problems.push(`${at} — ends with a stop; frames own the stop, and a fragment that carries one is a canned sentence`);
+          LOOM_SLOT_RE.lastIndex = 0;
+          if (!LOOM_SLOT_RE.test(t)) problems.push(`${at} — carries no slot; it has one surface and will collide with itself (see #136)`);
+          const unknown = t.match(/\{([a-z]+):/g) || [];
+          for (const u of unknown) {
+            const kind = u.slice(1, -1);
+            if (!LOOM_SLOT_KINDS.includes(kind)) problems.push(`${at} — unknown slot kind "${kind}"`);
+          }
+        }
+      }
+      return problems;
     }
 
     // ---- URL hash parameters (#172) ------------------------------------------

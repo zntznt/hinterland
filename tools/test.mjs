@@ -4050,6 +4050,298 @@ console.log("# The world outside (#121, B0): a third seed — the region is ruin
   else fail("world= never changed any event timeline across the scan");
 }
 
+// ===========================================================================
+console.log("# The loom D1 (#137): one prose engine, dormant, with its own audit");
+{
+  const E = await setupEngine();
+
+  // A fixture pool. It lives HERE and not in the engine on purpose: D1 ships the
+  // loom's runtime and no fragments at all, because a pool belongs to the surface
+  // that migrates onto it, behind that surface's own gate (D2-D5). Until then the
+  // suite is the loom's only consumer, which the last check in this block enforces.
+  const POOL = {
+    open: [
+      { t: "the office at {name:town} reports as follows", req: () => true },
+      { t: "{name:town}, riparian district on {name:river}", req: c => c.river },
+      { t: "assessment of {name:town}, entered against the standing schedule", req: () => true },
+      { t: "the register for {name:town} stands corrected as below", req: () => true },
+    ],
+    assess: [
+      { t: "toll burden at {name:gate} is entered at {num:toll}", req: c => c.gate && c.toll >= 10 },
+      { t: "blight load for {name:town} stands at {num:blight}", req: c => c.blight >= 20 },
+      { t: "of {name:town}'s souls, {num:uncounted} decline enumeration", req: c => c.uncounted >= 1 },
+      { t: "wealth per head in {name:town} is entered at {num:wealth}", req: () => true },
+      { t: "the crossing at {name:gate} returns its schedule punctually", req: c => c.gate },
+      { t: "disease burden at {name:town} is returned at {num:burden} in the thousand", req: c => c.burden >= 15 },
+      { t: "outward registration of labour from {name:town} is noted at {num:emig}", req: c => c.emig >= 1 },
+      { t: "the discolouration of {name:river} is carried without particulars", req: c => c.river },
+    ],
+    euphemism: [
+      { t: "what mortality continues in {name:town} is booked under ordinary wastage", req: c => c.burden >= 30, band: b => b !== "proud" },
+      { t: "the affected ground about {name:town} is reclassified rather than lost", req: c => c.blight >= 40 },
+      { t: "departures from {name:town} are entered as the ordinary circulation of an expanding trade", req: c => c.emig >= 1 },
+      { t: "complaint of the {name:gate} levy is of the district's ordinary character", req: c => c.gate },
+      { t: "persons outside the {name:town} count stand outside the levy, and the office notes the saving", req: c => c.uncounted >= 1 },
+      { t: "such subsidence as is reported at {name:town} is of the ground and not of the works", req: () => true },
+    ],
+    close: [
+      { t: "the {name:town} account is balanced as shown", req: () => true },
+      { t: "submitted from {name:town} without remark", req: () => true },
+      { t: "no further {name:town} particulars are required at this time", req: () => true },
+      { t: "the {name:town} schedule stands until superseded", req: () => true },
+    ],
+  };
+  const FRAMES = ["{A}; {B}.", "{A}. {B}.", "{A}, and {B}.", "{A}: {B}."];
+  const CTX = (over) => Object.assign({
+    town: "Ostenford", river: "the Melverow", gate: "Ostenford Bridge",
+    toll: 62, blight: 44, wealth: 31, pop: 8400, uncounted: 1210, burden: 61, emig: 240,
+  }, over || {});
+  const RESOLVE = (kind, key, c) => {
+    if (kind === "name") return c[key];
+    if (kind === "num") return key === "uncounted" ? { value: c.uncounted, of: c.pop } : c[key];
+    if (kind === "coin") return c.__lex ? c.__lex[0] : null;
+    if (kind === "term") return key === "trade" ? "hauling and mill-work" : null;
+    return null;
+  };
+  const WORLD = { names: new Set(["Ostenford", "the Melverow", "Ostenford Bridge"]) };
+  const compose = (register, ctx, key, band) => E.loomCompose({
+    register, frames: FRAMES, pool: POOL, classes: [["assess", "euphemism"], ["assess", "euphemism"]],
+    ctx, resolve: RESOLVE, rv: E.loomStream("s-loom", "voices", key), band, open: "open", close: "close",
+  });
+
+  // (i) DETERMINISM PER SUBSTREAM. Two calls with the same (seed, surface, key)
+  //     must give the same word; two surfaces on the same key must not; and the
+  //     isolation is the point — draws taken on the chronicle's stream cannot move
+  //     the findings' stream, which is what lets one surface be edited alone.
+  {
+    const a = compose("ledger", CTX(), "r7").text, b = compose("ledger", CTX(), "r7").text;
+    const other = compose("ledger", CTX(), "r8").text;
+    const s1 = E.loomStream("s-loom", "chronicle", "7"), s2 = E.loomStream("s-loom", "findings", "7");
+    const seq1 = [s1(), s1(), s1()], seq2 = [s2(), s2(), s2()];
+    const fresh = E.loomStream("s-loom", "findings", "7");
+    const drained = E.loomStream("s-loom", "chronicle", "7"); for (let i = 0; i < 50; i++) drained();
+    const seq2b = [fresh(), fresh(), fresh()];
+    const det = a === b && a !== other
+      && JSON.stringify(seq1) !== JSON.stringify(seq2)
+      && JSON.stringify(seq2) === JSON.stringify(seq2b);
+    if (det) ok(`the loom is deterministic PER SUBSTREAM: (seed, surface, key) reproduces a paragraph exactly, a different key gives a different one, and 50 draws taken on the chronicle's stream leave the findings' stream untouched`);
+    else fail(`loom substream determinism broken: same-key equal ${a === b}, different-key differs ${a !== other}, surfaces independent ${JSON.stringify(seq1) !== JSON.stringify(seq2)}, isolation ${JSON.stringify(seq2) === JSON.stringify(seq2b)}`);
+  }
+
+  // (ii) GATING CORRECTNESS. A fragment whose req fails does not EXIST for that
+  //      context — it is not a low-scoring candidate, it is absent. Same for band,
+  //      and for a fragment already spent in this paragraph.
+  {
+    const withGate = E.loomGate(POOL, "assess", CTX(), undefined, new Set()).map(f => f.t);
+    const noGate = E.loomGate(POOL, "assess", CTX({ gate: null }), undefined, new Set()).map(f => f.t);
+    const lowBlight = E.loomGate(POOL, "assess", CTX({ blight: 5, gate: null }), undefined, new Set()).map(f => f.t);
+    const banded = E.loomGate(POOL, "euphemism", CTX(), "proud", new Set()).map(f => f.t);
+    const unbanded = E.loomGate(POOL, "euphemism", CTX(), "weary", new Set()).map(f => f.t);
+    const spent = E.loomGate(POOL, "close", CTX(), undefined, new Set([POOL.close[0].t])).map(f => f.t);
+    const gateOK = withGate.length === 8 && noGate.length === 6 && lowBlight.length === 5
+      && banded.length === unbanded.length - 1 && spent.length === 3
+      && !noGate.some(t => t.includes("{name:gate}"))
+      && !banded.some(t => t.includes("mortality"));
+    if (gateOK) ok(`column gating is absence, not scoring: dropping the gate takes the assess class from 8 candidates to 6, blight 44→5 takes another, the band takes the harm euphemism out of a proud voice, and a fragment already spent in this paragraph cannot return (4→3)`);
+    else fail(`loom gating wrong: ${withGate.length}/${noGate.length}/${lowBlight.length} by req, ${banded.length} vs ${unbanded.length} by band, ${spent.length} after spend`);
+  }
+
+  // (iii) THE SLOT AUDIT CATCHES A PLANTED FALSE FACT. The audit recomputes every
+  //       told from its true under the rule the fact declares, so a surface can only
+  //       lie by writing a told the arithmetic cannot produce. Three plants: a
+  //       tampered figure, a numeral in a register forbidden numerals, and a name
+  //       that is not in the export.
+  {
+    const clean = compose("ledger", CTX(), "audit-1");
+    const base = E.loomAudit(clean, "ledger", WORLD);
+
+    const tampered = JSON.parse(JSON.stringify(clean));
+    const numFact = tampered.facts.find(f => f.rule === "verbatim" && /^\d+$/.test(String(f.told)));
+    numFact.told = String(Number(numFact.told) + 1);          // the plant: one digit off
+    const caught = E.loomAudit(tampered, "ledger", WORLD);
+
+    const streetish = { text: "the levy takes 62 of every hundred", facts: [], names: [] };
+    const numeral = E.loomAudit(streetish, "street", WORLD);
+
+    const invented = { text: "as they say in Vellenmark", facts: [], names: [{ told: "Vellenmark", raw: "Vellenmark", rule: "verbatim" }] };
+    const notInExport = E.loomAudit(invented, "ledger", WORLD);
+
+    // and the quiet one: a slot the caller cannot fill leaves a hole in the sentence
+    // that reads like a typo rather than a bug. It is recorded, so it fails loudly.
+    const holeFacts = [];
+    E.loomFill("the levy at {name:gate} is {num:missing}", CTX(), "ledger", RESOLVE, holeFacts, []);
+    const hole = E.loomAudit({ text: "the levy at Ostenford Bridge is ", facts: holeFacts, names: [] }, "ledger", WORLD);
+
+    const allFour = base.ok && !caught.ok && caught.offenders.length === 1
+      && !numeral.ok && !notInExport.ok && !hole.ok && /could not be filled/.test(hole.offenders[0].why);
+    if (allFour) ok(`the slot audit catches a planted false fact: a clean voice passes, one figure moved by 1 is caught as the single offender (${caught.offenders[0].why}), a numeral in the street register is caught by its own digits law, a name absent from the export is caught as invented, and a slot the caller could not fill is caught as an unresolved hole rather than read as a typo`);
+    else fail(`slot audit failed to catch a plant: clean ${base.ok}, tampered offenders ${caught.offenders.length}, numeral-in-folk ${!numeral.ok}, invented name ${!notInExport.ok}, unfilled slot ${!hole.ok}`);
+  }
+
+  // (iv) THE DIGITS LAWS. Each register declares what it may put on the page as a
+  //      numeral, and the renderers are pure and invertible.
+  {
+    const spelled = E.loomSpell(42), folk = E.loomFolk(68);
+    const share = E.LOOM_RULES.share(1210, { of: 8400 });
+    const laws = new Set(Object.values(E.LOOM_REGISTERS).map(r => r.digits));
+    const streetV = compose("street", CTX(), "law-1");
+    // the ladder is the voices spec §2 ladder, unchanged, and it is monotone
+    const rungs = E.LOOM_LADDER.map(r => r[0]);
+    const ladderOK = JSON.stringify(rungs) === JSON.stringify([5, 10, 25, 33, 50, 67, 75, 90, 97])
+      && rungs.every((v, i) => i === 0 || v > rungs[i - 1])
+      && E.loomFolk(4) === "next to none" && E.loomFolk(99) === "all but the sweepings";
+    // the spelled law must hold at every magnitude a column can reach, or the renderer
+    // contradicts the law it serves — loomSpell used to give up past a thousand and
+    // return the numeral, in a register forbidden numerals.
+    const spellClean = [0, 7, 13, 40, 99, 100, 408, 1000, 8400, 27863, 1250000]
+      .every(v => !/\d/.test(E.loomSpell(v)));
+    const bigSpell = E.loomSpell(8400);
+    // loomFill on its own: one clause, one fact per slot, the register's law applied
+    const fillFacts = [], fillNames = [];
+    const filled = E.loomFill("blight at {name:town} is {num:blight}", CTX(), "ledger", RESOLVE, fillFacts, fillNames);
+    const spelledFill = E.loomFill("blight at {name:town} is {num:blight}", CTX(), "judge", RESOLVE, [], []);
+    const fillOK = filled === "blight at Ostenford is 44" && spelledFill === "blight at Ostenford is forty-four"
+      && fillFacts.length === 2 && fillNames.length === 1
+      && fillFacts[1].path === "num:blight" && fillFacts[1].true === 44;
+    const lawsOK = spelled === "forty-two" && folk === "two parts in three" && share === "a tithe"
+      && laws.size === 3 && Object.keys(E.LOOM_REGISTERS).length === 7 && ladderOK && fillOK && spellClean
+      && !/\d/.test(streetV.text) && E.loomRuleFor("street") === "folk" && E.loomRuleFor("ledger") === "verbatim";
+    if (lawsOK) ok(`the seven registers carry three digits laws, and one clause obeys whichever it is handed: exact / spelled ("forty-two") / folk ("two parts in three", and 1,210-in-8,400 reads "a tithe" off the spec's nine-rung ladder). The same fragment fills to "${filled}" for the ledger and "${spelledFill}" for the judge, with one audited fact per slot, a street paragraph off the same pool carries no numeral at all, and the spelled law holds at every magnitude a column reaches (8,400 → "${bigSpell}"), which it did not when the renderer gave up past a thousand and returned the numeral`);
+    else fail(`digits laws wrong: spelled "${spelled}", folk "${folk}", share "${share}", ladder ${ladderOK}, fill ${fillOK} ("${filled}" / "${spelledFill}"), spell-clean ${spellClean}, ${laws.size} laws over ${Object.keys(E.LOOM_REGISTERS).length} registers, street numerals ${/\d/.test(streetV.text)}`);
+  }
+
+  // (v) DIVERSITY FLOOR COMPUTATION, measured on SKELETONS. Raw text flatters the
+  //     loom: one template filled with twenty town names looks like twenty
+  //     paragraphs. Masking the fills back to their slot positions leaves what a
+  //     reader actually notices repeating. Four numbers come out, and which four is
+  //     the measurement: within-skeleton type-token (stable in n), pooled bigram
+  //     entropy (floor scales with log2 n), distinct skeletons, and the pairwise
+  //     skeleton OVERLAP that direction.md §4 already pins as a ceiling.
+  {
+    const skeletonsOf = (pool, n) => {
+      const out = [];
+      for (let i = 0; i < n; i++) {
+        const v = E.loomCompose({
+          register: "ledger", frames: FRAMES, pool, classes: [["assess", "euphemism"], ["assess", "euphemism"]],
+          ctx: CTX({ town: "Town" + i, blight: 20 + i * 4, toll: 10 + i * 3, burden: 20 + i * 3 }),
+          resolve: RESOLVE, rv: E.loomStream("s-loom", "voices", "div-" + i), open: "open", close: "close",
+        });
+        out.push(E.loomSkeleton(v.text, v.facts));
+      }
+      return out;
+    };
+    const oneTemplate = [];
+    for (let i = 0; i < 20; i++)
+      oneTemplate.push(E.loomSkeleton(`blight load for Town${i} stands at 44`,
+        [{ path: "name:town", true: "Town" + i, told: "Town" + i, rule: "verbatim" },
+         { path: "num:blight", true: 44, told: "44", rule: "verbatim" }]));
+
+    const varied = skeletonsOf(POOL, 20);
+    const maskWorks = new Set(oneTemplate).size === 1;      // twenty names, one skeleton
+    const flat = E.loomDiversity(oneTemplate), rich = E.loomDiversity(varied);
+    const floor = E.loomDiversityFloor(20);
+    const floorGrows = E.loomDiversityFloor(200).bigramEntropy > floor.bigramEntropy;
+    // the within-skeleton type-token ratio must NOT decay with corpus size — that is
+    // the bug the pooled version had, and the reason a fixed floor on it failed a
+    // good corpus for the crime of being large.
+    const ttStable = Math.abs(E.loomDiversity(varied.concat(varied)).typeToken - rich.typeToken) < 0.02;
+    const flatFails = !E.loomMeetsFloor(flat, floor).ok, richPasses = E.loomMeetsFloor(rich, floor).ok;
+
+    // and the curve the D3/D4 authors will need before they start writing: overlap
+    // against POOL SIZE, everything else held. §4 records today's chronicle at
+    // 0.36-0.52 cross-seed and pins the ceiling at 0.20; this is what it costs.
+    const cut = (f) => ({
+      open: POOL.open.slice(0, Math.max(2, Math.round(4 * f))),
+      assess: POOL.assess.slice(0, Math.max(2, Math.round(8 * f))),
+      euphemism: POOL.euphemism.slice(0, Math.max(2, Math.round(6 * f))),
+      close: POOL.close.slice(0, Math.max(2, Math.round(4 * f))),
+    });
+    const curve = [0.25, 0.4, 0.55, 0.7, 1].map(f => {
+      const pool = cut(f);
+      return { size: Object.values(pool).flat().length, overlap: E.loomDiversity(skeletonsOf(pool, 20)).overlap };
+    });
+    const monotone = curve.every((c, i) => i === 0 || c.overlap <= curve[i - 1].overlap);
+    const smallMisses = curve[0].overlap > 0.36;            // an 8-fragment pool sits in §4's "today" band
+
+    if (maskWorks && flatFails && richPasses && floorGrows && ttStable && monotone && smallMisses)
+      ok(`skeleton-masked diversity does the job it exists for: twenty paragraphs off ONE template mask to one skeleton and fail (${E.loomMeetsFloor(flat, floor).short.join("; ")}); twenty composed off a ${Object.values(POOL).flat().length}-fragment pool clear the floor (within-skeleton type-token ${rich.typeToken} ≥ ${floor.typeToken}, entropy ${rich.bigramEntropy} ≥ ${floor.bigramEntropy}, ${rich.distinct}/20 distinct, pairwise overlap ${rich.overlap} ≤ §4's pinned ${floor.overlap}); the entropy floor rises with corpus size (${floor.bigramEntropy} at n=20 → ${E.loomDiversityFloor(200).bigramEntropy} at n=200) while type-token does not move when the corpus doubles; and overlap falls monotonically with POOL size — ${curve.map(c => `${c.size}→${c.overlap}`).join(", ")} — so §4's 0.20 ceiling costs about ${curve[curve.length - 1].size} fragments for this frame count, and an 8-fragment pool lands at ${curve[0].overlap}, above even §4's recorded 0.36-0.52 band for today's chronicle`);
+    else fail(`diversity measure off: mask collapses ${maskWorks}, flat fails ${flatFails}, rich passes ${richPasses} (${JSON.stringify(rich)} vs ${JSON.stringify(floor)}), floor grows ${floorGrows}, tt stable ${ttStable}, curve monotone ${monotone} ${JSON.stringify(curve)}, small misses ${smallMisses}`);
+  }
+
+  // (vi) THE LINT: no canned complete sentences anywhere in a fragment pool. This
+  //      is the failure mode the loom exists to end, so it is a lint error, not a
+  //      style note. The one-slot rule rides along with it: #136 measured surface
+  //      repeats of 14 and then 8 against a ceiling of 3, and slot density, not
+  //      pool size, was the binding constraint.
+  {
+    const clean = E.loomLint(POOL);
+    const dirty = E.loomLint({
+      assess: [
+        { t: "The office reports as follows.", req: () => true },        // capital + stop + no slot
+        { t: "the levy is entered at {num:toll}", req: () => true },     // fine
+        { t: "the district is in the ordinary condition", req: () => true }, // no slot
+        { t: "the return for {place:town} is filed", req: () => true },  // unknown slot kind
+      ],
+    });
+    const kinds = dirty.join(" | ");
+    // four planted fragments, six problems: the canned sentence trips three at once
+    // (capital, stop, no slot) and {place:town} trips two (no VALID slot, and the
+    // kind itself is not one the loom knows).
+    const kindsMatch = JSON.stringify(E.LOOM_SLOT_KINDS) === JSON.stringify(["name", "num", "coin", "term"]);
+    const catchesAll = clean.length === 0 && dirty.length === 6 && kindsMatch
+      && /opens with a capital/.test(kinds) && /ends with a stop/.test(kinds)
+      && (dirty.filter(d => /carries no slot/.test(d)).length === 3)
+      && /unknown slot kind "place"/.test(kinds);
+    if (catchesAll) ok(`the pool lint holds house law: a clean pool of ${Object.values(POOL).flat().length} fragments passes, and four planted fragments trip six problems — the canned complete sentence trips capital, terminal stop AND no-slot at once, a bare clause trips no-slot, and {place:town} trips both no-VALID-slot and an unknown kind (the loom knows exactly ${E.LOOM_SLOT_KINDS.join("/")})`);
+    else fail(`lint wrong: clean ${clean.length} problems, dirty ${dirty.length} (expected 6), kinds ${kindsMatch}: ${kinds}`);
+  }
+
+  // (vii) WORLD LEXICA. Oaths are minted once per world and shared, so they repeat
+  //       like culture; a coin that is already a place name is rejected; and the
+  //       imperial tier is a third corpus, audibly foreign, which is what makes
+  //       cultural penetration something you can hear as well as measure.
+  {
+    const lex = E.loomLexicon("lex-a"), same = E.loomLexicon("lex-a"), other = E.loomLexicon("lex-b");
+    const stable = JSON.stringify(lex) === JSON.stringify(same);
+    const differs = JSON.stringify(lex) !== JSON.stringify(other);
+    const corpus = new Set();
+    for (const reg in E.NAME_CORPUS) for (const w of E.NAME_CORPUS[reg]) corpus.add(w.toLowerCase());
+    const allCoins = [];
+    for (const k in lex) { if (k === "imperial") allCoins.push(...lex[k]); else allCoins.push(...lex[k].oath, ...lex[k].slang); }
+    const distinctPerLex = Object.values(lex).every(v => Array.isArray(v) ? new Set(v).size === v.length
+      : new Set(v.oath).size === v.oath.length && new Set(v.slang).size === v.slang.length);
+    // the imperial tier does not sound like the regions: none of its coins carry the
+    // regional suffixes, and the regional coins do not carry its romance finals.
+    const REGIONAL = /(mere|holt|wick|ford|by|grim|moth|reth|dale|brook)$/i;
+    const imperialClean = lex.imperial.length >= 3 && !lex.imperial.some(w => REGIONAL.test(w));
+    const noCorpusWord = !allCoins.some(w => corpus.has(w.toLowerCase()));
+    // loomMint on its own: 200 walks against a corpus of 700+ place names, and not
+    // one of them may come back as a name that already exists on the map.
+    const rm = E.loomStream("lex-a", "lexicon", "mint-probe");
+    const probe = [];
+    for (let i = 0; i < 200; i++) { const w = E.loomMint("lowland", rm, 3, 8, null); if (w) probe.push(w.toLowerCase()); }
+    const mintClean = probe.length >= 150 && !probe.some(w => corpus.has(w));
+    if (stable && differs && distinctPerLex && imperialClean && noCorpusWord && mintClean)
+      ok(`world lexica are minted once per world and repeat like culture: "${lex.lowland.oath.join("/")}" is stable across calls and differs by seed, each lexicon's entries are distinct, none of ${probe.length} probe mints reproduces any of the ${corpus.size} corpus words (a coin that is already a place name is not a coin), and the imperial tier is audibly foreign (${lex.imperial.join(", ")} — no regional suffix among them)`);
+    else fail(`lexica off: stable ${stable}, seed-varying ${differs}, distinct ${distinctPerLex}, imperial ${JSON.stringify(lex.imperial)}, corpus-clean ${noCorpusWord}, mint-clean ${mintClean} (${probe.length} probes)`);
+  }
+
+  // (viii) THE DORMANCY IS HONEST. The loom ships with no consumer by design, which
+  //        is one letter away from dead code — the exact failure the suite's own
+  //        self-audit exists to catch. So: every loom symbol the engine exports must
+  //        be exercised HERE, or D1 has shipped a framework nobody has run.
+  {
+    const engineSrc = readFileSync(new URL("../src/engine/engine.mjs", import.meta.url), "utf8");
+    const block = engineSrc.slice(engineSrc.lastIndexOf("export {"));
+    const names = [...new Set([...block.matchAll(/\b(loom[A-Za-z]+|LOOM_[A-Z_]+)\b/g)].map(m => m[1]))];
+    const suite = readFileSync(new URL("./test.mjs", import.meta.url), "utf8");
+    const unused = names.filter(n => !new RegExp("E\\." + n + "\\b").test(suite));
+    if (names.length >= 15 && unused.length === 0)
+      ok(`the loom's dormancy is honest: all ${names.length} exported loom symbols are exercised by this suite, so the engine carries a runtime nobody calls in production and nobody has left unrun`);
+    else fail(`loom exports not exercised (${names.length} found): ${unused.join(", ")}`);
+  }
+}
+
 console.log("# The suite audits itself: no assertion may sit in dead code");
 {
   // The audit that produced this check found a 1138-line validate() in THIS file

@@ -5003,9 +5003,11 @@ console.log("# The verdict composed D5 (#141): twelve stories where three were")
       // and the analyst's lead is gated on the same cell
       const fc = E.findingsCtx(model, S);
       const lead = E.composeFindings(model, S).find(b => b.topic === "lead");
+      // the lead block is a claim plus a gloss, so its text CONTAINS a realization of
+      // the gated claim class rather than equalling one
       const leadSaid = (E.FINDINGS_POOL.lead || []).filter(f => f.req(fc))
         .map(f => E.loomFill(f.t, fc, "analyst", E.findingsResolve, [], []));
-      if (!lead || !leadSaid.some(t => lead.text === t)) disagree.push(`${SEEDS[i]}: the band's lead is not gated on ${fc.cell}`);
+      if (!lead || !leadSaid.some(t => lead.text.includes(t))) disagree.push(`${SEEDS[i]}: the band's lead is not gated on ${fc.cell}`);
       if (fc.cell !== F.verdict.cell || vc.cell !== F.verdict.cell) disagree.push(`${SEEDS[i]}: contexts disagree with the export`);
     }
     if (!disagree.length)
@@ -5052,6 +5054,43 @@ console.log("# The verdict composed D5 (#141): twelve stories where three were")
     if (reached.size === 5 && missing.length === 1 && missing[0] === "unequal growth" && alsoRose === 0)
       ok(`five of §3.5's six cells appear in ${worlds.length} worlds at defaults and the sixth does not: of the ${widened.length} whose gap widened, ${alsoRose} also raised their floor — \`unequal growth\` is rare rather than impossible (one turns up at seed v5s-194), because in this model a widening gap takes the floor down with it`);
     else fail(`the reachable cell set moved: ${reached.size} reached (${[...reached].join(", ")}), missing ${missing.join(", ") || "none"}, widened-and-rose ${alsoRose}/${widened.length}`);
+  }
+
+  // (viii) THE HOLE THAT LET THE ATLAS ROT. #140 composed the chronicle and broke
+  //        `tools/atlas.mjs`, which read the capital's name and the reigning ruler
+  //        out of the preamble with regexes and quoted each archetype by matching a
+  //        v1 sentence. Measured after the fact: the capital parsed in 0 of 20
+  //        worlds and eight of nine quotations matched nothing — through a green CI,
+  //        because a docs generator has no test. Fixing the tool does not close the
+  //        hole; this does. A generator may not derive a world fact by matching
+  //        composed prose, and the facts it needs must come from the export.
+  {
+    const atlasSrc = readFileSync(new URL("./atlas.mjs", import.meta.url), "utf8");
+    // the regex form the break took: pulling a value out of the chronicle
+    const greps = (atlasSrc.match(/chron\s*\.\s*match\s*\(/g) || []).length;
+    // and the anchors it uses instead must actually resolve, on real worlds
+    const holes = [];
+    for (let i = 0; i < 6; i++) {
+      const { model, S } = (() => {
+        const h = `#seed=atlas-${i}&regions=24&ep=10`;
+        const P = LOOM.parseHash(h);
+        const regions = LOOM.buildTopology(P), geo = LOOM.buildGeology(regions, P);
+        return { model: LOOM.applyAttributes(regions, P, geo), S: P };
+      })();
+      const chron = LOOM.composeChronicle(model, S);
+      // the capital and the reign, from the export rather than from the prose
+      if (!model.capitalName) holes.push(`atlas-${i}: no capital name in the model`);
+      const crown = model.dynasties.crown;
+      if (!crown.length || !crown[crown.length - 1].name) holes.push(`atlas-${i}: no reigning ruler`);
+      // the quotation fallback every archetype now leans on: the composed verdict,
+      // which the chronicle carries as its last emphasised line
+      const vline = chron.split("\n").map(l => l.trim()).reverse()
+        .find(l => /^\*[^*].*\*$/.test(l));
+      if (!vline || vline.length < 80) holes.push(`atlas-${i}: no verdict line to quote`);
+    }
+    if (!greps && !holes.length)
+      ok(`the atlas cannot rot silently again: it derives no world fact by matching composed prose, and over 6 worlds the export anchors it uses instead (capital, reigning ruler, and the composed verdict every quotation falls back to) all resolve`);
+    else fail(`atlas would break on a reworded pool: ${greps} chronicle regex(es), ${holes.length} unresolved anchors (${holes.slice(0, 3).join("; ")})`);
   }
 }
 

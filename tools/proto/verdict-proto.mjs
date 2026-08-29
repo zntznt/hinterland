@@ -10,6 +10,7 @@
 import { setupEngine } from "../lib.mjs";
 const E = await setupEngine();
 const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 ? process.argv[i + 1] : d; };
+const has = (k) => process.argv.includes("--" + k);
 const N = Number(arg("n", "80"));
 const of_ = (h) => { const S = E.parseHash(h); const r = E.buildTopology(S), g = E.buildGeology(r, S);
   const m = E.applyAttributes(r, S, g); return { F: E.getFindings(m), m, S }; };
@@ -60,4 +61,63 @@ if (process.argv.includes("--sample")) {
   md += `asserts the absence, so a later mechanism that makes it reachable turns the\n`;
   md += `check red rather than passing unnoticed.\n`;
   console.log(md);
+}
+
+// --floor: the survivorship question behind the verdict's second axis. The floor is
+// the poorest tenth of the regions STILL STANDING, taken at both ends on that same
+// set, which is the right way to measure a change and the wrong way to be quiet
+// about: a realm that abandoned its poorest ground shows a risen floor because that
+// ground stopped being counted. This measures how often the sign flips when the
+// founding tenth is taken over the FOUNDING set instead. The measure is unchanged;
+// the judge names the abandonment whenever the floor rose and any settlement left.
+if (has("floor")) {
+  const p10 = (a) => { const t = a.slice().sort((x, y) => x - y); return t.length ? t[Math.floor(0.1 * (t.length - 1))] : 0; };
+  let rose = 0, withDeaths = 0, flips = 0; const eg = [];
+  const M = 200;
+  for (let i = 0; i < M; i++) {
+    const S = E.parseHash(`#seed=fl-${i}&regions=24&ep=10`);
+    const r = E.buildTopology(S), g = E.buildGeology(r, S);
+    const m = E.applyAttributes(r, S, g), F = E.getFindings(m);
+    if (F.floor.p10 - F.floor.p10_t0 <= 0) continue;
+    rose++;
+    const now = m.regions.filter(x => x.settled);
+    const founded = m.regions.filter(x => x.wealthT0 > 0 || x.settled);
+    const died = founded.length - now.length;
+    if (died > 0) withDeaths++;
+    if (p10(now.map(x => x.wealth)) <= p10(founded.map(x => x.wealthT0))) {
+      flips++;
+      if (eg.length < 3) eg.push(`fl-${i}: ${F.floor.p10_t0}->${F.floor.p10} on survivors, ${died} settlements gone`);
+    }
+  }
+  console.log(`# ${M} worlds at defaults`);
+  console.log(`  the floor rose in ${rose}`);
+  console.log(`  ...of those, ${withDeaths} lost at least one settled region`);
+  console.log(`  ...and in ${flips} the rise DISAPPEARS against the founding set`);
+  for (const e of eg) console.log(`   ${e}`);
+  process.exit(0);
+}
+
+// --rate: how rare is `unequal growth` (a widening gap over a RISING floor)? Earlier
+// statements in this repo were bounds from single seed families, and two of them
+// overstated. This measures a rate the docs can quote.
+if (has("rate")) {
+  const FAMS = ["v5", "v5s", "hunt", "atlas", "ir", "vd", "fl", "vp"];
+const PER = 150;
+  let n = 0, widened = 0, widenedRose = 0;
+  const cells = new Map(), hits = [];
+for (const f of FAMS) for (let i = 0; i < PER; i++) {
+  const { F } = of_(`#seed=${f}-${i}&regions=24&ep=10`); n++;
+  cells.set(F.verdict.cell, (cells.get(F.verdict.cell) || 0) + 1);
+  if (F.verdict.gap === "widened") { widened++; if (F.verdict.floor === "rose") widenedRose++; }
+  if (F.verdict.cell === "unequal growth") hits.push(`${f}-${i}`);
+}
+  console.log(`# ${n} worlds at defaults (regions=24, ep=10) across ${FAMS.length} seed families`);
+for (const [c, k] of [...cells].sort((a, b) => b[1] - a[1]))
+  console.log(`  ${String(k).padStart(5)}  ${(100 * k / n).toFixed(2).padStart(6)}%  ${c}`);
+console.log(`\nunequal growth: ${hits.length}/${n} = ${(100 * hits.length / n).toFixed(2)}%  (1 in ${hits.length ? Math.round(n / hits.length) : "∞"})`);
+console.log(`  seeds: ${hits.slice(0, 8).join(", ") || "none"}`);
+console.log(`\nthe mechanism: of ${widened} worlds whose gap widened, ${widenedRose} also raised the floor`);
+console.log(`  = ${(100 * widenedRose / Math.max(1, widened)).toFixed(1)}%, about 1 in ${widenedRose ? Math.round(widened / widenedRose) : "∞"}`);
+
+  process.exit(0);
 }

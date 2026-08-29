@@ -44,18 +44,18 @@
   — falling back to the world's own composed verdict, which every chronicle now carries
   and which is always on the subject.
   (2) *`unequal growth` is rare, and the acceptance asked to display it.* The sixth
-  cell of §3.5's matrix — a gap that widens over a RISING floor — appears in **0 of 80**
-  worlds in the calibration sweep and **0 of 400** in a second seed family. It is not
-  impossible: hunting a third family turned one up at `v5s-194`. The mechanism behind
-  the rarity is visible in the axes, and is what the suite actually asserts: among the
-  worlds whose gap widens, **the floor rises in roughly one in twenty-five**. In this
-  model a widening gap almost always takes the floor down with it. That is a finding
-  about the world-model rather than the prose, so the cell's prose is authored and the
-  check is written as a tripwire: if a later mechanism makes the cell common it turns
-  red and the claim is re-measured instead of inherited.
-  (*Stated as "unreachable" in an earlier draft of this entry on the strength of one
-  seed family; the sample then found a world in another. The narrower claim above is
-  what the measurements support.*)
+  cell of §3.5's matrix — a gap that widens over a RISING floor — appears **2 times in
+  1200 worlds** at defaults across eight seed families (`verdict-proto.mjs --rate`):
+  one in six hundred. The mechanism behind the rarity is the checkable part, and is
+  what the suite asserts: of the **191** worlds whose gap widened, **2** also raised
+  their floor, one in ninety-six. In this model a widening gap almost always takes the
+  floor down with it. That is a finding about the world-model rather than the prose, so
+  the cell's prose is authored and the check is a tripwire: if a later mechanism makes
+  the cell common it turns red and the claim is re-measured instead of inherited.
+  (*This entry twice said something the evidence did not support before it was
+  measured — first "unreachable" from one seed family, then "one in twenty-five" for
+  the mechanism from a 48-world probe, against a measured one in ninety-six. The rate
+  above is from 1200 worlds and the script that produced it ships.*)
   (3) *The floor axis is measured on survivors, and the verdict never said so.* The
   floor is the poorest tenth of the regions still standing, taken at both ends on that
   same set — which is the right way to measure a change and the wrong way to be quiet

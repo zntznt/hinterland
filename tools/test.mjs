@@ -5035,14 +5035,13 @@ console.log("# The verdict composed D5 (#141): twelve stories where three were")
 
   // (vii) WHAT THE MODEL RARELY SAYS. Five of §3.5's six cells turn up in this
   //       sweep. `unequal growth` — a widening gap over a RISING floor — does not,
-  //       and the honest statement of that is narrower than it first looked: it is
-  //       absent from these 80 worlds and from a 400-world sweep of a second seed
-  //       family, but it is NOT impossible — hunting a third family turned one up at
-  //       `v5s-194`. So the cell is rare, on the order of one world in several
-  //       hundred at defaults, and the reason is visible in the axes: among the
-  //       worlds whose gap widens, the floor move is positive in about one in
-  //       twenty-five. A widening gap in this model almost always takes the floor
-  //       down with it.
+  //       and the honest statement of that is narrower than it first looked. Measured
+  //       over 1200 worlds at defaults across eight seed families
+  //       (`verdict-proto.mjs --rate`): the cell appears **2 times in 1200**, one in
+  //       six hundred. It is rare, not impossible. The reason is visible in the axes
+  //       and is the part worth pinning: of the **191** worlds whose gap widened,
+  //       **2** also raised their floor — one in ninety-six. A widening gap in this
+  //       model almost always takes the floor down with it.
   //
   //       The check asserts only what this sweep measures. Its value is as a
   //       tripwire: if a later mechanism makes the cell common, this turns red and
@@ -5056,7 +5055,7 @@ console.log("# The verdict composed D5 (#141): twelve stories where three were")
     const widened = worlds.filter(w => w.F.verdict.gap === "widened");
     const alsoRose = widened.filter(w => w.F.verdict.floor === "rose").length;
     if (reached.size === 5 && missing.length === 1 && missing[0] === "unequal growth" && alsoRose === 0)
-      ok(`five of §3.5's six cells appear in ${worlds.length} worlds at defaults and the sixth does not: of the ${widened.length} whose gap widened, ${alsoRose} also raised their floor — \`unequal growth\` is rare rather than impossible (one turns up at seed v5s-194), because in this model a widening gap takes the floor down with it`);
+      ok(`five of §3.5's six cells appear in ${worlds.length} worlds at defaults and the sixth does not: of the ${widened.length} whose gap widened, ${alsoRose} also raised their floor — \`unequal growth\` is rare rather than impossible (2 in 1200 over eight seed families, and of 191 widened-gap worlds only 2 raised the floor), because in this model a widening gap takes the floor down with it`);
     else fail(`the reachable cell set moved: ${reached.size} reached (${[...reached].join(", ")}), missing ${missing.join(", ") || "none"}, widened-and-rose ${alsoRose}/${widened.length}`);
   }
 

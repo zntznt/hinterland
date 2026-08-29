@@ -45,11 +45,11 @@ Thistlefold grew apart while its floor rose, which the record can report and can
 
 ## `unequal growth` — the rare one
 
-The sixth cell, a widening gap over a RISING floor, is rare rather than absent. It
-appears in 0 of 80 worlds in the calibration sweep and 0 of 400 in a second seed
-family; hunting a third turned one up at `v5s-194`, which is the world quoted above.
-The reason is in the axes: among worlds whose gap widens, the floor rises in roughly
-one in twenty-five. In this model a widening gap almost always takes the floor down
-with it. The prose for the cell is authored, and the suite asserts the shape of the
+The sixth cell, a widening gap over a RISING floor, is rare rather than absent.
+Measured over 1200 worlds at defaults across eight seed families
+(`verdict-proto.mjs --rate`): it appears **2 times in 1200**, one in six hundred.
+The reason is in the axes: of the **191** worlds whose gap widened, **2** also raised
+their floor, one in ninety-six. In this model a widening gap almost always takes the
+floor down with it. The prose for the cell is authored, and the suite asserts the shape of the
 rarity rather than the wording, so a later mechanism that makes it common turns the
 check red instead of passing unnoticed.

@@ -497,12 +497,11 @@ the sweep harness before pinning, per house rule.
 > matched nothing, and CI was green throughout because a docs generator is not a test.
 > Anything that reads prose for a fact the export holds is a latent break; the atlas
 > reads the export now. Second, **the sixth verdict cell is rare rather than absent**:
-> a widening gap over a rising floor appears in 0 of 80 worlds in the calibration
-> sweep and 0 of 400 in a second seed family, and a third family turns one up. The
-> checkable part is the mechanism behind the rarity — among the worlds whose gap
-> widens, the floor rises in about one in twenty-five — so in this model a widening
-> gap almost always takes the floor down with it. Whether that is a property worth
-> keeping belongs to Phase B.
+> a widening gap over a rising floor appears **2 times in 1200 worlds** at defaults
+> across eight seed families, one in six hundred. The checkable part is the mechanism
+> behind the rarity — of the 191 worlds whose gap widened, 2 also raised the floor,
+> one in ninety-six — so in this model a widening gap almost always takes the floor
+> down with it. Whether that is a property worth keeping belongs to Phase B.
 
 ---
 

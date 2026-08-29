@@ -5007,7 +5007,11 @@ console.log("# The verdict composed D5 (#141): twelve stories where three were")
       // the gated claim class rather than equalling one
       const leadSaid = (E.FINDINGS_POOL.lead || []).filter(f => f.req(fc))
         .map(f => E.loomFill(f.t, fc, "analyst", E.findingsResolve, [], []));
-      if (!lead || !leadSaid.some(t => lead.text.includes(t))) disagree.push(`${SEEDS[i]}: the band's lead is not gated on ${fc.cell}`);
+      // ...and loomCompose raises the opening letter of whichever clause lands first,
+      // so the comparison is case-insensitive. (Verified against 12 worlds directly
+      // before spending another full suite run on it.)
+      if (!lead || !leadSaid.some(t => lead.text.toLowerCase().includes(t.toLowerCase())))
+        disagree.push(`${SEEDS[i]}: the band's lead is not gated on ${fc.cell}`);
       if (fc.cell !== F.verdict.cell || vc.cell !== F.verdict.cell) disagree.push(`${SEEDS[i]}: contexts disagree with the export`);
     }
     if (!disagree.length)

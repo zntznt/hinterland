@@ -300,15 +300,11 @@ const d3 = globalThis.d3;
       const blocks = composeFindings(model, params || { seed: model.seed, ep: model.epochSnaps.length - 1 });
       const mark = (t) => esc(t).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
       return blocks.map(b => {
-        // the lead keeps its verdict colour: green when the gap closed, red when it
-        // widened, plain when it held. The words are the loom's; the colour is the
-        // panel's reading of the same number.
-        if (b.topic === "lead") {
-          const F = getFindings(model), d = F.gini - F.gini_t0;
-          const col = d <= -0.04 ? "#8fbf7f" : d >= 0.04 ? "#e08268" : null;
-          const html = mark(b.text);
-          return col ? html.replace(/<b>/, `<b style="color:${col}">`) : html;
-        }
+        // D5 (#141): THE MORAL COLOUR IS GONE. The lead used to be painted green when
+        // the gap closed and red when it widened, which is the app grading a world on
+        // one axis of three — and grading at all. A world that closes its gap by
+        // emptying its poorest ground was painted green. The lead now reads the
+        // verdict space in words, and the words are the whole of the reading.
         const label = FINDINGS_LABEL[b.topic];
         const accent = FINDINGS_ACCENT[b.topic];
         return (label ? `<span style="color:${accent}">${label}</span> ` : "") + mark(b.text);
@@ -326,9 +322,11 @@ const d3 = globalThis.d3;
     // .md stays byte-exact — this styles the page only, composeChronicle is law.
     function chronicleArticleHTML(md, model, params) {
       const F = getFindings(model);
-      const dG = F.gini - F.gini_t0;
+      // D5 (#141): the pull quote read the gini delta three ways and called that a
+      // verdict. It reads the verdict function now, so the article's headline and the
+      // panel's lead cannot disagree about what happened to this world.
       const pulls = [
-        `<b>${dG <= -0.04 ? "the gap closed" : dG >= 0.04 ? "the world got more unequal" : "the world held its shape"}</b>: gini ${F.gini_t0.toFixed(2)} → ${F.gini.toFixed(2)}`
+        `<b>${F.verdict.cell}</b>: gini ${F.gini_t0.toFixed(2)} → ${F.gini.toFixed(2)}, floor ${F.floor.p10_t0} → ${F.floor.p10}`
       ];
       if (F.owners) pulls.push(`<b>${F.owners.pop_pct}%</b> of the people hold <b>${F.owners.coin_pct}%</b> of the coin`);
       const echo = timelineHTML(model, params);

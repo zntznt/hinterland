@@ -195,6 +195,42 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       return ea - eb || a.localeCompare(b);
     }).map(k => `${k}:${dec[k]}`).join(",");
 
+    // A decision is offered exactly where the dice already decided, and OPTION 0 IS
+    // ALWAYS THE DICE'S OWN OUTCOME. That is what makes the echo-the-dice invariant
+    // structural instead of tested-in: a reign that echoes every die IS the auto run,
+    // because picking option 0 runs the same branch the auto run ran, in the same
+    // order, drawing the same numbers.
+    //
+    // `decide` consumes NO randomness — not one draw, ever. If offering a choice cost
+    // a draw, merely being ASKED would move a world that answered nothing, and the
+    // byte-pin would be unsatisfiable rather than merely broken.
+    //
+    // A `ch` entry naming an option a decision does not offer is STALE: the world
+    // moved under the reign (a knob changed, a trigger fired at another epoch), so
+    // the dice decide, which is exactly what would have happened with no entry at
+    // all. That is the "stale entries ignored === no-ch" acceptance, and it falls out
+    // of the same clamp rather than needing its own path.
+    function makeReign(params) {
+      const want = parseDecisions(params && params.ch);
+      const log = [];
+      const decide = (kind, epoch, options) => {
+        const key = kind + epoch;
+        const asked = Object.prototype.hasOwnProperty.call(want, key);
+        const raw = asked ? want[key] : 0;
+        const ok = Number.isInteger(raw) && raw >= 0 && raw < options.length;
+        const pick = ok ? raw : 0;
+        log.push({
+          epoch, kind, key,
+          options: options.slice(),
+          chose: options[pick],
+          by: pick === 0 ? "dice" : "governor",
+          stale: asked && !ok,
+        });
+        return pick;
+      };
+      return { decide, log };
+    }
+
     // ---- Deterministic RNG (mulberry32) + string hashing --------------------
     function hashStr(str) {
       let h = 2166136261 >>> 0;
@@ -2383,6 +2419,8 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       // on sx. Empty fate falls back to the seed, so fx === sx draw-for-draw and
       // the default world is byte-identical — the pivot the fixture pin proves.
       const fx = streams(params.fate || params.seed);
+      // E1 (#142): the governor's reign, read from the hash. Consumes no randomness.
+      const reign = makeReign(params);
 
       // STAGE-3 PURITY (C1): the loop writes depletion back into
       // reg.endowment for the export, so a SECOND society run on the same
@@ -3368,6 +3406,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       // so its window stays the smallest — it still scales, but lands sooner.
       const dominionEpoch = 2 + Math.floor(rX() * evWindow(5));
       let dominionAt = -1, footholdIdx = -1; // occupied/occupiedEpoch reset at wealth init
+      let dominionRepelled = -1;   // E1 (#142): the epoch a governor turned the fleet away
       // E5: the dynasty structure — reigns drawn blind before time runs;
       // the names come later (after the world has taken all of its own)
       const rD = fx("dynasty");
@@ -4002,7 +4041,24 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
             if (best === -1 || reg.wealth > regions[best].wealth ||
                 (reg.wealth === regions[best].wealth && i < best)) best = i;
           });
-          if (best >= 0) {
+          // E1 (#142): the fleet stands off the quay and the governor answers it.
+          // The choice is only offered where the dice actually produced a landing —
+          // option 0 is the fleet coming ashore, as it always did. There is no option
+          // to summon a fleet the dice never sent: a decision may redirect history,
+          // not invent an event.
+          if (best >= 0 && ["land", "repel"][reign.decide("d", e + 1, ["land", "repel"])] === "repel") {
+            // REPELLED. G5's adversarial list names this case for a reason: it is the
+            // one takeover whose refusal has to be narrated, or the chronicle simply
+            // has a quiet year where an empire was turned away. The refusal is not
+            // free — the realm pays for the fleet it kept out.
+            const fh = regions[best];
+            fh.eventType = "dominion_repelled"; fh.eventEpoch = e + 1;
+            fh.eventSeverity = 55;                       // fixed: refusing consumes no die
+            dominionRepelled = e + 1;
+            treasuries.crown = Math.max(0, treasuries.crown - 12);  // the muster is paid for
+            tensions[pairKey("crown", "magnate")] += 10;            // the quay's owners wanted the trade
+            events.push({ epoch: e + 1, type: "dominion_repelled", region_id: fh.id });
+          } else if (best >= 0) {
             footholdIdx = best; dominionAt = e + 1;
             const occRun = costDistances(regions, [footholdIdx]);
             regions.forEach((reg, i) => {
@@ -4322,17 +4378,47 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
                 reg.eliteShare = Math.max(8, reg.eliteShare - 4); // the price floor pays the digger
               });
             };
+            // E1 (#142): SELECTION IS SEPARATED FROM APPLICATION. The cascade below
+            // is the same ladder in the same order drawing the same numbers — note
+            // `dumping_reform` still consumes rIns() exactly where it always did, so
+            // a governor cannot change what the seat drew merely by being offered a
+            // choice. What changes is that the ladder now NAMES a measure instead of
+            // enacting one, and the enactment happens after the governor has spoken.
+            const APPLY = {
+              retention_act: () => retentionAct(),
+              crown_granary: () => { granaryOn = true; granaryEpoch = e + 1; },
+              grid_charter: () => { gtShift = -18; expandConduit(); charterDebt = CHARTER_LOAN; charterDebtEpoch = e + 1; }, // B7: the wires are strung on imperial credit
+              toll_amnesty: () => { tollScale = 0.4; },
+              dumping_reform: () => { disposalOverride = "disperse"; },
+            };
+            // The runner-up is the next DISTINCT measure the same ladder would reach,
+            // computed from predicate state alone — it may not draw, because a draw
+            // here would depend on which measure the ladder had already named and the
+            // auto run's draw order would shift under it.
+            const ladder = [
+              ["retention_act", giniNow >= 0.42 && richSeam >= 60],
+              ["crown_granary", giniNow >= 0.42],
+              ["grid_charter", darkShare >= 0.55],
+              ["toll_amnesty", meanToll >= 12],
+              ["retention_act", bottomOre >= 18],
+              ["crown_granary", true],
+            ];
             let measure;
             // a RESOURCE-RICH but unequal realm floors its commodity price (a levy the
             // diggers keep) rather than importing bread — the retention act competes
             // with the granary where a rich seam runs (B7: gives the act a home).
-            if (giniNow >= 0.42 && richSeam >= 60) { measure = "retention_act"; retentionAct(); }
-            else if (giniNow >= 0.42) { measure = "crown_granary"; granaryOn = true; granaryEpoch = e + 1; }
-            else if (darkShare >= 0.55) { measure = "grid_charter"; gtShift = -18; expandConduit(); charterDebt = CHARTER_LOAN; charterDebtEpoch = e + 1; } // B7: the wires are strung on imperial credit
-            else if (meanToll >= 12) { measure = "toll_amnesty"; tollScale = 0.4; }
-            else if (params.db >= 34 && rIns() < 0.5) { measure = "dumping_reform"; disposalOverride = "disperse"; }
-            else if (bottomOre >= 18) { measure = "retention_act"; retentionAct(); }
-            else { measure = "crown_granary"; granaryOn = true; granaryEpoch = e + 1; }
+            if (giniNow >= 0.42 && richSeam >= 60) measure = "retention_act";
+            else if (giniNow >= 0.42) measure = "crown_granary";
+            else if (darkShare >= 0.55) measure = "grid_charter";
+            else if (meanToll >= 12) measure = "toll_amnesty";
+            else if (params.db >= 34 && rIns() < 0.5) measure = "dumping_reform";
+            else if (bottomOre >= 18) measure = "retention_act";
+            else measure = "crown_granary";
+            // the card: what the seat chose, and the nearest thing it nearly chose
+            const alt = ladder.find(([m, live]) => live && m !== measure);
+            const wOpts = alt ? [measure, alt[0]] : [measure];
+            measure = wOpts[reign.decide("w", e + 1, wOpts)];
+            APPLY[measure]();
             events.push({ epoch: e + 1, type: "reform", measure });
           } else if (respCoin < params.iq / 100 + 0.3) {
             let measure;
@@ -4410,7 +4496,14 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
             const reg = regions[ri];
             const stateStr = 42 + 0.5 * reg.centrality + Math.min(40, treasuries.crown) + rV() * 25
               + (reg.occupied ? 25 : 0); // the imperial garrison stands behind the wardline
-            revoltWon = rs > stateStr + 20;
+            // E1 (#142): the seat's dice say one thing; the governor may say another.
+            // Option 0 is what the dice rolled, so echoing them runs this block
+            // unchanged. Diverging legitimately changes the draws that follow —
+            // a different history has different luck, and that is not a byte-pin
+            // failure but the whole point of taking the seat.
+            const diceWon = rs > stateStr + 20;
+            const rOpts = diceWon ? ["won", "crushed"] : ["crushed", "won"];
+            revoltWon = rOpts[reign.decide("r", e + 1, rOpts)] === "won";
             if (revoltWon) {
               freeTownIdx = ri;                       // tolls no one, ever again
               reg.retention = 100;                    // keeps what it makes
@@ -5309,7 +5402,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       // a bridge on an abandoned river town is gone with it (no one keeps the
       // span); keep only bridges whose host cell is still settled
       const liveBridges = geo.bridges.filter(b => regions[b.regionIdx] && regions[b.regionIdx].settled);
-      return { seed: String(params.seed), regions, settlements, facilities, structures, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: liveBridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, lakeShapes: geo.lakeShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
+      return { decisions: reign.log, dominionRepelled, seed: String(params.seed), regions, settlements, facilities, structures, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: liveBridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, lakeShapes: geo.lakeShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
         dominion: dominionAt !== -1 ? { arrived: dominionAt, foothold: footholdIdx } : null,
         // B11 (#133): the off-map powers — the Metropole that courts this realm
         // (concessions/attention) and the Rival it is courted against (rivalry/

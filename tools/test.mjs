@@ -5097,6 +5097,99 @@ console.log("# The verdict composed D5 (#141): twelve stories where three were")
   }
 }
 
+console.log("# The reign engine E1 (#142): the byte-pin, before anything can move");
+
+{
+  const E = LOOM;
+
+  // (i) THE BYTE-COMPAT PIN. G5's sequencing rule (§5, amendment d) is that the
+  //     reign engine may not move the auto-history: a world with no reign is the
+  //     world that existed before the reign engine did. The pin is the acceptance's
+  //     own wording — the default hash must be byte-identical to the same hash
+  //     carrying an explicit empty `&ch=` and `&fate=`.
+  //
+  //     This is the FIRST thing built and the first thing checked, deliberately.
+  //     Every later stage of E1 adds a way for a decision to reach the loop, and
+  //     each one is a chance to disturb the draw order for worlds that made no
+  //     decisions at all. This check is what makes that failure loud.
+  {
+    const exportOf = (hash) => {
+      const S = E.parseHash(hash);
+      const regions = E.buildTopology(S), geo = E.buildGeology(regions, S);
+      const model = E.applyAttributes(regions, S, geo);
+      return {
+        gj: JSON.stringify(E.toGeoJSON(model, S)),
+        chron: E.composeChronicle(model, S),
+      };
+    };
+    const drift = [];
+    for (const base of ["#seed=e1-1&regions=24&ep=10", "#seed=e1-2&regions=18&ep=6",
+                        "#seed=e1-3&regions=24&ep=10&iq=100", "#seed=e1-4&regions=30&ep=0"]) {
+      const plain = exportOf(base);
+      for (const suffix of ["&ch=&fate=", "&ch=", "&fate=", "&ch=&fate=&ch="]) {
+        const withEmpty = exportOf(base + suffix);
+        if (plain.chron !== withEmpty.chron) drift.push(`${base}${suffix}: chronicle differs`);
+        if (plain.gj !== withEmpty.gj) drift.push(`${base}${suffix}: export differs`);
+      }
+      // and a reign that cannot be read is a reign that was never played
+      for (const junk of ["&ch=nonsense", "&ch=w99:1", "&ch=,,,", "&ch=%20", "&ch=zz1:0,q:9"]) {
+        const sanitized = exportOf(base + junk);
+        if (plain.chron !== sanitized.chron) drift.push(`${base}${junk}: malformed ch moved the world`);
+      }
+    }
+    if (!drift.length)
+      ok(`the auto-history does not move: over 4 worlds an explicit empty \`&ch=\`/\`&fate=\` and five malformed reigns each export byte-identically to the bare hash — a world with no reign is the world that existed before the reign engine`);
+    else fail(`the reign engine moved the auto-history: ${drift.slice(0, 3).join(" | ")}`);
+  }
+
+  // (ii) THE REIGN ROUND-TRIPS. A reign is shared as a URL, so the parser has to be
+  //      total (any input yields a decisions map) and canonical (however it was
+  //      typed, it comes back one way — otherwise two links to the same reign
+  //      disagree in provenance).
+  {
+    const cases = [
+      ["w4:1,r6:0,d3:1", "d3:1,w4:1,r6:0"],   // sorted by epoch
+      ["d3:1,w4:1,r6:0", "d3:1,w4:1,r6:0"],   // already canonical
+      ["  w4:1 , r6:0 ", "w4:1,r6:0"],        // whitespace
+      ["w4:1,w4:0", "w4:0"],                  // last wins
+      ["nonsense", ""], ["w99:1", ""], ["r0:1", ""], ["d3:9", ""], ["", ""], [",,,", ""],
+      ["zz1:0", ""], ["W4:1", ""],            // unknown kind, wrong case
+    ];
+    const bad = [];
+    for (const [input, want] of cases) {
+      const got = E.parseHash(`#seed=x&ch=${encodeURIComponent(input)}`).ch;
+      if (got !== want) bad.push(`"${input}" -> "${got}", wanted "${want}"`);
+      // and the canonical form is a fixed point: parsing it again changes nothing
+      const again = E.parseHash(`#seed=x&ch=${encodeURIComponent(got)}`).ch;
+      if (again !== got) bad.push(`"${got}" is not a fixed point (-> "${again}")`);
+    }
+    if (!bad.length)
+      ok(`a reign round-trips: ${cases.length} inputs sanitize to a canonical epoch-ordered form, every one of them a fixed point, and everything unreadable collapses to no reign at all`);
+    else fail(`the reign parser is not canonical: ${bad.slice(0, 3).join(" | ")}`);
+  }
+
+  // (iii) PROVENANCE CARRIES A REIGN ONLY WHEN ONE WAS PLAYED. `fate` set the
+  //       precedent: an empty value must not appear as a key, or every existing
+  //       fixture moves and the byte-pin above is a lie told in a different file.
+  {
+    const provOf = (hash) => {
+      const S = E.parseHash(hash);
+      const regions = E.buildTopology(S), geo = E.buildGeology(regions, S);
+      return E.toGeoJSON(E.applyAttributes(regions, S, geo), S).hinterland;
+    };
+    const bare = provOf("#seed=e1-p&regions=24&ep=10");
+    const empty = provOf("#seed=e1-p&regions=24&ep=10&ch=&fate=");
+    const played = provOf("#seed=e1-p&regions=24&ep=10&ch=w4:1");
+    const problems = [];
+    if ("ch" in bare) problems.push("a world with no reign carries a ch key");
+    if ("ch" in empty) problems.push("an explicitly empty ch appears in provenance");
+    if (played.ch !== "w4:1") problems.push(`a played reign is not carried: ${JSON.stringify(played.ch)}`);
+    if (!problems.length)
+      ok(`provenance carries a reign only when one was played: absent for the bare hash and for an explicit empty \`&ch=\`, and exact for a reign that was`);
+    else fail(`provenance: ${problems.join("; ")}`);
+  }
+}
+
 console.log("# The suite audits itself: no assertion may sit in dead code");
 {
   // The audit that produced this check found a 1138-line validate() in THIS file

@@ -1462,7 +1462,7 @@
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
 
     const DEFAULTS = {
-      seed: "hinterland", fate: "", world: "concordat-settlement", regions: 24, relax: 2, bias: 80,
+      seed: "hinterland", fate: "", ch: "", world: "concordat-settlement", regions: 24, relax: 2, bias: 80,
       we: 35, wf: 25, wt: 30, wg: 10,   // income-mix weights
       gt: 35,                            // grid threshold (0 = conduit reaches everyone)
       db: 60,                            // disposal doctrine: 0–33 disperse, 34–66 concentrate, 67–100 treat
@@ -1473,6 +1473,49 @@
       ep: 0,                             // epochs (0 = founding snapshot, no dynamics)
       capital: null                      // null => seat derived from geology
     };
+
+    // ---- E1 (#142): the reign, as a string ----------------------------------
+    // A reign is a list of decisions the governor took, and it has to survive a
+    // paste into a URL bar. `ch=w4:1,r6:0,d3:1` reads "at epoch 4 the wound
+    // response was option 1; at epoch 6 the revolt was option 0; at epoch 3 the
+    // Dominion was option 1".
+    //
+    // The keys are EPOCH-QUALIFIED on purpose. A reign shared at ep=10 and replayed
+    // at ep=6 carries decisions for epochs that never arrive; keyed by epoch they
+    // are simply not reached, rather than sliding onto the wrong year. Same for a
+    // decision whose trigger moved when a knob changed: the entry goes stale and is
+    // ignored, and the dice decide as they always did.
+    //
+    // Everything here is TOTAL: any input produces a decisions map, and anything
+    // unreadable produces an empty one. That is the robustness acceptance ("malformed
+    // /stale ch sanitized === no-ch") and it is a property of the parser rather than
+    // of the caller's care.
+    const CH_KINDS = "wrd";                    // wound response, revolt, Dominion
+    const CH_MAX_EPOCH = 24;                   // the ep clamp; beyond it nothing can fire
+    const CH_MAX_OPTION = 7;                   // no dilemma offers more than this
+    function parseDecisions(raw) {
+      const out = {};
+      const text = String(raw == null ? "" : raw).trim();
+      if (!text) return out;
+      // a cap on entries: a hash is a shareable link, not an input channel
+      for (const part of text.split(",").slice(0, 64)) {
+        const m = /^([a-z])(\d{1,2}):(\d)$/.exec(part.trim());
+        if (!m) continue;                                        // malformed: ignored
+        const [, kind, ep, opt] = m;
+        if (!CH_KINDS.includes(kind)) continue;                  // unknown decision
+        const e = Number(ep), o = Number(opt);
+        if (!(e >= 1 && e <= CH_MAX_EPOCH)) continue;            // out of range
+        if (!(o >= 0 && o <= CH_MAX_OPTION)) continue;
+        out[kind + e] = o;                                       // last wins
+      }
+      return out;
+    }
+    // The canonical form, so a reign round-trips through provenance and a share link
+    // byte-identically however it was typed.
+    const formatDecisions = (dec) => Object.keys(dec).sort((a, b) => {
+      const ea = Number(a.slice(1)), eb = Number(b.slice(1));
+      return ea - eb || a.localeCompare(b);
+    }).map(k => `${k}:${dec[k]}`).join(",");
 
     // ---- Deterministic RNG (mulberry32) + string hashing --------------------
     function hashStr(str) {
@@ -7037,7 +7080,7 @@
         hinterland: {
           schema_version: SCHEMA_VERSION,
           world: model.world,
-          seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), regions: params.regions, relax: params.relax,
+          seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), ...(params.ch ? { ch: String(params.ch) } : {}), regions: params.regions, relax: params.relax,
           bias: params.bias,
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt,
@@ -7265,7 +7308,7 @@
           dominion: model.dominion ? { arrived_epoch: model.dominion.arrived, foothold: model.regions[model.dominion.foothold].id, occupied_n: model.regions.filter(r => r.occupied).length } : null,
           powers: { metropole: model.metropole, rival: model.rival, concessions: model.regions.filter(r => r.concession).length, abandoned: model.regions.filter(r => r.concessionEnded).length },
           years_per_epoch: 25,
-          seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), regions: params.regions, relax: params.relax,
+          seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), ...(params.ch ? { ch: String(params.ch) } : {}), regions: params.regions, relax: params.relax,
           bias: params.bias,
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt, dump_bias: params.db,
@@ -11340,6 +11383,7 @@
         ...DEFAULTS,
         seed: p.get("seed") || DEFAULTS.seed,
         fate: (p.get("fate") || DEFAULTS.fate).trim(),
+        ch: formatDecisions(parseDecisions(p.get("ch"))),   // sanitized on the way in
         world: (p.get("world") || DEFAULTS.world).trim() || DEFAULTS.world,
         regions: clamp(Math.round(num("regions", DEFAULTS.regions)), 5, 64),
         relax: clamp(Math.round(num("relax", DEFAULTS.relax)), 0, 8),

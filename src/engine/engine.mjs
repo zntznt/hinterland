@@ -168,7 +168,13 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     // unreadable produces an empty one. That is the robustness acceptance ("malformed
     // /stale ch sanitized === no-ch") and it is a property of the parser rather than
     // of the caller's care.
-    const CH_KINDS = "wrd";                    // wound response, revolt, Dominion
+    // wrd: the three dice the governor may take over (wound response, revolt, Dominion)
+    // cgotsn: the six authored dilemmas (conduit, granary, ore floor, gates, spoil,
+    // charter). Each is anchored to a Phase B mechanism that ALREADY has two live
+    // edges — direction.md §5 amendment (a): "each dilemma option maps onto §3.2
+    // mechanisms, so its long edge exists in the physics". Nothing here invents a
+    // consequence; every option pulls a lever the economy already had.
+    const CH_KINDS = "wrdcgotsn";
     const CH_MAX_EPOCH = 24;                   // the ep clamp; beyond it nothing can fire
     const CH_MAX_OPTION = 7;                   // no dilemma offers more than this
     function parseDecisions(raw) {
@@ -3407,6 +3413,8 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       const dominionEpoch = 2 + Math.floor(rX() * evWindow(5));
       let dominionAt = -1, footholdIdx = -1; // occupied/occupiedEpoch reset at wealth init
       let dominionRepelled = -1;   // E1 (#142): the epoch a governor turned the fleet away
+      const dilemmaFired = {};     // E1: each authored dilemma is offered once
+      let charterRefused = -1;     // E1: the epoch a governor refused the metropole's charter
       // E5: the dynasty structure — reigns drawn blind before time runs;
       // the names come later (after the world has taken all of its own)
       const rD = fx("dynasty");
@@ -4480,6 +4488,95 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
               }
             });
           }
+        }
+        // ---- E1 (#142): THE GOVERNOR'S DILEMMAS ----------------------------
+        // Six authored decisions, each offered ONCE, at the first epoch its trigger
+        // reads true. Every one of them:
+        //   * consumes no randomness, so being offered cannot move a world;
+        //   * has OPTION 0 = THE STATUS QUO, so a reign that answers nothing runs
+        //     exactly the code that ran before the dilemmas existed;
+        //   * pulls a Phase B lever with a long edge already in the physics, which
+        //     is why the near edge is on the card and the far edge is discovered.
+        // The seat is a GOVERNOR's, so the axis is comply / resist / skim against a
+        // metropole that is always the other party to the bargain.
+        {
+          const settledNow = regions.filter(r => r.settled);
+          const dark = onGrid.filter(v => !v).length / Math.max(1, regions.length);
+          const tollMean = regions.reduce((a, r) => a + r.tollBurden, 0) / Math.max(1, regions.length);
+          const wsv = settledNow.map(r => r.wealth).sort((a, b) => a - b);
+          const mwv = wsv.reduce((a, b) => a + b, 0) / Math.max(1, wsv.length);
+          let gs = 0;
+          for (let gi = 0; gi < wsv.length; gi++) gs += (2 * (gi + 1) - wsv.length - 1) * wsv[gi];
+          const giniHere = mwv > 0 ? gs / (wsv.length * wsv.length * mwv) : 0;
+          const bled = events.some(ev => ev.epoch === e + 1 &&
+            ["blight_plague", "relic_calamity", "revolt", "war"].includes(ev.type));
+
+          const offer = (kind, live, options) => {
+            if (dilemmaFired[kind] || !live) return 0;
+            dilemmaFired[kind] = true;
+            return reign.decide(kind, e + 1, options);
+          };
+
+          // (c) THE CONDUIT. The dark country can be wired on the metropole's credit.
+          //     Long edge: B7's charter debt, serviced out of the crown for the rest
+          //     of the run. Comply and the wires reach; the interest reaches too.
+          if (offer("c", dark >= 0.40 && charterDebt <= 0 && gtShift === 0, ["hold", "borrow"]) === 1) {
+            gtShift = -18; expandConduit();
+            charterDebt = CHARTER_LOAN; if (charterDebtEpoch === -1) charterDebtEpoch = e + 1;
+            events.push({ epoch: e + 1, type: "decree", measure: "conduit_charter", by: "governor" });
+          }
+          // (g) THE GRANARY. Bread now against a habit later — B7's dependency curdles
+          //     the mercy only in a SUSTAINED peace, which is the far edge exactly.
+          if (offer("g", bled && !granaryOn, ["hold", "open"]) === 1) {
+            granaryOn = true; granaryEpoch = e + 1;
+            events.push({ epoch: e + 1, type: "decree", measure: "crown_granary", by: "governor" });
+          }
+          // (o) THE ORE FLOOR. Resist the metropole's price and the diggers keep more;
+          //     B7's capital flight thins the owners' row and the works it funded.
+          if (offer("o", giniHere >= 0.45 && retentionEpoch === -1, ["hold", "floor"]) === 1) {
+            retentionEpoch = e + 1;
+            const medHere = wsv[Math.floor(wsv.length / 2)] || 0;
+            regions.forEach(reg => {
+              if (!reg.settled || reg.wealth >= medHere) return;
+              reg.retention = Math.min(100, reg.retention + 15);
+              reg.eliteShare = Math.max(8, reg.eliteShare - 4);
+            });
+            events.push({ epoch: e + 1, type: "decree", measure: "retention_act", by: "governor" });
+          }
+          // (t) THE GATES. Cut the tariff and the roads open while the treasury thins;
+          //     raise it and the crown eats while the taxed road pays. The skim.
+          {
+            const pick = offer("t", tollMean >= 15, ["hold", "cut", "raise"]);
+            if (pick === 1) { tollScale = 0.4; events.push({ epoch: e + 1, type: "decree", measure: "toll_amnesty", by: "governor" }); }
+            else if (pick === 2) { tollScale = 1.6; events.push({ epoch: e + 1, type: "decree", measure: "toll_crackdown", by: "governor" }); }
+          }
+          // (s) THE SPOIL. B4's doctrine, taken by hand: concentrate writes a zone off
+          //     and spares everywhere else; disperse spreads the same poison thin.
+          {
+            const conc = disposalOverride ? disposalOverride === "concentrate" : (params.db >= 34 && params.db < 67);
+            const pick = offer("s", conc && sacrificeZone >= 0, ["hold", "disperse"]);
+            if (pick === 1) { disposalOverride = "disperse"; events.push({ epoch: e + 1, type: "decree", measure: "dumping_reform", by: "governor" }); }
+          }
+          // (n) THE CHARTER. A coast the metropole wants. Today it simply takes it;
+          //     a governor may refuse, and keep the yield and lose the capital that
+          //     would have built on it (B11's concession, both edges).
+          {
+            const wanted = regions.findIndex(r => r.concession && r.concessionEpoch === e + 1);
+            const pick = offer("n", wanted >= 0, ["accept", "refuse"]);
+            if (pick === 1) {
+              const reg = regions[wanted];
+              reg.concession = false; reg.concessionEpoch = -1; reg.foreignClaim = 0;
+              reg.eliteShare = Math.max(8, reg.eliteShare - 3);   // the factors never arrive
+              reg.A = Math.max(0, reg.A - 6);                     // and neither does their capital
+              charterRefused = e + 1;
+              events.push({ epoch: e + 1, type: "decree", measure: "charter_refused", by: "governor", region_id: reg.id });
+            }
+          }
+          // G5's adversarial list names the treasury floor: no decree may drive the
+          // crown below nothing, whatever it costs.
+          treasuries.crown = Math.max(0, treasuries.crown);
+          treasuries.temple = Math.max(0, treasuries.temple);
+          treasuries.magnate = Math.max(0, treasuries.magnate);
         }
         // V1: THE REVOLT — once per run, the region where injustice, tolls,
         // and darkness stack highest can rise. Its strength against the

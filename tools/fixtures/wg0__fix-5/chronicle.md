@@ -32,11 +32,11 @@ The record does not run flat: it falls into 4 ages, **the Quiet Years** (1000–
 
 **Year 1025.** A quarrel between the Verrant Hegemony and the Metropole became the ruin of Umbereness. The wealth the trade had brought to Umbereness was gone, and the town had no say in any of it. The second fortune at Umbereness was made on trade and unmade the same way.
 
-**Year 1025.** What the founding surveys called Hazelmoord Cairn the first winter called uninhabitable. And the rolls of Umbereness carried it for a season and then stopped.
+**Year 1025.** There was no living to be had on the ground called Hazelmoord Cairn, and the year proved it. And the record of Umbereness keeps the name and drops the place.
 
-**Year 1025.** Nobody wintered at Grendhul: the site was never one people could hold; no one left Grendhul, because no one was ever there to leave.
+**Year 1025.** The ground at Grendhul never carried anyone, whatever the founding rolls entered; Grendhul is a name on a map and was never anything else.
 
-**Year 1025.** The ground at Gharton never carried anyone, whatever the founding rolls entered. And the record of Umbereness keeps the name and drops the place.
+**Year 1025.** The founding wrote Gharton down and the country declined to keep it. And nothing was abandoned at Gharton, because nothing was ever established.
 
 **Year 1025.** The Umbereness gate went to the magnates on a claim nobody contested. And the notice went up at Umbereness and the queue formed under it the same week. The 12 regions gained no road that year and lost a free crossing.
 

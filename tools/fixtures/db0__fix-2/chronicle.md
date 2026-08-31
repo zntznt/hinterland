@@ -32,7 +32,7 @@ Cut where the record turns, the years give **the Age of the Gates** (1000–1100
 
 **Year 1025.** The water closed on Pellness for reasons made elsewhere. Pellness had no say in the quarrel and paid the whole of the settlement. Pellness discovered what a fortune built on somebody else's politics is worth.
 
-**Year 1025.** Skulgruk appears in the founding survey and in no census after it. Skulgruk is a name on a map and was never anything else.
+**Year 1025.** The ground at Skulgruk was named before anyone asked whether it would hold a life. The loss is a clerical one: Skulgruk was never anybody's home to lose.
 
 **Year 1025.** The sickness reached Kemerby and stayed, so the tax rolls at Kemerby were shorter the following year and were collected in full. The blight at Kemerby was decades old and nobody had been charged for it; the Wasting of 1025 is the heading, and the count under it is an estimate.
 

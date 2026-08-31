@@ -32,9 +32,9 @@ Read at a distance the years are **the Quiet Years** (1000–1025), when the dis
 
 **Year 1025.** A quarrel between the Vantreth Imperium and the Metropole became the ruin of Comfre, so Comfre had built on foreign trade, and foreign trade was withdrawn. The capital that closed the lanes has never heard of Comfre.
 
-**Year 1025.** What the founding surveys called Mariellenne Delf the first winter called uninhabitable, and the survey that placed Mariellenne Delf read the water and the road and did not read the ground.
+**Year 1025.** The stones set at Mariellenne Delf were the only thing that stayed, and the survey that placed Mariellenne Delf read the water and the road and did not read the ground.
 
-**Year 1025.** The hamlet marked at Drennath was gone before the first count, and the ground is the reason, so Drennath is a name on a map and was never anything else.
+**Year 1025.** The hamlet marked at Drennath was gone before the first count, and the ground is the reason, so an entry in the survey of Comfre is not the same thing as a town.
 
 **Year 1025.** Nobody wintered at Surzethrak: the site was never one people could hold. The rolls of Comfre carried it for a season and then stopped.
 

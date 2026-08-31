@@ -32,7 +32,7 @@ Cut where the record turns, the years give **the Age of the Gates** (1000–1100
 
 **Year 1025.** The water closed on Pellness for reasons made elsewhere. Pellness had no say in the quarrel and paid the whole of the settlement. Pellness discovered what a fortune built on somebody else's politics is worth.
 
-**Year 1025.** Skulgruk appears in the founding survey and in no census after it. Skulgruk is a name on a map and was never anything else.
+**Year 1025.** The ground at Skulgruk was named before anyone asked whether it would hold a life. The loss is a clerical one: Skulgruk was never anybody's home to lose.
 
 **Year 1025.** Whatever the old world left under Skulgruk broke loose; the Temple sealed the site at Skulgruk and wrote the account. The Temple's account of Skulgruk was written by the Temple.
 

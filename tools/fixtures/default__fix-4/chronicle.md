@@ -32,9 +32,9 @@ The run divides into 4 ages, named from the record itself: **the Quiet Years** (
 
 **Year 1025.** A quarrel between the Corvine League and the Metropole became the ruin of Rushold. And the cargoes stopped coming, and the coast that had rivalled Rushold went bust in a single year. The second fortune at Rushold was made on trade and unmade the same way.
 
-**Year 1025.** What the founding surveys called Comfre Fell the first winter called uninhabitable, and the rolls of Rushold carried it for a season and then stopped.
+**Year 1025.** There was no living to be had on the ground called Comfre Fell, and the year proved it, and Comfre Fell is a name on a map and was never anything else.
 
-**Year 1025.** Nether Gnathok appears in the founding survey and in no census after it. And the survey that placed Nether Gnathok read the water and the road and did not read the ground.
+**Year 1025.** The ground at Nether Gnathok was named before anyone asked whether it would hold a life. And the survey that placed Nether Gnathok read the water and the road and did not read the ground.
 
 **Year 1025.** The magnates took the gate at Rushold: nothing about the crossing at Rushold changed except who collected at it. Gates are the cheapest thing in the realm to take and the dearest to be under, at Rushold as anywhere.
 

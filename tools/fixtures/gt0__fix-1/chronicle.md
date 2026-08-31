@@ -34,11 +34,11 @@ The realm has one span, at Merelmere Bridge, and no other crossing. And the alte
 
 **Year 1025.** A quarrel elsewhere shut the sea to Drakby, so the quays at Drakby stood full and still for a year. Drakby discovered what a fortune built on somebody else's politics is worth.
 
-**Year 1025.** What the founding surveys called Umberthold the first winter called uninhabitable; the survey that placed Umberthold read the water and the road and did not read the ground.
+**Year 1025.** The first winter took back whatever the founding thought it had made at Umberthold; the rolls of Brook carried it for a season and then stopped.
 
-**Year 1025.** Dhozzurn appears in the founding survey and in no census after it: Dhozzurn is a name on a map and was never anything else.
+**Year 1025.** The site of Dhozzurn was surveyed, entered, and never inhabited: the loss is a clerical one: Dhozzurn was never anybody's home to lose.
 
-**Year 1025.** The ground at Cerandre Cairn never carried anyone, whatever the founding rolls entered. The rolls of Brook carried it for a season and then stopped.
+**Year 1025.** Whatever was begun at Cerandre Cairn did not last one turn of the seasons. No one left Cerandre Cairn, because no one was ever there to leave.
 
 **Year 1050.** Drakby was under weather for three days and under water for one. The Drakby defences were built to the standard the ledgers would pay for. The quay at Drakby held because the quay had money spent on it, and the Great Storm of 1050 is the name that stuck.
 

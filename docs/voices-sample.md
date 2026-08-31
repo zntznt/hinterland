@@ -27,7 +27,7 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 >
 > columns: wealth 9 · toll 39 · blight 27 · burden 56.8/1k · trust 33 · legib 64 · works 0 · decline
 
-**ORAL** — You'll not hear this from Ophienne's assessor. We hold the Briarlstead deeds ourselves, whatever they hold elsewhere. Say what you like: there's a story in Briarlstead that Ophienne's assessor's own household is not counted either. The rent takes half of a quarry-work wage in Briarlstead before the first shift is worked, same as the last shift. My father called Briarlstead by the old name and would not use the new one. That is the whole of it, and you may check it yourself.
+**ORAL** — You'll not hear this from Ophienne's assessor. We hold the Briarlstead deeds ourselves, whatever they hold elsewhere. Say what you like: there's a story in Briarlstead that Ophienne's assessor's own household is not counted either. The rent takes half of a quarry-work wage in Briarlstead before the first shift is worked, same as the last shift. My father called Briarlstead by the old name and would not use the new one. That is the whole of it, and you may walk Briarlstead and check it yourself.
 
 **WRITTEN** — Assessment of Briarlstead, entered against the standing schedule. The reduction in Briarlstead vacancy is attributed to the administration's measures; as the works reports, traffic on the Salt Road is returned as the district's principal land carriage. The injustice index for Briarlstead returns 25, within the range Ophienne has accepted before. The office asks leave to enumerate the northern quarter of Briarlstead afresh, so entered. The elite share of Briarlstead receipts is 19, unchanged in form: persons standing outside the Briarlstead count stand also outside the levy, and the office notes the saving. No further Briarlstead particulars are required at this time.
 
@@ -78,7 +78,7 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 >
 > columns: wealth 18 · toll 28 · blight 49 · burden 36.4/1k · trust 80 · legib 7 · works 0 · stable
 
-**ORAL** — Sit where the light is and mind the sill — this is Osteaste. My cousin writes that the freight and factoring out there is worse and the pay is better. Word in Osteaste is Cramwick will not hold the seat past the next reckoning. The Ore Road ran free in my mother's day and the Crown's assessor has a booth on it now. And the freight and factoring barges leave Osteaste before light and you can set a clock by them. There's a lamp where the Ore Road enters Osteaste that wasn't there two winters back. And I have walked the Ore Road in every weather there is. That is not a complaint, it is a measurement.
+**ORAL** — Sit where the light is and mind the sill — this is Osteaste. My cousin writes that the freight and factoring out there is worse and the pay is better. Word in Osteaste is Cramwick will not hold the seat past the next reckoning. The Ore Road ran free in my mother's day and the Crown's assessor has a booth on it now. And the freight and factoring barges leave Osteaste before light and you can set a clock by them. There's a lamp where the Ore Road enters Osteaste that wasn't there two winters back. And I have walked the Ore Road in every weather there is. That is not a complaint about Osteaste, it is a measurement.
 
 **WRITTEN** — Digest of conditions at Osteaste, prepared for Cramwick. The Osteaste grade is that published by Quill Exchange and is not the office's to revise. Traffic on the Ore Road is returned as the district's principal land carriage — per the shift return. Of Osteaste's 5286 souls, some 111 decline enumeration. Complaint of the Osteaste Bridge levy is of long standing and is of the district's ordinary character. Entered, and the Osteaste file closed for the quarter.
 
@@ -129,7 +129,7 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 >
 > columns: wealth 16 · toll 25 · blight 49 · burden 39.4/1k · trust 78 · legib 10 · works 0 · stable
 
-**ORAL** — I keep no ledger, so I'll tell it straight. The freight and factoring price is set somewhere it is always morning and in Brokstead it is always the same hour. Word in Brokstead is Cramwick will not hold the seat past the next reckoning. Since the third whistle, a third part of Brokstead ground will grow nothing a person should eat; the dust settles white on the Brokstead sills by the second day. That is not a complaint, it is a measurement.
+**ORAL** — I keep no ledger in Brokstead, so I'll tell it straight. The freight and factoring price is set somewhere it is always morning and in Brokstead it is always the same hour. Word in Brokstead is Cramwick will not hold the seat past the next reckoning. Since the third whistle, a third part of Brokstead ground will grow nothing a person should eat; the dust settles white on the Brokstead sills by the second day. That is not a complaint about Brokstead, it is a measurement.
 
 **WRITTEN** — Prospectus note on Brokstead, for the attention of Quill Exchange. The price index against which Brokstead is assessed is entered at 0.783, as issued: social trust in Brokstead is scored 78 by the standing instrument. The elite share of Brokstead receipts is 23, unchanged in form. What mortality continues in Brokstead is booked under ordinary wastage — against the line schedule. The reduction in Brokstead vacancy is attributed to the administration's measures. Noted at the margin of the Brokstead return and read as ordinary — as the works reports. No further Brokstead particulars are required at this time.
 
@@ -214,7 +214,7 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 >
 > columns: wealth 10 · toll 39 · blight 28 · burden 56.2/1k · trust 60 · legib 29 · works 0 · stable
 
-**ORAL** — My people have been in Skrakstead four generations and I'll say this plain. The healer is four days from Skrakstead and Cramwick's assessor is here every quarter. The ground gives under the north field of Skrakstead and always has. The rent takes a third part of a quarry-work wage in Skrakstead before the first shift is worked, and my father called Skrakstead by the old name and would not use the new one. They say the constables were paid twice this quarter in Skrakstead and the healers not at all. Write that down if you're writing anything.
+**ORAL** — My people have been in Skrakstead four generations and I'll say this plain. The healer is four days from Skrakstead and Cramwick's assessor is here every quarter. The ground gives under the north field of Skrakstead and always has. The rent takes a third part of a quarry-work wage in Skrakstead before the first shift is worked, and my father called Skrakstead by the old name and would not use the new one. They say the constables were paid twice this quarter in Skrakstead and the healers not at all. Write Skrakstead down if you're writing anything.
 
 **WRITTEN** — Skrakstead, district return for the quarter. Market access for Skrakstead is scored at 15 against the standing table. Leave is sought to retain a portion of Skrakstead receipts against local works. Service provision at Skrakstead is scored at 70 against need; as the works reports, persons standing outside the Skrakstead count stand also outside the levy, and the office notes the saving. The Skrakstead matter is referred to the Osmark Combine and the office awaits instruction.
 
@@ -250,7 +250,7 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 >
 > columns: wealth 14 · toll 32 · blight 36 · burden 40.8/1k · trust 79 · legib 3 · works 0 · stable
 
-**ORAL** — You've come up the freight and factoring road into Welwick Height, so you've seen the half of it already. Half the pay that keeps this row of Welwick Height comes in from off the map, same hours either way. They say the constables were paid twice this quarter in Welwick Height and the healers not at all. The rent takes a quarter part of a freight and factoring wage in Welwick Height before the first shift is worked. And the ground gives under the north field of Welwick Height and always has. They say Cramwick has never once had to send a constable up to Welwick Height — and the line runs. The freight and factoring barges leave Welwick Height before light and you can set a clock by them. That is not a complaint, it is a measurement.
+**ORAL** — You've come up the freight and factoring road into Welwick Height, so you've seen the half of it already. Half the pay that keeps this row of Welwick Height comes in from off the map, same hours either way. They say the constables were paid twice this quarter in Welwick Height and the healers not at all. The rent takes a quarter part of a freight and factoring wage in Welwick Height before the first shift is worked. And the ground gives under the north field of Welwick Height and always has. They say Cramwick has never once had to send a constable up to Welwick Height — and the line runs. The freight and factoring barges leave Welwick Height before light and you can set a clock by them. That is not a complaint about Welwick Height, it is a measurement.
 
 **WRITTEN** — The office at Welwick Height reports as follows. The Obsensign of the period carried the notice and Welwick Height is deemed informed. Outward registration of labour from Welwick Height is noted at 195 in the period, so entered. Social trust in Welwick Height is scored 79 by the standing instrument. Cramwick is asked to confirm the Welwick Height schedule before the season turns, so entered. The return is certified as prepared from the Welwick Height register.
 
@@ -267,7 +267,7 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 >
 > columns: wealth 14 · toll 35 · blight 36 · burden 45.3/1k · trust 74 · legib 9 · works 0 · stable
 
-**ORAL** — I keep no ledger, so I'll tell it straight. My cousin writes that the freight and factoring out there is worse and the pay is better. And word in Hamhold is Cramwick will not hold the seat past the next reckoning. The rent takes a third part of a freight and factoring wage in Hamhold before the first shift is worked; the freight and factoring barges leave Hamhold before light and you can set a clock by them. Hamhold will be here after the constabulary, whatever the book says.
+**ORAL** — I keep no ledger in Hamhold, so I'll tell it straight. My cousin writes that the freight and factoring out there is worse and the pay is better. And word in Hamhold is Cramwick will not hold the seat past the next reckoning. The rent takes a third part of a freight and factoring wage in Hamhold before the first shift is worked; the freight and factoring barges leave Hamhold before light and you can set a clock by them. Hamhold will be here after the constabulary, whatever the book says.
 
 **WRITTEN** — Return of Hamhold, submitted on the standard form of the Osmark Combine. Works district: the standard by which Hamhold water is judged potable is the imperial one; the elite share of Hamhold receipts is 21, unchanged in form. The order level returned for Hamhold is 50: leave is sought to retain a portion of Hamhold receipts against local works. Market access for Hamhold is scored at 72 against the standing table. Departures from Hamhold are entered as the ordinary circulation of an expanding trade, so entered. Submitted from Hamhold without remark.
 
@@ -286,7 +286,7 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 >
 > columns: wealth 13 · toll 32 · blight 36 · burden 42/1k · trust 77 · legib 4 · works 0 · stable
 
-**ORAL** — There's what the office writes and there's what Mookby knows. My brother signed the recruiter's book out of Mookby and his letter came with a stamp I can't read. There's a price for anything out of Mookby if you know which door at Ballard Precinct. The rent takes a quarter part of a freight and factoring wage in Mookby before the first shift is worked. I remember when the Drought came through Mookby. At the line's end, they say Cramwick has never once had to send a constable up to Mookby; my father called Mookby by the old name and would not use the new one. Mookby knows what it is owed, if not when.
+**ORAL** — There's what the office writes and there's what Mookby knows. My brother signed the recruiter's book out of Mookby and his letter came with a stamp I can't read. There's a price for anything out of Mookby if you know which door at Ballard Precinct. The rent takes a quarter part of a freight and factoring wage in Mookby before the first shift is worked. I remember when the Drought came through Mookby. At the line's end, they say Cramwick has never once had to send a constable up to Mookby; my father called Mookby by the old name and would not use the new one. That is not a complaint about Mookby, it is a measurement.
 
 **WRITTEN** — Prospectus note on Mookby, for the attention of Quill Exchange. The price index against which Mookby is assessed is entered at 0.783, as issued. Potable supply at Mookby is assessed at 43, without remark. The elite share of Mookby receipts is 24, unchanged in form. Cramwick is asked to confirm the Mookby schedule before the season turns — per the shift return. The Mookby matter is referred to the Osmark Combine and the office awaits instruction.
 
@@ -357,7 +357,7 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 >
 > columns: wealth 12 · toll 39 · blight 10 · burden 39.2/1k · trust 70 · legib 15 · works 0 · stable
 
-**ORAL** — There's what the office writes and there's what Dhulzak knows. Dhulzak pays for the lamp and the lamp is in the constabulary's street, third whistle to third whistle. My father called Dhulzak by the old name and would not use the new one. The rent takes a third part of a hauling and mill-work wage in Dhulzak before the first shift is worked, and the count holds. The hauling and mill-work barges leave Dhulzak before light and you can set a clock by them. The healer is four days from Dhulzak and the constabulary is here every quarter — you can hear the Raverelfolt cables over Dhulzak sing in a hard wind. Dhulzak knows what it is owed, if not when.
+**ORAL** — There's what the office writes and there's what Dhulzak knows. Dhulzak pays for the lamp and the lamp is in the constabulary's street, third whistle to third whistle. My father called Dhulzak by the old name and would not use the new one. The rent takes a third part of a hauling and mill-work wage in Dhulzak before the first shift is worked, and the count holds. The hauling and mill-work barges leave Dhulzak before light and you can set a clock by them. The healer is four days from Dhulzak and the constabulary is here every quarter — you can hear the Raverelfolt cables over Dhulzak sing in a hard wind. That is not a complaint about Dhulzak, it is a measurement.
 
 **WRITTEN** — Dhulzak, district return for the quarter. Of Dhulzak's 591 souls, some 27 decline enumeration; what mortality continues in Dhulzak is booked under ordinary wastage. Disease burden at Dhulzak is returned at 39.2 in the thousand, and persons standing outside the Dhulzak count stand also outside the levy, and the office notes the saving. Market access for Dhulzak is scored at 42 against the standing table; as the works reports, departures from Dhulzak are entered as the ordinary circulation of an expanding trade. Submitted from Dhulzak without remark.
 
@@ -497,7 +497,7 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 | `atlas-1` | V2 oral voices contain no digits | PASS |
 | `atlas-1` | V3 every proper name appears verbatim in the export | PASS |
 | `atlas-1` | V4 S_written − S_oral is the signed skew law | PASS |
-| `atlas-1` | V5 no Cyrillic / banned lexicon, no surface > 3 | PASS (max repeat 3) |
+| `atlas-1` | V5 no Cyrillic / banned lexicon, no surface > 3 | PASS (max repeat 2) |
 | `v6-2` | V1 every digit in a written voice is an export value in facts[] | PASS |
 | `v6-2` | V2 oral voices contain no digits | PASS |
 | `v6-2` | V3 every proper name appears verbatim in the export | PASS |
@@ -547,15 +547,15 @@ lead topics: `elsewhere` 18 · `grid` 15 · `water` 9 · `sky` 7 · `burden` 7 �
 ### Surface repetition — top realized surfaces, all seeds
 
 - 8× `witness` — I have walked the Ore Road in every weather there is
-- 6× `closer` — that is not a complaint, it is a measurement
-- 5× `closer` — that is the whole of it, and you may check it yourself
-- 5× `open` — I keep no ledger, so I'll tell it straight
-- 5× `closer` — you'll not get that from the office, but you have it from me
 - 4× `open` — you'll not hear this from the constabulary
 - 4× `elsewhere` — my cousin writes that the freight and factoring out there is worse and the pay
-- 3× `closer` — write that down if you're writing anything
+- 2× `open` — you'll not hear this from Ophienne's assessor
+- 2× `assess` — traffic on the Salt Road is returned as the district's principal land carriage
+- 2× `witness` — my father called Dhulzak by the old name and would not use the new one
+- 2× `open` — sit where the light is and mind the sill — this is Pelvetchste
+- 2× `grievance` — the rent takes a quarter part of a freight and factoring wage in Pelvetchste b
 
-distinct realized surfaces: 987 over 1068 draws
+distinct realized surfaces: 1004 over 1068 draws
 
-town-name density (the cost of slotting every fragment): oral mean 6.0, max 10; written mean 7.3, max 10 mentions per voice
+town-name density (the cost of slotting every fragment): oral mean 6.3, max 10; written mean 7.3, max 10 mentions per voice
 

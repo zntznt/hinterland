@@ -10371,7 +10371,15 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         for (const f of pool[cls]) {
           const t = String(f && f.t === undefined ? f : f.t);
           const at = `${cls}: ${JSON.stringify(t.slice(0, 48))}`;
-          if (/^[A-Z]/.test(t)) problems.push(`${at} — opens with a capital; frames own the capital`);
+          // The law is "frames own the capital", so a fragment must not hard-code
+          // sentence case — it has to read correctly mid-sentence too. The English
+          // first-person pronoun is the one capital that is NOT sentence case: "I"
+          // is capital wherever it stands, and "stand at the gate and i'll show you"
+          // is not an available spelling. D2 (#138) is the first surface written in
+          // first person — the historian, the analyst and the judge are all third —
+          // so the law meets its first honest exception here rather than being bent.
+          if (/^[A-Z]/.test(t) && !/^I(?:'(?:m|ll|ve|d)\b|\b)/.test(t))
+            problems.push(`${at} — opens with a capital; frames own the capital`);
           if (/[.!?]$/.test(t)) problems.push(`${at} — ends with a stop; frames own the stop, and a fragment that carries one is a canned sentence`);
           LOOM_SLOT_RE.lastIndex = 0;
           if (!LOOM_SLOT_RE.test(t)) problems.push(`${at} — carries no slot; it has one surface and will collide with itself (see #136)`);

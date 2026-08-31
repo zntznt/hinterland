@@ -2,10 +2,14 @@
 
 **Schema history:**
 - **the reign engine: a governor's choices, replayable from a URL** (issue #142, E1;
-  **schema 56 → 57, additive** — all 30 fixtures differ in the version number and in
-  nothing else, verified field by field: `ch` and its decision log appear in
-  provenance only when a reign was played, `by` is empty on every auto-run event row,
-  and the three new event types only a reign can produce cannot occur without one).
+  **schema 56 → 57, additive** — all 30 `world.geojson` fixtures differ in the version
+  number and in nothing else, verified field by field: `ch` and its decision log appear
+  in provenance only when a reign was played, `by` is empty on every auto-run event row,
+  and the three new event types only a reign can produce cannot occur without one.
+  All 30 `events.csv` files gained an empty `by` column — a trailing comma on every
+  row, verified as the only change — which is exactly the case the fixture allowlist
+  admits: a new column, empty for every config in the matrix. 5 `chronicle.md` files also
+  moved, for a prose fix unrelated to the reign, described below).
   A world was a thing that happened to you. Now a governor can stand at the points
   where the dice decided and decide instead, and the whole reign is a string in the
   URL: `#seed=…&ch=w4:1,r6:2,t3:1`. No UI (that is E2/#143) — the engine is playable

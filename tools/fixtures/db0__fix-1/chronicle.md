@@ -34,6 +34,10 @@ The realm has one span, at Merelmere Bridge, and no other crossing. And the alte
 
 **Year 1025.** A quarrel elsewhere shut the sea to Drakby, so the quays at Drakby stood full and still for a year. Drakby discovered what a fortune built on somebody else's politics is worth.
 
+**Year 1025.** What the founding surveys called Vrakton the first winter called uninhabitable; the survey that placed Vrakton read the water and the road and did not read the ground.
+
+**Year 1025.** Bromnakth Cairn appears in the founding survey and in no census after it: Bromnakth Cairn is a name on a map and was never anything else.
+
 **Year 1025.** A plague settled on Brook, and those who could walk left Brook, and those who could not were counted after. The burial rolls at Brook were kept and the cause was not. And the scribes wrote it down as the Wasting of 1025 and moved on.
 
 **Year 1050.** The water threw a storm at Drakby and held it there. The Drakby defences were built to the standard the ledgers would pay for. The quay at Drakby held because the quay had money spent on it, so the Great Storm of 1050 is the name the survivors gave the year.

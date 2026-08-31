@@ -32,6 +32,8 @@ The run divides into 4 ages, named from the record itself: **the Quiet Years** (
 
 **Year 1025.** A quarrel between the Corvine League and the Metropole became the ruin of Rushold. And the cargoes stopped coming, and the coast that had rivalled Rushold went bust in a single year. The second fortune at Rushold was made on trade and unmade the same way.
 
+**Year 1025.** What the founding surveys called Nether Gnathok the first winter called uninhabitable, and the rolls of Rushold carried it for a season and then stopped.
+
 **Year 1025.** The magnates moved on the gate at Rushold and held it, so everyone who goes through Rushold still goes through, and pays. One more of the realm's 12 regions now pays to leave itself.
 
 **Year 1025.** The streams above Drolvek Diggings were down to stones by 1025. And the poorest ground at Drolvek Diggings was the first to be given up. Two dry years is not a disaster in Rushold's ledgers and is one at Drolvek Diggings. The scribes titled the dry page the Drought of 1025.

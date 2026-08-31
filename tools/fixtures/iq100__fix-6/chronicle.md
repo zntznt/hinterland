@@ -34,6 +34,10 @@ Ramwill Reach Bridge and Dravzek Crag Bridge carry every crossing in the realm, 
 
 **Year 1025.** The sea closed on Hamwick in 1025, and the second fortune at Hamwick was made on trade and unmade the same way. Nothing at Hamwick was destroyed and everything at Hamwick stopped.
 
+**Year 1025.** Nobody wintered at Khekton: the site was never one people could hold, so the rolls of Asellby carried it for a season and then stopped.
+
+**Year 1025.** Serrvarnuk Bastion appears in the founding survey and in no census after it. And no one left Serrvarnuk Bastion, because no one was ever there to leave.
+
 **Year 1050.** The country around Glasholt Crag dried from the edges inward; the country the water had barely reached went to dust first, as it always does around Glasholt Crag. Nothing at Glasholt Crag was rationed, which is a decision even unmade. And the scribes titled the dry page the Drought of 1050.
 
 **Year 1075.** The fighting reached Asellby in 1075: the quarrel belonged to the Crown and the magnates and the ground belonged to Asellby. The capital lost a third of its people and a quarter of what it had. And the fair copy at Asellby is headed the Asellby War.

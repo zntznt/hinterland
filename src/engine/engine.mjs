@@ -10401,15 +10401,23 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       // name was reached, so a voice could open with "the town" — the head clause
       // losing the only name it had. Order is the whole rule: the reader meets the
       // name twice, and only then starts hearing pronouns.
-      const re = new RegExp(`(the )?${esc2}('s)?`, "g");
+      // The article guard is case-INSENSITIVE: "The Pellton account" is the same
+      // construction as "the Pellton account", and matching only the lowercase form
+      // produced "The the town account".
+      const re = new RegExp(`([Tt]he )?${esc2}('s)?`, "g");
       let seen = 0;
-      return text.replace(re, (m, theBefore, poss) => {
+      let out = text.replace(re, (m, theBefore, poss) => {
         seen++;
         if (seen <= 2) return m;                 // the name still stands
         if (theBefore) return m;                 // "the Grath entry" — qualifying a noun
         if (poss) return "its";
         return "the town";
       });
+      // A substitution can land at the head of a sentence, where the loom had already
+      // capitalized the name it replaced. Restore the capital rather than shipping
+      // "the town will be here after the constabulary" mid-paragraph.
+      out = out.replace(/(^|[.!?]\s+)the town\b/g, (m2, pre) => `${pre}The town`);
+      return out;
     }
 
     // WHO GETS TO SPEAK. A world of 24 regions cannot hand every town a microphone
@@ -11351,6 +11359,6 @@ export {
   voiceOf, voiceSentiment, voiceBand, voiceWritten, VOICE_W_REF,
   voiceWorld, voiceBlamed, voiceCredited, VOICE_ORAL, VOICE_WRITTEN, VOICE_FRAMES, VOICE_SKINS,
   composeVoice, voiceTopics, voiceSkin, voiceResolve, VOICE_CLASSES,
-  composeVoices, voiceNewsworthy, VOICE_CAP,
+  composeVoices, voiceNewsworthy, VOICE_CAP, voicesFor,
   RUIN_SAID, AGE_SAID, FATE_SAID,
 };

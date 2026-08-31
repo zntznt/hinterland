@@ -7553,7 +7553,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         { t: "every one of the {num:gate_n} charges, and every charge is paid by somebody with no second road", req: c => c.gateN > 0 && c.gate_none === 0 },
         { t: "every one of the {num:gate_n} charges, and none of them was put there by anyone who pays", req: c => c.gateN > 0 && c.gate_none === 0 },
         { t: "the one that charges nothing charges nothing because nobody found it worth holding, and the other {num:gate_others} do", req: c => c.gateN > 2 && c.gate_none === 1 },
-        { t: "the one that charges nothing charges nothing because nobody found it worth holding, and the only other one does", req: c => c.gateN === 2 && c.gate_none === 1 },
+        { t: "one of the {num:gate_n} charges nothing because nobody found it worth holding, and the other one does", req: c => c.gateN === 2 && c.gate_none === 1 },
       ],
       treasuries: [
         { t: "the tariff ledgers run deepest with {term:richest_power}, and coin buys the next gate", req: c => c.hasTreasuries },
@@ -9873,8 +9873,11 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         { t: "{name:capital} ate that year, and the taxed road paid for the meal", req: c => c.evMeasure === "toll_crackdown" },
         { t: "the gates of {name:capital} were told to collect, and they collect from whoever has no second road", req: c => c.evMeasure === "toll_crackdown" },
         { t: "no country is written off now, and the poison piled on one is spread across {num:n_regions} regions", req: c => c.evMeasure === "dumping_reform" },
-        { t: "the sacrifice zone was dissolved by decree and its share of the spoil went to the other {num:n_others} regions", req: c => c.evMeasure === "dumping_reform" && c.n_others > 1 },
-        { t: "the sacrifice zone was dissolved by decree and its share of the spoil went to the one region left to take it", req: c => c.evMeasure === "dumping_reform" && c.n_others === 1 },
+        // no singular arm here, and that is checked rather than assumed: `regions`
+        // clamps to [5, 64], so `n_others` is never below four and a count-of-one
+        // clause could not fire. The plural-agreement reflex authored one anyway,
+        // which lint cannot catch — dead prose has no surface to collide with.
+        { t: "the sacrifice zone was dissolved by decree and its share of the spoil went to the other {num:n_others} regions", req: c => c.evMeasure === "dumping_reform" },
         { t: "{name:ev_town} keeps its whole yield now, and the capital that would have built there never came", req: c => c.evMeasure === "charter_refused" },
         { t: "the works the factors would have funded at {name:ev_town} were not built by anyone else", req: c => c.evMeasure === "charter_refused" },
       ],

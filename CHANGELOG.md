@@ -115,6 +115,16 @@
   one, and the second is the reason **5 of the 30 chronicle fixtures were regenerated**
   — `default/db0/gt0/wg0/iq100 × fix-3`, all five the same sentence in the same realm.
   No `geojson` or `events.csv` byte moves.
+  *And a coda on that fix: the plural-agreement reflex authored two singular arms, and
+  both were wrong in different ways.* One carried no slot, which `loomLint` caught —
+  house law is that every fragment carries a region-varying slot, and "the only other
+  one does" carries none. The other could not fire at all: `regions` clamps to
+  **[5, 64]**, so `n_others` is never below four and a count-of-one clause for it is
+  dead prose. **Lint cannot catch that** — an unreachable fragment has no surface to
+  collide with and no law to break. It was deleted; the gates arm was kept, because it
+  is reachable and measured (a two-gate realm with one gate unheld occurs in 13 of 120
+  small worlds). The discipline the last three tickets built — *when a count can be one,
+  write the singular* — needs a second half: **check that it can.**
   **Two vacuous assertions, caught by asking whether an assertion CAN fail.** The
   averted-rising check read `epithet` off the region — the byname rides the settlement
   — and filtered garrisons on `kind === "garrison"`, which the export calls

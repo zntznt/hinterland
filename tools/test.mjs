@@ -1993,13 +1993,21 @@ const prov = A1.gj.hinterland;
 // for. Earlier note: re-pinned 40 -> 41: v41 adds the world outside (#121, B0). schema_version bumps;
 // the default carries the Concordat-era `world` block (regime chain + series), and
 // `fate` still rides provenance only when set — so a default world has no fate key.
-if (prov && prov.schema_version === 56 && prov.epochs === 0 && prov.responsiveness === 45 && prov.order === 50 && prov.openness === 100 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
+// The version is read from the engine, not spelled out here. Spelled out, these two
+// checks go red on every declared bump and say nothing about what they guard — the
+// accidental bump is already caught by 30 byte-pinned fixtures moving at once. What
+// they guard is that provenance CARRIES a version at all, and that it is the one the
+// engine believes it is writing.
+const WANT_SCHEMA = LOOM.SCHEMA_VERSION;
+if (!Number.isInteger(WANT_SCHEMA) || WANT_SCHEMA <= 0)
+  fail(`the engine exports no usable SCHEMA_VERSION: ${JSON.stringify(WANT_SCHEMA)}`);
+if (prov && prov.schema_version === WANT_SCHEMA && prov.epochs === 0 && prov.responsiveness === 45 && prov.order === 50 && prov.openness === 100 && prov.harbors_closed === false && Array.isArray(prov.events) && prov.events.length === 0 && prov.weights &&
     prov.weights.extraction === 35 && prov.weights.refining === 25 &&
     prov.weights.trade === 30 && prov.weights.gradient === 10 &&
     prov.grid_threshold === 35 && prov.dump_bias === 60 && prov.disposal_doctrine === "concentrate" && !("fate" in prov) &&
     prov.world && prov.world.seed === "concordat-settlement" && Array.isArray(prov.world.regime_chain) &&
     Number.isInteger(prov.wind_deg) && prov.wind_deg >= 0 && prov.wind_deg < 360)
-  ok("provenance carries schema_version=56 + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default");
+  ok(`provenance carries schema_version=${WANT_SCHEMA} + weights + knobs (db 60 → concentrate) + the Concordat world block + epochs(default 0) + empty timeline; no fate key at default`);
 else fail("provenance wrong: " + JSON.stringify(prov));
 
 const Empt = await genEngine("#seed=&regions=&we=&wg=");
@@ -2673,9 +2681,9 @@ console.log("# The mix pulls apart B10 (#132): a second pole, two knobs retired"
   // (i) old links MAP FORWARD: an hb=0 link seals the quays via openness=0
   const sealed = (await genEngine("#seed=alpha&regions=24&hb=0")).gj.hinterland;
   const openLink = (await genEngine("#seed=alpha&regions=24&openness=0")).gj.hinterland;
-  if (sealed.schema_version === 56 && sealed.openness === 0 && sealed.harbors_closed === true &&
+  if (sealed.schema_version === WANT_SCHEMA && sealed.openness === 0 && sealed.harbors_closed === true &&
       openLink.openness === 0 && openLink.harbors_closed === true)
-    ok(`old links map forward: hb=0 seals the quays through openness=0 (harbors_closed), same as openness=0 (schema 56)`);
+    ok(`old links map forward: hb=0 seals the quays through openness=0 (harbors_closed), same as openness=0 (schema ${WANT_SCHEMA})`);
   else fail(`forward mapping broken: hb=0 openness ${sealed.openness}/closed ${sealed.harbors_closed}`);
 
   // (ii) EXHIBIT — a trade world whose largest CITY is NOT the seat (the second pole).
@@ -5175,18 +5183,311 @@ console.log("# The reign engine E1 (#142): the byte-pin, before anything can mov
     const provOf = (hash) => {
       const S = E.parseHash(hash);
       const regions = E.buildTopology(S), geo = E.buildGeology(regions, S);
-      return E.toGeoJSON(E.applyAttributes(regions, S, geo), S).hinterland;
+      const model = E.applyAttributes(regions, S, geo);
+      return Object.assign(E.toGeoJSON(model, S).hinterland, { $model: model });
     };
     const bare = provOf("#seed=e1-p&regions=24&ep=10");
     const empty = provOf("#seed=e1-p&regions=24&ep=10&ch=&fate=");
-    const played = provOf("#seed=e1-p&regions=24&ep=10&ch=w4:1");
+    // the road taken is drawn from a decision this world actually offers, not from a
+    // key typed in by hand: a hard-coded `w4` credits nobody in a world with no wound
+    const road = bare.$model.decisions.find(d => d.options.length > 1);
+    const played = provOf(`#seed=e1-p&regions=24&ep=10&ch=${road.key}:1`);
     const problems = [];
     if ("ch" in bare) problems.push("a world with no reign carries a ch key");
     if ("ch" in empty) problems.push("an explicitly empty ch appears in provenance");
-    if (played.ch !== "w4:1") problems.push(`a played reign is not carried: ${JSON.stringify(played.ch)}`);
+    if (played.ch !== `${road.key}:1`) problems.push(`a played reign is not carried: ${JSON.stringify(played.ch)}`);
+    // and the reign LOG rides the same gate (§5.1 plumbing). It is not empty for an
+    // auto run — every dice takeover is a decision point whether or not anyone stood
+    // at it — so an ungated key would move all thirty fixtures.
+    if ("decisions" in bare) problems.push("a world with no reign carries a decisions log");
+    if ("decisions" in empty) problems.push("an explicitly empty ch still logs decisions");
+    if (!Array.isArray(played.decisions) || played.decisions.length < 3)
+      problems.push(`a played reign logs no decisions: ${JSON.stringify(played.decisions)}`);
+    else {
+      const d = played.decisions;
+      if (!d.every(x => x.options.length >= 2 && x.options.includes(x.chose) && ["dice", "governor"].includes(x.by)))
+        problems.push("a logged decision is malformed");
+      if (!d.some(x => x.key === road.key && x.by === "governor"))
+        problems.push("the one road the governor took is not marked as theirs");
+      if (d.filter(x => x.by === "governor").length !== 1)
+        problems.push(`${d.filter(x => x.by === "governor").length} decisions credited to a governor who made one`);
+      if (JSON.stringify(d.map(x => x.epoch)) !== JSON.stringify(d.map(x => x.epoch).slice().sort((a, b) => a - b)))
+        problems.push("the log is not in the order the reign was lived");
+    }
     if (!problems.length)
-      ok(`provenance carries a reign only when one was played: absent for the bare hash and for an explicit empty \`&ch=\`, and exact for a reign that was`);
+      ok(`provenance carries a reign only when one was played: no \`ch\` and no decision log for the bare hash or an explicit empty \`&ch=\`, and for a reign that was played, the string exactly plus a log in lived order crediting exactly the one road its governor took`);
     else fail(`provenance: ${problems.join("; ")}`);
+  }
+
+  // (iv) THE ECHO-THE-DICE INVARIANT. E1's central claim: a reign that echoes every
+  //      die IS the auto run. It holds structurally rather than by luck, because
+  //      option 0 is always the dice's own outcome, so echoing runs the same branch
+  //      in the same order drawing the same numbers. Diverging is ALLOWED to change
+  //      the draws that follow — a different history has different luck — so the
+  //      invariant is asserted on the echo case only, and the fork case is asserted
+  //      the other way: a decision that changes nothing is not a decision.
+  {
+    const world = (hash) => {
+      const S = E.parseHash(hash);
+      const regions = E.buildTopology(S), geo = E.buildGeology(regions, S);
+      const model = E.applyAttributes(regions, S, geo);
+      const gj = E.toGeoJSON(model, S);
+      // provenance honestly gains a `ch` key AND its decision log when a reign was
+      // played, echoing or not, so the record OF the reign is not part of the world
+      // the reign produced. Both come off, or an echo differs from the auto run by
+      // the sole fact that somebody was standing there.
+      const { ch, decisions, ...prov } = gj.hinterland;
+      return { model, chron: E.composeChronicle(model, S),
+        w: JSON.stringify({ f: gj.features, p: prov }) };
+    };
+    let echoed = 0, echoN = 0, forked = 0, forkN = 0;
+    const offered = {};
+    const bad = [];
+    for (let i = 0; i < 40; i++) {
+      const base = `#seed=e1-${i}&regions=24&ep=10`;
+      const auto = world(base);
+      for (const d of auto.model.decisions) offered[d.kind] = (offered[d.kind] || 0) + 1;
+      if (!auto.model.decisions.length) continue;
+      const echo = auto.model.decisions.map(d => `${d.key}:0`).join(",");
+      const same = world(`${base}&ch=${echo}`);
+      echoN++;
+      if (same.w === auto.w && same.chron === auto.chron) echoed++;
+      else bad.push(`e1-${i}: echoing every die did not reproduce the auto world`);
+      const fork = auto.model.decisions.find(d => d.options.length > 1);
+      if (fork) {
+        forkN++;
+        const other = world(`${base}&ch=${fork.key}:1`);
+        if (other.w !== auto.w) forked++;
+        else bad.push(`e1-${i}: taking ${fork.key} option 1 (${fork.options[1]}) changed nothing`);
+      }
+    }
+    const kinds = Object.keys(offered).sort().join("");
+    if (echoed === echoN && forked === forkN && echoN >= 20 && kinds === "cdgnorstw")
+      ok(`the echo-the-dice invariant holds: over ${echoN} reigned worlds, echoing every die reproduces the auto world byte-identically ${echoed}/${echoN}, taking a different road changes it ${forked}/${forkN}, and all nine decisions (three dice, six dilemmas) are reached`);
+    else fail(`reign invariant: echo ${echoed}/${echoN}, fork ${forked}/${forkN}, kinds "${kinds}" — ${bad.slice(0, 2).join(" | ")}`);
+  }
+
+  // (v) THE AVERTED RISING'S RIPPLES. G5's adversarial list names this case for its
+  //     consequences, not its existence: a rising that never happens must leave every
+  //     consumer of revolt state coherent. The garrison is the one that bit — the
+  //     Crown fortifies a crushed town after the hangings, and there were none.
+  {
+    const of_ = (hash) => {
+      const S = E.parseHash(hash);
+      const regions = E.buildTopology(S), geo = E.buildGeology(regions, S);
+      const model = E.applyAttributes(regions, S, geo);
+      const gj = E.toGeoJSON(model, S);
+      return { model, gj, ev: gj.hinterland.events || [],
+        R: gj.features.filter(f => f.properties.kind === "region").map(f => f.properties),
+        // the byname is history's, and it rides the SETTLEMENT, not the region. Read
+        // off the region it is silently undefined and the assertion below can never
+        // fire — which is what it did until the export's property list was checked.
+        S: gj.features.filter(f => f.properties.kind === "settlement").map(f => f.properties),
+        // and the garrison rides the export as a CONSTABULARY. Filtered on "garrison"
+        // this array is empty in every world, and the ripple G5 names as the one that
+        // bit becomes an assertion over nothing.
+        gar: gj.features.filter(f => f.properties.kind === "constabulary") };
+    };
+    const bad = []; let checked = 0, bynamesEarned = 0, garrisonsLifted = 0;
+    for (let i = 0; i < 40 && checked < 12; i++) {
+      const base = `#seed=e1-${i}&regions=24&ep=10`;
+      const auto = of_(base);
+      const rv = auto.model.decisions.find(d => d.kind === "r");
+      const fired = auto.ev.find(e => e.type === "revolt");
+      if (!rv || !fired) continue;
+      checked++;
+      const av = of_(`${base}&ch=${rv.key}:2`);          // 2 = averted
+      const reg = av.R.find(r => r.region_id === fired.region_id);
+      if (av.ev.some(e => e.type === "revolt")) bad.push(`e1-${i}: a revolt event survives its aversion`);
+      if (!av.ev.some(e => e.type === "revolt_averted")) bad.push(`e1-${i}: nothing records the aversion`);
+      if (reg && reg.event_type === "revolt") bad.push(`e1-${i}: the region is still stamped revolt`);
+      if (reg && reg.won_arc) bad.push(`e1-${i}: won_arc survives an aversion`);
+      const town = av.S.find(t => t.region_id === fired.region_id);
+      if (town && ["the Free", "the Famished"].includes(town.epithet)) bad.push(`e1-${i}: byname "${town.epithet}" for a rising that did not happen`);
+      if (av.model.decisions.filter(d => d.kind === "r").length !== 1) bad.push(`e1-${i}: the rising was offered more than once`);
+      if (fired.outcome === "crushed") {
+        const had = auto.gar.some(g => g.properties.region_id === fired.region_id);
+        const has = av.gar.some(g => g.properties.region_id === fired.region_id);
+        if (had && has) bad.push(`e1-${i}: a garrison is posted for hangings that never happened`);
+        if (had && !has) garrisonsLifted++;
+      }
+      // and the assertions above must be capable of failing. The byname one was NOT:
+      // it read `epithet` off the region, where there is none — it rides the
+      // settlement. So count the risings that DID earn one in the auto run, and
+      // require the count to be non-zero, or this whole block is theatre.
+      const autoTown = auto.S.find(t => t.region_id === fired.region_id);
+      if (autoTown && ["the Free", "the Famished"].includes(autoTown.epithet)) bynamesEarned++;
+    }
+    // A byname is rarer than a rising — measured, 3 of 40 risings earn one, because
+    // most rising towns are gone or wear an older name by the end — so the first
+    // twelve worlds can easily contain none. Hunt one deliberately, and hold the
+    // aversion against it: without a witness the byname arm asserts nothing.
+    if (bynamesEarned === 0) {
+      for (let i = 0; i < 60 && !bynamesEarned; i++) {
+        const b2 = `#seed=e1-${i}&regions=24&ep=10`;
+        const a2 = of_(b2);
+        const rv2 = a2.model.decisions.find(d => d.kind === "r");
+        const f2 = a2.ev.find(e => e.type === "revolt");
+        if (!rv2 || !f2) continue;
+        const t2 = a2.S.find(t => t.region_id === f2.region_id);
+        if (!t2 || !["the Free", "the Famished"].includes(t2.epithet)) continue;
+        bynamesEarned++;
+        const av2 = of_(`${b2}&ch=${rv2.key}:2`);
+        const t3 = av2.S.find(t => t.region_id === f2.region_id);
+        if (t3 && ["the Free", "the Famished"].includes(t3.epithet))
+          bad.push(`e1-${i}: the town still wears "${t3.epithet}" after the rising was averted`);
+      }
+    }
+    if (bynamesEarned === 0)
+      bad.push("no rising in 60 worlds earned a byname, so the byname assertion proves nothing");
+    if (garrisonsLifted === 0)
+      bad.push("no crushed rising in the sample posted a garrison, so the garrison ripple proves nothing");
+    if (!bad.length && checked >= 8)
+      ok(`an averted rising leaves no trace of one, over ${checked} worlds: no revolt event, no stamp on the region, no byname, no won-arc, no garrison for hangings that never happened, and the once-per-run guard still closes — and the sample has teeth: a byname witnessed and taken back, and ${garrisonsLifted} constabular${garrisonsLifted === 1 ? "y" : "ies"} lifted from ${garrisonsLifted === 1 ? "a town" : "towns"} the Crown no longer had to hold down`);
+    else fail(`averted ripples: ${bad.slice(0, 3).join(" | ")} (checked ${checked})`);
+  }
+
+  // (vi) A DECISION WITH ONE OPTION IS NOT A DECISION. The null-fork finding: the
+  //      wound's ladder can name a measure with no distinct runner-up, and offering
+  //      it would log a choice in the export that no reign could have taken
+  //      differently.
+  {
+    const bad = [];
+    for (let i = 0; i < 40; i++) {
+      const S = E.parseHash(`#seed=e1-${i}&regions=24&ep=10`);
+      const regions = E.buildTopology(S), geo = E.buildGeology(regions, S);
+      const model = E.applyAttributes(regions, S, geo);
+      for (const d of model.decisions) {
+        if (d.options.length < 2) bad.push(`e1-${i}: ${d.key} offered ${d.options.length} option(s)`);
+        if (new Set(d.options).size !== d.options.length) bad.push(`e1-${i}: ${d.key} offers the same road twice`);
+      }
+    }
+    if (!bad.length)
+      ok(`no null forks reach the export: across 40 worlds every logged decision offers at least two distinct roads, so a card is never put in front of a governor whose only move is the move already made`);
+    else fail(`null forks: ${bad.slice(0, 3).join(" | ")}`);
+  }
+
+  // (vii) "THE OTHER N" IS NEVER THE TOTAL. Not an E1 invariant — a loom one, found
+  //       while reading E1's own decree prose and then found again, already shipped,
+  //       in the gates block. The slot audit checks that a number is IN the export;
+  //       it cannot check that it is the right number for the clause it sits in, and
+  //       a total dropped after the words "the other" is off by exactly one every
+  //       time. So: a counting slot in that position must be named for the remainder.
+  {
+    const src = readFileSync(new URL("../src/engine/engine.mjs", import.meta.url), "utf8");
+    // the phrases where an author means "everything except the one just named"
+    const REMAINDER = /\b(?:the other|the rest of the|the remaining|all but the|the others)\s+\{num:([a-z0-9_]+)\}/g;
+    // only COUNTS of a set can be off by one this way. "one carries burden X and the
+    // other Y" is a magnitude in the same position and is perfectly correct, so the
+    // test is the slot's name: n_*, *_n and *_count are the house's counting slots.
+    const IS_COUNT = /^n_|_n$|_count$/;
+    const IS_REMAINDER = /_others$|_rest$|_remaining$/;
+    const offenders = [];
+    for (const m of src.matchAll(REMAINDER)) {
+      if (!IS_COUNT.test(m[1]) || IS_REMAINDER.test(m[1])) continue;
+      offenders.push(`{num:${m[1]}} after "${m[0].split("{")[0].trim()}"`);
+    }
+    // and the check must be able to fail: plant the exact mistake and require it back
+    const planted = [...`, and the other {num:n_regions} regions`.matchAll(REMAINDER)]
+      .filter(m => IS_COUNT.test(m[1]) && !IS_REMAINDER.test(m[1])).length;
+    if (!offenders.length && planted === 1)
+      ok(`no clause counts the wrong set: every counting slot following "the other"/"the rest"/"the remaining" in the pools is named for the remainder, not the total — the mistake that printed "the other 24 regions" in a realm of 24 and "the other 5 do" of five gates cannot be spelled without renaming the slot`);
+    else if (planted !== 1)
+      fail(`the remainder check cannot fail: its own planted offender matched ${planted} times`);
+    else fail(`a clause counts the total where it means the remainder: ${offenders.join("; ")}`);
+  }
+
+  // (viii) THE THREE THINGS ONLY A REIGN CAN DO ARE ALL MARKED AS SUCH. `by` is the
+  //        whole point of the new column: it separates a decree from the seat's own
+  //        measure. `dominion_repelled` shipped without it while its sibling
+  //        `revolt_averted` had it, so the column was already inconsistent on the
+  //        three event types that cannot exist without a governor.
+  {
+    const GOVERNOR_ONLY = ["decree", "revolt_averted", "dominion_repelled"];
+    const seen = {}, bad = [];
+    let autoRows = 0;
+    for (let i = 0; i < 40 && GOVERNOR_ONLY.some(t => !seen[t]); i++) {
+      const S = E.parseHash(`#seed=e1-${i}&regions=24&ep=10`);
+      const regions = E.buildTopology(S), geo = E.buildGeology(regions, S);
+      const auto = E.applyAttributes(regions, S, geo);
+      // no auto run may produce any of the three, or the byte-pin is a coincidence
+      for (const ev of E.toGeoJSON(auto, S).hinterland.events || []) {
+        autoRows++;
+        if (GOVERNOR_ONLY.includes(ev.type)) bad.push(`e1-${i}: an auto run produced a ${ev.type}`);
+        if (ev.by !== undefined) bad.push(`e1-${i}: an auto run stamped by="${ev.by}" on a ${ev.type}`);
+      }
+      // walk the reign forward, taking every fork, and collect what the seat did
+      let taken = [], played = auto;
+      for (let step = 0; step < 12; step++) {
+        const next = played.decisions.find(d => d.options.length > 1 && !taken.some(t => t.startsWith(`${d.key}:`)));
+        if (!next) break;
+        taken.push(`${next.key}:${next.options.length - 1}`);
+        const S2 = E.parseHash(`#seed=e1-${i}&regions=24&ep=10&ch=${taken.join(",")}`);
+        const r2 = E.buildTopology(S2), g2 = E.buildGeology(r2, S2);
+        played = E.applyAttributes(r2, S2, g2);
+      }
+      const S3 = E.parseHash(`#seed=e1-${i}&regions=24&ep=10&ch=${taken.join(",")}`);
+      const r3 = E.buildTopology(S3), g3 = E.buildGeology(r3, S3);
+      for (const ev of E.toGeoJSON(E.applyAttributes(r3, S3, g3), S3).hinterland.events || []) {
+        if (!GOVERNOR_ONLY.includes(ev.type)) continue;
+        seen[ev.type] = (seen[ev.type] || 0) + 1;
+        if (ev.by !== "governor") bad.push(`e1-${i}: ${ev.type} carries by=${JSON.stringify(ev.by)}`);
+      }
+    }
+    const missing = GOVERNOR_ONLY.filter(t => !seen[t]);
+    if (!bad.length && !missing.length)
+      ok(`the three things only a reign can do are all marked as such: over ${autoRows} auto-run event rows not one is a decree, an averted rising or a repelled Dominion and not one carries a \`by\`, and each of the three, once produced, is stamped \`by: "governor"\` — the column separates a decree from the seat's own measure in both directions`);
+    else if (missing.length)
+      fail(`the reign never produced ${missing.join(", ")}, so the \`by\` column is unproven for ${missing.length === 1 ? "it" : "them"}`);
+    else fail(`the by column: ${bad.slice(0, 3).join(" | ")}`);
+  }
+
+  // (ix) EVERY ROAD LEADS SOMEWHERE ELSE, AND A REIGN REPLAYS. The acceptance asks
+  //       for per-option effect signatures in the export and for a `ch`+`fate` replay
+  //       to be deterministic. (iv) proves ONE option of one decision moves the world;
+  //       this walks the table. For each of the nine kinds, take the first two worlds
+  //       that offer it and require its options to land in mutually distinct worlds:
+  //       a three-road decision whose second and third roads arrive at the same place
+  //       is two roads wearing a hat, and the export would log a choice that was not
+  //       one. Provenance is excluded because it honestly records WHICH road was
+  //       taken; the question is whether the WORLD differs.
+  {
+    const build = (hash) => {
+      const S = E.parseHash(hash);
+      const regions = E.buildTopology(S), geo = E.buildGeology(regions, S);
+      const model = E.applyAttributes(regions, S, geo);
+      return { model, gj: E.toGeoJSON(model, S) };
+    };
+    const shape = (b) => JSON.stringify({ f: b.gj.features, e: b.gj.hinterland.events });
+    const tried = {}, bad = [];
+    let replays = 0, replayN = 0;
+    for (let i = 0; i < 40 && Object.values(tried).filter(n => n >= 2).length < 9; i++) {
+      // fate varies WITH the seed. Holding one fate across many seeds runs a single
+      // run of luck over many maps: measured, a fixed fate starved the wound takeover
+      // to 0 of 60 worlds while the Dominion arrived in 58. That is fate working as
+      // designed (A2) and a coverage table reading it as an absent code path.
+      const base = `#seed=e1-${i}&regions=24&ep=10&fate=e1f-${i}`;
+      const auto = build(base);
+      for (const d of auto.model.decisions) {
+        if ((tried[d.kind] || 0) >= 2) continue;
+        tried[d.kind] = (tried[d.kind] || 0) + 1;
+        const roads = d.options.map((_, k) => shape(build(`${base}&ch=${d.key}:${k}`)));
+        if (new Set(roads).size !== roads.length)
+          bad.push(`${d.kind} (e1-${i}, epoch ${d.epoch}): ${roads.length} roads [${d.options.join("/")}] land in ${new Set(roads).size} world(s)`);
+        // the status quo road IS the auto run, which is (iv) again from the other side
+        if (roads[0] !== shape(auto)) bad.push(`${d.kind} (e1-${i}): option 0 is not the status quo`);
+        // and a reign replays: the same ch and the same fate, twice
+        replayN++;
+        const last = d.options.length - 1;
+        if (shape(build(`${base}&ch=${d.key}:${last}`)) === roads[last]) replays++;
+        else bad.push(`${d.kind} (e1-${i}): a reign did not replay byte-identically`);
+      }
+    }
+    const kinds = Object.keys(tried).sort().join("");
+    const cells = Object.values(tried).reduce((a, b) => a + b, 0);
+    if (!bad.length && kinds === "cdgnorstw" && cells >= 16)
+      ok(`every road leads somewhere else: over ${cells} decisions spanning all nine kinds, each option lands in a world distinct from every other option of that decision, option 0 reproduces the auto run exactly, and ${replays}/${replayN} reigns replay byte-identically from \`ch\`+\`fate\` alone`);
+    else fail(`per-option signatures: kinds "${kinds}", ${cells} decisions, replay ${replays}/${replayN} — ${bad.slice(0, 3).join(" | ")}`);
   }
 }
 

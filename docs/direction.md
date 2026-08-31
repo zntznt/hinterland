@@ -386,6 +386,16 @@ per world so they repeat like culture); every surface draws from its own
 `sx("<surface>#…")` substream; register divergence where registers *should* disagree
 is a derived, testable quantity.
 
+**Arithmetic inside a clause is a fact like any other (E1, #142).** A slot named for a
+total is not the count the sentence needs. Twice now a fragment has read `n_regions`
+or `gate_n` straight after the words "the other", printing "the other 24 regions" in a
+realm of 24 and "the other 5 do" of five gates, four of which do. The slot audit
+catches a number that is not in the export; it cannot catch a number that is in the
+export and is the wrong one for the clause. **Where a clause says "the other", "the
+rest", "the remaining" or "all but", it needs its own slot** (`n_others`,
+`gate_others`) — and, as with plural agreement, a singular arm for when that slot is
+one.
+
 **The chronicle specifically:** the fixed founding beats become conditional AND
 composed: absence becomes remarkable instead of a filled slot ("no wall crosses
 this realm" should be rare and startling, not the else-branch of a template). The
@@ -801,6 +811,46 @@ proven OUTSIDE the app first.
 8. **Voice streams**: keyed `sx("voice#<region>#<epoch>#<kind>")`, never drawn
    from shared streams (auto-run byte-compat holds even with voices generated on
    every run).
+
+## G5 build notes (E1, #142 — what the build learned, against the frozen spec above)
+
+The spec above is left verbatim. What shipped differs from it in three places, and
+each difference is a reading of the ticket rather than a drift from it.
+
+- **The six dilemmas are Phase B levers, not §5.1's six flavours.** #142 asks for the
+  dilemmas "re-anchored to the GOVERNOR seat (comply/resist/skim vs the metropole) …
+  long edges via Phase B mechanisms", which is amendment (a) made into an acceptance.
+  The triggers §5.1 named mostly survived the pivot; the long edges did not. Absentee
+  rents, enriched collaborators and gentrifying smugglers are not mechanisms Phase B
+  left behind, so five of the six would mean adding physics inside a ticket whose
+  acceptance is a byte-pin. What shipped instead is the set of Phase B levers that
+  already carry a discovered far edge: `c` the conduit (B7 charter debt), `g` the
+  granary (B7 dependency), `o` the ore floor (B7 capital flight), `t` the gates (the
+  tariff scale), `s` the spoil (B4 disposal doctrine), `n` the charter (B11
+  concession). Only `c` survives §5.1 by letter and trigger. **The rule this follows,
+  for the surfaces still to come: a dilemma may only pull a lever whose far edge the
+  economy already has. A card whose consequence has to be built for it is an authored
+  moral, not a discovered one.**
+- **`option` is not a csv column.** The plumbing line above specifies `by`,`option`.
+  `by` shipped. An option *index* alone is unreadable without the option list, which
+  lives in the decision log, and the readable form of the same fact — which road was
+  taken — is already the row's `measure`/`outcome`. Provenance gains `ch` and
+  `decisions` as specified, both under the same gate: the log is not empty for an auto
+  run, so writing it unconditionally would move all thirty fixtures.
+- **The null fork has two readings and both are real.** Finding 6 above means a run
+  offering no forks at all, and is a verdict-panel line (E2). The engine turned up the
+  nearer one: a decision offering a single option, from a ladder whose runner-up is not
+  distinct. Both are fixed for their own layer. Measured: at ep=10 defaults, 0 of 60
+  worlds offer no fork, and the thinnest offers three — G5's case is reachable (ep=0)
+  but not by accident.
+
+**And a note on `fate` that cost a test.** A coverage table that held one fate constant
+across 60 seeds found the wound takeover in 0 of them, and read that as a dead branch.
+Nothing was broken: fate *is* the luck, so one fate over many seeds is a single run of
+luck over many maps, and event-triggered behaviour vanishes or saturates accordingly
+(the Dominion arrived in 58 of the same 60). **Any sweep that varies the seed and pins
+the fate is measuring one history's luck, not the model's** — vary both, or say in the
+comment which one is held.
 
 ## G5 known risks (addressed in design)
 

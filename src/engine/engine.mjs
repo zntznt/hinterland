@@ -8,7 +8,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 56;   // #178: v56 redefines findings.blight_ratio over the INHABITED realm — its "poorest fifth" was 85% empty cells, which export wealth 0 and so ARE the bottom fifth — and makes it nullable where too few towns stand to rank. Same key, different population, new null: a break, not a silent move.
+    const SCHEMA_VERSION = 57;   // E1 (#142): v57 adds the REIGN. `ch` in provenance when a governor played one, a `by` column on events.csv separating a decree from the seat's own measure, and three new event types only a reign can produce (decree, revolt_averted, dominion_repelled). Additive: a world with no reign exports exactly what v56 did, which is what the byte-pin proves.
     // v55 (#180) redefined blight_load as an ABSOLUTE load (100 = ruined) carried as a decaying stock, where v54 normalised it to each world's own worst cell.
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
@@ -200,6 +200,18 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       const ea = Number(a.slice(1)), eb = Number(b.slice(1));
       return ea - eb || a.localeCompare(b);
     }).map(k => `${k}:${dec[k]}`).join(",");
+
+    // The reign as the EXPORT carries it (§5.1 plumbing: "provenance gains
+    // hinterland.choices/fate/decisions"). Emitted beside `ch` and under the same
+    // gate, because the log is not empty for an auto run — every dice takeover is
+    // a decision point whether or not anyone stood at it — so writing it
+    // unconditionally would move all thirty fixtures and the byte-pin with them.
+    // `stale` rides only when true: an entry the governor typed for a decision that
+    // no longer exists is worth seeing in the file, and a column of `false` is not.
+    const reignLog = (model) => (model.decisions || []).map(d => ({
+      epoch: d.epoch, key: d.key, options: d.options, chose: d.chose, by: d.by,
+      ...(d.stale ? { stale: true } : {})
+    }));
 
     // A decision is offered exactly where the dice already decided, and OPTION 0 IS
     // ALWAYS THE DICE'S OWN OUTCOME. That is what makes the echo-the-dice invariant
@@ -4073,7 +4085,12 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
             dominionRepelled = e + 1;
             treasuries.crown = Math.max(0, treasuries.crown - 12);  // the muster is paid for
             tensions[pairKey("crown", "magnate")] += 10;            // the quay's owners wanted the trade
-            events.push({ epoch: e + 1, type: "dominion_repelled", region_id: fh.id });
+            // `by` like its sibling the averted rising: both are outcomes that CANNOT
+            // occur without a governor, so the column is unambiguous on them. It is
+            // deliberately NOT set on a revolt the governor chose to crush — the dice
+            // could have crushed it too, and marking those needs the "the seat chose"
+            // lead-in §5.1 describes, which is prose this ticket does not author.
+            events.push({ epoch: e + 1, type: "dominion_repelled", region_id: fh.id, by: "governor" });
           } else if (best >= 0) {
             footholdIdx = best; dominionAt = e + 1;
             const occRun = costDistances(regions, [footholdIdx]);
@@ -5987,7 +6004,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         hinterland: {
           schema_version: SCHEMA_VERSION,
           world: model.world,
-          seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), ...(params.ch ? { ch: String(params.ch) } : {}), regions: params.regions, relax: params.relax,
+          seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), ...(params.ch ? { ch: String(params.ch), decisions: reignLog(model) } : {}), regions: params.regions, relax: params.relax,
           bias: params.bias,
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt,
@@ -6215,7 +6232,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
           dominion: model.dominion ? { arrived_epoch: model.dominion.arrived, foothold: model.regions[model.dominion.foothold].id, occupied_n: model.regions.filter(r => r.occupied).length } : null,
           powers: { metropole: model.metropole, rival: model.rival, concessions: model.regions.filter(r => r.concession).length, abandoned: model.regions.filter(r => r.concessionEnded).length },
           years_per_epoch: 25,
-          seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), ...(params.ch ? { ch: String(params.ch) } : {}), regions: params.regions, relax: params.relax,
+          seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), ...(params.ch ? { ch: String(params.ch), decisions: reignLog(model) } : {}), regions: params.regions, relax: params.relax,
           bias: params.bias,
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt, dump_bias: params.db,
@@ -7535,7 +7552,8 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         { t: "a levy at a gate is not a price, because a price implies a choice, and the {num:gate_n} offer none", req: c => c.gateN > 0 },
         { t: "every one of the {num:gate_n} charges, and every charge is paid by somebody with no second road", req: c => c.gateN > 0 && c.gate_none === 0 },
         { t: "every one of the {num:gate_n} charges, and none of them was put there by anyone who pays", req: c => c.gateN > 0 && c.gate_none === 0 },
-        { t: "the one that charges nothing charges nothing because nobody found it worth holding, and the other {num:gate_n} do", req: c => c.gateN > 1 && c.gate_none === 1 },
+        { t: "the one that charges nothing charges nothing because nobody found it worth holding, and the other {num:gate_others} do", req: c => c.gateN > 2 && c.gate_none === 1 },
+        { t: "the one that charges nothing charges nothing because nobody found it worth holding, and the only other one does", req: c => c.gateN === 2 && c.gate_none === 1 },
       ],
       treasuries: [
         { t: "the tariff ledgers run deepest with {term:richest_power}, and coin buys the next gate", req: c => c.hasTreasuries },
@@ -7679,7 +7697,10 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         seed: params.seed, close_year: 1000 + 25 * params.ep,
         capital: model.capitalName,
         reigning: (crownLine[crownLine.length - 1] || {}).name || "an unnamed regent",
-        n_regions: model.regions.length, compass,
+        n_regions: model.regions.length,
+        // the OTHERS: everywhere a clause says "the other N", N is not the total. It
+        // read `n_regions` once and printed "the other 24 regions" in a realm of 24.
+        n_others: model.regions.length - 1, compass,
         pop_top: pops[0], pop_med: pops[Math.floor(pops.length / 2)],
         hasWorks: works0.length > 0, works_list: list(works0.map(id => town(id).name)),
         // the trunk lines run from the works TO the capital, so a beat that says so
@@ -7784,6 +7805,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         ungov_answer: bc.ungoverned === 1 ? "answers" : "answer",
         ungov_recognise: bc.ungoverned === 1 ? "recognises" : "recognise",
         gateN: model.holdings.length, gate_n: model.holdings.length,
+        gate_others: model.holdings.length - 1,   // "the other N", same trap as n_others
         gate_crown: hc.crown, gate_temple: hc.temple, gate_magnate: hc.magnate, gate_none: hc.none,
         gate_none_n: hc.none,
         hasTreasuries: model.holdings.length > 0 && (tr.crown + tr.temple + tr.magnate) > 0,
@@ -9851,7 +9873,8 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         { t: "{name:capital} ate that year, and the taxed road paid for the meal", req: c => c.evMeasure === "toll_crackdown" },
         { t: "the gates of {name:capital} were told to collect, and they collect from whoever has no second road", req: c => c.evMeasure === "toll_crackdown" },
         { t: "no country is written off now, and the poison piled on one is spread across {num:n_regions} regions", req: c => c.evMeasure === "dumping_reform" },
-        { t: "the sacrifice zone was dissolved by decree and its share of the spoil went to the other {num:n_regions} regions", req: c => c.evMeasure === "dumping_reform" },
+        { t: "the sacrifice zone was dissolved by decree and its share of the spoil went to the other {num:n_others} regions", req: c => c.evMeasure === "dumping_reform" && c.n_others > 1 },
+        { t: "the sacrifice zone was dissolved by decree and its share of the spoil went to the one region left to take it", req: c => c.evMeasure === "dumping_reform" && c.n_others === 1 },
         { t: "{name:ev_town} keeps its whole yield now, and the capital that would have built there never came", req: c => c.evMeasure === "charter_refused" },
         { t: "the works the factors would have funded at {name:ev_town} were not built by anyone else", req: c => c.evMeasure === "charter_refused" },
       ],

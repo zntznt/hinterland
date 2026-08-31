@@ -16,12 +16,29 @@ node --max-old-space-size=4096 atlas.mjs      # 80-world calibration
 ```
 cd tools
 npm install                                   # jsdom + d3-delaunay
-node --max-old-space-size=14000 test.mjs      # the main suite (~241 checks + the fixture pin)
-node --max-old-space-size=10000 stress.mjs    # 120-config structural stress + render smoke
+node --max-old-space-size=14000 test.mjs      # the main suite (~385 checks + the fixture pin)
+node --max-old-space-size=10000 stress.mjs    # 120-config structural stress + render smoke + the ch/fate fuzz
 node --max-old-space-size=8192  atlas.mjs     # regenerates ../docs/atlas.md (80-world sweep)
 node --max-old-space-size=8192  sweep.mjs     # prints the knob-reach + chronicle-sameness table (~1 min; observed, not pinned)
 node --max-old-space-size=8192  refixture.mjs # regenerates the golden fixtures (a declared act; see below)
 ```
+
+**Not in `npm test`, on purpose:** `reign-shots.mjs` walks a six-epoch reign in a
+real browser and writes the plates in `../docs/reign/`.
+
+```sh
+npm install --no-save playwright-core        # the browser itself is not downloaded
+PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 node reign-shots.mjs
+```
+
+It stays out of the suite because installing a browser would add minutes and
+~300MB to a job that already takes fifteen. It is not a screenshot tool with
+assertions bolted on, though: what jsdom cannot see is **layout**, so it checks
+that the docked dilemma card actually sits inside the plate, that the reign
+advances, and that the verdict arrives — and it exits nonzero when any of that
+fails. Set `PW_CHROMIUM` if the browser is somewhere other than
+`/opt/pw-browsers/chromium-1194/chrome-linux/chrome`; pass `--hash` to walk a
+different world.
 
 Two processes on purpose: jsdom retains memory per world, and the full
 run generates several hundred worlds; split, each pass fits in an

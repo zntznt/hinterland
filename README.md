@@ -24,7 +24,7 @@ Client-side, no backend.
   engine no longer presumes it, and where in the possibility space the
   extraction worlds still live.
 - **The atlas:** [`docs/atlas.md`](docs/atlas.md). A calibration sweep of 80
-  worlds (schema v55) and the archetypal extremes it found: the world that
+  worlds (schema v56) and the archetypal extremes it found: the world that
   closed its gap, the concession coast that is developed *and* owned, the
   occupied realm, the town that freed itself. Each is one click away with its own
   chronicle line, and the **verdict space** they populate (gap × floor ×
@@ -82,8 +82,9 @@ paves over and occasionally wakes.
 - [Your first map](#your-first-map)
 - [Six words you'll meet everywhere](#six-words-youll-meet-everywhere)
 - [Controls](#controls)
+- [Taking the seat (the reign)](#taking-the-seat-the-reign)
 - [The QGIS bridge](#the-qgis-bridge)
-- [Export schema (v55)](#export-schema-v55)
+- [Export schema (v57)](#export-schema-v57)
 
 ## Controls
 
@@ -103,6 +104,35 @@ unpinned, the capital settles in fertile lowland). Off-default, `world=` keys th
 **world outside**: the exogenous history (price, demand, attention, embargo)
 the region consumes but cannot move. The preview-layer radio only changes the
 on-screen choropleth; the export always carries every column.
+
+## Taking the seat (the reign)
+
+Everything else on the panel decides what the world **is** and then watches it
+happen. **THE REIGN** puts you inside it: at each point where the dice decided
+alone, the seat may decide instead — charter the wire on the metropole's credit,
+open the granary, name a floor the diggers keep, cut or raise the tariff, spread
+the spoil thin, refuse the charter, buy off a rising, burn the approaches.
+
+The card states the **near** edge only. The far edge is not hidden out of
+coyness: it does not exist yet. Each road pulls a mechanism that already has two
+live edges in the economy, so the consequence is *discovered by living it*, and
+the app never tells you which road was wise. The map is held at the year of the
+question until you answer it — you decide without seeing what it does, which is
+the only honest way to decide anything.
+
+At the end, the verdict panel runs the history you did **not** play (the same
+world with no reign) and puts them side by side on §3.5's axes: the gap, the
+floor, growth per head, and what the years cost in events. There is no score.
+Closing the gap while the floor falls is a real outcome and the table will show
+you both, in the judge's own words.
+
+A reign is a string in the URL (`ch=`), so a history you played is a history you
+can send. Abdicating keeps it. Recanting the last decree puts that year back.
+Change the seed, the region count or the epochs and the seat is vacated — a
+reign belongs to one world.
+
+Screenshots of a six-epoch reign are in [`docs/reign/`](docs/reign/), and
+`docs/reign-sample.md` shows one played from the URL bar with no UI at all.
 
 ## The QGIS bridge
 
@@ -131,7 +161,7 @@ byname roll, live in [CHANGELOG.md](CHANGELOG.md) so this page stays a front
 door. Open the field guide (docs/field-guide.md) for how to READ a world from
 the columns; open the changelog for how each mechanic earned its place.
 
-## Export schema (v55)
+## Export schema (v57)
 
 The FeatureCollection carries a top-level `hinterland` member with
 `schema_version` and the exact generator parameters. Every file can reproduce
@@ -143,6 +173,15 @@ the pivot's state: `world` (the outside-history key), the income `weights`,
 precinct / buried power), and `findings`, including the de-moralized
 `findings.verdict` (this world's gap × floor × growth class) and
 `findings.concessions` (imperial reach).
+
+Off-default, provenance also carries **the reign** (E1/E2, v57): `ch` — the
+governor's decisions as an epoch-qualified string, e.g. `w4:1,r6:2` — and
+`decisions`, the log of every fork the history offered, in the order it was
+lived, each with its options, the road taken, and whether the dice or the
+governor took it. Both appear **only when a reign was played**; a world nobody
+sat over exports exactly what it did before the reign engine existed, which is
+the byte-pin the whole feature was built behind. `events.csv` gained a `by`
+column for the same reason: it is empty on every row of an auto-history.
 
 > **A note on v55.** `blight_load` changed *meaning* in v55 (issue #180): it was
 > normalised to each world's own worst cell and is now an absolute load where 100

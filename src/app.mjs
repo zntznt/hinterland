@@ -14,6 +14,7 @@ import {
   edgeCost, costDistances,
   toGeoJSON, toEpochSeries, toCsvTables, epochDate,
   computeFindings, getFindings, composeChronicle, composeFindings,
+  composeVerdict,
   parseHash,
 } from './engine/engine.mjs';
 
@@ -1659,6 +1660,259 @@ const d3 = globalThis.d3;
       document.getElementById("inspBody").innerHTML = L.join("");
     }
 
+    // ---- E2 (#143): the reign controller -------------------------------------
+    // Every card the seat is offered, in the order the years reach them. A
+    // decision is ANSWERABLE at its own epoch: the reign walks the frontier
+    // forward and stops at the first one it has not answered.
+    const reignAnswered = (d) => reign.taken.some(t => t.split(":")[0] === d.key);
+    const reignPending = () =>
+      (model.decisions || []).filter(d => d.options.length > 1 && !reignAnswered(d))
+        .sort((a, b) => a.epoch - b.epoch)[0] || null;
+
+    // The seat's own vocabulary for the nine decisions. The card states the NEAR
+    // edge only — §5 amendment (a): "Cards state the near edge; the far edge is
+    // discovered." Anything here that promised the long edge would be the app
+    // grading the choice before the world answers it, which is the thing the
+    // whole instrument is against.
+    const REIGN_CARD = {
+      w: { kind: "the wound", brief: "Something has torn in the realm, and the seat is asked what it will spend to close it." },
+      r: { kind: "the rising", brief: "A town has had enough. The wardline is ready; so is a room with a table in it." },
+      d: { kind: "the Dominion", brief: "A fleet stands off the coast, and its envoys are polite. The quay can be opened or the approaches burned." },
+      c: { kind: "the conduit", brief: "The dark country can be wired this year, on the metropole's credit rather than the realm's." },
+      g: { kind: "the granary", brief: "The year has bled. The crown's own stores can be opened, or kept." },
+      o: { kind: "the ore floor", brief: "The metropole names the price for what the diggers pull up. The seat may name a different one." },
+      t: { kind: "the gates", brief: "Every road out of the realm passes a gate, and every gate is a number the seat sets." },
+      s: { kind: "the spoil", brief: "The doctrine writes one country off to spare the rest. It can be reversed." },
+      n: { kind: "the charter", brief: "The metropole wants a coast, and today it simply takes one. A governor may refuse." },
+    };
+    // Per-option phrasing: the road, in the seat's words, near edge only.
+    const REIGN_ROAD = {
+      hold: "Hold", borrow: "Charter the wire on the metropole's credit",
+      open: "Open the granary", floor: "Name a floor the diggers keep",
+      cut: "Cut the tariff", raise: "Raise the tariff",
+      // the wound's ladder names a MEASURE, not a road, so each gets its own words
+      retention_act: "Pass a Retention Act", crown_granary: "Open the Crown Granary",
+      grid_charter: "Charter the grid outward", toll_amnesty: "Declare a Tariff Amnesty",
+      dumping_reform: "Reform the dumping doctrine",
+      disperse: "Spread the spoil thin", accept: "Let the charter stand",
+      refuse: "Refuse the charter", won: "Let it run", crushed: "Send the wardline",
+      averted: "Buy the peace", land: "Open the quay", repel: "Burn the approaches",
+      mercy: "Mercy", fist: "The fist",
+    };
+    const reignRoadLabel = (opt) => REIGN_ROAD[opt] ||
+      (opt.charAt(0).toUpperCase() + opt.slice(1)).replace(/_/g, " ");
+
+    // Walk the frontier forward until a card stands or the reign reaches its end.
+    // The frontier is what the MAP is allowed to show, so it stops AT the year of
+    // the standing decision: the governor sees the realm as it was when the
+    // question arrived, never as it will be once answered.
+    function reignAdvance() {
+      const d = reignPending();
+      reign.standing = d && d.epoch <= reign.target ? d : null;
+      reign.frontier = reign.standing ? reign.standing.epoch : reign.target;
+      scrubEpoch = Math.min(reign.frontier, (model.epochSnaps || []).length - 1);
+      const sc = document.getElementById("scrub");
+      if (sc) { sc.value = scrubEpoch; document.getElementById("scrubVal").textContent = `${scrubEpoch}/${params.ep}`; }
+      updateAgeLabel();
+    }
+
+    // The year's ledger, as the card shows it: what moved between the epoch before
+    // the decision and the epoch it stands in. Plain deltas off epochSnaps — the
+    // same numbers the export carries, no commentary.
+    function reignDeltasHTML() {
+      const snaps = model.epochSnaps || [];
+      const e = Math.min(reign.frontier, snaps.length - 1);
+      const prev = snaps[Math.max(0, e - 1)], now = snaps[e];
+      if (!prev || !now) return "";
+      const live = (S) => S.wealth.filter((_, i) => S.pop[i] > 0);
+      const g0 = giniOf(live(prev)), g1 = giniOf(live(now));
+      const tot = (S) => S.wealth.reduce((a, b) => a + b, 0);
+      const settled = (S) => S.pop.filter(x => x > 0).length;
+      const row = (label, a2, b2, dp) => {
+        const dv = b2 - a2, sign = dv > 0 ? "+" : "";
+        return `<tr><td>${label}</td><td>${b2.toFixed(dp)} <span class="dc-edge">(${sign}${dv.toFixed(dp)})</span></td></tr>`;
+      };
+      return `<table>${row("the gap", g0, g1, 2)}${row("total wealth", tot(prev), tot(now), 0)}` +
+        `${row("towns standing", settled(prev), settled(now), 0)}</table>`;
+    }
+
+    // The gini line so far, revealed only as far as the frontier: the card may not
+    // plot a year the governor has not lived.
+    function reignSparkHTML() {
+      const snaps = (model.epochSnaps || []).slice(0, Math.min(reign.frontier, (model.epochSnaps || []).length - 1) + 1);
+      if (snaps.length < 2) return "";
+      const gs = perEpochGini(snaps);
+      const W = 190, H = 38, lo = Math.min(...gs), span = (Math.max(...gs) - lo) || 1;
+      const pts = gs.map((g, i) => `${((i / Math.max(1, reign.target)) * W).toFixed(1)},${(H - 4 - ((g - lo) / span) * (H - 10)).toFixed(1)}`).join(" ");
+      return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="the gap so far">` +
+        `<polyline points="${pts}" fill="none" stroke="#221d16" stroke-width="1.2" opacity="0.8"/></svg>`;
+    }
+
+    function updateDilemmaCard() {
+      const card = document.getElementById("dilemmaCard");
+      if (!card) return;
+      const d = reign.standing;
+      card.style.display = reign.on && d ? "" : "none";
+      if (!reign.on || !d) return;
+      const C = REIGN_CARD[d.kind] || { kind: d.kind, brief: "" };
+      document.getElementById("dcYear").textContent = `Year ${1000 + 25 * d.epoch}`;
+      document.getElementById("dcKind").textContent = C.kind;
+      document.getElementById("dcBrief").textContent = C.brief;
+      // D2 (#138) seam: voices mount here when the gate opens. Empty until then.
+      document.getElementById("dcVoices").innerHTML = "";
+      const opts = document.getElementById("dcOptions");
+      opts.innerHTML = d.options.map((o, k) =>
+        `<button type="button" data-opt="${k}"><b>${esc(reignRoadLabel(o))}</b>` +
+        `<span class="dc-edge">${k === 0 ? "what the dice would have done" : "the seat decides otherwise"}</span></button>`
+      ).join("");
+      opts.querySelectorAll("button").forEach(b =>
+        b.addEventListener("click", () => reignChoose(+b.dataset.opt)));
+      document.getElementById("dcDeltas").innerHTML = reignDeltasHTML();
+      document.getElementById("dcSpark").innerHTML = reignSparkHTML();
+    }
+
+    // Answering is the C1 pattern applied to a decision rather than a policy:
+    // append the road, recompute the SAME world shape, walk on. `params.ep` never
+    // moves, so the history the reign is played against is the history it ends in.
+    function reignChoose(k) {
+      const d = reign.standing;
+      if (!d) return;
+      reign.taken.push(`${d.key}:${k}`);
+      params.ch = reign.taken.join(",");
+      reignRecompute();
+    }
+    function reignRecompute() {
+      model = applyAttributes(topology, params, geo);
+      // a fork can retire a decision the governor already answered (a different
+      // history reaches different cards), so drop entries the world no longer
+      // offers — the parser ignores them anyway, and the seat should not be told
+      // it decided something that never came up.
+      const live = new Set((model.decisions || []).map(x => x.key));
+      reign.taken = reign.taken.filter(t => live.has(t.split(":")[0]));
+      params.ch = reign.taken.join(",");
+      delete model._seatRun;
+      reignAdvance();
+      document.getElementById("timeline").innerHTML = timelineHTML(model, params);
+      render(model, params);
+      renderInspector();
+      updateDilemmaCard();
+      updateReignPanel();
+      updateReignVerdict();
+      writeHash();
+    }
+
+    function updateReignPanel() {
+      const st = document.getElementById("reignState");
+      const btn = document.getElementById("reignTake");
+      if (!st || !btn) return;
+      st.style.display = reign.on ? "" : "none";
+      btn.textContent = reign.on ? "Leave the seat" : "Take the Seat";
+      btn.disabled = !reign.on && !reignAvailable(params);
+      btn.title = btn.disabled ? "A founding snapshot has no years to reign over. Run the world forward first." : "";
+      const rc = document.getElementById("reignRecant");
+      if (rc) rc.disabled = reign.taken.length === 0;
+      const hint = document.getElementById("reignHint");
+      if (!hint) return;
+      if (!reign.on) { hint.textContent = ""; return; }
+      const n = reign.taken.length;
+      hint.textContent = reign.standing
+        ? `Year ${1000 + 25 * reign.standing.epoch}. A decision stands; the map is held at this year until you answer it.` +
+          (n ? ` ${n} decree${n === 1 ? "" : "s"} so far.` : "")
+        : `The reign is run to ${1000 + 25 * reign.target}. ${n ? `${n} decree${n === 1 ? "" : "s"} stand in the record.` : "The history offered no forks."}`;
+    }
+
+    // Taking the seat re-runs nothing: the world is already computed, and the only
+    // change is which year the map is allowed to show. Leaving it restores the
+    // present. `ch` survives both, which is what "Abdicate keeps ch in the hash"
+    // means — a reign you walked away from is still a reign you can send.
+    function reignTake(on) {
+      if (on && !reignAvailable(params)) { toast("no years to reign over: run the world forward first"); return; }
+      reign.on = on;
+      reign.target = reignTargetEp(params);
+      if (on) {
+        reign.taken = params.ch ? params.ch.split(",").filter(Boolean) : [];
+        if (cfOn) { cfOn = false; updateCf(); }     // §5.1: no counterfactual mid-reign (spoiler)
+        reignAdvance();
+      } else {
+        reign.standing = null;
+        scrubEpoch = params.ep;
+        const sc = document.getElementById("scrub");
+        if (sc) { sc.value = params.ep; document.getElementById("scrubVal").textContent = `${params.ep}/${params.ep}`; }
+        updateAgeLabel();
+      }
+      document.getElementById("cfBtn").disabled = on;
+      document.getElementById("cfBtnGrid").disabled = on;
+      document.getElementById("cfBtnBoth").disabled = on;
+      render(model, params);
+      updateDilemmaCard();
+      updateReignPanel();
+      updateReignVerdict();
+    }
+    function reignRecant() {
+      if (!reign.taken.length) return;
+      reign.taken.pop();
+      params.ch = reign.taken.join(",");
+      reignRecompute();
+    }
+    // A reign is played against ONE world. Change the rock or the clock and the
+    // reign is against a history that no longer exists, so the seat is vacated to
+    // a defined state rather than left standing in a world that moved under it.
+    function reignAbortOnWorldChange() {
+      if (!reign.on) return;
+      reignTake(false);
+      toast("the world changed under the reign: the seat is vacant");
+    }
+
+    // The verdict on a reign: the history played, against the one the dice would
+    // have run. Same instrument as C1 — run the alternate, take plain numbers,
+    // restore the world as played — pointed at `ch:""` instead of a policy knob.
+    // §3.5's axes only (gap x floor x growth), plus what the years cost in events.
+    // No score: the judge argues, and the table is the argument's evidence.
+    function updateReignVerdict() {
+      const box = document.getElementById("reignVerdict");
+      if (!box) return;
+      const done = reign.on && !reign.standing;
+      box.style.display = done ? "" : "none";
+      if (!done) return;
+      const played = getFindings(model);
+      const playedEv = model.events.length;
+      // the auto-history: identical in everything but the reign
+      const autoModel = applyAttributes(topology, { ...params, ch: "" }, geo);
+      const autoF = computeFindings(autoModel);
+      const autoEv = autoModel.events.length;
+      const dec = (model.decisions || []).filter(d => d.options.length > 1).length;
+
+      // G5 finding 6, the null-fork reign: a history that offered no forks gets a
+      // line, not a diff table of a world identical to itself.
+      if (!reign.taken.length) {
+        document.getElementById("rvJudgment").innerHTML =
+          dec === 0
+            ? `<i>This history offered no forks. Nothing in the ${reign.target} epochs of ${esc(model.capitalName)} turned on a decision the seat could have taken differently, so there is no reign to judge — only the world, which is judged in the findings above.</i>`
+            : `<i>You took the seat and let every die stand. The history is the dice's own, and the verdict on it is the verdict on any unreigned world.</i>`;
+        document.getElementById("rvTable").innerHTML = "";
+        return;
+      }
+      const jl = composeVerdict(model, params, { surface: "reign-verdict" });
+      document.getElementById("rvJudgment").innerHTML =
+        `${jl && jl.text ? esc(jl.text) : ""}`;
+      const g = (F) => F.gini, fl = (F) => F.floor.p10, gr = (F) => F.growth.per_capita;
+      const row = (label, a2, b2, dp) => {
+        const d2 = b2 - a2, sign = d2 > 0 ? "+" : "";
+        return `<tr><td>${label}</td><td>${a2.toFixed(dp)}</td><td>${b2.toFixed(dp)}</td>` +
+          `<td>${d2 === 0 ? "—" : `${sign}${d2.toFixed(dp)}`}</td></tr>`;
+      };
+      document.getElementById("rvTable").innerHTML =
+        `<table><tr><th></th><th>the dice's history</th><th>your reign</th><th>the difference</th></tr>` +
+        row("the gap (gini)", g(autoF), g(played), 2) +
+        row("the floor (poorest tenth)", fl(autoF), fl(played), 0) +
+        row("growth per head", gr(autoF), gr(played), 1) +
+        row("events", autoEv, playedEv, 0) +
+        `<tr><td>the §3.5 reading</td><td>${esc(autoF.verdict.cell)}, ${esc(autoF.verdict.growth)}</td>` +
+        `<td>${esc(played.verdict.cell)}, ${esc(played.verdict.growth)}</td><td>${autoF.verdict.class === played.verdict.class ? "the same story" : "a different story"}</td></tr>` +
+        `<tr><td>decrees</td><td>0</td><td>${reign.taken.length} of ${dec} forks offered</td><td></td></tr>` +
+        `</table>`;
+    }
+
     // ---- The counterfactual (C1) ---------------------------------------------
     // One button re-runs THIS world with lambda = 0 and puts the two
     // injustice maps side by side. Built on stage-3 purity: run the
@@ -1762,6 +2016,37 @@ const d3 = globalThis.d3;
     // so the flag stays true until the hover layer lands
     const SHOW_NUMBERS = true;
     let scrubEpoch = 0;    // preview-only: which epoch the map shows
+
+    // ---- E2 (#143): THE REIGN ------------------------------------------------
+    // §5.1's Core mechanism says the controller re-runs with `ep: frontier` and
+    // reads the decisions for that epoch. MEASURED, IT CANNOT: `ep` is not a
+    // playback length, it is a world-shaping parameter. #88's `evWindow` scales
+    // one-shot event scheduling by the total run length, so the SAME draw lands
+    // on a different year in a 4-epoch world than in a 10-epoch one. Events at
+    // ep=N are a prefix of events at ep=10 in 0 of 60 worlds. Stepping `ep` would
+    // show the governor a different world at every step, and the reign they built
+    // would be against a history that never happens at the final `ep`.
+    //
+    // So the frontier is a REVEAL, not a re-run: `ep` stays at the target and the
+    // year we are living is `scrubEpoch`, which already exists for exactly this
+    // (the map, the region event stamps and the age label all honour it). A card
+    // resolves by appending to `params.ch` and recomputing THE SAME WORLD SHAPE —
+    // which is what `ch`'s epoch-qualified keys were built for, and what
+    // tools/proto/reign-proto.mjs --sample already does headlessly.
+    const reign = {
+      on: false,        // is the seat taken
+      frontier: 0,      // the year being lived; the map shows no further
+      standing: null,   // the decision awaiting an answer, or null
+      taken: [],        // ch entries in the order the governor added them
+      target: 0,        // the epoch the reign runs to (params.ep at the outset)
+    };
+    // §5.1 writes this target as `params.ep > 0 ? params.ep : 8`, which assumed the
+    // controller could SET the length. It cannot: `ep` shapes the world (see above),
+    // so falling back to 8 would reign over a history the page is not showing. The
+    // target is the world's own length, and a founding snapshot has no years to
+    // reign over at all — the seat is simply not offered there.
+    const reignTargetEp = (p) => p.ep;
+    const reignAvailable = (p) => p.ep > 0;
 
     // ---- The camera (#116/#117): the main map's viewBox becomes a pan/zoom rect
     // over the world [0,W]². It is a module-level value, so it survives render()'s
@@ -1973,6 +2258,7 @@ const d3 = globalThis.d3;
       toastT = setTimeout(() => el.classList.remove("show"), 1100);
     }
     function recomputeAttributes() {    // stage 3 only — geology untouched
+      reignAbortOnWorldChange();        // E2: a reign is played against ONE world
       model = applyAttributes(topology, params, geo);
       scrubEpoch = params.ep;           // land on the present
       const row = document.getElementById("scrubRow");
@@ -1988,6 +2274,11 @@ const d3 = globalThis.d3;
       render(model, params);
       renderInspector();
       updateCf();
+      // E2: the seat's availability tracks the world — a founding snapshot offers
+      // no years to reign over, and this is the only place `ep` can have changed.
+      updateReignPanel();
+      updateDilemmaCard();
+      updateReignVerdict();
       writeHash();
       toast("world recomputed: same rock, new society"); // the rewrite is never silent
     }
@@ -2010,6 +2301,10 @@ const d3 = globalThis.d3;
       const p = new URLSearchParams();
       p.set("seed", params.seed);
       if (params.fate) p.set("fate", params.fate);   // off-default only (the lens= precedent)
+      // E2 (#143): the reign rides the URL, off-default only, on the same
+      // precedent. This is the whole persistence layer for a reign — abdicating
+      // keeps `ch`, so the link in the bar is always the history as played.
+      if (params.ch) p.set("ch", params.ch);
       if (params.world && params.world !== DEFAULTS.world) p.set("world", params.world); // the Concordat era stays clean
       p.set("regions", params.regions);
       p.set("relax", params.relax);
@@ -2600,6 +2895,9 @@ const d3 = globalThis.d3;
           keyHelp($("keyCard").style.display === "none");
         }
       });
+      $("reignTake").addEventListener("click", () => reignTake(!reign.on));
+      $("reignRecant").addEventListener("click", reignRecant);
+      $("reignAbdicate").addEventListener("click", () => reignTake(false));
       $("cfBtnGrid").addEventListener("click", () => {
         if (cfOn && cfMode === "gt") { cfOn = false; } else { cfOn = true; cfMode = "gt"; }
         updateCf();

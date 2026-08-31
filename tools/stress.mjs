@@ -1536,5 +1536,63 @@ console.log("# Phase 2 acceptance: legacy mode, emergent mode, resource curse, s
 }
 
 
+// ---------------------------------------------------------------------------
+// E2 (#143): ch/fate FUZZ. A reign is a string a person pastes into a URL bar,
+// so the parser's only real contract is that NOTHING gets through it. The suite
+// checks a dozen hand-picked inputs; this throws structured garbage at it —
+// plausible-looking reigns with wrong kinds, impossible epochs, out-of-range
+// options, duplicate and contradictory keys, injections, and sheer length — and
+// requires every one to produce a world that is either the auto-history or a
+// history the same string reproduces exactly.
+{
+  const E = await setupEngine();
+  const KINDS = "wrdcgotsn";
+  const rnd = (() => { let x = 20260831; return () => (x = (x * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff; })();
+  const pick = (a2) => a2[Math.floor(rnd() * a2.length)];
+  const JUNK = ["", ",", ",,,", "::", "w", "w4", "w4:", ":1", "W4:1", "w-1:1", "w4:-1",
+    "w99:1", "w4:99", "w4:1:2", "zz1:0", "%20", "…", "w4:1;drop", "<script>", "\u0000",
+    "w4:1&fate=x", "w4:1 w5:1", " w4:1 ", "W4:1,R6:0", "9:9", "w4:1,".repeat(80)];
+  const mkReign = () => {
+    const n = 1 + Math.floor(rnd() * 6);
+    const parts = [];
+    for (let i = 0; i < n; i++) {
+      const wild = rnd();
+      if (wild < 0.35) parts.push(pick(JUNK));
+      else parts.push(`${pick(KINDS.split(""))}${Math.floor(rnd() * 30)}:${Math.floor(rnd() * 12)}`);
+    }
+    return parts.join(",");
+  };
+  const worldOf = (hash) => {
+    const S = E.parseHash(hash);
+    const r = E.buildTopology(S), g = E.buildGeology(r, S);
+    const m = E.applyAttributes(r, S, g);
+    return { ch: S.ch, gj: JSON.stringify(E.toGeoJSON(m, S).features), S };
+  };
+  let n = 0, reproduced = 0, autoMatches = 0, threw = 0;
+  const bad = [];
+  for (let i = 0; i < 120; i++) {
+    const seed = `fz-${i % 11}`;
+    const fate = i % 3 === 0 ? `&fate=${pick(["", "x", "fz", "%%", "a,b"])}` : "";
+    const base = `#seed=${seed}&regions=18&ep=8`;
+    const auto = worldOf(base);
+    const raw = mkReign();
+    let got;
+    try { got = worldOf(`${base}${fate}&ch=${encodeURIComponent(raw)}`); }
+    catch (e) { threw++; bad.push(`${JSON.stringify(raw)} threw ${e.message}`); continue; }
+    n++;
+    // whatever survived sanitizing must be a FIXED POINT and must reproduce
+    const again = worldOf(`${base}${fate}&ch=${encodeURIComponent(got.ch)}`);
+    if (again.ch !== got.ch) { bad.push(`${JSON.stringify(raw)} -> ${JSON.stringify(got.ch)} is not a fixed point`); continue; }
+    if (again.gj !== got.gj) { bad.push(`${JSON.stringify(raw)} does not reproduce from its own canonical form`); continue; }
+    reproduced++;
+    // and a reign that sanitized to nothing IS the auto-history, fate aside
+    if (!got.ch && !fate && got.gj !== auto.gj) { bad.push(`${JSON.stringify(raw)} sanitized to nothing but moved the world`); continue; }
+    if (!got.ch && !fate) autoMatches++;
+  }
+  if (!bad.length && threw === 0 && reproduced === n && n >= 110)
+    ok(`ch/fate fuzz: ${n} structured-garbage reigns (wrong kinds, impossible epochs, out-of-range options, contradictions, injections, an 80-entry string) — none threw, all ${reproduced} reproduce from their own canonical form, and the ${autoMatches} that sanitized to nothing are the auto-history byte for byte`);
+  else fail(`ch/fate fuzz: ${n} tried, ${reproduced} reproduced, ${threw} threw — ${bad.slice(0, 3).join(" | ")}`);
+}
+
 console.log(failures === 0 ? "\nSTRESS ALL PASS" : `\nSTRESS ${failures} FAILURE(S)`);
 process.exitCode = failures ? 1 : 0;

@@ -5491,6 +5491,174 @@ console.log("# The reign engine E1 (#142): the byte-pin, before anything can mov
   }
 }
 
+console.log("# The reign surface E2 (#143): a seat you can sit in, and a verdict on what you did from it");
+{
+  // A reign is a UI over E1's pure engine, so everything here is a DOM
+  // walkthrough: boot the real page, click the real buttons, read the real
+  // panels. The engine invariants are E1's section; these are the surface's.
+  const mkR = (hash) => {
+    const dom = new JSDOM(html, { runScripts: "dangerously", url: "https://h.test/" + hash,
+      pretendToBeVisual: true,
+      beforeParse(w) { w.d3 = { Delaunay: d3d.Delaunay, Voronoi: d3d.Voronoi }; } });
+    return dom;
+  };
+  const settle = () => new Promise(r => setTimeout(r, 400));
+  const beat = () => new Promise(r => setTimeout(r, 45));
+
+  // (i) THE SEAT IS NOT OFFERED WHERE THERE ARE NO YEARS. §5.1 writes the reign
+  //     target as `params.ep > 0 ? params.ep : 8`, which assumed the controller
+  //     could set the length. E2's own finding is that it cannot — `ep` shapes
+  //     the world — so a founding snapshot has nothing to reign over and says so
+  //     rather than silently reigning over a history the page is not showing.
+  {
+    const a = mkR("#seed=e2t-0&regions=24&ep=0"); await settle();
+    const b = mkR("#seed=e2t-0&regions=24&ep=10"); await settle();
+    const btnA = a.window.document.getElementById("reignTake");
+    const btnB = b.window.document.getElementById("reignTake");
+    const cardA = a.window.document.getElementById("dilemmaCard");
+    btnA.click(); await beat();
+    if (btnA.disabled && btnA.title && cardA.style.display === "none" && !btnB.disabled)
+      ok(`the seat is offered only where there are years to sit through: at ep=0 "Take the Seat" is disabled with a reason and clicking it opens nothing; at ep=10 it is live`);
+    else fail(`ep=0 seat: disabled ${btnA.disabled}, title ${JSON.stringify(btnA.title)}, card ${cardA.style.display}; ep=10 disabled ${btnB.disabled}`);
+    a.window.close(); b.window.close();
+  }
+
+  // (ii) THE WALKTHROUGH, AND THE MAP HELD AT THE YEAR OF THE QUESTION. The card
+  //      is answered without seeing what it does: the frontier stops AT the
+  //      standing decision's epoch, never past it. A governor who can see the
+  //      consequence before choosing is not deciding, they are checking.
+  {
+    const dom = mkR("#seed=e2t-5&regions=24&ep=10"); await settle();
+    const D = dom.window.document, $ = (id) => D.getElementById(id);
+    const scrub = () => +$("scrub").value;
+    $("reignTake").click(); await beat();
+    const years = [], leaks = [];
+    let n = 0;
+    while ($("dilemmaCard").style.display !== "none" && n < 15) {
+      const y = +$("dcYear").textContent.replace(/\D/g, "");
+      const epoch = (y - 1000) / 25;
+      years.push(y);
+      if (scrub() !== epoch) leaks.push(`card at ${y} but the map shows epoch ${scrub()}, not ${epoch}`);
+      const o = [...$("dcOptions").querySelectorAll("button")];
+      if (o.length < 2) leaks.push(`card at ${y} offered ${o.length} road(s)`);
+      o[o.length - 1].click(); await beat(); n++;
+    }
+    const sorted = years.every((y, i) => i === 0 || y >= years[i - 1]);
+    if (n >= 3 && !leaks.length && sorted && scrub() === 10)
+      ok(`a reign plays through the page: ${n} cards answered in the order the years reach them, the map held at the year of each question and never past it, and the present restored once the last one is answered`);
+    else fail(`walkthrough: ${n} cards, ordered ${sorted}, ends at epoch ${scrub()} — ${leaks.slice(0, 2).join("; ")}`);
+    dom.window.close();
+  }
+
+  // (iii) ECHOING THE DICE, THROUGH THE UI. E1 proves this on the engine; here it
+  //       has to be VISIBLE, because the verdict panel is the thing that would
+  //       lie about it. Take option 0 at every card and the diff table must show
+  //       no movement on any axis and say so in words.
+  {
+    const dom = mkR("#seed=e2t-5&regions=24&ep=10"); await settle();
+    const D = dom.window.document, $ = (id) => D.getElementById(id);
+    $("reignTake").click(); await beat();
+    let n = 0;
+    while ($("dilemmaCard").style.display !== "none" && n < 15) {
+      $("dcOptions").querySelector("button[data-opt='0']").click(); await beat(); n++;
+    }
+    const table = ($("rvTable").textContent || "").replace(/\s+/g, " ");
+    const shown = $("reignVerdict").style.display !== "none";
+    const dashes = (table.match(/—/g) || []).length;
+    if (shown && n >= 3 && /the same story/.test(table) && dashes >= 4)
+      ok(`the echo-the-dice invariant is visible on the page: answering all ${n} cards with the die's own outcome leaves every axis of the verdict table unmoved (${dashes} dashes) and the §3.5 reading "the same story"`);
+    else fail(`echo through the UI: shown ${shown}, ${n} cards, ${dashes} dashes — ${table.slice(0, 140)}`);
+    dom.window.close();
+  }
+
+  // (iv) RECANT PUTS THE YEAR BACK. The one control that has to be exactly
+  //      reversible: popping the last decree must restore the card that produced
+  //      it, standing at its own year again, with `ch` one entry shorter.
+  {
+    const dom = mkR("#seed=e2t-5&regions=24&ep=10"); await settle();
+    const D = dom.window.document, $ = (id) => D.getElementById(id);
+    const chOf = () => decodeURIComponent((dom.window.location.hash.match(/ch=([^&]*)/) || [])[1] || "");
+    $("reignTake").click(); await beat();
+    const firstYear = $("dcYear").textContent, firstKind = $("dcKind").textContent;
+    const o = [...$("dcOptions").querySelectorAll("button")];
+    o[o.length - 1].click(); await beat();
+    const after = chOf();
+    $("reignRecant").click(); await beat();
+    const back = chOf();
+    const restands = $("dcYear").textContent === firstYear && $("dcKind").textContent === firstKind;
+    if (after && !back && restands && $("reignRecant").disabled)
+      ok(`recanting a decree puts the year back: \`ch\` returns to empty, the card stands again at ${firstYear} on the same question, and with nothing left to recant the control disables itself`);
+    else fail(`recant: ch "${after}" -> "${back}", restands ${restands}, disabled ${$("reignRecant").disabled}`);
+    dom.window.close();
+  }
+
+  // (v) A REIGN IS PLAYED AGAINST ONE WORLD. Move the rock or the clock and the
+  //     reign is against a history that no longer exists. The seat vacates to a
+  //     defined state rather than standing in a world that changed under it — and
+  //     the counterfactual stays shut while a reign is live (§5.1: no spoilers).
+  {
+    const dom = mkR("#seed=e2t-5&regions=24&ep=10"); await settle();
+    const D = dom.window.document, $ = (id) => D.getElementById(id);
+    $("reignTake").click(); await beat();
+    const cfShutMidReign = $("cfBtn").disabled && $("cfBtnGrid").disabled && $("cfBtnBoth").disabled;
+    const seatedBefore = $("reignState").style.display !== "none";
+    $("regions").value = "20";
+    $("regions").dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+    await settle();
+    const vacated = $("reignState").style.display === "none" && $("dilemmaCard").style.display === "none";
+    if (cfShutMidReign && seatedBefore && vacated && !$("cfBtn").disabled)
+      ok(`a reign belongs to one world: the counterfactual is shut while the seat is taken (no seeing the alternate before you choose), and changing the region count vacates the seat to a defined state instead of leaving it standing in a world that moved`);
+    else fail(`world change: cf shut ${cfShutMidReign}, seated ${seatedBefore}, vacated ${vacated}, cf restored ${!$("cfBtn").disabled}`);
+    dom.window.close();
+  }
+
+  // (vi) THE CARD STATES THE NEAR EDGE ONLY. §5 amendment (a): "Cards state the
+  //      near edge; the far edge is discovered." A card that promised the long
+  //      consequence would be the app grading the choice before the world
+  //      answers it — the one thing this instrument exists not to do.
+  {
+    const dom = mkR("#seed=e2t-5&regions=24&ep=10"); await settle();
+    const D = dom.window.document, $ = (id) => D.getElementById(id);
+    $("reignTake").click(); await beat();
+    // words that would promise an outcome or grade a road before it is taken
+    const GRADING = /\b(better|worse|best|worst|wise|unwise|right choice|wrong choice|recommended|you should|will improve|will reduce|safer|riskier|mistake)\b/i;
+    const bad = [];
+    let n = 0;
+    while ($("dilemmaCard").style.display !== "none" && n < 15) {
+      const text = $("dcBrief").textContent + " " + $("dcOptions").textContent;
+      if (GRADING.test(text)) bad.push(`${$("dcYear").textContent}: "${text.match(GRADING)[0]}"`);
+      const o = [...$("dcOptions").querySelectorAll("button")];
+      o[o.length - 1].click(); await beat(); n++;
+    }
+    if (!bad.length && n >= 3)
+      ok(`the card states the near edge and grades nothing: over ${n} decisions no brief and no road promises an outcome, recommends itself, or calls another road a mistake — the far edge is discovered by living it, which is §5 amendment (a) and the whole argument of the instrument`);
+    else fail(`a card graded a road: ${bad.slice(0, 3).join("; ")}`);
+    dom.window.close();
+  }
+
+  // (vii) THE REIGN RIDES THE LINK, AND ONLY WHEN THERE IS ONE. Abdicating keeps
+  //       `ch` — a history you walked away from is still one you can send — and a
+  //       world with no reign must not grow a `ch=` key, or every shared link
+  //       from before E2 changes shape.
+  {
+    const dom = mkR("#seed=e2t-5&regions=24&ep=10"); await settle();
+    const D = dom.window.document, $ = (id) => D.getElementById(id);
+    const chOf = () => decodeURIComponent((dom.window.location.hash.match(/ch=([^&]*)/) || [])[1] || "");
+    const bare = chOf();
+    $("reignTake").click(); await beat();
+    const o = [...$("dcOptions").querySelectorAll("button")];
+    o[o.length - 1].click(); await beat();
+    const played = chOf();
+    $("reignAbdicate").click(); await beat();
+    const kept = chOf();
+    const seatEmpty = $("reignState").style.display === "none";
+    if (!bare && played && kept === played && seatEmpty)
+      ok(`the reign rides the link and only when there is one: a world nobody reigned over carries no \`ch=\` at all, and abdicating keeps the one that was played (${played}) so a history you left is still a history you can send`);
+    else fail(`ch in the hash: bare "${bare}", played "${played}", after abdicating "${kept}", seat empty ${seatEmpty}`);
+    dom.window.close();
+  }
+}
+
 console.log("# The suite audits itself: no assertion may sit in dead code");
 {
   // The audit that produced this check found a 1138-line validate() in THIS file

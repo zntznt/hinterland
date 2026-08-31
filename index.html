@@ -11786,6 +11786,40 @@
       : (v.sanctuary || v.pilgrim >= 40) ? "old-faith"
       : "frontier";
 
+    // THE ANAPHORA RULE (spec §7.5). Forcing a region-varying slot into every
+    // fragment — which is what stops the pool colliding with itself — makes a voice
+    // chant its own town's name: measured at 5.9 mentions per oral paragraph and up
+    // to 11 in a written one. Real speech pronominalizes.
+    //
+    // The spec proposes a second, name-free realization per fragment. That is 251
+    // more fragments to author and maintain in step with the first 251. This does
+    // the same work as one rule on the DISPLAYED text: after the first two mentions,
+    // a name becomes a pronoun. It is deliberately conservative — it only rewrites
+    // where English is unambiguous, and leaves the name standing anywhere a
+    // substitution could misread. A voice that says the name a third time is a much
+    // smaller fault than one that says "the it entry".
+    //
+    // §7.5 also requires V5 to be counted on the displayed text once this exists, so
+    // the rule cannot manufacture surface variety a reader never sees.
+    function voiceAnaphora(text, town) {
+      if (!town) return text;
+      const esc2 = town.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      // ONE left-to-right pass. Three separate passes each counted their own
+      // "first two mentions" and between them spent the allowance before the bare
+      // name was reached, so a voice could open with "the town" — the head clause
+      // losing the only name it had. Order is the whole rule: the reader meets the
+      // name twice, and only then starts hearing pronouns.
+      const re = new RegExp(`(the )?${esc2}('s)?`, "g");
+      let seen = 0;
+      return text.replace(re, (m, theBefore, poss) => {
+        seen++;
+        if (seen <= 2) return m;                 // the name still stands
+        if (theBefore) return m;                 // "the Grath entry" — qualifying a noun
+        if (poss) return "its";
+        return "the town";
+      });
+    }
+
     // WHO GETS TO SPEAK. A world of 24 regions cannot hand every town a microphone
     // every epoch — the panel would be unreadable and the export enormous — so the
     // cap is ~3 oral + 2 written, and the choice of WHOSE voice survives is itself a
@@ -11934,6 +11968,7 @@
         open: kind === "oral" ? "open" : "head", close: "closer",
       });
       const w = kind === "written" ? voiceWritten(sOral, lead, v) : null;
+      out.text = voiceAnaphora(out.text, ctx.$town);
       return { ...out, kind, region_id: reg.id, epoch, sentiment: sOral, band, lead,
         skin: voiceSkin(v), topics, ...(w ? { written: w, sentiment_written: w.s } : {}) };
     }

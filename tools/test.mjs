@@ -3699,7 +3699,11 @@ console.log("# QGIS substrates Q1 acceptance (#55/#56): edges, moran, CSV tables
     ok(`moran pseudo-p in (0,1] and wealth clusters above expectation (I ${FM.I} > ${FM.expected}, p ${FM.p})`);
   else fail(`moran p out of range or wealth unclustered: ${JSON.stringify(FM)}`);
 
-  // the CSV button: two clicks, six files each, identical bytes
+  // the CSV button: two clicks, seven files each, identical bytes. D2 (#138) added
+  // voices.csv as the seventh. The count is asserted separately from the bytes
+  // because the two failures are different findings and the old message reported
+  // the count while naming determinism — which sent one investigation down the
+  // wrong road entirely.
   {
     const w2 = Q1.window;
     const parts = [];
@@ -3710,9 +3714,12 @@ console.log("# QGIS substrates Q1 acceptance (#55/#56): edges, moran, CSV tables
     parts.length = 0;
     Q1.doc.getElementById("dlTables").click();
     const second = parts.slice();
-    if (first.length === 6 && JSON.stringify(first) === JSON.stringify(second))
-      ok("two clicks of Download tables produce the same six files, byte-identical");
-    else fail(`CSV click not deterministic (${first.length} files)`);
+    const NTABLES = 7;
+    if (first.length !== NTABLES)
+      fail(`Download tables produced ${first.length} files, expected ${NTABLES} (a table was added or dropped — declare it here)`);
+    else if (JSON.stringify(first) !== JSON.stringify(second))
+      fail(`CSV click not deterministic: two clicks of Download tables differ in ${first.filter((f, i) => f !== second[i]).length} of ${NTABLES} files`);
+    else ok(`two clicks of Download tables produce the same ${NTABLES} files, byte-identical (voices.csv is the seventh, D2 #138)`);
     const rows = (t) => t.split("\n").filter(Boolean).length - 1; // minus header
     if (rows(first[0]) === gj.hinterland.events.length &&
         first[0].startsWith("epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occupied,contested,ruler"))

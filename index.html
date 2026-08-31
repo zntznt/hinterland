@@ -11556,36 +11556,36 @@
         pick: c => c.works > 0 || c.onGrid,
         aside: { oral: ["since the third whistle", "off shift", "between lifts", "at the line's end"],
                  written: ["works district", "shift return appended", "line schedule attached", "plant note"] },
-        conn: { oral: { vNeg: ["and the line eats what the line eats", "same as the last shift", "and no bell for it", "which is the shift you get"],
+        conn: { oral: { neg: ["and the line eats what the line eats", "same as the last shift", "and no bell for it", "which is the shift you get"],
                         mid: ["shift on shift", "and that's the tally", "same hours either way", "and the line runs"],
-                        vPos: ["and the line runs clean", "third whistle to third whistle", "and the count holds", "shift on shift"] },
+                        pos: ["and the line runs clean", "third whistle to third whistle", "and the count holds", "shift on shift"] },
                 written: ["per the shift return", "against the line schedule", "on the plant's own figures", "as the works reports"] },
       },
       "metropolitan": {
         pick: c => c.market >= 55 || c.isPort,
         aside: { oral: ["down at the quay", "in the queue at the precinct", "on the third form", "at the freight platform"],
                  written: ["precinct copy", "circuit office", "quay return appended", "form three refers"] },
-        conn: { oral: { vNeg: ["and you queue for the privilege", "and there's a form for that too", "and they stamp it anyway", "and that is the third window"],
+        conn: { oral: { neg: ["and you queue for the privilege", "and there's a form for that too", "and they stamp it anyway", "and that is the third window"],
                         mid: ["which is the procedure", "and you take a number", "and the form allows it", "as the notice has it"],
-                        vPos: ["and the queue moves", "and the form went through", "first window, no wait", "and the notice was right"] },
+                        pos: ["and the queue moves", "and the form went through", "first window, no wait", "and the notice was right"] },
                 written: ["per the circuit standard", "as the precinct records", "on the form prescribed", "consistent with the quay return"] },
       },
       "old-faith": {
         pick: c => c.sanctuary || c.pilgrim >= 40,
         aside: { oral: ["as the bell goes", "before the hours", "at the old porch", "on the fast day"],
                  written: ["temple copy", "the old register refers", "sanctuary return appended", "hours observed"] },
-        conn: { oral: { vNeg: ["and there is no absolution in a ledger", "and the bell knows it", "as it was before them", "and we keep the hours regardless"],
+        conn: { oral: { neg: ["and there is no absolution in a ledger", "and the bell knows it", "as it was before them", "and we keep the hours regardless"],
                         mid: ["as the hours keep", "and the bell goes on", "in the old order of it", "and the porch is open"],
-                        vPos: ["and the bell goes glad", "as it was meant", "and the hours are kept", "thanks be for it"] },
+                        pos: ["and the bell goes glad", "as it was meant", "and the hours are kept", "thanks be for it"] },
                 written: ["as the old register has it", "the hours being observed", "per the sanctuary's return", "the temple concurring"] },
       },
       "frontier": {
         pick: () => true,
         aside: { oral: ["up here", "four days off the road", "past the last post", "out where the map thins"],
                  written: ["outer circuit", "remote district", "post return, delayed", "beyond the standing survey"] },
-        conn: { oral: { vNeg: ["and nobody comes up to see", "four days off the road as we are", "and the road is not mended", "and no one is sent"],
+        conn: { oral: { neg: ["and nobody comes up to see", "four days off the road as we are", "and the road is not mended", "and no one is sent"],
                         mid: ["up here", "far as we are from it", "and the road is what it is", "which is the distance"],
-                        vPos: ["far out as we are", "and we did it without them", "up here, of all places", "and no one sent to help"] },
+                        pos: ["far out as we are", "and we did it without them", "up here, of all places", "and no one sent to help"] },
                 written: ["allowance being made for the distance", "the district being remote", "per the delayed post return", "beyond the standing survey"] },
       },
     };
@@ -11627,6 +11627,12 @@
         // resolved every road to nothing.
         for (const ri of [p.from_region, p.to_region]) if (ri !== undefined && !roads.has(ri)) roads.set(ri, p.road_name);
       }
+      // A town's name is on its SETTLEMENT, not its region — the same join that put
+      // the byname on the wrong feature in E1. Read from the export so V3 holds by
+      // construction, and so a region with no settlement has no town to name rather
+      // than an empty hole in the sentence.
+      const towns = new Map(F.filter(p => p.kind === "settlement" && p.name)
+        .map(p => [p.region_id, p.name]));
       const shrines = new Map(F.filter(p => p.kind === "sanctioned_site" && p.site_name)
         .map(p => [p.region_id, p.site_name]));
       const ruins = new Map(F.filter(p => p.kind === "ruin" && p.ruin_name)
@@ -11639,7 +11645,7 @@
         if (line.length) rulerNow[f] = line[line.length - 1].name;
       }
       return {
-        gates, rivers, roads, shrines, ruins, rulerNow,
+        towns, gates, rivers, roads, shrines, ruins, rulerNow,
         inst: H.institutions || {},
         metropole: (H.powers || {}).metropole || null,
         rival: (H.powers || {}).rival || null,
@@ -11648,6 +11654,48 @@
         events: H.events || [],
       };
     }
+
+    // §2's topic ladder: which classes a voice reaches for, given what it is
+    // talking about. A harm leads to grievance and witness; an achievement to
+    // aspiration; the world outside to elsewhere and rumour.
+    const VOICE_CLASSES = {
+      oral: { toll: ["grievance", "witness"], blight: ["grievance", "witness"], burden: ["grievance", "witness"],
+        water: ["grievance", "witness"], tribute: ["grievance", "oath"], abandon: ["grievance", "witness"],
+        smuggling: ["rumor", "witness"], works: ["aspiration", "witness"], boom: ["aspiration", "elsewhere"],
+        grid: ["aspiration", "witness"], port: ["aspiration", "elsewhere"], sky: ["aspiration", "rumor"],
+        elsewhere: ["elsewhere", "rumor"] },
+      written: { toll: ["assess", "euphemism"], blight: ["assess", "euphemism"], burden: ["assess", "euphemism"],
+        water: ["assess", "plea"], tribute: ["assess", "circular"], abandon: ["assess", "euphemism"],
+        smuggling: ["assess", "euphemism"], works: ["assess", "puffery"], boom: ["puffery", "assess"],
+        grid: ["puffery", "marginalia"], port: ["assess", "puffery"], sky: ["puffery", "assess"],
+        elsewhere: ["circular", "assess"] },
+    };
+    // Which topics this region has anything to say about, most salient first.
+    const VOICE_TOPICS = [
+      { k: "toll", sal: v => v.toll, on: v => v.toll >= 20 },
+      { k: "blight", sal: v => v.blight, on: v => v.blight >= 30 },
+      { k: "burden", sal: v => v.burden, on: v => v.burden >= 30 },
+      { k: "water", sal: v => 100 - v.safeWater, on: v => v.safeWater < 45 },
+      { k: "tribute", sal: v => 30 * v.tribute, on: v => v.occupied },
+      { k: "abandon", sal: v => v.abandon, on: v => v.abandon >= 25 },
+      { k: "smuggling", sal: v => v.smuggling, on: v => v.smuggling >= 25 },
+      { k: "works", sal: v => v.works, on: v => v.works >= 25 },
+      { k: "boom", sal: v => v.wealth + 20, on: v => v.boom === "boom" || v.wealth >= 25 },
+      { k: "grid", sal: v => v.market, on: v => v.onGrid },
+      { k: "port", sal: v => v.market, on: v => v.isPort },
+      { k: "sky", sal: v => v.sky, on: v => v.isSkyport || v.sky >= 40 },
+      { k: "elsewhere", sal: v => v.market, on: v => v.market >= 30 || v.isPort || v.emig >= 100 },
+    ];
+    const voiceTopics = (v) => VOICE_TOPICS.filter(t => t.on(v))
+      .sort((a2, b2) => b2.sal(v) - a2.sal(v)).map(t => t.k);
+
+    // The diction skin: how this place SOUNDS, independent of what it is saying.
+    // First match wins, and `frontier` takes anything left, so every region has one.
+    const voiceSkin = (v) =>
+      (v.works > 0 || v.onGrid) ? "works-town"
+      : (v.market >= 55 || v.isPort) ? "metropolitan"
+      : (v.sanctuary || v.pilgrim >= 40) ? "old-faith"
+      : "frontier";
 
     // The voice's view of a region. Every field is named against the MODEL, and
     // four of them are not named what the export calls them — `aetherworks_capacity`
@@ -11675,6 +11723,111 @@
         isPort: !!reg.isPort, onRiver: !!reg.onRiver, pilgrim: reg.pilgrimFlux || 0,
         security: reg.securityStatus, bloc: reg.bloc,
       };
+    }
+
+    // The resolver: every slot the 251 fragments can reach. Names come from the
+    // export (V3 by construction); numbers come from the region's own columns and
+    // are told by the REGISTER's rule, so an oral voice spells a folk quantity and
+    // a written one prints the digit — which is V1 and V2 falling out of the loom
+    // rather than being policed after the fact.
+    function voiceResolve(kind, key, ctx) {
+      const v = ctx.$v, W = ctx.$w;
+      if (kind === "name") {
+        const g = W.gates.get(ctx.$id);
+        switch (key) {
+          case "town": return ctx.$town;
+          case "river": return W.rivers.get(ctx.$id) || null;
+          case "road": return W.roads.get(ctx.$id) || null;
+          case "gate": return g ? g.name : null;
+          case "holder": return g ? g.holder : null;
+          case "shrine": return W.shrines.get(ctx.$id) || null;
+          case "ruin": return W.ruins.get(ctx.$id) || null;
+          case "blamed": return voiceBlamed(v, { holder: g ? g.holder : null, skyway: W.skyway, ruler: W.rulerNow.crown });
+          case "credited": return voiceCredited(v, { shrine: W.shrines.get(ctx.$id), ruler: W.rulerNow.crown });
+          case "metropole": return W.metropole;
+          case "rival": return W.rival;
+          case "skyway": return W.skyway;
+          case "exchange": return W.inst.exchange || null;
+          case "gazette": return W.inst.gazette || null;
+          case "precinct": return W.inst.precinct || null;
+          case "buried": return W.inst.buried_power || null;
+          case "ruler": return W.rulerNow[v.bloc] || W.rulerNow.crown || null;
+          case "trade": return ctx.$trade;
+          case "event": return ctx.$event;
+          default: return null;
+        }
+      }
+      if (kind === "num") {
+        const N = {
+          toll: v.toll, blight: v.blight, burden: v.burden, market: v.market,
+          works: v.works, elite: v.elite, abandon: v.abandon, smuggling: v.smuggling,
+          safewater: v.safeWater, legib: v.legib, wealth: v.wealth, trust: v.trust,
+          injustice: v.injustice, servicegap: v.serviceGap, uncounted: v.uncounted,
+          endow: v.endow, emig: v.emig, pop: v.pop, order: v.order,
+          price: W.priceIdx,
+        };
+        return N[key] === undefined ? null : N[key];
+      }
+      if (kind === "coin") {
+        // Coined words come from the WORLD's lexicon, minted once per world so they
+        // repeat like culture rather than like a random draw. `imperial` is the
+        // Concordat tongue and is deliberately unlike every regional phonology, so a
+        // loanword is audible as foreign; everything else is the speaker's own.
+        const L = ctx.$lex || {};
+        if (key === "imperial") return (L.imperial || [])[ctx.$id % Math.max(1, (L.imperial || []).length)] || null;
+        const own = L[ctx.$coinReg] || L.lowland || {};
+        const bag = key === "oath" ? (own.oath || []) : (own.slang || []);
+        return bag.length ? bag[ctx.$id % bag.length] : null;
+      }
+      if (kind === "term") return ctx[key] ?? null;
+      return null;
+    }
+
+    // Compose one voice. `kind` is "oral" or "written"; each draws its OWN substream
+    // keyed on the region and epoch, so a voice added here cannot move a word of the
+    // chronicle, and a region's voice is recomputable from the export alone (G5
+    // finding 8). The written voice is not a separate opinion: it is the oral one
+    // pushed by the divergence law toward the institution's interest.
+    // `used` is the WORLD's tally, not the voice's. Without it every region reaches
+    // for the same most-eligible fragment and three towns in a row say "my father
+    // called it by the old name" — which is V5's surface-repetition ceiling failing
+    // for a structural reason rather than a pool-size one. The loom already shares a
+    // tally across composes and reuses rather than falling silent when a class runs
+    // dry, so a small world says something twice instead of saying nothing.
+    function composeVoice(reg, v, W, model, params, kind, lex, used) {
+      const pool = kind === "oral" ? VOICE_ORAL : VOICE_WRITTEN;
+      const register = kind === "oral" ? "street" : "ledger";
+      const sOral = voiceSentiment(v);
+      const band = voiceBand(sOral);
+      const topics = voiceTopics(v);
+      const lead = topics[0] || "elsewhere";
+      const skin = VOICE_SKINS[voiceSkin(v)];
+      const epoch = params.ep;
+      const rv = loomStream(params.fate || params.seed, "voices", `${reg.id}#${epoch}#${kind}`);
+      // The skin's connectives and asides are folded into the FRAMES before the loom
+      // sees them, because {conn} and {aside} are diction rather than content: the
+      // loom fills {A} and {B} and owns the punctuation, and how a place clears its
+      // throat between two clauses belongs to the place, not to the grammar.
+      const side = band === "fury" || band === "aggrieved" ? "neg"
+        : band === "steady" || band === "proud" ? "pos" : "mid";
+      const conns = kind === "oral" ? skin.conn.oral[side] : skin.conn.written;
+      const asides = skin.aside[kind];
+      const frames = VOICE_FRAMES[kind].map((f, i) =>
+        f.replace("{conn}", conns[i % conns.length]).replace("{aside}", asides[i % asides.length]));
+      const classes = topics.slice(0, 3).map(t => VOICE_CLASSES[kind][t]
+        || (kind === "oral" ? ["witness", "closer"] : ["assess", "marginalia"]));
+      const ctx = {
+        $v: v, $w: W, $id: reg.id, $town: W.towns.get(reg.id) || null,
+        $trade: reg.tradeGood || null, $event: null,
+        $lex: lex, $coinReg: (LOOM_REGISTERS[register] || {}).coin,
+      };
+      const out = loomCompose({
+        register, frames, pool, classes, ctx, resolve: voiceResolve, rv, band, used,
+        open: kind === "oral" ? "open" : "head", close: "closer",
+      });
+      const w = kind === "written" ? voiceWritten(sOral, lead, v) : null;
+      return { ...out, kind, region_id: reg.id, epoch, sentiment: sOral, band, lead,
+        skin: voiceSkin(v), topics, ...(w ? { written: w, sentiment_written: w.s } : {}) };
     }
 
     // §2's attribution shift: a voice does not name the mechanism, it names WHO IS

@@ -935,6 +935,12 @@
     cursor:pointer; }
   #cfBtnGrid, #cfBtnBoth { margin-top:6px; }
   #cfBtn:hover, #cfBtnGrid:hover, #cfBtnBoth:hover { border-color:var(--gold); }
+  #reignVerdict { max-width:1200px; margin:18px auto 0; padding:0 20px; }
+  #rvJudgment { font-size:15px; line-height:1.55; margin-bottom:12px; }
+  #rvTable table { border-collapse:collapse; width:100%; font-size:12.5px; }
+  #rvTable th { text-align:left; color:var(--muted); font-weight:600; padding:4px 8px 4px 0; border-bottom:1px solid var(--line); }
+  #rvTable td { padding:4px 8px 4px 0; border-bottom:1px solid #e7e0d0; }
+  #rvTable tr:last-child td { border-bottom:none; }
   #cfBox { max-width:1200px; margin:18px auto 0; padding:0 20px; scroll-margin-top:calc(var(--mast-h) + 10px); }
   .cf-inner { background:var(--tex-paper), var(--card); border:var(--rule); border-top:3px double var(--ink-neatline);
     padding:16px 18px; }
@@ -962,6 +968,30 @@
   #findingsText b { color:var(--oxblood); font-weight:700; }
   .manifesto { color:var(--muted); font-size:13px; line-height:1.55; max-width:76ch; margin:18px 0 0; padding-top:12px; border-top:1px dashed var(--line); }
   .manifesto b { color:var(--ink); }
+  /* E2 (#143): the dilemma card, docked over the plate's lower mat. Same paper
+     and neatline as every other card on the page — a decision is a document. */
+  #dilemmaCard { position:absolute; left:50%; transform:translateX(-50%); bottom:14px;
+    width:min(660px, calc(100% - 40px)); max-height:calc(100% - 40px); overflow:auto; z-index:6;
+    background:var(--tex-paper), var(--card); border:var(--rule); border-top:3px double var(--ink-neatline);
+    padding:14px 16px; font-size:13px; box-shadow:0 6px 26px rgba(20,16,10,0.28); }
+  .dc-head { display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    border-bottom:1px solid var(--line); padding-bottom:7px; margin-bottom:10px; }
+  .dc-year { font-weight:700; font-size:15px; }
+  .dc-kind { color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-size:11px; }
+  .dc-brief { margin-bottom:11px; line-height:1.5; }
+  .dc-voices:not(:empty) { margin:0 0 11px; padding-left:11px; border-left:3px solid var(--line); color:var(--muted); }
+  .dc-options { display:flex; flex-direction:column; gap:7px; }
+  .dc-options button { text-align:left; padding:9px 11px; line-height:1.4; width:100%; }
+  .dc-options button b { display:block; margin-bottom:2px; }
+  .dc-options button .dc-edge { color:var(--muted); font-size:12px; }
+  .dc-ledger { display:flex; gap:14px; align-items:flex-start; margin-top:12px;
+    border-top:1px solid var(--line); padding-top:9px; }
+  .dc-deltas { flex:1 1 auto; font-size:12px; }
+  .dc-deltas table { border-collapse:collapse; width:100%; }
+  .dc-deltas td { padding:2px 6px 2px 0; }
+  .dc-deltas td:first-child { color:var(--muted); white-space:nowrap; }
+  .dc-spark { flex:0 0 190px; }
+  .dc-spark svg { width:100%; height:38px; display:block; border:var(--rule); }
   .sidecard { background:var(--tex-paper), var(--card); border:var(--rule); border-top:3px double var(--ink-neatline); padding:12px 14px; font-size:12.5px; }
   .sidecard table { border-collapse:collapse; width:100%; }
   .sidecard td { padding:4px 6px 4px 0; border-bottom:1px solid #e7e0d0; vertical-align:top; }
@@ -1092,6 +1122,31 @@
       </div>
     </div>
     <button id="tabInspect" class="edge-tab edge-right" aria-expanded="false" aria-controls="drawerInspect">LEDGER</button>
+
+    <!-- E2 (#143): the dilemma card. Docked over the plate, not a <dialog>: the
+         year's deltas and the gini line have to stay readable BESIDE the choice,
+         because a decision made without the ledger open is a decision made
+         blind twice. The map underneath is withheld until the card resolves —
+         you do not get to see the consequence before you choose it. -->
+    <aside id="dilemmaCard" style="display:none" role="dialog" aria-label="A decision stands">
+      <div class="dc-head">
+        <span class="dc-year" id="dcYear"></span>
+        <span class="dc-kind" id="dcKind"></span>
+      </div>
+      <div class="dc-body">
+        <div class="dc-brief" id="dcBrief"></div>
+        <!-- D2 (#138) seam: the 2-3 epoch e-1 voices from the affected regions
+             mount here, oral and written, disagreeing where the columns say they
+             should. #138 is blocked on the #136 gate (the owner reads 50 aloud),
+             so the node ships empty and the card reads without it. -->
+        <div class="dc-voices" id="dcVoices"></div>
+        <div class="dc-options" id="dcOptions"></div>
+        <div class="dc-ledger">
+          <div class="dc-deltas" id="dcDeltas"></div>
+          <div class="dc-spark" id="dcSpark"></div>
+        </div>
+      </div>
+    </aside>
   </section>
 
   <!-- Compose drawer: every generation knob, over the plate's left mat -->
@@ -1203,6 +1258,26 @@
           <div class="hint">Run the world forward: ore depletes, wealth compounds, people migrate, the grid chases the winners, the capital decrees, towns rise. 0 = the founding snapshot.</div>
         </div>
       </div>
+
+      <!-- E2 (#143): THE REIGN. Everywhere else on this panel sets what the world
+           IS and then watches it happen. Here you stand inside it: at each point
+           where the dice decided alone, the seat may decide instead. The reign is
+           the `ch=` in the link, so a history you played is a history you can send
+           to somebody else. -->
+      <div class="sec">
+        <div class="sec-title">THE REIGN</div>
+        <div class="row">
+          <button id="reignTake">Take the Seat</button>
+          <div class="hint">Live this world one epoch at a time and answer for it. The map is withheld while a decision stands: you decide without seeing what it does, which is the only honest way to decide anything.</div>
+        </div>
+        <div class="row" id="reignState" style="display:none">
+          <div class="hint" id="reignHint"></div>
+          <div class="inline">
+            <button id="reignRecant" title="Undo the last decree and stand at that year again">Recant the last decree</button>
+            <button id="reignAbdicate" title="Leave the seat; the reign stays in the link">Abdicate</button>
+          </div>
+        </div>
+      </div>
     </div>
   </aside>
 
@@ -1249,6 +1324,17 @@
         </p>
       </div>
     </section>
+
+  <!-- E2 (#143): the verdict on a reign. The same instrument the counterfactual
+       uses — run the alternate, read plain numbers, restore — pointed at the
+       history the seat did NOT play: `ch:""`, same everything else. -->
+  <section id="reignVerdict" style="display:none">
+    <div class="cf-inner">
+      <div class="sec-title">THE VERDICT: THE HISTORY YOU PLAYED, AGAINST THE ONE THE DICE WOULD HAVE RUN</div>
+      <div id="rvJudgment"></div>
+      <div id="rvTable"></div>
+    </div>
+  </section>
 
   <!-- The counterfactual (C1): the lambda experiment, on the page -->
   <section id="cfBox" style="display:none">

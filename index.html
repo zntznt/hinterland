@@ -1542,6 +1542,13 @@
       const want = parseDecisions(params && params.ch);
       const log = [];
       const decide = (kind, epoch, options) => {
+        // G5's NULL-FORK finding: a decision with one option is not a decision. The
+        // wound's ladder can name a measure with no distinct runner-up, and offering
+        // that as a choice would put a card in front of a governor whose only move is
+        // the move already made — and would log a "decision" in the export that no
+        // reign could ever have taken differently. Nothing is offered and nothing is
+        // logged; the caller gets the dice's own outcome.
+        if (!options || options.length < 2) return 0;
         const key = kind + epoch;
         const asked = Object.prototype.hasOwnProperty.call(want, key);
         const raw = asked ? want[key] : 0;
@@ -7571,7 +7578,7 @@
       const eventRows = model.events.map(ev => [
         ev.epoch, 1000 + 25 * ev.epoch, ev.type, ev.region_id, ev.name, ev.outcome,
         ev.faction !== undefined ? ev.faction : (ev.factions ? ev.factions.join("|") : undefined),
-        ev.measure, ev.winner, ev.ceded, ev.tribute, ev.occupied, ev.contested, ev.ruler
+        ev.measure, ev.winner, ev.ceded, ev.tribute, ev.occupied, ev.contested, ev.ruler, ev.by
       ]);
       const epochRows = [];
       model.regions.forEach((reg, i) => {
@@ -7585,7 +7592,10 @@
         model.dynasties[fac].forEach(r => rulerRows.push([fac, r.name, r.from, r.contested]));
       return [
         ["events.csv", csvOf(
-          ["epoch", "year", "type", "region_id", "name", "outcome", "faction", "measure", "winner", "ceded", "tribute", "occupied", "contested", "ruler"],
+          // E1 (#142): `by` separates a decree the GOVERNOR issued from the same
+          // measure the seat reached on its own. Empty in every auto-run world, which
+          // is why the fixture allowlist admits it without a single cell moving.
+          ["epoch", "year", "type", "region_id", "name", "outcome", "faction", "measure", "winner", "ceded", "tribute", "occupied", "contested", "ruler", "by"],
           eventRows)],
         ["epoch_region.csv", csvOf(
           ["region_id", "epoch", "epoch_date", "wealth", "elite_share", "population", "dominant_bloc", "occupied", "tariff_burden"],
@@ -9191,6 +9201,13 @@
       discovery: [["discovery", "discovery_gloss"], ["discovery_coda", "discovery_name"]],
       ascendancy: [["ascendancy", "ascendancy_gloss"], ["ascendancy_coda", "ascendancy_name"]],
       consecration: [["consecration", "consecration_gloss"], ["consecration_coda", null]],
+      // E1 (#142): the reign's own year-lines. A decree is narrated as a decision
+      // somebody took, not as weather that happened -- the chronicle has spent four
+      // acts insisting nobody steered this world, and a governor is the exception it
+      // now has to record.
+      decree: [["decree", "decree_gloss"], ["decree_coda", null]],
+      revolt_averted: [["revolt_averted", "revolt_averted_gloss"], ["revolt_averted_coda", null]],
+      dominion_repelled: [["dominion_repelled", "dominion_repelled_gloss"], ["dominion_repelled_coda", null]],
       seizure: [["seizure", "seizure_gloss"], ["seizure_coda", null]],
     };
     const eventClasses = (type) => EVENT_CLASSES[type] || [[type, type + "_gloss"]];
@@ -10426,6 +10443,7 @@
       e.ev_place = PLACE[ev.faction] || "the capital";
       e.evContested = !!ev.contested;
       e.evMeasure = ev.measure || null;
+      e.evBy = ev.by || null;   // E1: whose hand -- the seat's or the governor's
       e.ev_measure = MEASURE[ev.measure] || "a measure the clerks did not title";
       e.ev_power = ev.power || (ev.type === "courting" ? "the Rival" : "the Metropole");
       e.ev_occupied = ev.occupied !== undefined ? ev.occupied : null;
@@ -11116,6 +11134,93 @@
         { t: "this is what {name:realm} came to, argued from its own columns and from nothing outside them", req: () => true },
       ],
     };
+
+
+    // E1 (#142): the governor's year-lines, in the historian's register. Gated on the
+    // measure so a decree reads as the decision it was, and glossed with the long
+    // edge the physics will charge for it later -- the card states the near edge and
+    // the record is where the far one arrives.
+    const DECREE_POOL = {
+      decree: [
+        { t: "the governor of {name:capital} chartered the wire out to the dark country, on the metropole's credit", req: c => c.evMeasure === "conduit_charter" },
+        { t: "{name:capital} signed for the conduit loan and the wires went where the ledgers had refused them", req: c => c.evMeasure === "conduit_charter" },
+        { t: "the dark settlements were promised the wire in {num:ev_year}, and the promise was borrowed", req: c => c.evMeasure === "conduit_charter" },
+        { t: "the governor opened the granary at {name:capital} before the next town rose", req: c => c.evMeasure === "crown_granary" },
+        { t: "bread was decreed out of the crown's own stores in {num:ev_year}", req: c => c.evMeasure === "crown_granary" },
+        { t: "the granary of {name:capital} was opened by decree rather than by petition", req: c => c.evMeasure === "crown_granary" },
+        { t: "the governor of {name:capital} floored the ore price against the metropole's own", req: c => c.evMeasure === "retention_act" },
+        { t: "a price floor was set at {name:capital} so the diggers kept more of what their ground gave up", req: c => c.evMeasure === "retention_act" },
+        { t: "in {num:ev_year} the governor refused the metropole's price and named one instead", req: c => c.evMeasure === "retention_act" },
+        { t: "the governor capped what every gate in the {num:n_regions} regions may charge", req: c => c.evMeasure === "toll_amnesty" },
+        { t: "the tariffs were cut by decree out of {name:capital} in {num:ev_year}", req: c => c.evMeasure === "toll_amnesty" },
+        { t: "the governor raised the tariff at all {num:n_regions} regions' gates and called it revenue", req: c => c.evMeasure === "toll_crackdown" },
+        { t: "in {num:ev_year} {name:capital} decided the gates were charging too little", req: c => c.evMeasure === "toll_crackdown" },
+        { t: "the governor of {name:capital} ordered the spoil spread thin instead of piled on one country", req: c => c.evMeasure === "dumping_reform" },
+        { t: "the doctrine was reversed by decree at {name:capital}: no more written-off ground", req: c => c.evMeasure === "dumping_reform" },
+        { t: "the governor refused the metropole's charter on {name:ev_town}", req: c => c.evMeasure === "charter_refused" },
+        { t: "the factors were turned away from {name:ev_town} in {num:ev_year}, charter and all", req: c => c.evMeasure === "charter_refused" },
+      ],
+      decree_gloss: [
+        { t: "the wire reached the dark and the interest reaches {name:capital} every year after", req: c => c.evMeasure === "conduit_charter" },
+        { t: "what the ledgers would not pay for, a loan did, and {name:capital} services it out of the crown", req: c => c.evMeasure === "conduit_charter" },
+        { t: "nobody in the dark country of {name:capital} signed the note that lit it", req: c => c.evMeasure === "conduit_charter" },
+        { t: "bread in a lean year is mercy, and in a long peace it becomes a habit {name:capital} cannot put down", req: c => c.evMeasure === "crown_granary" },
+        { t: "the levy that fills the granary of {name:capital} does not stop when the famine does", req: c => c.evMeasure === "crown_granary" },
+        { t: "the floor pays the digger, and the money that funded the works of {name:capital} reads it as a cap and leaves", req: c => c.evMeasure === "retention_act" },
+        { t: "what the diggers of {name:capital} gained, the owners' row began quietly withdrawing", req: c => c.evMeasure === "retention_act" },
+        { t: "the roads across {num:n_regions} regions opened and the treasury thinned, which are one decision seen from two ends", req: c => c.evMeasure === "toll_amnesty" },
+        { t: "every gate the realm keeps collects less, and {name:capital} notices first", req: c => c.evMeasure === "toll_amnesty" },
+        { t: "{name:capital} ate that year, and the taxed road paid for the meal", req: c => c.evMeasure === "toll_crackdown" },
+        { t: "the gates of {name:capital} were told to collect, and they collect from whoever has no second road", req: c => c.evMeasure === "toll_crackdown" },
+        { t: "no country is written off now, and the poison piled on one is spread across {num:n_regions} regions", req: c => c.evMeasure === "dumping_reform" },
+        { t: "the sacrifice zone was dissolved by decree and its share of the spoil went to the other {num:n_regions} regions", req: c => c.evMeasure === "dumping_reform" },
+        { t: "{name:ev_town} keeps its whole yield now, and the capital that would have built there never came", req: c => c.evMeasure === "charter_refused" },
+        { t: "the works the factors would have funded at {name:ev_town} were not built by anyone else", req: c => c.evMeasure === "charter_refused" },
+      ],
+      decree_coda: [
+        { t: "the record of {name:capital} marks it a decision, which is rarer in these pages than a disaster", req: () => true },
+        { t: "somebody at {name:capital} chose this, and the choosing is the part worth recording", req: () => true },
+        { t: "the ledgers of {num:n_regions} regions will carry it long after the year is out", req: () => true },
+        { t: "what a governor decides, the {num:n_regions} regions pay for on a schedule of their own", req: () => true },
+      ],
+      revolt_averted: [
+        { t: "the rising at {name:ev_town} was bought off before it lit", req: () => true },
+        { t: "the governor read the fires on the {name:ev_town} horizon and paid to keep them unlit", req: () => true },
+        { t: "in {num:ev_year} {name:ev_town} came to the edge of rising and was talked back from it", req: () => true },
+        { t: "what would have been a rising at {name:ev_town} was settled in a room instead", req: () => true },
+      ],
+      revolt_averted_gloss: [
+        { t: "the grievance was conceded rather than answered, and conceding cost {name:capital} coin it had counted on", req: () => true },
+        { t: "{name:ev_town} keeps more of what it makes now, which is what it would have taken by force", req: () => true },
+        { t: "no constabulary rode to {name:ev_town}, no hangings followed, and no garrison was posted afterwards", req: () => true },
+        { t: "the peace at {name:ev_town} was purchased, and the price is in the crown's ledger", req: () => true },
+      ],
+      revolt_averted_coda: [
+        { t: "a rising that does not happen leaves {name:ev_town} no date to keep", req: () => true },
+        { t: "the {num:n_regions} regions record nothing that year, which is what averting looks like from outside", req: () => true },
+        { t: "whether {name:ev_town} was spared or merely delayed is not a question this record can settle", req: () => true },
+      ],
+      dominion_repelled: [
+        { t: "the Dominion's fleet stood off {name:ev_harbor} and was turned away", req: () => true },
+        { t: "the governor refused the fleet at {name:ev_harbor} in {num:ev_year}", req: () => true },
+        { t: "{name:ev_harbor} was mustered against the fleet instead of opened to it", req: () => true },
+        { t: "the empire came to {name:ev_harbor} and did not land", req: () => true },
+      ],
+      dominion_repelled_gloss: [
+        { t: "the muster was paid for out of {name:capital}'s treasury, and the quay's owners wanted the trade", req: () => true },
+        { t: "nothing at {name:ev_harbor} was occupied and nothing was wired, which is one refusal counted twice", req: () => true },
+        { t: "the assessment tables never reached {name:ev_harbor}, and neither did the copper", req: () => true },
+        { t: "{name:capital} paid for a fleet it never fought", req: () => true },
+      ],
+      dominion_repelled_coda: [
+        { t: "an empire turned away from {name:ev_harbor} once is an empire that knows the way back", req: () => true },
+        { t: "the {num:n_regions} regions stayed the realm's own that year", req: () => true },
+        { t: "what {name:ev_harbor} kept, it kept at a price the record can name", req: () => true },
+      ],
+    };
+
+    // the reign's year-lines join the historian's event pool
+    Object.assign(EVENT_POOL, DECREE_POOL);
 
     // Everything the judge may count, as integers, because the register's law
     // forbids a numeral and `loomSpell` rounds. A gini to two places has no spelled

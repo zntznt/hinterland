@@ -1330,7 +1330,7 @@
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 56;   // #178: v56 redefines findings.blight_ratio over the INHABITED realm — its "poorest fifth" was 85% empty cells, which export wealth 0 and so ARE the bottom fifth — and makes it nullable where too few towns stand to rank. Same key, different population, new null: a break, not a silent move.
+    const SCHEMA_VERSION = 57;   // E1 (#142): v57 adds the REIGN. `ch` in provenance when a governor played one, a `by` column on events.csv separating a decree from the seat's own measure, and three new event types only a reign can produce (decree, revolt_averted, dominion_repelled). Additive: a world with no reign exports exactly what v56 did, which is what the byte-pin proves.
     // v55 (#180) redefined blight_load as an ABSOLUTE load (100 = ruined) carried as a decaying stock, where v54 normalised it to each world's own worst cell.
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
@@ -1462,7 +1462,7 @@
     const FRICTION = 1.5;  // how much ruggedness multiplies travel cost
 
     const DEFAULTS = {
-      seed: "hinterland", fate: "", world: "concordat-settlement", regions: 24, relax: 2, bias: 80,
+      seed: "hinterland", fate: "", ch: "", world: "concordat-settlement", regions: 24, relax: 2, bias: 80,
       we: 35, wf: 25, wt: 30, wg: 10,   // income-mix weights
       gt: 35,                            // grid threshold (0 = conduit reaches everyone)
       db: 60,                            // disposal doctrine: 0–33 disperse, 34–66 concentrate, 67–100 treat
@@ -1473,6 +1473,110 @@
       ep: 0,                             // epochs (0 = founding snapshot, no dynamics)
       capital: null                      // null => seat derived from geology
     };
+
+    // ---- E1 (#142): the reign, as a string ----------------------------------
+    // A reign is a list of decisions the governor took, and it has to survive a
+    // paste into a URL bar. `ch=w4:1,r6:0,d3:1` reads "at epoch 4 the wound
+    // response was option 1; at epoch 6 the revolt was option 0; at epoch 3 the
+    // Dominion was option 1".
+    //
+    // The keys are EPOCH-QUALIFIED on purpose. A reign shared at ep=10 and replayed
+    // at ep=6 carries decisions for epochs that never arrive; keyed by epoch they
+    // are simply not reached, rather than sliding onto the wrong year. Same for a
+    // decision whose trigger moved when a knob changed: the entry goes stale and is
+    // ignored, and the dice decide as they always did.
+    //
+    // Everything here is TOTAL: any input produces a decisions map, and anything
+    // unreadable produces an empty one. That is the robustness acceptance ("malformed
+    // /stale ch sanitized === no-ch") and it is a property of the parser rather than
+    // of the caller's care.
+    // wrd: the three dice the governor may take over (wound response, revolt, Dominion)
+    // cgotsn: the six authored dilemmas (conduit, granary, ore floor, gates, spoil,
+    // charter). Each is anchored to a Phase B mechanism that ALREADY has two live
+    // edges — direction.md §5 amendment (a): "each dilemma option maps onto §3.2
+    // mechanisms, so its long edge exists in the physics". Nothing here invents a
+    // consequence; every option pulls a lever the economy already had.
+    const CH_KINDS = "wrdcgotsn";
+    const CH_MAX_EPOCH = 24;                   // the ep clamp; beyond it nothing can fire
+    const CH_MAX_OPTION = 7;                   // no dilemma offers more than this
+    function parseDecisions(raw) {
+      const out = {};
+      const text = String(raw == null ? "" : raw).trim();
+      if (!text) return out;
+      // a cap on entries: a hash is a shareable link, not an input channel
+      for (const part of text.split(",").slice(0, 64)) {
+        const m = /^([a-z])(\d{1,2}):(\d)$/.exec(part.trim());
+        if (!m) continue;                                        // malformed: ignored
+        const [, kind, ep, opt] = m;
+        if (!CH_KINDS.includes(kind)) continue;                  // unknown decision
+        const e = Number(ep), o = Number(opt);
+        if (!(e >= 1 && e <= CH_MAX_EPOCH)) continue;            // out of range
+        if (!(o >= 0 && o <= CH_MAX_OPTION)) continue;
+        out[kind + e] = o;                                       // last wins
+      }
+      return out;
+    }
+    // The canonical form, so a reign round-trips through provenance and a share link
+    // byte-identically however it was typed.
+    const formatDecisions = (dec) => Object.keys(dec).sort((a, b) => {
+      const ea = Number(a.slice(1)), eb = Number(b.slice(1));
+      return ea - eb || a.localeCompare(b);
+    }).map(k => `${k}:${dec[k]}`).join(",");
+
+    // The reign as the EXPORT carries it (§5.1 plumbing: "provenance gains
+    // hinterland.choices/fate/decisions"). Emitted beside `ch` and under the same
+    // gate, because the log is not empty for an auto run — every dice takeover is
+    // a decision point whether or not anyone stood at it — so writing it
+    // unconditionally would move all thirty fixtures and the byte-pin with them.
+    // `stale` rides only when true: an entry the governor typed for a decision that
+    // no longer exists is worth seeing in the file, and a column of `false` is not.
+    const reignLog = (model) => (model.decisions || []).map(d => ({
+      epoch: d.epoch, key: d.key, options: d.options, chose: d.chose, by: d.by,
+      ...(d.stale ? { stale: true } : {})
+    }));
+
+    // A decision is offered exactly where the dice already decided, and OPTION 0 IS
+    // ALWAYS THE DICE'S OWN OUTCOME. That is what makes the echo-the-dice invariant
+    // structural instead of tested-in: a reign that echoes every die IS the auto run,
+    // because picking option 0 runs the same branch the auto run ran, in the same
+    // order, drawing the same numbers.
+    //
+    // `decide` consumes NO randomness — not one draw, ever. If offering a choice cost
+    // a draw, merely being ASKED would move a world that answered nothing, and the
+    // byte-pin would be unsatisfiable rather than merely broken.
+    //
+    // A `ch` entry naming an option a decision does not offer is STALE: the world
+    // moved under the reign (a knob changed, a trigger fired at another epoch), so
+    // the dice decide, which is exactly what would have happened with no entry at
+    // all. That is the "stale entries ignored === no-ch" acceptance, and it falls out
+    // of the same clamp rather than needing its own path.
+    function makeReign(params) {
+      const want = parseDecisions(params && params.ch);
+      const log = [];
+      const decide = (kind, epoch, options) => {
+        // G5's NULL-FORK finding: a decision with one option is not a decision. The
+        // wound's ladder can name a measure with no distinct runner-up, and offering
+        // that as a choice would put a card in front of a governor whose only move is
+        // the move already made — and would log a "decision" in the export that no
+        // reign could ever have taken differently. Nothing is offered and nothing is
+        // logged; the caller gets the dice's own outcome.
+        if (!options || options.length < 2) return 0;
+        const key = kind + epoch;
+        const asked = Object.prototype.hasOwnProperty.call(want, key);
+        const raw = asked ? want[key] : 0;
+        const ok = Number.isInteger(raw) && raw >= 0 && raw < options.length;
+        const pick = ok ? raw : 0;
+        log.push({
+          epoch, kind, key,
+          options: options.slice(),
+          chose: options[pick],
+          by: pick === 0 ? "dice" : "governor",
+          stale: asked && !ok,
+        });
+        return pick;
+      };
+      return { decide, log };
+    }
 
     // ---- Deterministic RNG (mulberry32) + string hashing --------------------
     function hashStr(str) {
@@ -3662,6 +3766,8 @@
       // on sx. Empty fate falls back to the seed, so fx === sx draw-for-draw and
       // the default world is byte-identical — the pivot the fixture pin proves.
       const fx = streams(params.fate || params.seed);
+      // E1 (#142): the governor's reign, read from the hash. Consumes no randomness.
+      const reign = makeReign(params);
 
       // STAGE-3 PURITY (C1): the loop writes depletion back into
       // reg.endowment for the export, so a SECOND society run on the same
@@ -4620,6 +4726,7 @@
       const rV = fx("revolt");
       const revoltBar = 95 + rV() * 25 + (params.order - 50) * 0.5; // B9 (#131): order raises the bar to rise — a police state suppresses revolt; an open realm invites it (neutral at 50)
       let responded = false, revoltIdx = -1, revoltWon = false;
+      let revoltAvertedIdx = -1;   // E1 (#142): a rising the governor headed off
       // B11 (#133): THE POWERS BEYOND THE SEA. Empire works by REACH, not by
       // the fleet — it courts, it wires, it owns the works, and it leaves when
       // the ore runs out. Two are named: the METROPOLE that courts this realm,
@@ -4647,6 +4754,9 @@
       // so its window stays the smallest — it still scales, but lands sooner.
       const dominionEpoch = 2 + Math.floor(rX() * evWindow(5));
       let dominionAt = -1, footholdIdx = -1; // occupied/occupiedEpoch reset at wealth init
+      let dominionRepelled = -1;   // E1 (#142): the epoch a governor turned the fleet away
+      const dilemmaFired = {};     // E1: each authored dilemma is offered once
+      let charterRefused = -1;     // E1: the epoch a governor refused the metropole's charter
       // E5: the dynasty structure — reigns drawn blind before time runs;
       // the names come later (after the world has taken all of its own)
       const rD = fx("dynasty");
@@ -5281,7 +5391,29 @@
             if (best === -1 || reg.wealth > regions[best].wealth ||
                 (reg.wealth === regions[best].wealth && i < best)) best = i;
           });
-          if (best >= 0) {
+          // E1 (#142): the fleet stands off the quay and the governor answers it.
+          // The choice is only offered where the dice actually produced a landing —
+          // option 0 is the fleet coming ashore, as it always did. There is no option
+          // to summon a fleet the dice never sent: a decision may redirect history,
+          // not invent an event.
+          if (best >= 0 && ["land", "repel"][reign.decide("d", e + 1, ["land", "repel"])] === "repel") {
+            // REPELLED. G5's adversarial list names this case for a reason: it is the
+            // one takeover whose refusal has to be narrated, or the chronicle simply
+            // has a quiet year where an empire was turned away. The refusal is not
+            // free — the realm pays for the fleet it kept out.
+            const fh = regions[best];
+            fh.eventType = "dominion_repelled"; fh.eventEpoch = e + 1;
+            fh.eventSeverity = 55;                       // fixed: refusing consumes no die
+            dominionRepelled = e + 1;
+            treasuries.crown = Math.max(0, treasuries.crown - 12);  // the muster is paid for
+            tensions[pairKey("crown", "magnate")] += 10;            // the quay's owners wanted the trade
+            // `by` like its sibling the averted rising: both are outcomes that CANNOT
+            // occur without a governor, so the column is unambiguous on them. It is
+            // deliberately NOT set on a revolt the governor chose to crush — the dice
+            // could have crushed it too, and marking those needs the "the seat chose"
+            // lead-in §5.1 describes, which is prose this ticket does not author.
+            events.push({ epoch: e + 1, type: "dominion_repelled", region_id: fh.id, by: "governor" });
+          } else if (best >= 0) {
             footholdIdx = best; dominionAt = e + 1;
             const occRun = costDistances(regions, [footholdIdx]);
             regions.forEach((reg, i) => {
@@ -5601,17 +5733,47 @@
                 reg.eliteShare = Math.max(8, reg.eliteShare - 4); // the price floor pays the digger
               });
             };
+            // E1 (#142): SELECTION IS SEPARATED FROM APPLICATION. The cascade below
+            // is the same ladder in the same order drawing the same numbers — note
+            // `dumping_reform` still consumes rIns() exactly where it always did, so
+            // a governor cannot change what the seat drew merely by being offered a
+            // choice. What changes is that the ladder now NAMES a measure instead of
+            // enacting one, and the enactment happens after the governor has spoken.
+            const APPLY = {
+              retention_act: () => retentionAct(),
+              crown_granary: () => { granaryOn = true; granaryEpoch = e + 1; },
+              grid_charter: () => { gtShift = -18; expandConduit(); charterDebt = CHARTER_LOAN; charterDebtEpoch = e + 1; }, // B7: the wires are strung on imperial credit
+              toll_amnesty: () => { tollScale = 0.4; },
+              dumping_reform: () => { disposalOverride = "disperse"; },
+            };
+            // The runner-up is the next DISTINCT measure the same ladder would reach,
+            // computed from predicate state alone — it may not draw, because a draw
+            // here would depend on which measure the ladder had already named and the
+            // auto run's draw order would shift under it.
+            const ladder = [
+              ["retention_act", giniNow >= 0.42 && richSeam >= 60],
+              ["crown_granary", giniNow >= 0.42],
+              ["grid_charter", darkShare >= 0.55],
+              ["toll_amnesty", meanToll >= 12],
+              ["retention_act", bottomOre >= 18],
+              ["crown_granary", true],
+            ];
             let measure;
             // a RESOURCE-RICH but unequal realm floors its commodity price (a levy the
             // diggers keep) rather than importing bread — the retention act competes
             // with the granary where a rich seam runs (B7: gives the act a home).
-            if (giniNow >= 0.42 && richSeam >= 60) { measure = "retention_act"; retentionAct(); }
-            else if (giniNow >= 0.42) { measure = "crown_granary"; granaryOn = true; granaryEpoch = e + 1; }
-            else if (darkShare >= 0.55) { measure = "grid_charter"; gtShift = -18; expandConduit(); charterDebt = CHARTER_LOAN; charterDebtEpoch = e + 1; } // B7: the wires are strung on imperial credit
-            else if (meanToll >= 12) { measure = "toll_amnesty"; tollScale = 0.4; }
-            else if (params.db >= 34 && rIns() < 0.5) { measure = "dumping_reform"; disposalOverride = "disperse"; }
-            else if (bottomOre >= 18) { measure = "retention_act"; retentionAct(); }
-            else { measure = "crown_granary"; granaryOn = true; granaryEpoch = e + 1; }
+            if (giniNow >= 0.42 && richSeam >= 60) measure = "retention_act";
+            else if (giniNow >= 0.42) measure = "crown_granary";
+            else if (darkShare >= 0.55) measure = "grid_charter";
+            else if (meanToll >= 12) measure = "toll_amnesty";
+            else if (params.db >= 34 && rIns() < 0.5) measure = "dumping_reform";
+            else if (bottomOre >= 18) measure = "retention_act";
+            else measure = "crown_granary";
+            // the card: what the seat chose, and the nearest thing it nearly chose
+            const alt = ladder.find(([m, live]) => live && m !== measure);
+            const wOpts = alt ? [measure, alt[0]] : [measure];
+            measure = wOpts[reign.decide("w", e + 1, wOpts)];
+            APPLY[measure]();
             events.push({ epoch: e + 1, type: "reform", measure });
           } else if (respCoin < params.iq / 100 + 0.3) {
             let measure;
@@ -5674,6 +5836,95 @@
             });
           }
         }
+        // ---- E1 (#142): THE GOVERNOR'S DILEMMAS ----------------------------
+        // Six authored decisions, each offered ONCE, at the first epoch its trigger
+        // reads true. Every one of them:
+        //   * consumes no randomness, so being offered cannot move a world;
+        //   * has OPTION 0 = THE STATUS QUO, so a reign that answers nothing runs
+        //     exactly the code that ran before the dilemmas existed;
+        //   * pulls a Phase B lever with a long edge already in the physics, which
+        //     is why the near edge is on the card and the far edge is discovered.
+        // The seat is a GOVERNOR's, so the axis is comply / resist / skim against a
+        // metropole that is always the other party to the bargain.
+        {
+          const settledNow = regions.filter(r => r.settled);
+          const dark = onGrid.filter(v => !v).length / Math.max(1, regions.length);
+          const tollMean = regions.reduce((a, r) => a + r.tollBurden, 0) / Math.max(1, regions.length);
+          const wsv = settledNow.map(r => r.wealth).sort((a, b) => a - b);
+          const mwv = wsv.reduce((a, b) => a + b, 0) / Math.max(1, wsv.length);
+          let gs = 0;
+          for (let gi = 0; gi < wsv.length; gi++) gs += (2 * (gi + 1) - wsv.length - 1) * wsv[gi];
+          const giniHere = mwv > 0 ? gs / (wsv.length * wsv.length * mwv) : 0;
+          const bled = events.some(ev => ev.epoch === e + 1 &&
+            ["blight_plague", "relic_calamity", "revolt", "war"].includes(ev.type));
+
+          const offer = (kind, live, options) => {
+            if (dilemmaFired[kind] || !live) return 0;
+            dilemmaFired[kind] = true;
+            return reign.decide(kind, e + 1, options);
+          };
+
+          // (c) THE CONDUIT. The dark country can be wired on the metropole's credit.
+          //     Long edge: B7's charter debt, serviced out of the crown for the rest
+          //     of the run. Comply and the wires reach; the interest reaches too.
+          if (offer("c", dark >= 0.40 && charterDebt <= 0 && gtShift === 0, ["hold", "borrow"]) === 1) {
+            gtShift = -18; expandConduit();
+            charterDebt = CHARTER_LOAN; if (charterDebtEpoch === -1) charterDebtEpoch = e + 1;
+            events.push({ epoch: e + 1, type: "decree", measure: "conduit_charter", by: "governor" });
+          }
+          // (g) THE GRANARY. Bread now against a habit later — B7's dependency curdles
+          //     the mercy only in a SUSTAINED peace, which is the far edge exactly.
+          if (offer("g", bled && !granaryOn, ["hold", "open"]) === 1) {
+            granaryOn = true; granaryEpoch = e + 1;
+            events.push({ epoch: e + 1, type: "decree", measure: "crown_granary", by: "governor" });
+          }
+          // (o) THE ORE FLOOR. Resist the metropole's price and the diggers keep more;
+          //     B7's capital flight thins the owners' row and the works it funded.
+          if (offer("o", giniHere >= 0.45 && retentionEpoch === -1, ["hold", "floor"]) === 1) {
+            retentionEpoch = e + 1;
+            const medHere = wsv[Math.floor(wsv.length / 2)] || 0;
+            regions.forEach(reg => {
+              if (!reg.settled || reg.wealth >= medHere) return;
+              reg.retention = Math.min(100, reg.retention + 15);
+              reg.eliteShare = Math.max(8, reg.eliteShare - 4);
+            });
+            events.push({ epoch: e + 1, type: "decree", measure: "retention_act", by: "governor" });
+          }
+          // (t) THE GATES. Cut the tariff and the roads open while the treasury thins;
+          //     raise it and the crown eats while the taxed road pays. The skim.
+          {
+            const pick = offer("t", tollMean >= 15, ["hold", "cut", "raise"]);
+            if (pick === 1) { tollScale = 0.4; events.push({ epoch: e + 1, type: "decree", measure: "toll_amnesty", by: "governor" }); }
+            else if (pick === 2) { tollScale = 1.6; events.push({ epoch: e + 1, type: "decree", measure: "toll_crackdown", by: "governor" }); }
+          }
+          // (s) THE SPOIL. B4's doctrine, taken by hand: concentrate writes a zone off
+          //     and spares everywhere else; disperse spreads the same poison thin.
+          {
+            const conc = disposalOverride ? disposalOverride === "concentrate" : (params.db >= 34 && params.db < 67);
+            const pick = offer("s", conc && sacrificeZone >= 0, ["hold", "disperse"]);
+            if (pick === 1) { disposalOverride = "disperse"; events.push({ epoch: e + 1, type: "decree", measure: "dumping_reform", by: "governor" }); }
+          }
+          // (n) THE CHARTER. A coast the metropole wants. Today it simply takes it;
+          //     a governor may refuse, and keep the yield and lose the capital that
+          //     would have built on it (B11's concession, both edges).
+          {
+            const wanted = regions.findIndex(r => r.concession && r.concessionEpoch === e + 1);
+            const pick = offer("n", wanted >= 0, ["accept", "refuse"]);
+            if (pick === 1) {
+              const reg = regions[wanted];
+              reg.concession = false; reg.concessionEpoch = -1; reg.foreignClaim = 0;
+              reg.eliteShare = Math.max(8, reg.eliteShare - 3);   // the factors never arrive
+              reg.A = Math.max(0, reg.A - 6);                     // and neither does their capital
+              charterRefused = e + 1;
+              events.push({ epoch: e + 1, type: "decree", measure: "charter_refused", by: "governor", region_id: reg.id });
+            }
+          }
+          // G5's adversarial list names the treasury floor: no decree may drive the
+          // crown below nothing, whatever it costs.
+          treasuries.crown = Math.max(0, treasuries.crown);
+          treasuries.temple = Math.max(0, treasuries.temple);
+          treasuries.magnate = Math.max(0, treasuries.magnate);
+        }
         // V1: THE REVOLT — once per run, the region where injustice, tolls,
         // and darkness stack highest can rise. Its strength against the
         // seat's decides: crushed, or a free town.
@@ -5689,8 +5940,39 @@
             const reg = regions[ri];
             const stateStr = 42 + 0.5 * reg.centrality + Math.min(40, treasuries.crown) + rV() * 25
               + (reg.occupied ? 25 : 0); // the imperial garrison stands behind the wardline
-            revoltWon = rs > stateStr + 20;
-            if (revoltWon) {
+            // E1 (#142): the seat's dice say one thing; the governor may say another.
+            // Option 0 is what the dice rolled, so echoing them runs this block
+            // unchanged. Diverging legitimately changes the draws that follow —
+            // a different history has different luck, and that is not a byte-pin
+            // failure but the whole point of taking the seat.
+            const diceWon = rs > stateStr + 20;
+            // AVERTED is the third road, and G5's adversarial list names its ripples
+            // rather than its existence: a rising that never happens must leave every
+            // consumer of revolt state coherent. Six of them read it —
+            //   (1) the once-per-run guard `revoltIdx`, which must still close, or the
+            //       next epoch simply offers the same rising again;
+            //   (2) `freeTownIdx`, which sets tollBurden to zero for a town that was
+            //       never freed — it stays -1;
+            //   (3) `crushedIdx`, which posts a garrison after the hangings — there
+            //       were no hangings, so it must not fire (the ripple that bites);
+            //   (4) `wonArc`, which earns a town the byname "the Free" or "the
+            //       Famished" — it stays null;
+            //   (5) the region's own `eventType`, which must not read "revolt";
+            //   (6) the `revolt` event itself, which the chronicle narrates and the
+            //       findings read as the run's turning point — an aversion is its own
+            //       event type, so neither mistakes it for a rising that happened.
+            const rOpts = diceWon ? ["won", "crushed", "averted"] : ["crushed", "won", "averted"];
+            const outcome = rOpts[reign.decide("r", e + 1, rOpts)];
+            if (outcome === "averted") {
+              // the seat reads the fires on the horizon and buys the grievance off
+              // before it lights. Peace is not free: it is paid for out of the crown
+              // and conceded out of the yield.
+              revoltAvertedIdx = ri;
+              treasuries.crown = Math.max(0, treasuries.crown - 15);
+              reg.retention = Math.min(100, reg.retention + 8);
+              reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
+              events.push({ epoch: e + 1, type: "revolt_averted", region_id: reg.id, by: "governor" });
+            } else if ((revoltWon = outcome === "won")) {
               freeTownIdx = ri;                       // tolls no one, ever again
               reg.retention = 100;                    // keeps what it makes
               { const _es0 = reg.eliteShare; reg.eliteShare = Math.max(8, reg.eliteShare - 25); reg.eliteCatDelta += reg.eliteShare - _es0; } // the charters burn with the manor (B5: catastrophe ledger)
@@ -5733,10 +6015,16 @@
               { const _es0 = reg.eliteShare; reg.eliteShare = Math.min(92, reg.eliteShare + 10); reg.eliteCatDelta += reg.eliteShare - _es0; } // expropriation under the garrison (B5: catastrophe ledger — an UPWARD shock)
               reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
             }
-            reg.eventType = "revolt"; reg.eventEpoch = e + 1;
-            reg.eventSeverity = 70 + Math.round(rV() * 25);
-            events.push({ epoch: e + 1, type: "revolt", region_id: reg.id, outcome: revoltWon ? "won" : "crushed",
-              ...(revoltWon ? { arc: reg.wonArc } : {}) }); // B8 (#130): the won rising's arc — flourished or starved
+            // consumers (5) and (6): a rising that never happened stamps no region
+            // and files no revolt. The severity die is not drawn either — there is
+            // no rising to rate — which is the same rule the rest of the takeovers
+            // follow: a road not taken draws nothing.
+            if (outcome !== "averted") {
+              reg.eventType = "revolt"; reg.eventEpoch = e + 1;
+              reg.eventSeverity = 70 + Math.round(rV() * 25);
+              events.push({ epoch: e + 1, type: "revolt", region_id: reg.id, outcome: revoltWon ? "won" : "crushed",
+                ...(revoltWon ? { arc: reg.wonArc } : {}) }); // B8 (#130): the won rising's arc — flourished or starved
+            }
           }
         }
         // D6: the faith arrives where the suffering is — two epochs after the
@@ -6068,7 +6356,8 @@
       roadEdges.forEach(e => { thr[e.a] += e.traffic; thr[e.b] += e.traffic; });
       const maxThr = Math.max(...thr, 1e-9);
       const KG = Math.max(1, Math.round(regions.length / 12));
-      const crushedIdx = (revoltIdx >= 0 && !revoltWon) ? revoltIdx : -1;
+      // E1 (#142): an AVERTED rising leaves no crushed town to fortify (consumer 3)
+      const crushedIdx = (revoltIdx >= 0 && !revoltWon && revoltAvertedIdx === -1) ? revoltIdx : -1;
       const garScored = regions.map((reg, i) => {
         const rj = sx("gar#" + reg.id);
         return { i, s: 0.6 * (100 * thr[i] / maxThr) + 0.4 * reg.centrality + (rj() - 0.5) * 8 };
@@ -6588,7 +6877,7 @@
       // a bridge on an abandoned river town is gone with it (no one keeps the
       // span); keep only bridges whose host cell is still settled
       const liveBridges = geo.bridges.filter(b => regions[b.regionIdx] && regions[b.regionIdx].settled);
-      return { seed: String(params.seed), regions, settlements, facilities, structures, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: liveBridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, lakeShapes: geo.lakeShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
+      return { decisions: reign.log, dominionRepelled, seed: String(params.seed), regions, settlements, facilities, structures, sanctionedSites, garrisons, conduitEdges, roadEdges, epochSnaps, events, capital: cap, capPoint, capitalName, windDeg: geo.windDeg, ridges: geo.ridges, passes: geo.passes, rivers: geo.rivers, seaSides: geo.seaSides, bridges: liveBridges, ruins: geo.ruins, maelstrom: geo.maelstrom, holdings, treasuries, tensions, dynasties, seaShapes: geo.seaShapes, lakeShapes: geo.lakeShapes, seaLevel: geo.seaLevel, contours: geo.contours, contoursFine: geo.contoursFine, hachures: geo.hachures, peaks: geo.peaks, skywayName, freeport, sanctuary, camps, stillName,
         dominion: dominionAt !== -1 ? { arrived: dominionAt, foothold: footholdIdx } : null,
         // B11 (#133): the off-map powers — the Metropole that courts this realm
         // (concessions/attention) and the Rival it is courted against (rivalry/
@@ -7037,7 +7326,7 @@
         hinterland: {
           schema_version: SCHEMA_VERSION,
           world: model.world,
-          seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), regions: params.regions, relax: params.relax,
+          seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), ...(params.ch ? { ch: String(params.ch), decisions: reignLog(model) } : {}), regions: params.regions, relax: params.relax,
           bias: params.bias,
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt,
@@ -7265,7 +7554,7 @@
           dominion: model.dominion ? { arrived_epoch: model.dominion.arrived, foothold: model.regions[model.dominion.foothold].id, occupied_n: model.regions.filter(r => r.occupied).length } : null,
           powers: { metropole: model.metropole, rival: model.rival, concessions: model.regions.filter(r => r.concession).length, abandoned: model.regions.filter(r => r.concessionEnded).length },
           years_per_epoch: 25,
-          seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), regions: params.regions, relax: params.relax,
+          seed: String(params.seed), ...(params.fate ? { fate: String(params.fate) } : {}), ...(params.ch ? { ch: String(params.ch), decisions: reignLog(model) } : {}), regions: params.regions, relax: params.relax,
           bias: params.bias,
           weights: { extraction: params.we, refining: params.wf, trade: params.wt, gradient: params.wg },
           grid_threshold: params.gt, dump_bias: params.db,
@@ -7306,7 +7595,7 @@
       const eventRows = model.events.map(ev => [
         ev.epoch, 1000 + 25 * ev.epoch, ev.type, ev.region_id, ev.name, ev.outcome,
         ev.faction !== undefined ? ev.faction : (ev.factions ? ev.factions.join("|") : undefined),
-        ev.measure, ev.winner, ev.ceded, ev.tribute, ev.occupied, ev.contested, ev.ruler
+        ev.measure, ev.winner, ev.ceded, ev.tribute, ev.occupied, ev.contested, ev.ruler, ev.by
       ]);
       const epochRows = [];
       model.regions.forEach((reg, i) => {
@@ -7320,7 +7609,10 @@
         model.dynasties[fac].forEach(r => rulerRows.push([fac, r.name, r.from, r.contested]));
       return [
         ["events.csv", csvOf(
-          ["epoch", "year", "type", "region_id", "name", "outcome", "faction", "measure", "winner", "ceded", "tribute", "occupied", "contested", "ruler"],
+          // E1 (#142): `by` separates a decree the GOVERNOR issued from the same
+          // measure the seat reached on its own. Empty in every auto-run world, which
+          // is why the fixture allowlist admits it without a single cell moving.
+          ["epoch", "year", "type", "region_id", "name", "outcome", "faction", "measure", "winner", "ceded", "tribute", "occupied", "contested", "ruler", "by"],
           eventRows)],
         ["epoch_region.csv", csvOf(
           ["region_id", "epoch", "epoch_date", "wealth", "elite_share", "population", "dominant_bloc", "occupied", "tariff_burden"],
@@ -8582,7 +8874,8 @@
         { t: "a levy at a gate is not a price, because a price implies a choice, and the {num:gate_n} offer none", req: c => c.gateN > 0 },
         { t: "every one of the {num:gate_n} charges, and every charge is paid by somebody with no second road", req: c => c.gateN > 0 && c.gate_none === 0 },
         { t: "every one of the {num:gate_n} charges, and none of them was put there by anyone who pays", req: c => c.gateN > 0 && c.gate_none === 0 },
-        { t: "the one that charges nothing charges nothing because nobody found it worth holding, and the other {num:gate_n} do", req: c => c.gateN > 1 && c.gate_none === 1 },
+        { t: "the one that charges nothing charges nothing because nobody found it worth holding, and the other {num:gate_others} do", req: c => c.gateN > 2 && c.gate_none === 1 },
+        { t: "one of the {num:gate_n} charges nothing because nobody found it worth holding, and the other one does", req: c => c.gateN === 2 && c.gate_none === 1 },
       ],
       treasuries: [
         { t: "the tariff ledgers run deepest with {term:richest_power}, and coin buys the next gate", req: c => c.hasTreasuries },
@@ -8726,7 +9019,10 @@
         seed: params.seed, close_year: 1000 + 25 * params.ep,
         capital: model.capitalName,
         reigning: (crownLine[crownLine.length - 1] || {}).name || "an unnamed regent",
-        n_regions: model.regions.length, compass,
+        n_regions: model.regions.length,
+        // the OTHERS: everywhere a clause says "the other N", N is not the total. It
+        // read `n_regions` once and printed "the other 24 regions" in a realm of 24.
+        n_others: model.regions.length - 1, compass,
         pop_top: pops[0], pop_med: pops[Math.floor(pops.length / 2)],
         hasWorks: works0.length > 0, works_list: list(works0.map(id => town(id).name)),
         // the trunk lines run from the works TO the capital, so a beat that says so
@@ -8831,6 +9127,7 @@
         ungov_answer: bc.ungoverned === 1 ? "answers" : "answer",
         ungov_recognise: bc.ungoverned === 1 ? "recognises" : "recognise",
         gateN: model.holdings.length, gate_n: model.holdings.length,
+        gate_others: model.holdings.length - 1,   // "the other N", same trap as n_others
         gate_crown: hc.crown, gate_temple: hc.temple, gate_magnate: hc.magnate, gate_none: hc.none,
         gate_none_n: hc.none,
         hasTreasuries: model.holdings.length > 0 && (tr.crown + tr.temple + tr.magnate) > 0,
@@ -8926,6 +9223,13 @@
       discovery: [["discovery", "discovery_gloss"], ["discovery_coda", "discovery_name"]],
       ascendancy: [["ascendancy", "ascendancy_gloss"], ["ascendancy_coda", "ascendancy_name"]],
       consecration: [["consecration", "consecration_gloss"], ["consecration_coda", null]],
+      // E1 (#142): the reign's own year-lines. A decree is narrated as a decision
+      // somebody took, not as weather that happened -- the chronicle has spent four
+      // acts insisting nobody steered this world, and a governor is the exception it
+      // now has to record.
+      decree: [["decree", "decree_gloss"], ["decree_coda", null]],
+      revolt_averted: [["revolt_averted", "revolt_averted_gloss"], ["revolt_averted_coda", null]],
+      dominion_repelled: [["dominion_repelled", "dominion_repelled_gloss"], ["dominion_repelled_coda", null]],
       seizure: [["seizure", "seizure_gloss"], ["seizure_coda", null]],
     };
     const eventClasses = (type) => EVENT_CLASSES[type] || [[type, type + "_gloss"]];
@@ -10161,6 +10465,7 @@
       e.ev_place = PLACE[ev.faction] || "the capital";
       e.evContested = !!ev.contested;
       e.evMeasure = ev.measure || null;
+      e.evBy = ev.by || null;   // E1: whose hand -- the seat's or the governor's
       e.ev_measure = MEASURE[ev.measure] || "a measure the clerks did not title";
       e.ev_power = ev.power || (ev.type === "courting" ? "the Rival" : "the Metropole");
       e.ev_occupied = ev.occupied !== undefined ? ev.occupied : null;
@@ -10852,6 +11157,97 @@
       ],
     };
 
+
+    // E1 (#142): the governor's year-lines, in the historian's register. Gated on the
+    // measure so a decree reads as the decision it was, and glossed with the long
+    // edge the physics will charge for it later -- the card states the near edge and
+    // the record is where the far one arrives.
+    const DECREE_POOL = {
+      decree: [
+        { t: "the governor of {name:capital} chartered the wire out to the dark country, on the metropole's credit", req: c => c.evMeasure === "conduit_charter" },
+        { t: "{name:capital} signed for the conduit loan and the wires went where the ledgers had refused them", req: c => c.evMeasure === "conduit_charter" },
+        { t: "the dark settlements were promised the wire in {num:ev_year}, and the promise was borrowed", req: c => c.evMeasure === "conduit_charter" },
+        { t: "the governor opened the granary at {name:capital} before the next town rose", req: c => c.evMeasure === "crown_granary" },
+        { t: "bread was decreed out of the crown's own stores in {num:ev_year}", req: c => c.evMeasure === "crown_granary" },
+        { t: "the granary of {name:capital} was opened by decree rather than by petition", req: c => c.evMeasure === "crown_granary" },
+        { t: "the governor of {name:capital} floored the ore price against the metropole's own", req: c => c.evMeasure === "retention_act" },
+        { t: "a price floor was set at {name:capital} so the diggers kept more of what their ground gave up", req: c => c.evMeasure === "retention_act" },
+        { t: "in {num:ev_year} the governor refused the metropole's price and named one instead", req: c => c.evMeasure === "retention_act" },
+        { t: "the governor capped what every gate in the {num:n_regions} regions may charge", req: c => c.evMeasure === "toll_amnesty" },
+        { t: "the tariffs were cut by decree out of {name:capital} in {num:ev_year}", req: c => c.evMeasure === "toll_amnesty" },
+        { t: "the governor raised the tariff at all {num:n_regions} regions' gates and called it revenue", req: c => c.evMeasure === "toll_crackdown" },
+        { t: "in {num:ev_year} {name:capital} decided the gates were charging too little", req: c => c.evMeasure === "toll_crackdown" },
+        { t: "the governor of {name:capital} ordered the spoil spread thin instead of piled on one country", req: c => c.evMeasure === "dumping_reform" },
+        { t: "the doctrine was reversed by decree at {name:capital}: no more written-off ground", req: c => c.evMeasure === "dumping_reform" },
+        { t: "the governor refused the metropole's charter on {name:ev_town}", req: c => c.evMeasure === "charter_refused" },
+        { t: "the factors were turned away from {name:ev_town} in {num:ev_year}, charter and all", req: c => c.evMeasure === "charter_refused" },
+      ],
+      decree_gloss: [
+        { t: "the wire reached the dark and the interest reaches {name:capital} every year after", req: c => c.evMeasure === "conduit_charter" },
+        { t: "what the ledgers would not pay for, a loan did, and {name:capital} services it out of the crown", req: c => c.evMeasure === "conduit_charter" },
+        { t: "nobody in the dark country of {name:capital} signed the note that lit it", req: c => c.evMeasure === "conduit_charter" },
+        { t: "bread in a lean year is mercy, and in a long peace it becomes a habit {name:capital} cannot put down", req: c => c.evMeasure === "crown_granary" },
+        { t: "the levy that fills the granary of {name:capital} does not stop when the famine does", req: c => c.evMeasure === "crown_granary" },
+        { t: "the floor pays the digger, and the money that funded the works of {name:capital} reads it as a cap and leaves", req: c => c.evMeasure === "retention_act" },
+        { t: "what the diggers of {name:capital} gained, the owners' row began quietly withdrawing", req: c => c.evMeasure === "retention_act" },
+        { t: "the roads across {num:n_regions} regions opened and the treasury thinned, which are one decision seen from two ends", req: c => c.evMeasure === "toll_amnesty" },
+        { t: "every gate the realm keeps collects less, and {name:capital} notices first", req: c => c.evMeasure === "toll_amnesty" },
+        { t: "{name:capital} ate that year, and the taxed road paid for the meal", req: c => c.evMeasure === "toll_crackdown" },
+        { t: "the gates of {name:capital} were told to collect, and they collect from whoever has no second road", req: c => c.evMeasure === "toll_crackdown" },
+        { t: "no country is written off now, and the poison piled on one is spread across {num:n_regions} regions", req: c => c.evMeasure === "dumping_reform" },
+        // no singular arm here, and that is checked rather than assumed: `regions`
+        // clamps to [5, 64], so `n_others` is never below four and a count-of-one
+        // clause could not fire. The plural-agreement reflex authored one anyway,
+        // which lint cannot catch — dead prose has no surface to collide with.
+        { t: "the sacrifice zone was dissolved by decree and its share of the spoil went to the other {num:n_others} regions", req: c => c.evMeasure === "dumping_reform" },
+        { t: "{name:ev_town} keeps its whole yield now, and the capital that would have built there never came", req: c => c.evMeasure === "charter_refused" },
+        { t: "the works the factors would have funded at {name:ev_town} were not built by anyone else", req: c => c.evMeasure === "charter_refused" },
+      ],
+      decree_coda: [
+        { t: "the record of {name:capital} marks it a decision, which is rarer in these pages than a disaster", req: () => true },
+        { t: "somebody at {name:capital} chose this, and the choosing is the part worth recording", req: () => true },
+        { t: "the ledgers of {num:n_regions} regions will carry it long after the year is out", req: () => true },
+        { t: "what a governor decides, the {num:n_regions} regions pay for on a schedule of their own", req: () => true },
+      ],
+      revolt_averted: [
+        { t: "the rising at {name:ev_town} was bought off before it lit", req: () => true },
+        { t: "the governor read the fires on the {name:ev_town} horizon and paid to keep them unlit", req: () => true },
+        { t: "in {num:ev_year} {name:ev_town} came to the edge of rising and was talked back from it", req: () => true },
+        { t: "what would have been a rising at {name:ev_town} was settled in a room instead", req: () => true },
+      ],
+      revolt_averted_gloss: [
+        { t: "the grievance was conceded rather than answered, and conceding cost {name:capital} coin it had counted on", req: () => true },
+        { t: "{name:ev_town} keeps more of what it makes now, which is what it would have taken by force", req: () => true },
+        { t: "no constabulary rode to {name:ev_town}, no hangings followed, and no garrison was posted afterwards", req: () => true },
+        { t: "the peace at {name:ev_town} was purchased, and the price is in the crown's ledger", req: () => true },
+      ],
+      revolt_averted_coda: [
+        { t: "a rising that does not happen leaves {name:ev_town} no date to keep", req: () => true },
+        { t: "the {num:n_regions} regions record nothing that year, which is what averting looks like from outside", req: () => true },
+        { t: "whether {name:ev_town} was spared or merely delayed is not a question this record can settle", req: () => true },
+      ],
+      dominion_repelled: [
+        { t: "the Dominion's fleet stood off {name:ev_harbor} and was turned away", req: () => true },
+        { t: "the governor refused the fleet at {name:ev_harbor} in {num:ev_year}", req: () => true },
+        { t: "{name:ev_harbor} was mustered against the fleet instead of opened to it", req: () => true },
+        { t: "the empire came to {name:ev_harbor} and did not land", req: () => true },
+      ],
+      dominion_repelled_gloss: [
+        { t: "the muster was paid for out of {name:capital}'s treasury, and the quay's owners wanted the trade", req: () => true },
+        { t: "nothing at {name:ev_harbor} was occupied and nothing was wired, which is one refusal counted twice", req: () => true },
+        { t: "the assessment tables never reached {name:ev_harbor}, and neither did the copper", req: () => true },
+        { t: "{name:capital} paid for a fleet it never fought", req: () => true },
+      ],
+      dominion_repelled_coda: [
+        { t: "an empire turned away from {name:ev_harbor} once is an empire that knows the way back", req: () => true },
+        { t: "the {num:n_regions} regions stayed the realm's own that year", req: () => true },
+        { t: "what {name:ev_harbor} kept, it kept at a price the record can name", req: () => true },
+      ],
+    };
+
+    // the reign's year-lines join the historian's event pool
+    Object.assign(EVENT_POOL, DECREE_POOL);
+
     // Everything the judge may count, as integers, because the register's law
     // forbids a numeral and `loomSpell` rounds. A gini to two places has no spelled
     // form worth reading, so the gap is carried in PARTS OF A HUNDRED — the same
@@ -11340,6 +11736,7 @@
         ...DEFAULTS,
         seed: p.get("seed") || DEFAULTS.seed,
         fate: (p.get("fate") || DEFAULTS.fate).trim(),
+        ch: formatDecisions(parseDecisions(p.get("ch"))),   // sanitized on the way in
         world: (p.get("world") || DEFAULTS.world).trim() || DEFAULTS.world,
         regions: clamp(Math.round(num("regions", DEFAULTS.regions)), 5, 64),
         relax: clamp(Math.round(num("relax", DEFAULTS.relax)), 0, 8),

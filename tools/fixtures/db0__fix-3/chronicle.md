@@ -102,7 +102,7 @@ The emptiest place in the record is Mariellenne Delf, which the roads have given
 
 The realm divides 9 to the Crown, 1 to the Temple and 0 to the magnates. A further 1 of the 12 regions acknowledge no authority at all.
 
-The bridges, passes and quays number 5: Crown 3, Temple 0, magnates 1. The one that charges nothing charges nothing because nobody found it worth holding, and the other 5 do.
+The bridges, passes and quays number 5: Crown 3, Temple 0, magnates 1. The one that charges nothing charges nothing because nobody found it worth holding, and the other 4 do.
 
 The Crown came out of the years with the deepest ledger: what the gates earn buys more gates, and of the powers the Crown and the magnates are the pair worth watching.
 

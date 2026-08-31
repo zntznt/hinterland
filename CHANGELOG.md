@@ -1,6 +1,160 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the reign engine: a governor's choices, replayable from a URL** (issue #142, E1;
+  **schema 56 → 57, additive** — all 30 `world.geojson` fixtures differ in the version
+  number and in nothing else, verified field by field: `ch` and its decision log appear
+  in provenance only when a reign was played, `by` is empty on every auto-run event row,
+  and the three new event types only a reign can produce cannot occur without one.
+  All 30 `events.csv` files gained an empty `by` column — a trailing comma on every
+  row, verified as the only change — which is exactly the case the fixture allowlist
+  admits: a new column, empty for every config in the matrix. 5 `chronicle.md` files also
+  moved, for a prose fix unrelated to the reign, described below).
+  A world was a thing that happened to you. Now a governor can stand at the points
+  where the dice decided and decide instead, and the whole reign is a string in the
+  URL: `#seed=…&ch=w4:1,r6:2,t3:1`. No UI (that is E2/#143) — the engine is playable
+  by hand.
+  **THE BYTE-PIN WAS BUILT FIRST AND IS THE POINT.** §5 amendment (d) says the reign
+  engine may not move the auto-history, so the first check written was the one that
+  fails if it does: over four worlds, an explicit empty `&ch=`/`&fate=` and five
+  malformed reigns each export byte-identically to the bare hash. Every later stage
+  adds another way for a decision to reach the loop, and each is a chance to disturb
+  the draw order of worlds that decided nothing. **A world with no reign is the world
+  that existed before the reign engine did**, and that is checked, not asserted.
+  **The echo-the-dice invariant is structural, not lucky.** Option 0 of every decision
+  is the dice's own outcome, so a reign that echoes every die runs the same branch in
+  the same order drawing the same numbers. Over 40 worlds, echoing reproduces the auto
+  world byte-identically 40/40; taking a different road changes it 40/40. Diverging is
+  *allowed* to change the draws that follow — a different history has different luck —
+  so the invariant is asserted on the echo case only, and the fork case is asserted
+  the other way round: **a decision that changes nothing is not a decision.**
+  **Nine decisions: three dice taken over, six dilemmas authored.** The dice are `w`
+  (the wound response, offering the top two *distinct* eligible measures), `r` (the
+  rising: crushed / won / **averted**) and `d` (the Dominion: the quay opened or the
+  approaches burned, **repelled**). The six dilemmas are `c` the conduit, `g` the
+  granary, `o` the ore floor, `t` the gates, `s` the spoil, `n` the charter.
+  **THE SIX ARE NOT §5.1'S SIX, AND THAT IS WHAT THE TICKET ASKED FOR.** §5.1 froze six
+  flavours (the aetherstone concession, the imperial embassy, the sanctuary writ, the
+  skyway charter, conduit rationing, the freeport pardon) authored against pre-pivot
+  physics, and #142 asks for them "re-anchored to the GOVERNOR seat (comply/resist/skim
+  vs the metropole) … long edges via Phase B mechanisms". Their *triggers* mostly
+  survived the pivot — there is an ore strike, an annexation, a sanctuary, a skyway, a
+  freeport. Their *long edges* did not: absentee rents, enriched collaborators and
+  gentrifying smugglers are not mechanisms Phase B left behind, so five of the six
+  would mean adding physics inside a ticket whose acceptance is a byte-pin, and then
+  re-authoring the prose around it. So the six are instead the six Phase B levers that
+  **already carry a discovered far edge**: B7's charter debt (`c` — the wires reach the dark country on the metropole's
+  credit, and the interest reaches too), B7's granary dependency (`g` — bread now
+  against a habit later, which curdles only in a sustained peace), B7's capital flight
+  (`o` — resist the metropole's price and the diggers keep more, and the owners' row
+  thins along with the works it funded), the tariff scale (`t` — the skim: cut and the
+  roads open while the treasury thins, raise and the crown eats while the taxed road
+  pays), B4's disposal doctrine (`s` — concentrate writes one zone off and spares
+  everywhere else; disperse spreads the same poison thin) and B11's concession (`n` —
+  refuse the charter, keep the yield, lose the capital that would have built on it).
+  Only `c` survives §5.1 by letter and trigger (dark share ≥ 0.4); its edges are B7's
+  rather than the ones §5.1 sketched. Each is offered once per run, consumes
+  **zero randomness**, and has option 0 = the status quo, which is why merely being
+  asked cannot move a world that answered nothing.
+  **Each option is a different road, and that is measured rather than intended.** Over
+  18 decisions spanning all nine kinds, every option of every decision lands in a world
+  distinct from every other option of that decision, option 0 reproduces the auto run
+  exactly, and 18/18 reigns replay byte-identically from `ch`+`fate` alone.
+  **G5's four adversarial findings, each landed with its fix.**
+  (1) *The averted rising's ripples.* G5 names this case for its consequences, not its
+  existence: a rising that never happens must leave every consumer of revolt state
+  coherent, and there are six. Five were easy. The garrison is the one that bit — **the
+  Crown fortifies a crushed town after the hangings, and there were none.** Over 12
+  worlds an aversion now leaves no revolt event, no stamp on the region, no byname
+  (`the Free`, `the Famished`), no won-arc, and no garrison posted for hangings that
+  never happened, and the once-per-run guard still closes so the rising is not offered
+  twice. The first version of this branch had exactly that bug: the tail
+  after the branch set `reg.eventType = "revolt"` and pushed the revolt event
+  unconditionally, so the first averted rising averted nothing at all.
+  (2) *The null fork — in a second sense G5 did not have in mind.* G5's finding names a
+  run that offers **no** fork at all, and asks the verdict panel for a line rather than
+  a degenerate diff table; that is a panel, so it belongs to E2. Building the engine
+  turned up a nearer relative: the wound's ladder can name a measure with **one**
+  option, because its runner-up is not distinct. Offering it would put a card in front
+  of a governor whose only move is the move already made, and log a choice in the
+  export that no reign could have taken differently. `decide` returns 0 without logging
+  when handed fewer than two options; across 40 worlds every logged decision offers at
+  least two distinct roads. G5's own case is real but not reachable by accident at
+  defaults: over 60 worlds at ep=10 **none** offered zero forks and the thinnest
+  offered three. It is reachable at ep=0, where there are no epochs to decide in, and
+  E2 will need the line.
+  (3) *The treasury floor.* No decree may drive a treasury below nothing, whatever it
+  costs; all three are clamped after the dilemma block.
+  (4) *Repelled narration.* A Dominion that is turned away and a rising that is talked
+  down are outcomes the chronicle had no words for, because they could not previously
+  happen. They have their own fragment classes now, alongside the decree block, and the
+  loom's house law applies to them like everything else.
+  **The parser is total and canonical, because a reign is a link.** Any input yields a
+  decisions map and anything unreadable yields an empty one, so a malformed `ch` is
+  exactly a world with no reign. Keys are **epoch-qualified** (`w4:1`) so a reign shared
+  at ep=10 and replayed at ep=6 carries decisions for years that never arrive — they
+  are simply not reached, rather than sliding onto the wrong one. Whatever order it was
+  typed in, it comes back epoch-ordered and last-wins, and the canonical form is a fixed
+  point: twelve inputs sanitize correctly and every one of them re-parses to itself,
+  which is what keeps two links to the same reign from disagreeing in provenance.
+  **A finding about `fate`, from a test it starved.** The per-option coverage table
+  originally held one fate constant across 60 seeds and found the wound takeover in
+  **0 of them**, while the Dominion arrived in 58. Nothing was broken: fate *is* the
+  luck (A2), so a fixed fate over many seeds is a single run of luck over many maps,
+  and event-triggered decisions vanish or saturate accordingly. Without a fixed fate
+  the same 60 worlds offer `w` in 22, `d` in 16, `o` in 7, `s`/`t` in 60. The check
+  varies fate with the seed and says why in a comment, because the next person to hold
+  a knob still would read 0/60 as a dead branch.
+  **Two prose bugs of the same shape, one of them E1's own, and 5 fixtures moved to
+  fix them (a declared act).** The decree gloss for a dissolved sacrifice zone said its
+  share of the spoil "went to the other 24 regions" — in a realm of 24. `n_regions` is
+  the total; "the other N" is never the total. Grepping the shape found the same
+  mistake already shipped in the gates block, where the one gate that charges nothing
+  is followed by "the other 5 do" **in a realm of 5 gates**, four of which charge. Both
+  now read a `n_others`/`gate_others` slot, both gained a singular arm for the count of
+  one, and the second is the reason **5 of the 30 chronicle fixtures were regenerated**
+  — `default/db0/gt0/wg0/iq100 × fix-3`, all five the same sentence in the same realm.
+  No `geojson` or `events.csv` byte moves.
+  *And a coda on that fix: the plural-agreement reflex authored two singular arms, and
+  both were wrong in different ways.* One carried no slot, which `loomLint` caught —
+  house law is that every fragment carries a region-varying slot, and "the only other
+  one does" carries none. The other could not fire at all: `regions` clamps to
+  **[5, 64]**, so `n_others` is never below four and a count-of-one clause for it is
+  dead prose. **Lint cannot catch that** — an unreachable fragment has no surface to
+  collide with and no law to break. It was deleted; the gates arm was kept, because it
+  is reachable and measured (a two-gate realm with one gate unheld occurs in 13 of 120
+  small worlds). The discipline the last three tickets built — *when a count can be one,
+  write the singular* — needs a second half: **check that it can.**
+  **Two vacuous assertions, caught by asking whether an assertion CAN fail.** The
+  averted-rising check read `epithet` off the region — the byname rides the settlement
+  — and filtered garrisons on `kind === "garrison"`, which the export calls
+  `constabulary`. Both arms were green over 12 worlds because neither ever found
+  anything to look at, including the garrison ripple G5 names as the one that bit. The
+  fix is not only the two names: the check now **counts its own witnesses** and fails
+  if the sample contains no rising that earned a byname and no garrison lifted, and
+  because a byname is rare (3 of 40 risings earn one) it hunts a witness deliberately
+  rather than hoping the first twelve worlds contain one.
+  **The `by` column was inconsistent on the three things only a reign can do.**
+  `revolt_averted` carried `by: "governor"`; `dominion_repelled` did not, so the column
+  the schema bumped for did not mark one of the three events that cannot exist without
+  a governor. It does now, and the suite holds the set in both directions: over 102
+  auto-run event rows not one is a decree, an aversion or a repulse and **not one
+  carries a `by` at all**, and each of the three, once a reign produces it, is stamped.
+  `by` is deliberately *not* set on a rising the governor chose to crush — the dice
+  could have crushed it too, and marking those needs the "the seat chose" lead-in §5.1
+  describes, which is prose this ticket does not author.
+  **The suite no longer spells the schema version.** Two checks asserted
+  `schema_version === 56` literally and went red on this bump while saying nothing about
+  what they guard; an *accidental* bump is already caught by 30 byte-pinned fixtures
+  moving at once. They read `SCHEMA_VERSION` off the engine now, and assert separately
+  that the engine exports a usable one.
+  **Two deviations from §5.1's plumbing line, both deliberate.** Provenance gains
+  `hinterland.ch` and `hinterland.decisions` (the log, in lived order, with `stale`
+  riding only when true) — under the same gate, because the log is *not* empty for an
+  auto run and writing it unconditionally would move all thirty fixtures. events.csv
+  gains `by` and **not** `option`: an option index alone is unreadable without the
+  option list, and the readable form of the same fact — which road was taken — is
+  already the row's `measure`/`outcome` beside `by`.
 - **the verdict is composed now, and the app stopped grading worlds** (issue #141, D5;
   **no schema change and no exported byte moves** — the regen touched 30 `chronicle.md`
   files and 0 `geojson`/`events.csv`, the same shape as #140 and for the same reason:

@@ -3909,15 +3909,33 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
             // will: the imperial peace keeps it manned, so it (and the Dominion's
             // foothold harbor) never empties into a dead zone under occupation.
             if (!reg.isCapital && !reg.occupied && (reg.livability < 20 || reg.settlementPop <= 22)) {
+              // #185: A TOWN THAT NEVER WAS is not a town that died. `livability` is
+              // computed once, at the founding, and never recomputed here — so a cell
+              // failing this bar in the FIRST recorded year was already below it when
+              // the founding centuries put a hamlet on it. The founding's quality
+              // term reads fertility, centrality, river and coast; it is blind to the
+              // ruggedness, temperature, elevation and biome this bar tests. It
+              // places towns its own loop deletes on the first tick.
+              //
+              // Measured: 42 of 384 cells sit below the bar at founding, and exactly
+              // those 42 are cleared in epoch 1 — the identity is exact, which is
+              // what proves these are corrections rather than declines.
+              //
+              // The state change is RIGHT and stays: nobody can live there. What was
+              // wrong is the record, which has narrated every one of them as a town
+              // death. They get their own event now, so the chronicle can say the
+              // ground was never habitable instead of mourning a settlement that
+              // existed for zero years.
+              const neverViable = (e + 1) === 1 && reg.livability < 20;
               reg.settled = 0; reg.abandonedEpoch = e + 1;
               reg.settlementPop = 0; reg.population = 0; reg.tier = "none";
               // the abandonment is now this cell's headline event: it overrides
               // any earlier same-cell event (a tower raised then deserted, a gate
               // seized then emptied) so event_type never promises a standing
               // asset the dead zone no longer holds.
-              reg.eventType = "settlement_abandoned"; reg.eventEpoch = e + 1;
+              reg.eventType = neverViable ? "site_unviable" : "settlement_abandoned"; reg.eventEpoch = e + 1;
               reg.eventSeverity = Math.max(reg.eventSeverity, 60);
-              events.push({ epoch: e + 1, type: "settlement_abandoned", region_id: reg.id });
+              events.push({ epoch: e + 1, type: neverViable ? "site_unviable" : "settlement_abandoned", region_id: reg.id });
             } else {
               if (reg.settlementPop > reg.peakPop) reg.peakPop = reg.settlementPop;
               reg.population = Math.round(reg.settlementPop * (1 + reg.rural));
@@ -7912,6 +7930,11 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     // Which classes each type composes, in order. A pair whose classes both gate
     // empty contributes nothing, so an optional coda costs nothing to declare.
     const EVENT_CLASSES = {
+      // #185: a site the founding placed a hamlet on that nobody could live on. It
+      // is NOT an abandonment and must not be narrated as one — there was no town
+      // to lose. Its own two classes so the record can say the ground was never
+      // habitable, which is a fact about the world worth one line.
+      site_unviable: [["site_unviable", "site_unviable_gloss"]],
       blight_plague: [["blight_plague", "blight_plague_gloss"], ["blight_plague_coda", "blight_plague_name"]],
       ore_strike: [["ore_strike", "ore_strike_gloss"], ["ore_strike_war", null]],
       war: [["war", "war_powers"], ["war_loss", "war_name"]],
@@ -7950,6 +7973,38 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     const eventClasses = (type) => EVENT_CLASSES[type] || [[type, type + "_gloss"]];
 
     const EVENT_POOL = {
+      // #185: the founding's own misses. Every fragment carries a region-varying
+      // slot and none of them says a town died, because none did.
+      site_unviable: [
+        { t: "the hamlet marked at {name:ev_town} was gone before the first count, and the ground is the reason", req: () => true },
+        { t: "nobody wintered at {name:ev_town}: the site was never one people could hold", req: () => true },
+        { t: "what the founding surveys called {name:ev_town} the first winter called uninhabitable", req: () => true },
+        { t: "the ground at {name:ev_town} never carried anyone, whatever the founding rolls entered", req: () => true },
+        { t: "{name:ev_town} appears in the founding survey and in no census after it", req: () => true },
+        { t: "the first winter took back whatever the founding thought it had made at {name:ev_town}", req: () => true },
+        { t: "the stones set at {name:ev_town} were the only thing that stayed", req: () => true },
+        { t: "there was no living to be had on the ground called {name:ev_town}, and the year proved it", req: () => true },
+        { t: "the founding wrote {name:ev_town} down and the country declined to keep it", req: () => true },
+        { t: "whatever was begun at {name:ev_town} did not last one turn of the seasons", req: () => true },
+        { t: "the site of {name:ev_town} was surveyed, entered, and never inhabited", req: () => true },
+        { t: "no smoke rose twice from {name:ev_town}", req: () => true },
+        { t: "the ground at {name:ev_town} was named before anyone asked whether it would hold a life", req: () => true },
+      ],
+      site_unviable_gloss: [
+        { t: "the survey that placed {name:ev_town} read the water and the road and did not read the ground", req: () => true },
+        { t: "the rolls of {name:capital} carried it for a season and then stopped", req: () => true },
+        { t: "no one left {name:ev_town}, because no one was ever there to leave", req: () => true },
+        { t: "{name:ev_town} is a name on a map and was never anything else", req: () => true },
+        { t: "the record of {name:capital} keeps the name and drops the place", req: () => true },
+        { t: "the rolls at {name:capital} were drawn from a map and not from a visit", req: () => true },
+        { t: "what {name:capital} counted there it counted once and never again", req: () => true },
+        { t: "the founding of {name:capital} was better at naming ground than at reading it", req: () => true },
+        { t: "an entry in the survey of {name:capital} is not the same thing as a town", req: () => true },
+        { t: "the loss is a clerical one: {name:ev_town} was never anybody's home to lose", req: () => true },
+        { t: "the country around {name:ev_town} never argued; it simply did not sustain anyone", req: () => true },
+        { t: "nothing was abandoned at {name:ev_town}, because nothing was ever established", req: () => true },
+        { t: "the survey of {name:capital} recorded a settlement and the ground recorded nothing", req: () => true },
+      ],
       // -- the aetherworks ----------------------------------------------------
       refinery_collapse: [
         { t: "the aetherworks at {name:ev_town} shut down, the fields that fed them worked out", req: () => true },

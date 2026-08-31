@@ -1,8 +1,8 @@
 epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occupied,contested,ruler,by
 1,1025,embargo,3,,,,,,,,,,,
-1,1025,settlement_abandoned,2,,,,,,,,,,,
-1,1025,settlement_abandoned,9,,,,,,,,,,,
-1,1025,settlement_abandoned,10,,,,,,,,,,,
+1,1025,site_unviable,2,,,,,,,,,,,
+1,1025,site_unviable,9,,,,,,,,,,,
+1,1025,site_unviable,10,,,,,,,,,,,
 1,1025,seizure,3,,,magnate,,,,,,,,
 2,1050,drought,4,the Drought of 1050,,,,,,,,,,
 3,1075,succession,,Drumdek,,magnate,,,,,,false,1,

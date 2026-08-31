@@ -12,7 +12,7 @@ import {
   relaxPts,
   buildTopology, buildGeology, applyAttributes,
   edgeCost, costDistances,
-  toGeoJSON, toEpochSeries, toCsvTables, epochDate,
+  toGeoJSON, toEpochSeries, toCsvTables, epochDate, voicesFor,
   computeFindings, getFindings, composeChronicle, composeFindings,
   composeVerdict,
   parseHash,
@@ -1657,6 +1657,31 @@ const d3 = globalThis.d3;
         row("river_flux", `${reg.riverFlux} — accumulated rainfall flow; navigable if ≥40`) +
         row("downstream_blight", `${reg.downstreamBlight} — blight carried from upstream`) +
         `</table>`);
+
+      // D2 (#138): WHAT THEY SAY / WHAT IS WRITTEN. The two registers on one
+      // region, side by side, with the arithmetic of their disagreement under them.
+      // This is the panel the whole surface exists for: not that the ledger is
+      // wrong, but that the distance between the two is a NUMBER, computed from
+      // legibility and distrust, leaning the way the office's interest leans.
+      {
+        // memoized per (model, params) and normally already primed by the last
+        // export build — clicking a region must not rebuild the whole world
+        const mine = (voicesFor(model, params) || []).filter(v => v.region_id === reg.id);
+        const oral = mine.find(v => v.kind === "oral");
+        const written = mine.find(v => v.kind === "written");
+        if (oral || written) {
+          const V = [`<div class="insp-sec">WHAT THEY SAY / WHAT IS WRITTEN</div>`];
+          if (oral) V.push(`<div class="insp-voice"><b>the street</b> <span class="insp-band">${esc(oral.band)} · ${oral.sentiment > 0 ? "+" : ""}${oral.sentiment}</span><p>${esc(oral.text)}</p></div>`);
+          if (written) V.push(`<div class="insp-voice"><b>the record</b> <span class="insp-band">${written.sentiment_written > 0 ? "+" : ""}${written.sentiment_written}${written.written.corridor ? " · corridor" : ""}</span><p>${esc(written.text)}</p></div>`);
+          if (written) V.push(`<table>` +
+            row("divergence", `${written.written.D} — 0.45·legibility_gap + 0.15·(100 − social_trust)`) +
+            row("skew", `${written.written.skew > 0 ? "+" : ""}${written.written.skew} — ${esc(written.written.why)}`) +
+            row("lead topic", `${esc(written.lead)} — what the entry is mostly about`) +
+            `</table>`);
+          V.push(`<div class="insp-note">The record is not a second opinion. It is the street's own sentiment moved by the skew above, toward whatever the office writing it has an interest in — which is not always the rosier direction.</div>`);
+          L.push(V.join(""));
+        }
+      }
       document.getElementById("inspBody").innerHTML = L.join("");
     }
 
@@ -2929,7 +2954,7 @@ const d3 = globalThis.d3;
       $("dlTables").addEventListener("click", () => {
         if (!model) return;
         // one click, six tables — the same blob+anchor path as every download
-        for (const [fname, text] of toCsvTables(model)) {
+        for (const [fname, text] of toCsvTables(model, params)) {
           const blob = new Blob([text], { type: "text/csv" });
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");

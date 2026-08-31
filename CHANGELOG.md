@@ -1,6 +1,88 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the voices ship: the street and the ledger disagree on the record** (issue #138,
+  D2; **schema 57 → 58, additive but NOT byte-neutral** — every export gains
+  `hinterland.voices`, so all 30 fixtures are a declared regen; verified field by
+  field that each moved by the version number and the new key alone, 5 voices apiece,
+  and that no fixture carried the key before).
+  A region has had columns since the beginning and a chronicle since D4. It has never
+  had a mouth. Now two: **what they say**, and **what is written** — one world, two
+  registers, and a disagreement that is arithmetic rather than attitude.
+  **THE DISAGREEMENT IS A NUMBER.** The written voice is not a second opinion. It is
+  the oral one moved by `D = 0.45·legibility_gap + 0.15·(100 − social_trust)`, signed
+  by whatever the office writing it has an interest in — and that interest is *not*
+  always the rosier direction. A harm is minimised, an achievement inflated (same
+  sign, opposite lie); disorder inflates for a constabulary writing a budget request
+  and deflates for a censorate with order to keep. `elsewhere` splits by direction
+  (#136 §7.6): an outward flow the region **lost** is minimised like any harm, an
+  inward relation it merely **transmits** deflates toward "not a matter for this
+  office". A controlled ledger — occupied, or order ≥ 70 — is clamped to [−10, +25]:
+  never furious and never glad.
+  **The loom was built for this before this existed.** D1 registered `street`
+  (digits: folk) and `ledger` (digits: exact) pointing at a "voices" surface. So V1
+  (every digit in a written voice is an export value) and V2 (no digit in an oral
+  one) **fall out of the register table** rather than being policed after the fact.
+  The corpus needed only its 19 bare name slots prefixed — 348 of them — because the
+  prototype already spoke the loom's typed-slot syntax.
+  **V3 is true by construction.** Voices compose from the *finished* export and read
+  the names they say back out of the very features they ship beside. That also puts
+  the surface provably outside the dynamics loop — by the time it runs, every draw
+  the world makes has been made — so the byte-compat acceptance is satisfied by where
+  the code sits. It is still pinned, because "holds structurally" is what was said
+  about the reign engine, and the reign engine has a pin.
+  **Who gets to speak is an editorial claim, and it is not "who is worst off".** The
+  cap is 3 oral + 2 written. A page that always hands the microphone to the most
+  miserable town makes the same decision every epoch and the street stops being
+  evidence and becomes a chorus. Newsworthiness is **distance from neutral** — a town
+  doing unusually well is exactly as newsworthy as one doing unusually badly —
+  weighted by population and topic salience. On the first world tried it chose a
+  fury town, a steady town and a weary one.
+  **The anaphora rule, and why a count is not a reading.** Forcing a region-varying
+  slot into every fragment is what stops the pool colliding with itself; it also made
+  a voice chant its own town's name, 5.9 mentions per oral paragraph and up to 11 in
+  a written one (§7.5 predicted exactly this). The spec proposes a second, name-free
+  realization per fragment — 251 more fragments to keep in step with the first 251.
+  One rule on the displayed text does the same work: after two mentions, a name
+  becomes a pronoun. Mean fell to 2.2, max 3. **Then a person opened a ledger** and
+  the first paragraph had two faults the counting could not see: `The the town
+  account` (the article guard was case-sensitive) and a sentence opening lowercase
+  (a substitution landing where the loom had already capitalized). Both fixed. The
+  measurement was right and the prose was still wrong.
+  **Nine field-name defects, and they are one defect.** Across this ticket:
+  `aetherworks_capacity` is `reg.refining`; `legibility_gap` is `reg.legibility`;
+  `smuggling_intensity` is `reg.smuggling`; `tribute_burden` is not stored at all;
+  holdings are keyed `regionIdx`; `institutions` is not on the model; a road's
+  endpoints are `from_region`/`to_region`; and **a town's name is on its settlement,
+  not its region** — which resolved every `{name:town}` to an empty hole until the
+  text was printed rather than trusted. Counting the four in E1/E2, that is nine in
+  one session, three of which had shipped green for weeks. **The model and the export
+  use different names for the same thing and nothing checks the join.** Every field
+  in `voiceOf` was verified against the model before it was written, which is the
+  only reason this list is nine and not more.
+  **A defect I introduced and did not find for three stages.** The port renamed the
+  gate helpers `neg`/`pos` to `vNeg`/`vPos` with a word-boundary regex, which also
+  renamed the **skins' band keys** — a mechanical rename that could not tell code
+  from data. It sat harmless until the composer tried to read `conn.oral.neg` and
+  crashed. Restored by targeting `vNeg:` with the colon, which matches an object key
+  and never a function reference.
+  **Seven suite checks, two of which had no teeth when first written.** V1 failed on
+  an arbitrary floor of 15 digit-sequences the sample never reached — a check
+  reporting failure for a reason that was not real. And **V4's censor-corridor arm
+  asserted over nothing**: the corridor needs an occupied or high-order region and
+  all three sample worlds were ordinary. The sample is now two ordinary worlds and
+  one at `order=80`, and the check **fails if the corridor does not fire**. It fires
+  once. That is the fifth unfailable assertion found this session and the second I
+  wrote myself.
+  **V6 on the shipping engine, as the #136 gate restated it**: strict, over 204
+  regions at default weights, `weary` counted toward neither side — fury 5 ·
+  aggrieved 45 · weary 121 · steady 29 · proud 4. Both sides of zero reached.
+  **The gate is still not walked.** #136 asks the owner to read fifty voices aloud
+  and judge euphemism-join flatness and the house-style-of-lying uniformity. It has
+  not happened, this ticket shipped past it on the owner's instruction, and **those
+  two risks are unexamined by a human ear**. Nothing in V1–V6 can tell you whether
+  these sound like people. The voices in the export are the ones a reader will
+  actually meet.
 - **the voices gate, second run: three decisions taken, and two of my own findings
   withdrawn** (issue #136, the GATE; **no schema change, no app change, no exported byte
   moves** — `tools/proto/` is outside the app and the suite, which is what a gate is).

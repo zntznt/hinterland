@@ -84,7 +84,7 @@ paves over and occasionally wakes.
 - [Controls](#controls)
 - [Taking the seat (the reign)](#taking-the-seat-the-reign)
 - [The QGIS bridge](#the-qgis-bridge)
-- [Export schema (v57)](#export-schema-v57)
+- [Export schema (v58)](#export-schema-v58)
 
 ## Controls
 
@@ -161,7 +161,7 @@ byname roll, live in [CHANGELOG.md](CHANGELOG.md) so this page stays a front
 door. Open the field guide (docs/field-guide.md) for how to READ a world from
 the columns; open the changelog for how each mechanic earned its place.
 
-## Export schema (v57)
+## Export schema (v58)
 
 The FeatureCollection carries a top-level `hinterland` member with
 `schema_version` and the exact generator parameters. Every file can reproduce
@@ -173,6 +173,16 @@ the pivot's state: `world` (the outside-history key), the income `weights`,
 precinct / buried power), and `findings`, including the de-moralized
 `findings.verdict` (this world's gap × floor × growth class) and
 `findings.concessions` (imperial reach).
+
+As of **v58** every export carries `hinterland.voices` and `voices.csv`: the region's
+two registers, **what they say** and **what is written**, with the facts trail behind
+every figure a written voice prints. They are not two opinions. The written one is the
+spoken one moved by a computed divergence — `0.45·legibility_gap + 0.15·(100 −
+social_trust)` — signed by whatever the office writing it has an interest in, which is
+not always the rosier direction. A ledger under control (occupied, or order ≥ 70) is
+clamped: never furious and never glad. Three oral and two written per world, from the
+regions furthest from neutral — a town doing unusually well is as newsworthy as one
+doing unusually badly.
 
 Off-default, provenance also carries **the reign** (E1/E2, v57): `ch` — the
 governor's decisions as an epoch-qualified string, e.g. `w4:1,r6:2` — and

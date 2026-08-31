@@ -8,7 +8,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 57;   // E1 (#142): v57 adds the REIGN. `ch` in provenance when a governor played one, a `by` column on events.csv separating a decree from the seat's own measure, and three new event types only a reign can produce (decree, revolt_averted, dominion_repelled). Additive: a world with no reign exports exactly what v56 did, which is what the byte-pin proves.
+    const SCHEMA_VERSION = 58;   // D2 (#138): v58 adds THE VOICES. `hinterland.voices` carries the street and the ledger on the same world with the facts trail behind every figure, and voices.csv puts them in a table. Additive, but NOT byte-neutral: every export gains the key, so this is a declared regen of all 30 fixtures rather than a silent one. PREVIOUSLY — E1 (#142): v57 adds the REIGN. `ch` in provenance when a governor played one, a `by` column on events.csv separating a decree from the seat's own measure, and three new event types only a reign can produce (decree, revolt_averted, dominion_repelled). Additive: a world with no reign exports exactly what v56 did, which is what the byte-pin proves.
     // v55 (#180) redefined blight_load as an ABSOLUTE load (100 = ruined) carried as a decaying stock, where v54 normalised it to each world's own worst cell.
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
@@ -5998,7 +5998,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
           geometry: { type: "Point", coordinates: [round2(s.x), round2(s.y)] }
         });
       });
-      return {
+      const gj = {
         type: "FeatureCollection",
         name: "hinterland",
         hinterland: {
@@ -6049,6 +6049,24 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         },
         features
       };
+      // D2 (#138): the voices ride the export, and they are composed from the
+      // FINISHED object — the names a voice says are read back out of the very
+      // features it ships beside, which is what makes V3 true by construction
+      // instead of by a mapping kept in step by hand. It also puts the whole
+      // surface provably outside the dynamics loop: by the time this runs, every
+      // draw the world makes has been made.
+      gj.hinterland.voices = voicesPrime(model, params, gj).map(v => ({
+        region_id: v.region_id, epoch: v.epoch, kind: v.kind,
+        band: v.band, sentiment: v.sentiment, lead_topic: v.lead, skin: v.skin,
+        text: v.text,
+        ...(v.written ? {
+          sentiment_written: v.sentiment_written, divergence: v.written.D,
+          skew: v.written.skew, interest: v.written.why,
+          corridor: v.written.corridor ? 1 : 0,
+        } : {}),
+        facts: v.facts,
+      }));
+      return gj;
     }
 
     // ---- Epoch-series export: QGIS Temporal Controller food -----------------
@@ -6268,7 +6286,11 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
     };
     const csvOf = (header, rows) =>
       [header.join(","), ...rows.map(r => r.map(csvCell).join(","))].join("\n") + "\n";
-    function toCsvTables(model) {
+    // `params` is required: the tables carry voices now, and voices need the seed
+    // and epoch that produced them. It was briefly optional, with the voices coming
+    // from whatever the export had primed — which made the same call return
+    // different tables depending on whether an export had been built yet.
+    function toCsvTables(model, params) {
       const F = getFindings(model);
       const eventRows = model.events.map(ev => [
         ev.epoch, 1000 + 25 * ev.epoch, ev.type, ev.region_id, ev.name, ev.outcome,
@@ -6301,7 +6323,22 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         ["treasuries.csv", csvOf(["faction", "coin"],
           ["crown", "temple", "magnate"].map(k => [k, Math.round(model.treasuries[k])]))],
         ["findings.csv", csvOf(["key", "value"],
-          Object.keys(F).map(k => [k, F[k] !== null && typeof F[k] === "object" ? JSON.stringify(F[k]) : F[k]]))]
+          Object.keys(F).map(k => [k, F[k] !== null && typeof F[k] === "object" ? JSON.stringify(F[k]) : F[k]]))],
+        // D2 (#138): the street and the ledger, side by side in one table, so the
+        // disagreement is something a reader can sort a spreadsheet by. `skew` and
+        // `interest` are the divergence law's own workings, not a summary of them:
+        // sentiment_written − sentiment IS skew, unless the corridor clamped it,
+        // and the corridor column says when it did.
+        ["voices.csv", csvOf(
+          ["region_id", "epoch", "kind", "band", "sentiment", "sentiment_written",
+           "divergence", "skew", "interest", "corridor", "lead_topic", "skin", "text"],
+          (voicesAny(model, params) || []).map(v => [
+            v.region_id, v.epoch, v.kind, v.band, v.sentiment,
+            v.sentiment_written ?? "", v.written ? v.written.D : "",
+            v.written ? v.written.skew : "", v.written ? v.written.why : "",
+            v.written && v.written.corridor ? 1 : 0,
+            v.lead, v.skin, v.text,
+          ]))]
       ];
     }
 
@@ -9718,6 +9755,842 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       "{A}, though {B}.", "{A}, so {B}.",
     ];
 
+    // ---- D2 (#138): THE VOICES — sentiment, and the divergence law ----------
+    // The street and the ledger describe one world and disagree about it, and the
+    // disagreement is DERIVED rather than decorated: it is a number computed from
+    // the same exported columns everything else on the page is computed from.
+    //
+    // §3's bands: fury ≤ −45 < aggrieved ≤ −10 < weary ≤ +15 < steady ≤ +40 < proud.
+    const VOICE_TRAJ = { boom: 18, stable: 0, decline: -14, collapse: -30 };
+    // The reference ceiling the credit side's wealth term is stated against (#136,
+    // resolved). `wealth` is clamped 0–100 in the engine but its realized spread is
+    // far narrower and depends on the income mix — p50 14 / max 55 at default
+    // weights, max 28 under extraction, max 74 when the world runs on trade — so
+    // stated against 100 the term carried a mean 4.5 of its nominal 30 and `proud`
+    // was starved to 1.3%. 60 sits above the default ceiling (an ordinary world
+    // never clamps) and below the trade-heavy one (the richest trade towns saturate,
+    // which is the right reading of "as rich as this scale goes").
+    //
+    // ABSOLUTE, never a percentile. Under a percentile `proud` is a RANK — the top
+    // of THIS world, however poor the world — so a uniformly destitute realm would
+    // manufacture pride out of its own misery. Under an absolute ceiling it is a
+    // LEVEL. An instrument whose subject is inequality does not grade on a curve.
+    const VOICE_W_REF = 60;
+    const voiceBand = (s) => s <= -45 ? "fury" : s <= -10 ? "aggrieved"
+      : s <= 15 ? "weary" : s <= 40 ? "steady" : "proud";
+    function voiceSentiment(v) {
+      const T = VOICE_TRAJ[v.boom] ?? 0;
+      const G = 0.30 * v.blight + 0.35 * v.toll + 0.20 * v.injustice
+        + 18 * (v.occupied ? 1 : 0) + 3 * v.tribute + Math.max(0, -T);
+      const C = 0.30 * Math.min(100, v.wealth * 100 / VOICE_W_REF)
+        + 0.25 * v.trust + 0.15 * v.market + 0.10 * v.sky + Math.max(0, T);
+      return clamp(Math.round(C - G), -100, 100);
+    }
+    const VOICE_HARM = new Set(["toll", "blight", "burden", "abandon", "tribute", "water"]);
+    const VOICE_ACHIEVE = new Set(["works", "boom", "grid", "port", "sky"]);
+    const VOICE_DISORDER = new Set(["smuggling"]);
+    // §3 (#136 §7.6, resolved): `elsewhere` splits by DIRECTION, because the office's
+    // interest does. What the region LOST to somewhere else is a harm it wants to
+    // look blameless for (+D). What was decided above it and merely passes through
+    // is a thing it wants to look powerless over, and deflates toward "not a matter
+    // for this office" (−D). One row cannot carry both.
+    const voiceElsewhereOutward = (v) => v.emig >= 100;
+    function voiceWritten(sOral, lead, v) {
+      const D = Math.round(0.45 * v.legib + 0.15 * (100 - v.trust));
+      let skew = 0, why;
+      if (VOICE_HARM.has(lead)) { skew = D; why = "harm minimised"; }
+      else if (VOICE_ACHIEVE.has(lead)) { skew = D; why = "achievement inflated"; }
+      else if (VOICE_DISORDER.has(lead)) {
+        const quiet = v.occupied || v.order >= 70;
+        skew = quiet ? -D : D;
+        why = quiet ? "censorate deflates disorder" : "constabulary inflates disorder";
+      } else if (lead === "elsewhere") {
+        const out = voiceElsewhereOutward(v);
+        skew = out ? D : -D;
+        why = out ? "outward loss minimised" : "structural relation deflated";
+      } else { skew = 0; why = "no interest engaged"; }
+      let s = clamp(sOral + skew, -100, 100);
+      // The censor's corridor, generalized as §3 says it should be once the order
+      // axis exists (B9, #131): a controlled ledger is never furious and never glad.
+      const controlled = v.occupied || v.order >= 70;
+      const corridor = controlled && clamp(s, -10, 25) !== s;
+      if (controlled) s = clamp(s, -10, 25);
+      return { D, skew, s, why, corridor };
+    }
+
+    // ---- the authored corpus (spec §1, full declared scale) -------------------
+    // 251 fragments: 135 oral across 9 classes, 116 written across 8. Ported from
+    // tools/proto/voices-pools.mjs, which stays the authoring source so the corpus
+    // the gate reads and the corpus that ships cannot drift apart.
+    //
+    // A fragment is a CLAUSE: no leading capital (except the first-person pronoun,
+    // which is capital wherever it stands), no terminal stop. Frames own both.
+    // Every fragment carries at least one region-varying slot — a slotless fragment
+    // has exactly one surface per skin and collides with itself every time it is
+    // drawn, which no amount of pool growth fixes.
+    //
+    // Article discipline, inherited from the spec: {name:river} {name:holder}
+    // {name:event} {name:metropole} {name:rival} {name:gazette} render WITH their
+    // article; {name:town} {name:gate} {name:ruler} {name:shrine} {name:ruin}
+    // {name:exchange} {name:precinct} {name:buried} {name:skyway} render bare. No
+    // fragment writes "the {name:river}".
+
+    const vAny = () => true;
+    const vNeg = (b) => b === "fury" || b === "aggrieved";
+    const vPos = (b) => b === "steady" || b === "proud";
+    const vNotpos = (b) => b !== "proud";
+
+    const VOICE_ORAL = {
+      // ---- open: street-cry / address (14) --------------------------------------
+      open: [
+        { t: "you want the truth of {name:town}, stand at {name:gate} at shift-change", req: c => c.gate },
+        { t: "ask anyone on the {name:town} side of {name:river} and you'll hear it the same", req: c => c.river },
+        { t: "there's what the office writes and there's what {name:town} knows", req: vAny },
+        { t: "I've hauled {name:road} since before they put a name on it", req: c => c.road },
+        { t: "come down to {name:river} below {name:town} and I'll show you rather than tell you", req: c => c.onRiver },
+        { t: "my people have been in {name:town} four generations and I'll say this plain", req: vAny },
+        { t: "you'll not hear this from {name:blamed}", req: vAny },
+        { t: "stand at the {name:town} works gate when the third whistle goes", req: c => c.works > 0 },
+        { t: "I keep no ledger in {name:town}, so I'll tell it straight", req: vAny },
+        { t: "they ask us for a word and write down another, and that is {name:town}", req: c => c.legib >= 40 },
+        { t: "put your name to nothing in {name:town} and you'll do well enough", req: c => c.trust < 45 },
+        { t: "you've come up the {name:trade} road into {name:town}, so you've seen the half of it already", req: c => c.market >= 30 },
+        { t: "I'll give you {name:town} the way it is and not the way it reads", req: vAny },
+        { t: "sit where the light is and mind the sill — this is {name:town}", req: c => c.blight >= 35 },
+        { t: "there's no call to whisper, everyone in {name:town} knows it already", req: vAny },
+      ],
+
+      // ---- grievance (20) --------------------------------------------------------
+      grievance: [
+        { t: "you pay going over and you pay coming back, and {name:gate} keeps {num:toll}", req: c => c.toll >= 25 && c.gate, band: vNotpos },
+        { t: "{name:blamed} sits the tally-booth and counts, and the counting has never once come out for {name:town}", req: c => c.gate, band: vNotpos },
+        { t: "every works above us lets fall what it likes into {name:river}, and {name:town} drinks it last", req: c => c.onRiver && c.downstream >= 1, band: vNotpos },
+        { t: "in {name:town} we bury more than we name, and {name:blamed} calls it the ordinary rate", req: c => c.burden >= 30, band: vNeg },
+        { t: "{num:blight} of {name:town} ground will grow nothing a person should eat", req: c => c.blight >= 40, band: vNotpos },
+        { t: "they weigh what {name:town} lifts on scales {name:blamed} keeps, and the scales find their own rent", req: c => c.occupied, band: vNotpos },
+        { t: "the rent takes {num:toll} of a {name:trade} wage in {name:town} before the first shift is worked", req: c => c.toll >= 20, band: vNotpos },
+        { t: "there's {name:trade} here and none of it stays in {name:town}", req: c => c.eliteShare >= 45, band: vNotpos },
+        { t: "one in the house takes the {name:town} cough and then they all do, and {name:blamed} has a word for that too", req: c => c.burden >= 40, band: vNeg },
+        { t: "{name:town} is counted for the levy and uncounted for the road", req: c => c.legib >= 45, band: vNotpos },
+        { t: "the young go and the old stay and the middle of {name:town} is a thin thing", req: c => c.abandon >= 30, band: vNotpos },
+        { t: "{name:road} ran free in my mother's day and {name:blamed} has a booth on it now", req: c => c.road && c.toll >= 20, band: vNotpos },
+        { t: "{name:blamed} calls the {name:town} levy a schedule, and a schedule is a thing you can hold to", req: c => c.tribute >= 2, band: vNotpos },
+        { t: "{num:uncounted} of {name:town} is not in the book at all, and it suits {name:blamed}", req: c => c.legib >= 40, band: vNotpos },
+        { t: "{name:river} is drinkable if you have the wood to boil it, and {name:town} does not", req: c => c.safeWater < 40 && c.onRiver, band: vNeg },
+        { t: "the lode under {name:town} is done and the company is not, so it is us that ends", req: c => c.exhausted, band: vNotpos },
+        { t: "they took the {name:town} field for the works and gave the works to {name:ruler}", req: c => c.works >= 40 && c.ruler, band: vNotpos },
+        { t: "you can wait a day at {name:precinct} to be told to come back to {name:town}", req: c => c.order >= 60, band: vNotpos },
+        { t: "{name:town} pays for the lamp and the lamp is in {name:blamed}'s street", req: c => c.onGrid && c.eliteShare >= 40, band: vNotpos },
+        { t: "the healer is four days from {name:town} and {name:blamed} is here every quarter", req: c => c.serviceGap >= 40, band: vNotpos },
+        { t: "since they came to {name:town} nothing is ours to say is ours", req: c => c.occupied, band: vNeg },
+      ],
+
+      // ---- aspiration / boast (16) ----------------------------------------------
+      aspiration: [   // every fragment additionally gated off `fury` in buildVoice
+        { t: "three new lines at the {name:town} works since spring, and the third whistle never blows an empty shift", req: c => c.works >= 50, band: vPos },
+        { t: "the {name:trade} pay comes late to {name:town} but it comes, and it did not come at all before", req: c => c.boom === "boom" },
+        { t: "my girl reads the gauges at the {name:town} works now, which is more than her mother was let do", req: c => c.works > 0, band: vPos },
+        { t: "we mended the bank of {name:river} at {name:town} ourselves and nobody asked us to", req: c => c.onRiver },
+        { t: "there's a lamp where {name:road} enters {name:town} that wasn't there two winters back", req: c => c.onGrid && c.road },
+        { t: "you can put a roof on a year like this one in {name:town}, and {name:credited} may take the half of the credit", req: c => c.wealth >= 30, band: vPos },
+        { t: "{name:town} feeds itself now, and that is not nothing", req: c => c.wealth >= 20 },
+        { t: "{name:river} runs clean past the second bend below {name:town} and {name:credited} saw to it", req: c => c.safeWater >= 55 && c.onRiver },
+        { t: "the boats go out of {name:town} full and come back fuller", req: c => c.isPort, band: vPos },
+        { t: "my brother came back to {name:town}, which tells you more than vAny figure", req: c => c.boom === "boom", band: vPos },
+        { t: "we hold the {name:town} deeds ourselves, whatever they hold elsewhere", req: c => c.tenure === "customary" || c.tenure === "titled" },
+        { t: "there's not a house on the {name:town} row without someone in {name:trade}", req: c => c.works >= 30 || c.boom === "boom", band: vPos },
+        { t: "nobody in {name:town} has gone hungry through a winter in my daughter's lifetime", req: c => c.wealth >= 25 && c.abandon < 20, band: vPos },
+        { t: "{name:town} buried the old quarrel and the two banks of {name:river} trade again", req: c => c.trust >= 65 && c.river },
+        { t: "the lift runs to the platform now and a man can be at {name:gate} by noon", req: c => c.isSkyport && c.gate, band: vPos },
+        { t: "they say {name:ruler} has never once had to send a constable up to {name:town}", req: c => c.trust >= 70 && c.smuggling < 20 && c.ruler },
+      ],
+
+      // ---- witness: sensory / memory (20) ---------------------------------------
+      witness: [
+        { t: "I've watched {name:river} change colour off {name:town} twice in my life", req: c => c.onRiver && c.blight >= 30 },
+        { t: "{name:gate} was free in my mother's day", req: c => c.gate && c.toll >= 20 },
+        { t: "I remember when {name:event} came through {name:town}", req: c => c.event },
+        { t: "the sound of the {name:town} works carries to the far bank on a still night", req: c => c.works > 0 },
+        { t: "you learn the smell of a bad shift at the {name:town} line before the bell says so", req: c => c.works > 0 },
+        { t: "there were nine houses on that {name:town} row and now there are four", req: c => c.abandon >= 35 },
+        { t: "the dust settles white on the {name:town} sills by the second day", req: c => c.blight >= 45 },
+        { t: "I have not seen {name:blamed} walk past the first street of {name:town}", req: c => c.legib >= 40 },
+        { t: "my father called {name:town} by the old name and would not use the new one", req: vAny },
+        { t: "the {name:trade} barges leave {name:town} before light and you can set a clock by them", req: c => c.market >= 40 },
+        { t: "I have walked {name:road} in every weather there is", req: c => c.road },
+        { t: "there's a mark on a {name:town} wall where {name:river} came to, and it is above my head", req: c => c.onRiver },
+        { t: "the birds went off {name:river} at {name:town} the year the works opened", req: c => c.works > 0 && c.blight >= 30 && c.onRiver },
+        { t: "you can hear the {name:skyway} cables over {name:town} sing in a hard wind", req: c => c.isSkyport && c.skyway },
+        { t: "the bell at {name:shrine} still keeps the hours nobody in {name:town} keeps", req: c => c.shrine },
+        { t: "I've carried the same {name:trade} load up the same {name:town} stair for eleven years", req: c => c.gate || c.works > 0 },
+        { t: "they repainted the front of the {name:town} office and nothing behind it", req: c => c.order >= 60 },
+        { t: "the ground gives under the north field of {name:town} and always has", req: c => c.rugged >= 45 || c.blight >= 30 },
+        { t: "half of {name:town} speaks the old tongue at home and the other half pretends not to", req: c => c.cultDist >= 40 },
+        { t: "there is a stone at {name:ruin} older than vAny name {name:town} uses", req: c => c.ruin },
+        { t: "the ice on {name:river} at {name:town} used to hold a cart and now it will not hold a dog", req: c => c.temp <= 45 && c.onRiver },
+      ],
+
+      // ---- rumor (14) ------------------------------------------------------------
+      rumor: [
+        { t: "they say the night boats do not stop at the {name:town} quay at all", req: c => c.smuggling >= 40 },
+        { t: "there's a price for anything out of {name:town} if you know which door at {name:precinct}", req: c => c.blackMarket >= 40 },
+        { t: "word in {name:town} is {name:ruler} will not hold the seat past the next reckoning", req: c => c.ruler },
+        { t: "they say {name:exchange} moved the grade on {name:town} and told nobody", req: c => c.market >= 35 },
+        { t: "there's a man takes names at the {name:town} platform and he is not from here", req: c => c.occupied || c.isSkyport },
+        { t: "some say the lode under {name:town} is not done at all, only closed", req: c => c.exhausted },
+        { t: "I've heard the {name:gate} levy is to rise again before the year turns", req: c => c.toll >= 30 && c.gate },
+        { t: "they say {name:buried} lies under {name:town} and is not so buried as the Ministry likes to write", req: c => c.blight >= 50 && c.buried },
+        { t: "there's talk the {name:town} works will take on again, and there is always talk", req: c => c.works > 0 && c.boom !== "boom" },
+        { t: "the {name:trade} carters say {name:road} is watched now", req: c => c.smuggling >= 25 && c.road },
+        { t: "they say {name:metropole} has a use for {name:town} it has not mentioned", req: c => c.attention >= 0.6 },
+        { t: "someone in {name:town} had a letter that said the grain ships were turned back", req: c => c.isPort },
+        { t: "there's a story in {name:town} that {name:blamed}'s own household is not counted either", req: c => c.legib >= 50 },
+        { t: "they say the constables were paid twice this quarter in {name:town} and the healers not at all", req: c => c.serviceGap >= 35 },
+      ],
+
+      // ---- elsewhere: letters, prices, the metropole (14) ------------------------
+      elsewhere: [
+        { t: "my brother signed the recruiter's book out of {name:town} and his letter came with a stamp I can't read", req: c => c.emig >= 1 },
+        { t: "they burn what {name:town} lifts in streets that have never seen {name:river}", req: c => c.works > 0 && c.river },
+        { t: "the {name:trade} price is set somewhere it is always morning and in {name:town} it is always the same hour", req: c => c.market >= 35 },
+        { t: "half the pay that keeps this row of {name:town} comes in from off the map", req: c => c.remit >= 5 },
+        { t: "{name:gazette} comes up to {name:town} four days late and is still ahead of the office", req: c => c.market >= 30 },
+        { t: "there's a war on somewhere and {name:town} can tell by the freight", req: c => c.regime === "distant_war" },
+        { t: "{name:metropole} sets the grade and {name:exchange} reads it out and {name:town} lifts to it", req: c => c.market >= 30 },
+        { t: "my cousin writes that the {name:trade} out there is worse and the pay is better", req: c => c.emig >= 1 },
+        { t: "when {name:rival} and {name:metropole} fall out, the freight stops and {name:town} eats it", req: c => c.regime === "trade_war" || c.regime === "imperial_rivalry" },
+        { t: "the young ones of {name:town} say {coin:imperial} now and do not notice they do", req: c => c.attention >= 0.6 },
+        { t: "there are more of {name:town} gone than left, and that is a true count", req: c => c.emig >= 0.15 * c.pop },
+        { t: "the letters stop coming to {name:town} and that is how you know how it went", req: c => c.emig >= 1 },
+        { t: "they took the name of {name:town} for a grade of ore and we never saw the fee", req: c => c.endow >= 40 },
+        { t: "the boats that pass {name:town} do not stop, and they are going somewhere", req: c => c.isPort || c.onRiver },
+      ],
+
+      // ---- oath-frame (10) -------------------------------------------------------
+      oath: [
+        { t: "by {coin:oath}, that is {name:town}", req: vAny },
+        { t: "{coin:oath} keep {name:town}", req: vAny },
+        { t: "{coin:oath} take {name:blamed}'s scales off {name:town}", req: c => c.occupied || c.toll >= 30, band: vNotpos },
+        { t: "as {coin:oath} hears me, and {name:town} with it", req: vAny },
+        { t: "{coin:oath} witness it, I have not made {name:town} worse in the telling", req: vAny },
+        { t: "swear on {coin:oath} and on {name:river} where it passes {name:town}, and mean it", req: c => c.river },
+        { t: "{coin:oath} send {name:town} a plain year", req: c => c.boom !== "boom" },
+        { t: "{coin:oath} and {name:road}", req: c => c.road },
+        { t: "may {coin:oath} sit at {name:blamed}'s reckoning for {name:town}", req: c => c.injustice >= 30, band: vNotpos },
+        { t: "{coin:oath} be thanked for {name:town}", req: vAny, band: vPos },
+      ],
+
+      // ---- song-burden (8) -------------------------------------------------------
+      song: [
+        { t: "we sing {coin:burden}, {coin:burden}, and the {name:town} shift goes over", req: c => c.works > 0 },
+        { t: "the children of {name:town} have a rhyme for it that ends {coin:burden}", req: vAny },
+        { t: "there's a verse about {name:gate} nobody sings where they can hear", req: c => c.gate, band: vNotpos },
+        { t: "{coin:burden} is what the {name:town} pump says all night", req: c => c.works > 0 || c.onGrid },
+        { t: "the {name:trade} haulers of {name:town} keep time on it — {coin:burden}, and lift", req: c => c.market >= 30 },
+        { t: "an old song puts {name:river} and {name:town} in it and gets the bends wrong", req: c => c.river },
+        { t: "{name:town} sings {coin:burden} at the turn of the year and means it more some years", req: vAny },
+        { t: "{coin:burden}, says the {name:town} wheel, and it has said nothing else in my lifetime", req: c => c.works > 0 || c.onRiver },
+      ],
+
+      // ---- closer: kicker / defiance / toast (16) --------------------------------
+      closer: [
+        { t: "that is the whole of it, and you may walk {name:town} and check it yourself", req: vAny },
+        { t: "write {name:town} down if you're writing anything", req: vAny },
+        { t: "{name:town} will be here after {name:blamed}, whatever the book says", req: vAny, band: vNotpos },
+        { t: "and there's nobody to say otherwise who has stood in {name:town}", req: vAny },
+        { t: "so much for {name:blamed}'s schedule", req: c => c.toll >= 20 || c.tribute >= 1, band: vNotpos },
+        { t: "you'll not get that from {name:blamed}, but you have it from me", req: vAny },
+        { t: "come back to {name:town} in ten years and see which of us was right", req: vAny },
+        { t: "that is not a complaint about {name:town}, it is a measurement", req: vAny, band: vNotpos },
+        { t: "and {name:town} goes on, because what else is there", req: vAny, band: vNotpos },
+        { t: "I'd say as much to {name:blamed} directly, and have", req: c => c.gate, band: vNeg },
+        { t: "there — that is {name:town}, and I am not ashamed of it", req: vAny, band: vPos },
+        { t: "fill your glass, {name:town} has had a fair year", req: vAny, band: vPos },
+        { t: "and let {name:blamed} put that in the digest", req: vAny },
+        { t: "{name:town} knows what it is owed, if not when", req: vAny, band: vNotpos },
+        { t: "the {name:town} ground remembers longer than the register does", req: vAny },
+        { t: "that's all — the {name:town} {name:trade} shift starts", req: c => c.works > 0 },
+      ],
+    };
+
+    const VOICE_WRITTEN = {
+      // ---- head: document frame (12) --------------------------------------------
+      head: [
+        { t: "{name:town}, district return for the quarter", req: vAny },
+        { t: "the office at {name:town} reports as follows", req: vAny },
+        { t: "assessment of {name:town}, entered against the standing schedule", req: vAny },
+        { t: "digest of conditions at {name:town}, prepared for {name:ruler}", req: c => c.ruler },
+        { t: "memorandum on {name:town}, the crossing at {name:gate} appended", req: c => c.gate },
+        { t: "return of {name:town}, submitted on the standard form of {name:metropole}", req: c => c.attention >= 0.5 },
+        { t: "{name:town}, health and works, quarterly", req: c => c.works > 0 || c.burden >= 30 },
+        { t: "the register for {name:town} stands corrected as below", req: c => c.legib >= 40 },
+        { t: "{name:town}, riparian district on {name:river}", req: c => c.river },
+        { t: "{name:town} under administration, the quarter's account", req: c => c.occupied },
+        { t: "prospectus note on {name:town}, for the attention of {name:exchange}", req: c => c.market >= 35 },
+        { t: "the ordinary return for {name:town}, nothing extraordinary arising", req: vAny },
+      ],
+
+      // ---- assess: observation (20) ---------------------------------------------
+      assess: [
+        { t: "toll burden at {name:gate} is entered at {num:toll}; the office reads the figure as commensurate with the traffic borne", req: c => c.toll >= 10 && c.gate },
+        { t: "blight load for {name:town} stands at {num:blight} in the register", req: c => c.blight >= 20 },
+        { t: "disease burden at {name:town} is returned at {num:burden} in the thousand", req: c => c.burden >= 15 },
+        { t: "of {name:town}'s {num:pop} souls, some {num:uncounted} decline enumeration", req: c => c.uncounted >= 1 },
+        { t: "aetherworks capacity at {name:town} is entered at {num:works} and the schedule maintained", req: c => c.works >= 20 },
+        { t: "market access for {name:town} is scored at {num:market} against the standing table", req: vAny },
+        { t: "traffic on {name:road} is returned as the district's principal land carriage", req: c => c.road },
+        { t: "the abandonment index for {name:town} is carried at {num:abandon}", req: c => c.abandon >= 15 },
+        { t: "smuggling intensity about {name:town} stands at {num:smuggling} in the register", req: c => c.smuggling >= 20 },
+        { t: "the elite share of {name:town} receipts is {num:elite}, unchanged in form", req: vAny },
+        { t: "potable supply at {name:town} is assessed at {num:safewater}", req: vAny },
+        { t: "the legibility gap for {name:town} is {num:legib}, which the office is instructed to reduce", req: c => c.legib >= 25 },
+        { t: "tribute from {name:town} is collected at the schedule in force", req: c => c.occupied },
+        { t: "wealth per head in {name:town} is entered at {num:wealth} and is not the lowest in the circuit", req: vAny },
+        { t: "social trust in {name:town} is scored {num:trust} by the standing instrument", req: vAny },
+        { t: "the injustice index for {name:town} returns {num:injustice}, within the range {name:ruler} has accepted before", req: c => c.ruler },
+        { t: "{name:event} is carried on the {name:town} file as concluded", req: c => c.event },
+        { t: "the crossing at {name:gate} returns its schedule punctually and the receipts are found in good order", req: c => c.gate },
+        { t: "outward registration of labour from {name:town} is noted at {num:emig} in the period", req: c => c.emig >= 1 },
+        { t: "service provision at {name:town} is scored at {num:servicegap} against need", req: c => c.serviceGap >= 20 },
+        { t: "the order level returned for {name:town} is {num:order}", req: vAny },
+      ],
+
+      // ---- euphemism: harm-minimizing (18) --------------------------------------
+      euphemism: [
+        { t: "what mortality continues in {name:town} is booked under ordinary wastage", req: c => c.burden >= 30 },
+        { t: "the {name:town} figure is read as commerce awaiting classification", req: c => c.smuggling >= 30 },
+        { t: "persons standing outside the {name:town} count stand also outside the levy, and the office notes the saving", req: c => c.uncounted >= 1 },
+        { t: "the discolouration of {name:river} at {name:town} is a known seasonal character of that water", req: c => c.onRiver && c.blight >= 30 },
+        { t: "vacancy on the northern rows of {name:town} is entered as consolidation of tenancy", req: c => c.abandon >= 25 },
+        { t: "the interruption at {name:town} is recorded as a variance in the schedule rather than a stoppage", req: c => c.boom === "decline" || c.boom === "collapse" },
+        { t: "complaint of the {name:gate} levy is of long standing and is of the district's ordinary character", req: c => c.toll >= 25 && c.gate },
+        { t: "the affected ground about {name:town} is reclassified rather than lost", req: c => c.blight >= 40 },
+        { t: "the shortfall in potable supply at {name:town} is a matter of household practice", req: c => c.safeWater < 45 },
+        { t: "departures from {name:town} are entered as the ordinary circulation of an expanding trade", req: c => c.emig >= 1 },
+        { t: "the {name:town} incident is carried without further particulars, particulars being a term the office defines", req: c => c.occupied },
+        { t: "arrears in the {name:town} healer's circuit are a scheduling matter and not a provision matter", req: c => c.serviceGap >= 35 },
+        { t: "the disturbance at {name:town} is entered as an assembly that exceeded its notice", req: c => c.injustice >= 40 },
+        { t: "the register's silence on the northern quarter of {name:town} is not evidence of absence", req: c => c.legib >= 45 },
+        { t: "such subsidence as is reported at {name:town} is of the ground and not of the works", req: c => c.works > 0 },
+        { t: "the levy's incidence upon the poorer rows of {name:town} is a property of the rows", req: c => c.eliteShare >= 40 },
+        { t: "the closure at {name:town} is provisional and has been provisional for some time", req: c => c.exhausted },
+        { t: "the {name:town} cough is endemic, and endemic conditions are not returnable as events", req: c => c.burden >= 40 },
+      ],
+
+      // ---- puffery: achievement-inflating (14) -----------------------------------
+      puffery: [
+        { t: "{name:town} returns record throughput for the third consecutive quarter", req: c => c.works >= 40 },
+        { t: "the district commends the {name:town} figure to the Ministry's attention", req: c => c.works >= 30 || c.wealth >= 25 },
+        { t: "the office anticipates the next {name:town} assessment with confidence", req: c => c.boom === "boom" || c.wealth >= 20 },
+        { t: "receipts at {name:gate} exceed the projection laid before {name:exchange}", req: c => c.gate && c.toll >= 20 },
+        { t: "grid connection at {name:town} is complete and the benefit is already legible in the returns", req: c => c.onGrid },
+        { t: "the harbour at {name:town} is entered as an asset of the first class", req: c => c.isPort },
+        { t: "labour discipline at {name:town} is offered as a model to the circuit", req: c => c.works > 0 },
+        { t: "the {name:skyway} service at {name:town} is returned as the equal of vAny on the reach", req: c => c.isSkyport && c.skyway },
+        { t: "{name:town} has met its schedule without recourse to {name:ruler}", req: c => c.trust >= 55 && c.ruler },
+        { t: "endowment at {num:endow} places {name:town} among the favoured grounds of the circuit", req: c => c.endow >= 40 },
+        { t: "the {name:town} works are entered as the principal ornament of the district", req: c => c.works >= 50 },
+        { t: "the reduction in {name:town} vacancy is attributed to the administration's measures", req: c => c.abandon < 20 },
+        { t: "confidence among the holding class of {name:town} is reported as firm", req: c => c.eliteShare >= 35 },
+        { t: "the {name:town} quarter is submitted as evidence that the policy answers", req: c => c.boom === "boom" },
+      ],
+
+      // ---- circular: citations of off-map authority (10) -------------------------
+      circular: [
+        { t: "the {name:town} grade is that published by {name:exchange} and is not the office's to revise", req: c => c.market >= 25 },
+        { t: "the {name:town} schedule follows the standard of {name:metropole} and requires no local warrant", req: c => c.attention >= 0.5 },
+        { t: "{name:gazette} of the period carried the notice and {name:town} is deemed informed", req: vAny },
+        { t: "the price index against which {name:town} is assessed is entered at {num:price}, as issued", req: vAny },
+        { t: "the classification of {name:town} is {name:metropole}'s and the office applies it", req: c => c.attention >= 0.4 },
+        { t: "the standard by which {name:town} water is judged potable is the imperial one", req: c => c.safeWater < 60 },
+        { t: "the form is {name:metropole}'s; the office notes only that {name:town} has completed it", req: vAny },
+        { t: "the {name:town} obligation follows from the settlement and not from this return", req: c => c.occupied || c.tribute >= 1 },
+        { t: "the register of {name:town} grades is held at {name:precinct} and consulted, not questioned", req: vAny },
+        { t: "{name:rival}'s tariff is cited by the {name:town} traders and is not a matter for this office", req: c => c.market >= 30 },
+      ],
+
+      // ---- plea: petition ask (14) ----------------------------------------------
+      plea: [
+        { t: "the office requests that the healer's circuit be restored to {name:town}", req: c => c.serviceGap >= 30 },
+        { t: "an allowance against the {name:gate} levy is sought for the affected rows", req: c => c.toll >= 25 && c.gate },
+        { t: "{name:ruler} is asked to confirm the {name:town} schedule before the season turns", req: c => c.ruler },
+        { t: "the district petitions for a survey of {name:river} above {name:town}", req: c => c.onRiver && c.downstream >= 1 },
+        { t: "a constable's post is requested for {name:road} beyond the district", req: c => c.smuggling >= 30 && c.road },
+        { t: "the office asks leave to enumerate the northern quarter of {name:town} afresh", req: c => c.legib >= 45 },
+        { t: "materials for {name:gate} are sought against the coming quarter", req: c => c.gate },
+        { t: "repair of {name:road} where it enters the district is sought against the coming quarter", req: c => c.road },
+        { t: "the district asks that the {name:town} closure be reviewed", req: c => c.exhausted },
+        { t: "provision for potable supply at {name:town} is sought as a matter of order", req: c => c.safeWater < 45 },
+        { t: "the office asks that the {name:town} tribute schedule be read down for the season", req: c => c.tribute >= 2 },
+        { t: "relief is requested for {name:town} households displaced by the reclassification", req: c => c.blight >= 45 },
+        { t: "an extension of the grid to the lower rows of {name:town} is respectfully urged", req: c => c.onGrid },
+        { t: "the district requests that {name:exchange} be asked to state the {name:town} grade in writing", req: c => c.market >= 35 },
+        { t: "leave is sought to retain a portion of {name:town} receipts against local works", req: c => c.wealth < 20 },
+      ],
+
+      // ---- marginalia: aside (12) ------------------------------------------------
+      marginalia: [
+        { t: "a hand in the margin gives the {name:town} figure as queried and standing", req: vAny },
+        { t: "noted at the margin of the {name:town} return and read as ordinary", req: vAny },
+        { t: "the clerk observes that the {name:town} return was late and the reason not given", req: vAny },
+        { t: "an earlier {name:town} entry, struck through, gave a higher figure", req: c => c.legib >= 35 },
+        { t: "the {name:town} margin carries a second hand, unsigned", req: vAny },
+        { t: "{name:ruler}'s endorsement of the {name:town} return is appended without comment", req: c => c.ruler },
+        { t: "the copy held at {name:precinct} differs from the {name:town} return in this particular", req: c => c.order >= 60 },
+        { t: "a note asks whether the {name:gate} schedule was the one in force", req: c => c.toll >= 20 && c.gate },
+        { t: "the page is annotated to see the previous {name:town} quarter, which was not found", req: vAny },
+        { t: "the {name:town} entry is initialled by an officer no longer of this district", req: vAny },
+        { t: "a marginal query on the {name:town} count remains unanswered", req: c => c.uncounted >= 1 },
+        { t: "the {name:town} file bears the stamp of {name:metropole} and no covering letter", req: c => c.attention >= 0.6 },
+      ],
+
+      // ---- closer: formula (14) --------------------------------------------------
+      closer: [
+        { t: "submitted from {name:town} without remark", req: vAny },
+        { t: "the {name:town} office remains at {name:ruler}'s disposal", req: c => c.ruler },
+        { t: "assessment of {name:town} proceeds upon the counted", req: c => c.uncounted >= 1 },
+        { t: "entered, and the {name:town} file closed for the quarter", req: vAny },
+        { t: "no further {name:town} particulars are required at this time", req: vAny },
+        { t: "{name:town} is found to be in the ordinary condition", req: vAny },
+        { t: "the return is certified as prepared from the {name:town} register", req: vAny },
+        { t: "the {name:town} matter is referred to {name:metropole} and the office awaits instruction", req: c => c.attention >= 0.5 },
+        { t: "nothing in the {name:town} return departs from the standard form", req: vAny },
+        { t: "the {name:town} schedule stands until superseded", req: vAny },
+        { t: "the office records its satisfaction with the {name:town} period", req: c => c.boom === "boom" || c.wealth >= 25 },
+        { t: "so entered for {name:town}, under the administration's hand", req: c => c.occupied },
+        { t: "the {name:town} account is balanced as shown", req: vAny },
+        { t: "for the {name:town} file, and for {name:metropole} if called", req: vAny },
+      ],
+    };
+
+    // ---- frames: structural, own the capital and the terminal punctuation --------
+    // {A} {B} are fragment slots; {conn} a band+skin connective; {aside} a skin marker.
+    const VOICE_FRAMES = {
+      oral: [
+        "{A}. {B}.", "{A}, and {B}.", "{A} — {B}.", "{A}; {B}.",
+        "{A}, {conn}. {B}.", "{A}. {B}, and there it is.", "{A}. Say what you like: {B}.",
+        "{aside}, {A}; {B}.", "{A}. And {B}.", "{A} — {conn}. {B}.",
+      ],
+      written: [
+        "{A}; {B}.", "{A}. {B}.", "{A}, and {B}.", "{A}: {B}.",
+        "{A}. {B} — {conn}.", "{A}; {conn}, {B}.",
+        "{A}. {B}, without remark.", "{aside}: {A}; {B}.", "{A}. {B}, so entered.", "{A} — {B}.",
+      ],
+    };
+
+    // ---- diction skins (spec §1) -------------------------------------------------
+    // Each skin supplies band-keyed connectives and asides — 8+ per register per band.
+    const VOICE_SKINS = {
+      "works-town": {
+        pick: c => c.works > 0 || c.onGrid,
+        aside: { oral: ["since the third whistle", "off shift", "between lifts", "at the line's end"],
+                 written: ["works district", "shift return appended", "line schedule attached", "plant note"] },
+        conn: { oral: { neg: ["and the line eats what the line eats", "same as the last shift", "and no bell for it", "which is the shift you get"],
+                        mid: ["shift on shift", "and that's the tally", "same hours either way", "and the line runs"],
+                        pos: ["and the line runs clean", "third whistle to third whistle", "and the count holds", "shift on shift"] },
+                written: ["per the shift return", "against the line schedule", "on the plant's own figures", "as the works reports"] },
+      },
+      "metropolitan": {
+        pick: c => c.market >= 55 || c.isPort,
+        aside: { oral: ["down at the quay", "in the queue at the precinct", "on the third form", "at the freight platform"],
+                 written: ["precinct copy", "circuit office", "quay return appended", "form three refers"] },
+        conn: { oral: { neg: ["and you queue for the privilege", "and there's a form for that too", "and they stamp it anyway", "and that is the third window"],
+                        mid: ["which is the procedure", "and you take a number", "and the form allows it", "as the notice has it"],
+                        pos: ["and the queue moves", "and the form went through", "first window, no wait", "and the notice was right"] },
+                written: ["per the circuit standard", "as the precinct records", "on the form prescribed", "consistent with the quay return"] },
+      },
+      "old-faith": {
+        pick: c => c.sanctuary || c.pilgrim >= 40,
+        aside: { oral: ["as the bell goes", "before the hours", "at the old porch", "on the fast day"],
+                 written: ["temple copy", "the old register refers", "sanctuary return appended", "hours observed"] },
+        conn: { oral: { neg: ["and there is no absolution in a ledger", "and the bell knows it", "as it was before them", "and we keep the hours regardless"],
+                        mid: ["as the hours keep", "and the bell goes on", "in the old order of it", "and the porch is open"],
+                        pos: ["and the bell goes glad", "as it was meant", "and the hours are kept", "thanks be for it"] },
+                written: ["as the old register has it", "the hours being observed", "per the sanctuary's return", "the temple concurring"] },
+      },
+      "frontier": {
+        pick: () => true,
+        aside: { oral: ["up here", "four days off the road", "past the last post", "out where the map thins"],
+                 written: ["outer circuit", "remote district", "post return, delayed", "beyond the standing survey"] },
+        conn: { oral: { neg: ["and nobody comes up to see", "four days off the road as we are", "and the road is not mended", "and no one is sent"],
+                        mid: ["up here", "far as we are from it", "and the road is what it is", "which is the distance"],
+                        pos: ["far out as we are", "and we did it without them", "up here, of all places", "and no one sent to help"] },
+                written: ["allowance being made for the distance", "the district being remote", "per the delayed post return", "beyond the standing survey"] },
+      },
+    };
+
+    // Imperial stem corpus (spec §5): one corpus, the Concordat tongue, deliberately
+    // unlike every regional phonology so a loanword is audible as foreign.
+    const VOICE_STEMS = [
+      "calder", "vetriax", "solmara", "quirinal", "aurelian", "tessarine", "obrecht",
+      "pallavine", "cinquert", "marovec", "ostravin", "belmiro", "trascend", "juvarra",
+      "cortalis", "sabrenne", "delvarro", "murazzi", "lenticor", "praetine",
+    ];
+
+    // The world facts a voice can name: everything with a proper name this region
+    // can actually see. Built from the EXPORT's features, not the model's internals,
+    // for two reasons. V3 requires every proper name in a voice to appear verbatim
+    // in the export, and reading them from the export makes that true by
+    // construction rather than by a mapping that has to be kept in step. And a
+    // surface built on the finished export provably runs outside the dynamics loop,
+    // so it cannot disturb a draw — the byte-compat acceptance is satisfied by where
+    // this code sits, not by an argument about it.
+    function voiceWorld(gj, model) {
+      const F = gj.features.map(f => f.properties);
+      const holderOf = (h) => h === "crown" ? "the Crown's assessor"
+        : h === "temple" ? "the Ministry's assessor"
+        : h === "magnate" ? "the syndicate's factor"
+        : h === "dominion" ? "the Dominion's officer" : "the office";
+      const gates = new Map();
+      for (const p of F) if (["bridge", "pass", "port"].includes(p.kind)) {
+        const n = p.bridge_name || p.pass_name || p.port_name;
+        if (n && !gates.has(p.region_id)) gates.set(p.region_id, { name: n, holder: holderOf(p.held_by) });
+      }
+      const rivers = new Map();
+      for (const p of F) if (p.kind === "river" && p.river_name)
+        for (const ri of (p.chain_regions || [])) if (!rivers.has(ri)) rivers.set(ri, p.river_name);
+      const roads = new Map();
+      for (const p of F) if (p.kind === "road" && p.road_name) {
+        // from_region / to_region, which is what the export calls them — not
+        // region_a / region_b, which is what I assumed and which silently
+        // resolved every road to nothing.
+        for (const ri of [p.from_region, p.to_region]) if (ri !== undefined && !roads.has(ri)) roads.set(ri, p.road_name);
+      }
+      // A town's name is on its SETTLEMENT, not its region — the same join that put
+      // the byname on the wrong feature in E1. Read from the export so V3 holds by
+      // construction, and so a region with no settlement has no town to name rather
+      // than an empty hole in the sentence.
+      const towns = new Map(F.filter(p => p.kind === "settlement" && p.name)
+        .map(p => [p.region_id, p.name]));
+      const shrines = new Map(F.filter(p => p.kind === "sanctioned_site" && p.site_name)
+        .map(p => [p.region_id, p.site_name]));
+      const ruins = new Map(F.filter(p => p.kind === "ruin" && p.ruin_name)
+        .map(p => [p.region_id, p.ruin_name]));
+      const H = gj.hinterland || {};
+      const rulers = H.rulers || {};
+      const rulerNow = {};
+      for (const f of ["crown", "temple", "magnate"]) {
+        const line = rulers[f] || [];
+        if (line.length) rulerNow[f] = line[line.length - 1].name;
+      }
+      return {
+        towns, gates, rivers, roads, shrines, ruins, rulerNow,
+        inst: H.institutions || {},
+        metropole: (H.powers || {}).metropole || null,
+        rival: (H.powers || {}).rival || null,
+        skyway: (H.skyway || {}).name || null,
+        priceIdx: ((H.world || {}).price_index || [])[Math.max(0, (H.epochs || 0) - 1)] ?? null,
+        events: H.events || [],
+      };
+    }
+
+    // The world's voices, capped and ordered. One entry point: builds the nameable
+    // world and the lexicon once, scores every settled region, and lets the loudest
+    // few speak. Ties break on region id so the choice is deterministic in the seed
+    // and never in the iteration order.
+    const VOICE_CAP = { oral: 3, written: 2 };
+    // csv and geojson must ship the SAME voices, so both go through one memoized
+    // build per (model, params). Composing twice would be deterministic and equal,
+    // but it would also be two chances for them to drift apart later.
+    const VOICES_CACHE = new WeakMap();
+    function voicesFor(model, params) {
+      let per = VOICES_CACHE.get(model);
+      if (!per) { per = new Map(); VOICES_CACHE.set(model, per); }
+      const key = `${params.seed}|${params.fate}|${params.ep}|${params.ch}`;
+      // toGeoJSON primes this on its way past, so the csv path normally finds the
+      // voices already built. The fallback exists for a caller that wants the csv
+      // without the geojson, and it is the only path that pays for a second export.
+      if (!per.has(key)) per.set(key, composeVoices(model, params, toGeoJSON(model, params)));
+      return per.get(key);
+    }
+    // This model's voices, built if they are not already. `params` is REQUIRED and
+    // the earlier version's fallback was a bug: without params it returned whatever
+    // the cache happened to hold, so `toCsvTables(model)` emitted zero voice rows
+    // before any export had been built and five after — the same call, two answers,
+    // depending on what had run first. CI caught it as "CSV click not deterministic",
+    // which is exactly what it was.
+    function voicesAny(model, params) {
+      const per = VOICES_CACHE.get(model);
+      if (per && per.size) return per.values().next().value;
+      return voicesFor(model, params);
+    }
+    function voicesPrime(model, params, gj) {
+      let per = VOICES_CACHE.get(model);
+      if (!per) { per = new Map(); VOICES_CACHE.set(model, per); }
+      const key = `${params.seed}|${params.fate}|${params.ep}|${params.ch}`;
+      if (!per.has(key)) per.set(key, composeVoices(model, params, gj));
+      return per.get(key);
+    }
+    function composeVoices(model, params, gj) {
+      const W = voiceWorld(gj, model);
+      const lex = loomLexicon(params.fate || params.seed);
+      const speakers = model.regions.filter(r => r.settled && W.towns.has(r.id))
+        .map(r => ({ reg: r, v: voiceOf(r, model, params) }))
+        .map(o => ({ ...o, news: voiceNewsworthy(o.v) }))
+        .sort((a2, b2) => (b2.news - a2.news) || (a2.reg.id - b2.reg.id));
+      // one shared tally across the whole world, so the street does not repeat itself
+      const used = new Set();
+      const out = [];
+      for (const kind of ["oral", "written"]) {
+        for (const o of speakers.slice(0, VOICE_CAP[kind]))
+          out.push(composeVoice(o.reg, o.v, W, model, params, kind, lex, used));
+      }
+      return out;
+    }
+
+    // §2's topic ladder: which classes a voice reaches for, given what it is
+    // talking about. A harm leads to grievance and witness; an achievement to
+    // aspiration; the world outside to elsewhere and rumour.
+    const VOICE_CLASSES = {
+      oral: { toll: ["grievance", "witness"], blight: ["grievance", "witness"], burden: ["grievance", "witness"],
+        water: ["grievance", "witness"], tribute: ["grievance", "oath"], abandon: ["grievance", "witness"],
+        smuggling: ["rumor", "witness"], works: ["aspiration", "witness"], boom: ["aspiration", "elsewhere"],
+        grid: ["aspiration", "witness"], port: ["aspiration", "elsewhere"], sky: ["aspiration", "rumor"],
+        elsewhere: ["elsewhere", "rumor"] },
+      written: { toll: ["assess", "euphemism"], blight: ["assess", "euphemism"], burden: ["assess", "euphemism"],
+        water: ["assess", "plea"], tribute: ["assess", "circular"], abandon: ["assess", "euphemism"],
+        smuggling: ["assess", "euphemism"], works: ["assess", "puffery"], boom: ["puffery", "assess"],
+        grid: ["puffery", "marginalia"], port: ["assess", "puffery"], sky: ["puffery", "assess"],
+        elsewhere: ["circular", "assess"] },
+    };
+    // Which topics this region has anything to say about, most salient first.
+    const VOICE_TOPICS = [
+      { k: "toll", sal: v => v.toll, on: v => v.toll >= 20 },
+      { k: "blight", sal: v => v.blight, on: v => v.blight >= 30 },
+      { k: "burden", sal: v => v.burden, on: v => v.burden >= 30 },
+      { k: "water", sal: v => 100 - v.safeWater, on: v => v.safeWater < 45 },
+      { k: "tribute", sal: v => 30 * v.tribute, on: v => v.occupied },
+      { k: "abandon", sal: v => v.abandon, on: v => v.abandon >= 25 },
+      { k: "smuggling", sal: v => v.smuggling, on: v => v.smuggling >= 25 },
+      { k: "works", sal: v => v.works, on: v => v.works >= 25 },
+      { k: "boom", sal: v => v.wealth + 20, on: v => v.boom === "boom" || v.wealth >= 25 },
+      { k: "grid", sal: v => v.market, on: v => v.onGrid },
+      { k: "port", sal: v => v.market, on: v => v.isPort },
+      { k: "sky", sal: v => v.sky, on: v => v.isSkyport || v.sky >= 40 },
+      { k: "elsewhere", sal: v => v.market, on: v => v.market >= 30 || v.isPort || v.emig >= 100 },
+    ];
+    const voiceTopics = (v) => VOICE_TOPICS.filter(t => t.on(v))
+      .sort((a2, b2) => b2.sal(v) - a2.sal(v)).map(t => t.k);
+
+    // The diction skin: how this place SOUNDS, independent of what it is saying.
+    // First match wins, and `frontier` takes anything left, so every region has one.
+    const voiceSkin = (v) =>
+      (v.works > 0 || v.onGrid) ? "works-town"
+      : (v.market >= 55 || v.isPort) ? "metropolitan"
+      : (v.sanctuary || v.pilgrim >= 40) ? "old-faith"
+      : "frontier";
+
+    // THE ANAPHORA RULE (spec §7.5). Forcing a region-varying slot into every
+    // fragment — which is what stops the pool colliding with itself — makes a voice
+    // chant its own town's name: measured at 5.9 mentions per oral paragraph and up
+    // to 11 in a written one. Real speech pronominalizes.
+    //
+    // The spec proposes a second, name-free realization per fragment. That is 251
+    // more fragments to author and maintain in step with the first 251. This does
+    // the same work as one rule on the DISPLAYED text: after the first two mentions,
+    // a name becomes a pronoun. It is deliberately conservative — it only rewrites
+    // where English is unambiguous, and leaves the name standing anywhere a
+    // substitution could misread. A voice that says the name a third time is a much
+    // smaller fault than one that says "the it entry".
+    //
+    // §7.5 also requires V5 to be counted on the displayed text once this exists, so
+    // the rule cannot manufacture surface variety a reader never sees.
+    function voiceAnaphora(text, town) {
+      if (!town) return text;
+      const esc2 = town.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      // ONE left-to-right pass. Three separate passes each counted their own
+      // "first two mentions" and between them spent the allowance before the bare
+      // name was reached, so a voice could open with "the town" — the head clause
+      // losing the only name it had. Order is the whole rule: the reader meets the
+      // name twice, and only then starts hearing pronouns.
+      // The article guard is case-INSENSITIVE: "The Pellton account" is the same
+      // construction as "the Pellton account", and matching only the lowercase form
+      // produced "The the town account".
+      const re = new RegExp(`([Tt]he )?${esc2}('s)?`, "g");
+      let seen = 0;
+      let out = text.replace(re, (m, theBefore, poss) => {
+        seen++;
+        if (seen <= 2) return m;                 // the name still stands
+        if (theBefore) return m;                 // "the Grath entry" — qualifying a noun
+        if (poss) return "its";
+        return "the town";
+      });
+      // A substitution can land at the head of a sentence, where the loom had already
+      // capitalized the name it replaced. Restore the capital rather than shipping
+      // "the town will be here after the constabulary" mid-paragraph.
+      out = out.replace(/(^|[.!?]\s+)the town\b/g, (m2, pre) => `${pre}The town`);
+      return out;
+    }
+
+    // WHO GETS TO SPEAK. A world of 24 regions cannot hand every town a microphone
+    // every epoch — the panel would be unreadable and the export enormous — so the
+    // cap is ~3 oral + 2 written, and the choice of WHOSE voice survives is itself a
+    // claim the instrument has to stand behind.
+    //
+    // Newsworthiness is deliberately NOT "who is worst off". A page that always
+    // hands the microphone to the most miserable town is making the same editorial
+    // decision every epoch, and the street stops being evidence and becomes a
+    // chorus. It is DISTANCE FROM NEUTRAL — a town doing unusually well is exactly
+    // as newsworthy as one doing unusually badly — weighted by how many people it
+    // speaks for and how loud its loudest subject is. A boom town's pride and a
+    // sacrifice zone's fury are both news; a weary median town is not.
+    function voiceNewsworthy(v) {
+      const away = Math.abs(voiceSentiment(v));
+      const top = VOICE_TOPICS.filter(t => t.on(v)).reduce((m, t) => Math.max(m, t.sal(v)), 0);
+      const people = Math.log10(Math.max(10, v.pop));
+      return away * 1.0 + top * 0.35 + people * 6;
+    }
+
+    // The voice's view of a region. Every field is named against the MODEL, and
+    // four of them are not named what the export calls them — `aetherworks_capacity`
+    // is `reg.refining`, `legibility_gap` is `reg.legibility`, `smuggling_intensity`
+    // is `reg.smuggling`, and `tribute_burden` is not stored at all: it is derived
+    // at export time from the Dominion's presence and the region's bloc, so it is
+    // derived the same way here rather than read from a property that does not
+    // exist. Reading a column by the name you expect instead of the name it has is
+    // how three assertions in this suite came to be unable to fail.
+    function voiceOf(reg, model, params) {
+      return {
+        wealth: reg.wealth, pop: reg.settlementPop || 0, blight: reg.blight,
+        toll: reg.tollBurden, injustice: reg.injustice,
+        occupied: !!reg.occupied,
+        tribute: model.dominion ? (reg.occupied ? 3 : (reg.bloc === "crown" ? 1 : 2)) : 0,
+        trust: reg.socialTrust, legib: reg.legibility, market: reg.marketAccess,
+        sky: reg.skyAdvantage || 0, boom: reg.boomBust,
+        order: reg.orderLevel, emig: reg.emigrantsTotal || 0,
+        smuggling: reg.smuggling || 0, works: reg.refining || 0,
+        abandon: reg.abandonment || 0, safeWater: reg.safeWater,
+        serviceGap: reg.serviceGap || 0, onGrid: !!reg.onConduit,
+        burden: reg.burden || 0, elite: reg.eliteShare, endow: reg.endowment || 0,
+        uncounted: reg.uncounted || 0, downstream: reg.downstreamBlight || 0,
+        sanctuary: !!reg.hasSanctuary, isSkyport: reg.isSkyport === 1,
+        isPort: !!reg.isPort, onRiver: !!reg.onRiver, pilgrim: reg.pilgrimFlux || 0,
+        security: reg.securityStatus, bloc: reg.bloc,
+      };
+    }
+
+    // The resolver: every slot the 251 fragments can reach. Names come from the
+    // export (V3 by construction); numbers come from the region's own columns and
+    // are told by the REGISTER's rule, so an oral voice spells a folk quantity and
+    // a written one prints the digit — which is V1 and V2 falling out of the loom
+    // rather than being policed after the fact.
+    function voiceResolve(kind, key, ctx) {
+      const v = ctx.$v, W = ctx.$w;
+      if (kind === "name") {
+        const g = W.gates.get(ctx.$id);
+        switch (key) {
+          case "town": return ctx.$town;
+          case "river": return W.rivers.get(ctx.$id) || null;
+          case "road": return W.roads.get(ctx.$id) || null;
+          case "gate": return g ? g.name : null;
+          case "holder": return g ? g.holder : null;
+          case "shrine": return W.shrines.get(ctx.$id) || null;
+          case "ruin": return W.ruins.get(ctx.$id) || null;
+          case "blamed": return voiceBlamed(v, { holder: g ? g.holder : null, skyway: W.skyway, ruler: W.rulerNow.crown });
+          case "credited": return voiceCredited(v, { shrine: W.shrines.get(ctx.$id), ruler: W.rulerNow.crown });
+          case "metropole": return W.metropole;
+          case "rival": return W.rival;
+          case "skyway": return W.skyway;
+          case "exchange": return W.inst.exchange || null;
+          case "gazette": return W.inst.gazette || null;
+          case "precinct": return W.inst.precinct || null;
+          case "buried": return W.inst.buried_power || null;
+          case "ruler": return W.rulerNow[v.bloc] || W.rulerNow.crown || null;
+          case "trade": return ctx.$trade;
+          case "event": return ctx.$event;
+          default: return null;
+        }
+      }
+      if (kind === "num") {
+        const N = {
+          toll: v.toll, blight: v.blight, burden: v.burden, market: v.market,
+          works: v.works, elite: v.elite, abandon: v.abandon, smuggling: v.smuggling,
+          safewater: v.safeWater, legib: v.legib, wealth: v.wealth, trust: v.trust,
+          injustice: v.injustice, servicegap: v.serviceGap, uncounted: v.uncounted,
+          endow: v.endow, emig: v.emig, pop: v.pop, order: v.order,
+          price: W.priceIdx,
+        };
+        return N[key] === undefined ? null : N[key];
+      }
+      if (kind === "coin") {
+        // Coined words come from the WORLD's lexicon, minted once per world so they
+        // repeat like culture rather than like a random draw. `imperial` is the
+        // Concordat tongue and is deliberately unlike every regional phonology, so a
+        // loanword is audible as foreign; everything else is the speaker's own.
+        const L = ctx.$lex || {};
+        if (key === "imperial") return (L.imperial || [])[ctx.$id % Math.max(1, (L.imperial || []).length)] || null;
+        const own = L[ctx.$coinReg] || L.lowland || {};
+        const bag = key === "oath" ? (own.oath || []) : (own.slang || []);
+        return bag.length ? bag[ctx.$id % bag.length] : null;
+      }
+      if (kind === "term") return ctx[key] ?? null;
+      return null;
+    }
+
+    // Compose one voice. `kind` is "oral" or "written"; each draws its OWN substream
+    // keyed on the region and epoch, so a voice added here cannot move a word of the
+    // chronicle, and a region's voice is recomputable from the export alone (G5
+    // finding 8). The written voice is not a separate opinion: it is the oral one
+    // pushed by the divergence law toward the institution's interest.
+    // `used` is the WORLD's tally, not the voice's. Without it every region reaches
+    // for the same most-eligible fragment and three towns in a row say "my father
+    // called it by the old name" — which is V5's surface-repetition ceiling failing
+    // for a structural reason rather than a pool-size one. The loom already shares a
+    // tally across composes and reuses rather than falling silent when a class runs
+    // dry, so a small world says something twice instead of saying nothing.
+    function composeVoice(reg, v, W, model, params, kind, lex, used) {
+      const pool = kind === "oral" ? VOICE_ORAL : VOICE_WRITTEN;
+      const register = kind === "oral" ? "street" : "ledger";
+      const sOral = voiceSentiment(v);
+      const band = voiceBand(sOral);
+      const topics = voiceTopics(v);
+      const lead = topics[0] || "elsewhere";
+      const skin = VOICE_SKINS[voiceSkin(v)];
+      const epoch = params.ep;
+      const rv = loomStream(params.fate || params.seed, "voices", `${reg.id}#${epoch}#${kind}`);
+      // The skin's connectives and asides are folded into the FRAMES before the loom
+      // sees them, because {conn} and {aside} are diction rather than content: the
+      // loom fills {A} and {B} and owns the punctuation, and how a place clears its
+      // throat between two clauses belongs to the place, not to the grammar.
+      const side = band === "fury" || band === "aggrieved" ? "neg"
+        : band === "steady" || band === "proud" ? "pos" : "mid";
+      const conns = kind === "oral" ? skin.conn.oral[side] : skin.conn.written;
+      const asides = skin.aside[kind];
+      const frames = VOICE_FRAMES[kind].map((f, i) =>
+        f.replace("{conn}", conns[i % conns.length]).replace("{aside}", asides[i % asides.length]));
+      const classes = topics.slice(0, 3).map(t => VOICE_CLASSES[kind][t]
+        || (kind === "oral" ? ["witness", "closer"] : ["assess", "marginalia"]));
+      const ctx = {
+        $v: v, $w: W, $id: reg.id, $town: W.towns.get(reg.id) || null,
+        $trade: reg.tradeGood || null, $event: null,
+        $lex: lex, $coinReg: (LOOM_REGISTERS[register] || {}).coin,
+      };
+      const out = loomCompose({
+        register, frames, pool, classes, ctx, resolve: voiceResolve, rv, band, used,
+        open: kind === "oral" ? "open" : "head", close: "closer",
+      });
+      const w = kind === "written" ? voiceWritten(sOral, lead, v) : null;
+      out.text = voiceAnaphora(out.text, ctx.$town);
+      return { ...out, kind, region_id: reg.id, epoch, sentiment: sOral, band, lead,
+        skin: voiceSkin(v), topics, ...(w ? { written: w, sentiment_written: w.s } : {}) };
+    }
+
+    // §2's attribution shift: a voice does not name the mechanism, it names WHO IS
+    // VISIBLE from where it stands. Blame walks to the nearest visible institution,
+    // credit to the nearest local agent — and the `facts` trail records the real
+    // driver beside the name that was said, so the shift is auditable rather than a
+    // liberty. This is the whole reason the register can be unreliable and still be
+    // recomputable from the export.
+    const voiceBlamed = (v, w) =>
+      w.holder ? w.holder
+      : v.security !== "ungoverned" ? "the constabulary"
+      : (v.isSkyport && w.skyway) ? `the ${w.skyway} line`
+      : w.ruler ? `${w.ruler}'s assessor` : "the seat";
+    const voiceCredited = (v, w) =>
+      v.works > 0 ? "the works-master"
+      : (v.sanctuary && w.shrine) ? `the keeper at ${w.shrine}`
+      : w.ruler ? `${w.ruler}'s people` : "the row itself";
+
     const VERDICT_POOL = {
       // -- the six cells of §3.5's matrix -------------------------------------
       claim: [
@@ -10371,7 +11244,15 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
         for (const f of pool[cls]) {
           const t = String(f && f.t === undefined ? f : f.t);
           const at = `${cls}: ${JSON.stringify(t.slice(0, 48))}`;
-          if (/^[A-Z]/.test(t)) problems.push(`${at} — opens with a capital; frames own the capital`);
+          // The law is "frames own the capital", so a fragment must not hard-code
+          // sentence case — it has to read correctly mid-sentence too. The English
+          // first-person pronoun is the one capital that is NOT sentence case: "I"
+          // is capital wherever it stands, and "stand at the gate and i'll show you"
+          // is not an available spelling. D2 (#138) is the first surface written in
+          // first person — the historian, the analyst and the judge are all third —
+          // so the law meets its first honest exception here rather than being bent.
+          if (/^[A-Z]/.test(t) && !/^I(?:'(?:m|ll|ve|d)\b|\b)/.test(t))
+            problems.push(`${at} — opens with a capital; frames own the capital`);
           if (/[.!?]$/.test(t)) problems.push(`${at} — ends with a stop; frames own the stop, and a fragment that carries one is a canned sentence`);
           LOOM_SLOT_RE.lastIndex = 0;
           if (!LOOM_SLOT_RE.test(t)) problems.push(`${at} — carries no slot; it has one surface and will collide with itself (see #136)`);
@@ -10476,5 +11357,10 @@ export {
   EVENT_POOL, EVENT_FRAMES, EVENT_CLASSES, eventClasses, eventCtx, eventLine,
   chronicleResolve, CHRONICLE_FIXED,
   VERDICT_POOL, VERDICT_FRAMES, VERDICT_ORDER, verdictCtx, verdictResolve, composeVerdict,
+  // D2 (#138): the voices — sentiment, the divergence law, and a region's view
+  voiceOf, voiceSentiment, voiceBand, voiceWritten, VOICE_W_REF,
+  voiceWorld, voiceBlamed, voiceCredited, VOICE_ORAL, VOICE_WRITTEN, VOICE_FRAMES, VOICE_SKINS,
+  composeVoice, voiceTopics, voiceSkin, voiceResolve, VOICE_CLASSES,
+  composeVoices, voiceNewsworthy, VOICE_CAP, voicesFor,
   RUIN_SAID, AGE_SAID, FATE_SAID,
 };

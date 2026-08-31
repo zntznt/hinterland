@@ -186,9 +186,25 @@ All from exported columns, integer arithmetic, JS Math.round:
   T = trajectory term from boom_bust: {boom:+18, stable:0, decline:−14, collapse:−30}
   G = 0.30·blight_load + 0.35·toll_burden + 0.20·injustice_idx + 18·occupied
       + 3·tribute_burden + max(0, −T)
-  C = 0.30·wealth + 0.25·social_trust + 0.15·market_access + 0.10·sky_advantage
-      + max(0, T)
+  C = 0.30·min(100, wealth·100/W_REF) + 0.25·social_trust + 0.15·market_access
+      + 0.10·sky_advantage + max(0, T)          [W_REF = 60; see below]
   S_oral = clamp(round(C − G), −100, +100)
+
+**W_REF, the reference ceiling (#136 gate, resolved).** `wealth` is clamped 0–100 in
+the engine, so §3's original `0.30·wealth` was not wrong on its face — but its
+*realized* spread is far narrower and depends on the income mix: at default weights
+p50 14 / max 55, under extraction max 28, in a trade-heavy world max 74. Stated
+against 100 the term carried a mean 4.5 of its nominal 30 and `proud` was starved.
+It is now stated against **W_REF = 60**, which sits above the default-weights ceiling
+(so an ordinary world never clamps) and below the trade-heavy one (so the richest
+trade towns saturate the top of the scale, which is the correct reading of "as rich
+as this scale goes").
+
+It is **absolute, not a percentile**, and that is the whole of the decision. Under a
+percentile, `proud` is a RANK — the top of *this* world, however poor the world — so
+a uniformly destitute realm would manufacture pride out of its own misery. Under an
+absolute ceiling `proud` is a LEVEL: a town that actually holds something. An
+instrument whose subject is inequality does not get to grade on a curve.
 
 Sentiment reacts to WHERE A REGION IS GOING, not only where it sits: a rising poor
 town can be hopeful, a sliding rich one furious. [POST-B: T re-derives from the
@@ -213,6 +229,19 @@ toward power's INTEREST, which is not always rosier):**
     (−D toward calm: "commerce awaiting classification"); a contested region's
     constabulary INFLATES it (+D toward threat: the budget request)
     [order axis POST-B; occupied is the v1 proxy];
+  - elsewhere topics (the world outside: prices, the metropole's standard, outward
+    migration, capital that came or left) — **the sign splits by direction, as
+    disorder's does, because the interest does** (#136 §7.6, resolved):
+      * an OUTWARD flow the region lost (emigration, capital flight, a charter
+        taken, demand withdrawn) is a harm, and is minimized — **+D**, reported as
+        "the ordinary circulation of an expanding trade";
+      * an INWARD or structural relation the office merely transmits (the exchange's
+        grade, the metropole's standard form, a price set elsewhere) is a disclaimer
+        of discretion — the `circular` class exists for exactly this — and deflates
+        toward "not a matter for this office": **−D**.
+    One row cannot carry both: an office has an interest in looking blameless for
+    what it lost AND powerless over what was decided above it, and those are
+    opposite lies about the same subject;
   - S_written = clamp(S_oral + signed skew of the voice's LEAD topic, −100, +100).
 
   The censor's corridor generalizes: if occupied=1 [POST-B: or order ≥ 70],
@@ -229,10 +258,36 @@ Testable invariants for any exported world (the prototype asserts all):
   V5 no Cyrillic (/[Ѐ-ӿ]/), no banned real-world lexicon (curated list: earth
      places, currencies, faiths, videogame terms), no fragment surface repeated
      > 3 times per world;
-  **V6 (new, the balance tripwire): across a 3-seed sample, at least two of the
-     five sentiment bands on EACH side of zero are represented among oral voices,
-     and ≥20% of oral sentences draw from non-grievance classes, the spec's own
-     sign-reach check that the street is not a monotone (an internal check on generated output).**
+  **V6 (the balance tripwire; restated after the #136 gate ran it).** Three things
+     were wrong with the original wording and each is fixed here.
+
+     *The reading is STRICT.* `weary` spans −10..+15 and straddles zero, and it is
+     55–65% of all towns. A loose reading that counted it on both sides would make
+     V6 pass by construction — an invariant that cannot fail, which is worse than
+     no invariant. `weary` counts toward NEITHER side.
+
+     *The sample is stated in REGIONS, not seeds.* At any of the measured band
+     rates a 3-seed sample is a coin flip rather than a tripwire: at a 1.3% `proud`
+     rate, ~60 regions has a ~55% chance of containing one at all. **V6 is asserted
+     over ≥ 200 settled regions.**
+
+     *It is a check on the MODEL'S RANGE, not on any one world's street.* This is
+     the thing the gate found and the original wording got wrong. Measured across
+     income mixes at every reference ceiling tried, an **extraction world contains
+     no `proud` town at all — 0.0%**. That is not a starved formula, it is the
+     model telling the truth: a realm that lives by pulling ore out of the ground
+     and shipping it away does not produce pride, and its street IS a monotone. A
+     per-sample V6 would fire on a world that is correctly monotone and demand the
+     model be falsified into balance. So:
+
+     **V6: over ≥ 200 settled regions at DEFAULT income weights, at least two of
+     the five bands strictly below zero and at least two strictly above are
+     represented among oral voices, and ≥20% of oral sentences draw from
+     non-grievance classes.** The default mix is named because it is the one the
+     instrument ships and the one every other calibration (§7.3, the atlas sweep)
+     is stated against. Under an extraction mix the check is expected to fail on
+     the positive side, and that expectation is itself asserted — a model in which
+     extraction produced pride would be the defect.
 
 ## 4. Worked examples (hand-simulated; the quality bar)
 
@@ -533,7 +588,69 @@ circulation of an expanding trade" is inflating, same as any achievement. Whiche
 `elsewhere` needs a row in §3's table before D2, or the deterritorialization pillar arrives
 in the fragments and never reaches the lie.
 
-### 7.7 What remains for the owner
+### 7.7 The second run (#136 reopened): what the first diagnosis got wrong
+
+The three decisions §7.7 leaves to the owner were taken, and taking them turned up
+two errors in §7.4's own diagnosis. Both were the same mistake: **measuring one
+income mix and reporting it as the model.**
+
+**`wealth` does not top out at 55.** That was the max across 20 atlas seeds at
+*default* weights. Swept across income mixes it reaches **74 in a trade-heavy
+world** (and only 28 under extraction). So §7.4's charge against §4's worked example
+(d) — that it assumes `wealth` 71, "above the observed maximum of 55, in 386
+regions", "built on a column value the engine does not produce" — **is wrong, and
+is withdrawn here.** The engine produces 71 comfortably; it does so when the world
+runs on trade, which the default-weights sweep never sampled. The example was
+sound and the diagnosis was parochial.
+
+**An extraction world has no `proud` town at any reference ceiling.** Measured at
+W_REF ∈ {100, 74, 60, 55}, the extraction mix returns 0.0% `proud` every time,
+while trade-heavy returns 3.7–6.7%. This is the finding that reshaped V6 (§3): the
+original wording asserted balance in every sample, which would have fired on a
+world whose monotone street is the correct answer. A tripwire that demands the
+model be falsified into balance is not a tripwire.
+
+| income mix | wealth max | `proud` at W_REF 100 | at 60 |
+|---|---|---|---|
+| defaults | 55 | 0.6% | 1.2% |
+| trade-heavy | 74 | 3.7% | 6.1% |
+| extraction | 28 | **0.0%** | **0.0%** |
+| sealed | 43 | 1.8% | 3.7% |
+
+Reproduce with `node voices-proto.mjs --diag`, which now prints the sweep. The
+sweep runs inside the prototype and not in a scratch script for a reason worth
+recording: the prototype's context builder maps the spec's column names onto the
+export's real ones (`toll_burden` is `tariff_burden`, `refining_capacity` is
+`aetherworks_capacity`), and a hand-rolled formula that guesses them reads zeroes
+and reports a world happier than it is. The first attempt at this sweep did
+exactly that and disagreed with the prototype by 2×.
+
+**The rarest band's rate depends on the SEED FAMILY, and that nearly decided the
+verdict.** At W_REF 60 and default weights, `proud` runs **1.1% over the atlas family
+and 5.3% over a generic one — 4.8×**. The first implementation of the restated V6 drew
+its 200-region population from a single family, and it happened to be the favourable
+one. Drawing from one family lets that family's luck decide the check, which is how an
+invariant starts reporting its sample instead of the model. **V6's population is now a
+written-down mixed list** spanning the atlas, fixture and generic families.
+
+This is also the second reason V6 asks for **representation rather than a rate**: at
+200 regions even a 1.1% band yields ~2 towns, so the check survives the very spread it
+was nearly fooled by. As run on the mixed list: 202 regions, fury 3 · aggrieved 39 ·
+weary 118 · steady 38 · **proud 4**, non-grievance 80% — neg 2/2, pos 2/2, **PASS**.
+
+**The three decisions, as taken:**
+
+1. **V6 reads strict, over ≥200 regions, at default weights** — see §3. Strict
+   because `weary` straddles zero and is ~60% of towns, so the loose reading is an
+   invariant that cannot fail.
+2. **`wealth` enters absolute, rescaled against W_REF = 60** — not as a percentile.
+   Percentile makes `proud` a rank, and a uniformly destitute world would then
+   manufacture pride out of its own misery.
+3. **`elsewhere` splits by direction** — outward flows the region lost are
+   minimized (+D); inward or structural relations the office merely transmits are
+   deflated toward "not a matter for this office" (−D). See §3.
+
+### 7.8 What remains for the owner
 
 The machine part of the gate is met on 3 seeds: V1–V5 pass, no surface repeats above 3.
 What is left is the part only the owner can do — reading all 50, reading 6 pairs aloud
@@ -545,14 +662,31 @@ threshold the measured distributions rarely clear, so a `steady` town's oral voi
 drawing from `witness` and `grievance` anyway. That is §7.4 showing up in the reading
 rather than in the histogram, and it is the thing to listen for when reading aloud.
 
-Three decisions block D2, and all three are the owner's:
+The three decisions that blocked D2 are **taken** (§7.7): V6 reads strict over ≥200
+regions at default weights; `wealth` enters absolute against W_REF = 60, not as a
+percentile; `elsewhere` splits by direction. §3 carries all three.
 
-1. **Which reading of V6 governs**, and whether its sample size is stated in seeds or in
-   regions.
-2. **Whether `wealth` enters the sentiment formula raw or as a percentile** — or whether
-   §3 is left alone and the re-derivation waits for Phase D2's column set as §0 plans, in
-   which case the strict V6 stays red until then and should be recorded as such.
-3. **What interest the `elsewhere` topic serves** in §3's sign table (§7.6).
+**What is left is the part only the owner can do**, and it has not moved: reading all
+50, reading 6 pairs aloud including a positive-band pair, and judging the two named
+risks (euphemism-join flatness; the house-style-of-lying uniformity).
+
+**The sample's seeds changed, and that is worth stating plainly rather than burying.**
+[`docs/voices-sample.md`](voices-sample.md) was `atlas-1,atlas-2,atlas-3` — one family,
+and (as §7.7 measures) the family with the *lowest* rate of the positive bands. Under
+those seeds the regenerated sample still read `proud` 0 / `steady` 4 of 75, which means
+**the gate could not be walked**: it asks for a positive-band pair to be read aloud and
+there was not reliably one to read. It is now `atlas-1,v6-2,v6-5` — mixed across
+families — and reads `aggrieved` 16 · `weary` 33 · `steady` 18 · `proud` 8 of 75.
+
+This is a less biased sample than the original, not a flattering one, and the histogram
+is printed in the sample itself so the reading is never separated from what it is a
+sample *of*. Two things to hold while reading: `fury` does not appear (it is ~2% of
+towns, and 75 oral sentences is too few to expect one), and the positive bands here are
+commoner than they are in an average world — the mix was chosen so the upper edge could
+be *heard*, not because the realm is generally glad.
+
+Whether it *sounds* like people rather than a house style with two settings is not
+something the invariants can answer. That is the whole reason this gate is a gate.
 
 The corrections in §7.2, §7.3 and §7.5 are editorial rather than judgement calls — the
 column names, the "no fragment without a region-varying slot" rule, the anaphora rule, and

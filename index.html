@@ -1416,7 +1416,7 @@
     // ---- Constants ----------------------------------------------------------
     const WX = 1600, WY = 1000;   // world is [0,WX] x [0,WY], planar, y-up (16:10)
     const WDIAG = Math.hypot(WX, WY); // characteristic length for distance normalization
-    const SCHEMA_VERSION = 57;   // E1 (#142): v57 adds the REIGN. `ch` in provenance when a governor played one, a `by` column on events.csv separating a decree from the seat's own measure, and three new event types only a reign can produce (decree, revolt_averted, dominion_repelled). Additive: a world with no reign exports exactly what v56 did, which is what the byte-pin proves.
+    const SCHEMA_VERSION = 58;   // D2 (#138): v58 adds THE VOICES. `hinterland.voices` carries the street and the ledger on the same world with the facts trail behind every figure, and voices.csv puts them in a table. Additive, but NOT byte-neutral: every export gains the key, so this is a declared regen of all 30 fixtures rather than a silent one. PREVIOUSLY — E1 (#142): v57 adds the REIGN. `ch` in provenance when a governor played one, a `by` column on events.csv separating a decree from the seat's own measure, and three new event types only a reign can produce (decree, revolt_averted, dominion_repelled). Additive: a world with no reign exports exactly what v56 did, which is what the byte-pin proves.
     // v55 (#180) redefined blight_load as an ABSOLUTE load (100 = ruined) carried as a decaying stock, where v54 normalised it to each world's own worst cell.
     const TOLL_SEAT = 15;     // toll per held chokepoint on the path to the seat
     const TOLL_PORT = 10;     // toll per held chokepoint on the path to the port
@@ -7406,7 +7406,7 @@
           geometry: { type: "Point", coordinates: [round2(s.x), round2(s.y)] }
         });
       });
-      return {
+      const gj = {
         type: "FeatureCollection",
         name: "hinterland",
         hinterland: {
@@ -7457,6 +7457,24 @@
         },
         features
       };
+      // D2 (#138): the voices ride the export, and they are composed from the
+      // FINISHED object — the names a voice says are read back out of the very
+      // features it ships beside, which is what makes V3 true by construction
+      // instead of by a mapping kept in step by hand. It also puts the whole
+      // surface provably outside the dynamics loop: by the time this runs, every
+      // draw the world makes has been made.
+      gj.hinterland.voices = voicesPrime(model, params, gj).map(v => ({
+        region_id: v.region_id, epoch: v.epoch, kind: v.kind,
+        band: v.band, sentiment: v.sentiment, lead_topic: v.lead, skin: v.skin,
+        text: v.text,
+        ...(v.written ? {
+          sentiment_written: v.sentiment_written, divergence: v.written.D,
+          skew: v.written.skew, interest: v.written.why,
+          corridor: v.written.corridor ? 1 : 0,
+        } : {}),
+        facts: v.facts,
+      }));
+      return gj;
     }
 
     // ---- Epoch-series export: QGIS Temporal Controller food -----------------
@@ -7676,7 +7694,12 @@
     };
     const csvOf = (header, rows) =>
       [header.join(","), ...rows.map(r => r.map(csvCell).join(","))].join("\n") + "\n";
-    function toCsvTables(model) {
+    // `params` is optional and second, so the one existing caller keeps working:
+    // when it is absent the voices come from whatever toGeoJSON already primed for
+    // this model, which is the normal path (the app builds the export before it
+    // offers the tables). A caller that wants the tables and nothing else passes
+    // params and pays for one export.
+    function toCsvTables(model, params) {
       const F = getFindings(model);
       const eventRows = model.events.map(ev => [
         ev.epoch, 1000 + 25 * ev.epoch, ev.type, ev.region_id, ev.name, ev.outcome,
@@ -7709,7 +7732,22 @@
         ["treasuries.csv", csvOf(["faction", "coin"],
           ["crown", "temple", "magnate"].map(k => [k, Math.round(model.treasuries[k])]))],
         ["findings.csv", csvOf(["key", "value"],
-          Object.keys(F).map(k => [k, F[k] !== null && typeof F[k] === "object" ? JSON.stringify(F[k]) : F[k]]))]
+          Object.keys(F).map(k => [k, F[k] !== null && typeof F[k] === "object" ? JSON.stringify(F[k]) : F[k]]))],
+        // D2 (#138): the street and the ledger, side by side in one table, so the
+        // disagreement is something a reader can sort a spreadsheet by. `skew` and
+        // `interest` are the divergence law's own workings, not a summary of them:
+        // sentiment_written − sentiment IS skew, unless the corridor clamped it,
+        // and the corridor column says when it did.
+        ["voices.csv", csvOf(
+          ["region_id", "epoch", "kind", "band", "sentiment", "sentiment_written",
+           "divergence", "skew", "interest", "corridor", "lead_topic", "skin", "text"],
+          (voicesAny(model, params) || []).map(v => [
+            v.region_id, v.epoch, v.kind, v.band, v.sentiment,
+            v.sentiment_written ?? "", v.written ? v.written.D : "",
+            v.written ? v.written.skew : "", v.written ? v.written.why : "",
+            v.written && v.written.corridor ? 1 : 0,
+            v.lead, v.skin, v.text,
+          ]))]
       ];
     }
 
@@ -11655,6 +11693,57 @@
       };
     }
 
+    // The world's voices, capped and ordered. One entry point: builds the nameable
+    // world and the lexicon once, scores every settled region, and lets the loudest
+    // few speak. Ties break on region id so the choice is deterministic in the seed
+    // and never in the iteration order.
+    const VOICE_CAP = { oral: 3, written: 2 };
+    // csv and geojson must ship the SAME voices, so both go through one memoized
+    // build per (model, params). Composing twice would be deterministic and equal,
+    // but it would also be two chances for them to drift apart later.
+    const VOICES_CACHE = new WeakMap();
+    function voicesFor(model, params) {
+      let per = VOICES_CACHE.get(model);
+      if (!per) { per = new Map(); VOICES_CACHE.set(model, per); }
+      const key = `${params.seed}|${params.fate}|${params.ep}|${params.ch}`;
+      // toGeoJSON primes this on its way past, so the csv path normally finds the
+      // voices already built. The fallback exists for a caller that wants the csv
+      // without the geojson, and it is the only path that pays for a second export.
+      if (!per.has(key)) per.set(key, composeVoices(model, params, toGeoJSON(model, params)));
+      return per.get(key);
+    }
+    // Whatever this model's voices are: the primed set if the export has been built
+    // (the normal path), a fresh build if the caller supplied params, otherwise
+    // nothing rather than a guess.
+    function voicesAny(model, params) {
+      const per = VOICES_CACHE.get(model);
+      if (per && per.size) return per.values().next().value;
+      return params ? voicesFor(model, params) : [];
+    }
+    function voicesPrime(model, params, gj) {
+      let per = VOICES_CACHE.get(model);
+      if (!per) { per = new Map(); VOICES_CACHE.set(model, per); }
+      const key = `${params.seed}|${params.fate}|${params.ep}|${params.ch}`;
+      if (!per.has(key)) per.set(key, composeVoices(model, params, gj));
+      return per.get(key);
+    }
+    function composeVoices(model, params, gj) {
+      const W = voiceWorld(gj, model);
+      const lex = loomLexicon(params.fate || params.seed);
+      const speakers = model.regions.filter(r => r.settled && W.towns.has(r.id))
+        .map(r => ({ reg: r, v: voiceOf(r, model, params) }))
+        .map(o => ({ ...o, news: voiceNewsworthy(o.v) }))
+        .sort((a2, b2) => (b2.news - a2.news) || (a2.reg.id - b2.reg.id));
+      // one shared tally across the whole world, so the street does not repeat itself
+      const used = new Set();
+      const out = [];
+      for (const kind of ["oral", "written"]) {
+        for (const o of speakers.slice(0, VOICE_CAP[kind]))
+          out.push(composeVoice(o.reg, o.v, W, model, params, kind, lex, used));
+      }
+      return out;
+    }
+
     // §2's topic ladder: which classes a voice reaches for, given what it is
     // talking about. A harm leads to grievance and witness; an achievement to
     // aspiration; the world outside to elsewhere and rumour.
@@ -11696,6 +11785,25 @@
       : (v.market >= 55 || v.isPort) ? "metropolitan"
       : (v.sanctuary || v.pilgrim >= 40) ? "old-faith"
       : "frontier";
+
+    // WHO GETS TO SPEAK. A world of 24 regions cannot hand every town a microphone
+    // every epoch — the panel would be unreadable and the export enormous — so the
+    // cap is ~3 oral + 2 written, and the choice of WHOSE voice survives is itself a
+    // claim the instrument has to stand behind.
+    //
+    // Newsworthiness is deliberately NOT "who is worst off". A page that always
+    // hands the microphone to the most miserable town is making the same editorial
+    // decision every epoch, and the street stops being evidence and becomes a
+    // chorus. It is DISTANCE FROM NEUTRAL — a town doing unusually well is exactly
+    // as newsworthy as one doing unusually badly — weighted by how many people it
+    // speaks for and how loud its loudest subject is. A boom town's pride and a
+    // sacrifice zone's fury are both news; a weary median town is not.
+    function voiceNewsworthy(v) {
+      const away = Math.abs(voiceSentiment(v));
+      const top = VOICE_TOPICS.filter(t => t.on(v)).reduce((m, t) => Math.max(m, t.sal(v)), 0);
+      const people = Math.log10(Math.max(10, v.pop));
+      return away * 1.0 + top * 0.35 + people * 6;
+    }
 
     // The voice's view of a region. Every field is named against the MODEL, and
     // four of them are not named what the export calls them — `aetherworks_capacity`

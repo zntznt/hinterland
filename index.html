@@ -7699,11 +7699,10 @@
     };
     const csvOf = (header, rows) =>
       [header.join(","), ...rows.map(r => r.map(csvCell).join(","))].join("\n") + "\n";
-    // `params` is optional and second, so the one existing caller keeps working:
-    // when it is absent the voices come from whatever toGeoJSON already primed for
-    // this model, which is the normal path (the app builds the export before it
-    // offers the tables). A caller that wants the tables and nothing else passes
-    // params and pays for one export.
+    // `params` is required: the tables carry voices now, and voices need the seed
+    // and epoch that produced them. It was briefly optional, with the voices coming
+    // from whatever the export had primed — which made the same call return
+    // different tables depending on whether an export had been built yet.
     function toCsvTables(model, params) {
       const F = getFindings(model);
       const eventRows = model.events.map(ev => [
@@ -11717,13 +11716,16 @@
       if (!per.has(key)) per.set(key, composeVoices(model, params, toGeoJSON(model, params)));
       return per.get(key);
     }
-    // Whatever this model's voices are: the primed set if the export has been built
-    // (the normal path), a fresh build if the caller supplied params, otherwise
-    // nothing rather than a guess.
+    // This model's voices, built if they are not already. `params` is REQUIRED and
+    // the earlier version's fallback was a bug: without params it returned whatever
+    // the cache happened to hold, so `toCsvTables(model)` emitted zero voice rows
+    // before any export had been built and five after — the same call, two answers,
+    // depending on what had run first. CI caught it as "CSV click not deterministic",
+    // which is exactly what it was.
     function voicesAny(model, params) {
       const per = VOICES_CACHE.get(model);
       if (per && per.size) return per.values().next().value;
-      return params ? voicesFor(model, params) : [];
+      return voicesFor(model, params);
     }
     function voicesPrime(model, params, gj) {
       let per = VOICES_CACHE.get(model);
@@ -15667,7 +15669,7 @@
       $("dlTables").addEventListener("click", () => {
         if (!model) return;
         // one click, six tables — the same blob+anchor path as every download
-        for (const [fname, text] of toCsvTables(model)) {
+        for (const [fname, text] of toCsvTables(model, params)) {
           const blob = new Blob([text], { type: "text/csv" });
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");

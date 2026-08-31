@@ -2954,7 +2954,7 @@ const d3 = globalThis.d3;
       $("dlTables").addEventListener("click", () => {
         if (!model) return;
         // one click, six tables — the same blob+anchor path as every download
-        for (const [fname, text] of toCsvTables(model)) {
+        for (const [fname, text] of toCsvTables(model, params)) {
           const blob = new Blob([text], { type: "text/csv" });
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");

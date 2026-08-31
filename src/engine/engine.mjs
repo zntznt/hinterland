@@ -3385,6 +3385,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       const rV = fx("revolt");
       const revoltBar = 95 + rV() * 25 + (params.order - 50) * 0.5; // B9 (#131): order raises the bar to rise — a police state suppresses revolt; an open realm invites it (neutral at 50)
       let responded = false, revoltIdx = -1, revoltWon = false;
+      let revoltAvertedIdx = -1;   // E1 (#142): a rising the governor headed off
       // B11 (#133): THE POWERS BEYOND THE SEA. Empire works by REACH, not by
       // the fleet — it courts, it wires, it owns the works, and it leaves when
       // the ore runs out. Two are named: the METROPOLE that courts this realm,
@@ -4599,9 +4600,33 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
             // a different history has different luck, and that is not a byte-pin
             // failure but the whole point of taking the seat.
             const diceWon = rs > stateStr + 20;
-            const rOpts = diceWon ? ["won", "crushed"] : ["crushed", "won"];
-            revoltWon = rOpts[reign.decide("r", e + 1, rOpts)] === "won";
-            if (revoltWon) {
+            // AVERTED is the third road, and G5's adversarial list names its ripples
+            // rather than its existence: a rising that never happens must leave every
+            // consumer of revolt state coherent. Six of them read it —
+            //   (1) the once-per-run guard `revoltIdx`, which must still close, or the
+            //       next epoch simply offers the same rising again;
+            //   (2) `freeTownIdx`, which sets tollBurden to zero for a town that was
+            //       never freed — it stays -1;
+            //   (3) `crushedIdx`, which posts a garrison after the hangings — there
+            //       were no hangings, so it must not fire (the ripple that bites);
+            //   (4) `wonArc`, which earns a town the byname "the Free" or "the
+            //       Famished" — it stays null;
+            //   (5) the region's own `eventType`, which must not read "revolt";
+            //   (6) the `revolt` event itself, which the chronicle narrates and the
+            //       findings read as the run's turning point — an aversion is its own
+            //       event type, so neither mistakes it for a rising that happened.
+            const rOpts = diceWon ? ["won", "crushed", "averted"] : ["crushed", "won", "averted"];
+            const outcome = rOpts[reign.decide("r", e + 1, rOpts)];
+            if (outcome === "averted") {
+              // the seat reads the fires on the horizon and buys the grievance off
+              // before it lights. Peace is not free: it is paid for out of the crown
+              // and conceded out of the yield.
+              revoltAvertedIdx = ri;
+              treasuries.crown = Math.max(0, treasuries.crown - 15);
+              reg.retention = Math.min(100, reg.retention + 8);
+              reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
+              events.push({ epoch: e + 1, type: "revolt_averted", region_id: reg.id, by: "governor" });
+            } else if ((revoltWon = outcome === "won")) {
               freeTownIdx = ri;                       // tolls no one, ever again
               reg.retention = 100;                    // keeps what it makes
               { const _es0 = reg.eliteShare; reg.eliteShare = Math.max(8, reg.eliteShare - 25); reg.eliteCatDelta += reg.eliteShare - _es0; } // the charters burn with the manor (B5: catastrophe ledger)
@@ -4644,10 +4669,16 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
               { const _es0 = reg.eliteShare; reg.eliteShare = Math.min(92, reg.eliteShare + 10); reg.eliteCatDelta += reg.eliteShare - _es0; } // expropriation under the garrison (B5: catastrophe ledger — an UPWARD shock)
               reg.injustice = Math.round(100 * (reg.blight / 100) * (1 - reg.wealth / 100));
             }
-            reg.eventType = "revolt"; reg.eventEpoch = e + 1;
-            reg.eventSeverity = 70 + Math.round(rV() * 25);
-            events.push({ epoch: e + 1, type: "revolt", region_id: reg.id, outcome: revoltWon ? "won" : "crushed",
-              ...(revoltWon ? { arc: reg.wonArc } : {}) }); // B8 (#130): the won rising's arc — flourished or starved
+            // consumers (5) and (6): a rising that never happened stamps no region
+            // and files no revolt. The severity die is not drawn either — there is
+            // no rising to rate — which is the same rule the rest of the takeovers
+            // follow: a road not taken draws nothing.
+            if (outcome !== "averted") {
+              reg.eventType = "revolt"; reg.eventEpoch = e + 1;
+              reg.eventSeverity = 70 + Math.round(rV() * 25);
+              events.push({ epoch: e + 1, type: "revolt", region_id: reg.id, outcome: revoltWon ? "won" : "crushed",
+                ...(revoltWon ? { arc: reg.wonArc } : {}) }); // B8 (#130): the won rising's arc — flourished or starved
+            }
           }
         }
         // D6: the faith arrives where the suffering is — two epochs after the
@@ -4979,7 +5010,8 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt
       roadEdges.forEach(e => { thr[e.a] += e.traffic; thr[e.b] += e.traffic; });
       const maxThr = Math.max(...thr, 1e-9);
       const KG = Math.max(1, Math.round(regions.length / 12));
-      const crushedIdx = (revoltIdx >= 0 && !revoltWon) ? revoltIdx : -1;
+      // E1 (#142): an AVERTED rising leaves no crushed town to fortify (consumer 3)
+      const crushedIdx = (revoltIdx >= 0 && !revoltWon && revoltAvertedIdx === -1) ? revoltIdx : -1;
       const garScored = regions.map((reg, i) => {
         const rj = sx("gar#" + reg.id);
         return { i, s: 0.6 * (100 * thr[i] / maxThr) + 0.4 * reg.centrality + (rj() - 0.5) * 8 };

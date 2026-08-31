@@ -43,10 +43,21 @@ const distortM = (c) => (c.trust < 40 || c.legib >= 55) ? 1 + (100 - c.trust + c
 // §3  sentiment and the divergence law — spec formula, verbatim
 // =============================================================================
 const TRAJ = { boom: 18, stable: 0, decline: -14, collapse: -30 };
+// §3's credit side reads `0.30·wealth` as if wealth were a 0-100 index. It is
+// clamped 0-100 in the engine, but its REALIZED spread is far narrower and it
+// depends on the income mix: p50 14 / max 61 at default weights, max 74 when the
+// world runs on trade, max 35 under extraction. So the term carries a fraction of
+// the headroom §3 assumed, and `proud` is starved.
+//
+// W_REF is the reference ceiling the term is stated against. Absolute, not a
+// percentile: pride has to be a LEVEL (a town that holds something), never a RANK,
+// or a uniformly destitute world manufactures proud towns out of its own misery —
+// which is the one thing an instrument about inequality must not do.
+let W_REF = Number(arg("wref", "60"));
 function sentiment(c) {
   const T = TRAJ[c.boom] ?? 0;
   const G = 0.30*c.blight + 0.35*c.toll + 0.20*c.injustice + 18*(c.occupied?1:0) + 3*c.tribute + Math.max(0,-T);
-  const C = 0.30*c.wealth + 0.25*c.trust + 0.15*c.market + 0.10*c.sky + Math.max(0,T);
+  const C = 0.30*Math.min(100, c.wealth * 100 / W_REF) + 0.25*c.trust + 0.15*c.market + 0.10*c.sky + Math.max(0,T);
   return clamp(Math.round(C - G), -100, 100);
 }
 const bandOf = (s) => s <= -45 ? "fury" : s <= -10 ? "aggrieved" : s <= 15 ? "weary" : s <= 40 ? "steady" : "proud";
@@ -54,12 +65,26 @@ const SIDE = { fury: "neg", aggrieved: "neg", weary: "mid", steady: "pos", proud
 const HARM = new Set(["toll","blight","burden","abandon","tribute","water"]);
 const ACHIEVE = new Set(["works","boom","grid","port","sky"]);
 const DISORDER = new Set(["smuggling"]);
+// §3 (#136 §7.6, resolved): `elsewhere` splits by DIRECTION, because the office's
+// interest does. What the region LOST to somewhere else is a harm it wants to look
+// blameless for, and is minimised like any harm (+D). What was decided above it and
+// merely passes through — the exchange's grade, the metropole's standard, a price
+// set elsewhere — is a thing it wants to look powerless over, and deflates toward
+// "not a matter for this office" (−D). The topic's own trigger already carries both
+// conditions (`emig >= 100` outward; `market`/`isPort` inward), so the direction is
+// read from the same columns that raised the topic.
+const elsewhereOutward = (c) => c.emig >= 100;
 function written(sOral, lead, c) {
   const D = Math.round(0.45*c.legib + 0.15*(100 - c.trust));
   let skew = 0, why;
   if (HARM.has(lead))          { skew = +D; why = "harm minimised"; }
   else if (ACHIEVE.has(lead))  { skew = +D; why = "achievement inflated"; }
   else if (DISORDER.has(lead)) { skew = c.occupied ? -D : +D; why = c.occupied ? "censorate deflates disorder" : "constabulary inflates disorder"; }
+  else if (lead === "elsewhere") {
+    const out = elsewhereOutward(c);
+    skew = out ? +D : -D;
+    why = out ? "outward loss minimised" : "structural relation deflated (no discretion claimed)";
+  }
   else                         { skew = 0;  why = "no interest engaged"; }
   let s = clamp(sOral + skew, -100, 100);
   let corridor = false;
@@ -546,6 +571,7 @@ if (has("diag")) {
     : Array.from({length: 20}, (_, i) => `atlas-${i+1}`);
   const H = { fury:0, aggrieved:0, weary:0, steady:0, proud:0 }; let N = 0;
   const HR = { fury:0, aggrieved:0, weary:0, steady:0, proud:0 };
+  const HS = { fury:0, aggrieved:0, weary:0, steady:0, proud:0 };
   const Cs = [], Gs = [], terms = { wealth:[], trust:[], market:[], sky:[] };
   const allW = [];
   const rows = [];
@@ -566,6 +592,12 @@ if (has("diag")) {
     terms.wealth.push(0.30*c.wealth); terms.trust.push(0.25*c.trust);
     terms.market.push(0.15*c.market); terms.sky.push(0.10*c.sky);
     HR[bandOf(sentiment({ ...c, wealth: pct(c.wealth) }))]++;   // counterfactual only
+    // third counterfactual: wealth kept ABSOLUTE, its coefficient rescaled to the
+    // realized ceiling. Percentile makes pride relative — a uniformly destitute
+    // world would manufacture proud towns by construction, which is the one thing
+    // an instrument about inequality must not do. A fixed rescale gives the term
+    // the headroom §3 assumed while leaving a poor world poor.
+    HS[bandOf(sentiment({ ...c, wealth: Math.min(100, c.wealth * 100 / 55) }))]++;
   }
   const mn = (a) => a.reduce((x,y)=>x+y,0)/a.length;
   console.log(`# #136 diagnostic — sentiment band reachability, ${seeds.length} seeds, n=${N} settled regions\n`);
@@ -586,6 +618,45 @@ if (has("diag")) {
   console.log("| band | n | share |\n|---|---|---|");
   for (const b of ["fury","aggrieved","weary","steady","proud"])
     console.log(`| ${b} | ${HR[b]} | ${(100*HR[b]/N).toFixed(1)}% |`);
+  console.log("\n## Counterfactual (NOT applied): wealth kept ABSOLUTE, coefficient rescaled to its realized ceiling (x100/55)\n");
+  console.log("| band | n | share |\n|---|---|---|");
+  for (const b of ["fury","aggrieved","weary","steady","proud"])
+    console.log(`| ${b} | ${HS[b]} | ${(100*HS[b]/N).toFixed(1)}% |`);
+  // W_REF sweep, across the income mixes that move wealth's ceiling. Done HERE and
+  // not in a scratch script on purpose: the context builder above maps the spec's
+  // column names onto the export's real ones (`toll_burden` is `tariff_burden`,
+  // `refining_capacity` is `aetherworks_capacity`), and a hand-rolled formula that
+  // guesses those reads zeroes and reports a world that is happier than it is.
+  {
+    const MIX = [["defaults", ""], ["trade-heavy", "&we=10&wf=15&wt=65&wg=10"],
+                 ["extraction", "&we=70&wf=15&wt=10&wg=5"], ["sealed", "&openness=0"]];
+    const keep = W_REF;
+    console.log("\n## W_REF sweep: the reference ceiling the wealth term is stated against\n");
+    console.log("| income mix | W_REF | weary | steady | proud | wealth max |\n|---|---|---|---|---|---|");
+    for (const [nm, extra] of MIX) {
+      const cs = [];
+      for (const sd of seeds.slice(0, 8)) {
+        const { gj } = await gen(`#seed=${sd}&regions=${REGIONS}&ep=${EP}${extra}`);
+        const w2 = worldOf(gj, sd);
+        for (const p2 of w2.regions.filter(x => x.is_settled === 1)) {
+          const st = w2.settle.get(p2.region_id);
+          if (st) cs.push(ctxOf(p2, st, w2));
+        }
+      }
+      const wmax = Math.max(...cs.map(c => c.wealth));
+      for (const W of [100, 74, 60, 55]) {
+        W_REF = W;
+        const H2 = { fury:0, aggrieved:0, weary:0, steady:0, proud:0 };
+        for (const c of cs) H2[bandOf(sentiment(c))]++;
+        const pc = (b2) => `${(100 * H2[b2] / cs.length).toFixed(1)}%`;
+        console.log(`| ${nm} | ${W} | ${pc("weary")} | ${pc("steady")} | **${pc("proud")}** | ${wmax} |`);
+      }
+    }
+    W_REF = keep;
+  }
+  console.log("\nThe difference that matters is not the histogram, it is what `proud` MEANS:");
+  console.log("under the percentile it is a rank (the top of THIS world, however poor the world);");
+  console.log("under the rescale it is a level (a town that actually holds something).");
   process.exit(0);
 }
 
@@ -645,6 +716,43 @@ const nonGriev = cls.filter(k => k !== "grievance").length / Math.max(1, cls.len
 const V6strict = negBands >= 2 && posBands >= 2 && nonGriev >= 0.20;
 const V6loose  = negLoose >= 2 && posLoose >= 2 && nonGriev >= 0.20;
 
+// V6 AS RESTATED (#136, second run). The band check is a statement about the
+// MODEL'S RANGE, so it is asserted over >= 200 settled regions at DEFAULT income
+// weights — not over the ~75 voices three seeds happen to produce, where at a ~1%
+// `proud` rate the check is a coin flip rather than a tripwire. The non-grievance
+// share stays on the actual oral sentences, because that IS a statement about the
+// voices. `weary` counts toward neither side: it straddles zero and is ~60% of
+// towns, so counting it on both makes the invariant unfailable.
+const V6_MIN_REGIONS = 200;
+// The seed list is MIXED and written down, because the rate of the rarest band
+// depends on the family: measured at W_REF 60, `proud` runs 1.1% over the atlas
+// family and 5.3% over a generic one — 4.8x. Drawing the population from a single
+// family would let that family's luck decide the verdict, which is how a check
+// starts reporting the sample instead of the model. (This is also why V6 asks for
+// REPRESENTATION rather than a rate: at 200 regions even a 1.1% band yields ~2
+// towns, so the check survives the spread it was nearly fooled by.)
+const V6_SEEDS = ["atlas-1","atlas-2","atlas-3","atlas-4","atlas-5","atlas-6","atlas-7",
+                  "v6-1","v6-2","v6-3","v6-4","v6-5","v6-6","v6-7",
+                  "fix-1","fix-2","fix-3","fix-4","fix-5","fix-6","e2-1","e2-2","e2-3"];
+const bandPop = { fury:0, aggrieved:0, weary:0, steady:0, proud:0 };
+{
+  let got = 0;
+  for (const sd6 of V6_SEEDS) {
+    if (got >= V6_MIN_REGIONS) break;
+    const { gj } = await gen(`#seed=${sd6}&regions=${REGIONS}&ep=${EP}`);
+    const w2 = worldOf(gj, sd6);
+    for (const p2 of w2.regions.filter(x => x.is_settled === 1)) {
+      const st = w2.settle.get(p2.region_id);
+      if (!st) continue;
+      bandPop[bandOf(sentiment(ctxOf(p2, st, w2)))]++; got++;
+    }
+  }
+}
+const popN = Object.values(bandPop).reduce((a2, b2) => a2 + b2, 0);
+const negPop = ["fury","aggrieved"].filter(b2 => bandPop[b2]).length;
+const posPop = ["steady","proud"].filter(b2 => bandPop[b2]).length;
+const V6 = popN >= V6_MIN_REGIONS && negPop >= 2 && posPop >= 2 && nonGriev >= 0.20;
+
 md += `\n---\n\n## Invariants\n\n| seed | check | result |\n|---|---|---|\n`;
 for (const a of all) {
   const r = a.R;
@@ -658,6 +766,11 @@ md += `| all | V6 (strict) ≥2 bands each side, \`weary\` counted as neither | 
 md += `(neg ${negBands}/2, pos ${posBands}/2, non-grievance ${(100*nonGriev).toFixed(0)}%) |\n`;
 md += `| all | V6 (loose) \`weary\` counted on both sides, since it spans −10..+15 | ${V6loose ? "PASS" : "**FAIL**"} `;
 md += `(neg ${negLoose}/2, pos ${posLoose}/2) |\n`;
+md += `| ${popN} regions | **V6 AS RESTATED** — strict, over ≥${V6_MIN_REGIONS} settled regions at default weights | ${V6 ? "**PASS**" : "**FAIL**"} `;
+md += `(neg ${negPop}/2, pos ${posPop}/2, non-grievance ${(100*nonGriev).toFixed(0)}% ≥20%) |\n`;
+md += `\n> The two rows above are the OLD wording on a 3-seed sample, kept so the change is legible. `;
+md += `V6 is now a statement about the model's range rather than about whichever ~75 voices three seeds produced: `;
+md += `bands ${["fury","aggrieved","weary","steady","proud"].map(b2 => `${b2} ${bandPop[b2]}`).join(" · ")}.\n`;
 
 md += `\n### Sentiment bands (oral, all seeds, n=${oralAll.length})\n\n`;
 for (const b of ["fury","aggrieved","weary","steady","proud"])

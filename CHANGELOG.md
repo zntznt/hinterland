@@ -1,6 +1,83 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the voices gate, second run: three decisions taken, and two of my own findings
+  withdrawn** (issue #136, the GATE; **no schema change, no app change, no exported byte
+  moves** — `tools/proto/` is outside the app and the suite, which is what a gate is).
+  The gate ran in #195: V1–V5 passed, **V6 failed**, and it failed on the spec rather
+  than the prototype. Three decisions were escalated and sat unanswered; the owner has
+  now taken the one that turned on values, and the other two are settled here with
+  their reasons.
+  **`wealth` enters ABSOLUTE, rescaled against a reference ceiling of 60 — not as a
+  percentile.** §3's `0.30·wealth` was written as if wealth spanned 0–100; stated
+  against 100 the term carried a mean 4.5 of its nominal 30 and `proud` was starved to
+  1.3%. The percentile fix passes V6 most comfortably and is **wrong**: under a
+  percentile `proud` is a RANK — the top of *this* world, however poor the world — so a
+  uniformly destitute realm manufactures pride out of its own misery. Under an absolute
+  ceiling it is a LEVEL. An instrument whose subject is inequality does not grade on a
+  curve.
+  **V6 is restated, because as written it was unsound in three ways.** (1) The reading
+  is now **strict**: `weary` straddles zero and is ~60% of towns, so counting it on both
+  sides made an invariant that could not fail — the fourth such assertion found in as
+  many tickets, and the first that would have been blessed on purpose. (2) Its sample is
+  stated in **regions, not seeds**: at a ~1% band rate a 3-seed sample is a coin flip,
+  not a tripwire. (3) It is a check on **the model's range, not on one world's street**
+  — and that is the finding. Measured across income mixes at every ceiling tried, an
+  **extraction world contains no `proud` town at all, 0.0%**, while a trade-heavy world
+  reaches 3.7–6.7%. That is not a starved formula; it is the model telling the truth. A
+  realm that lives by pulling ore out of the ground and shipping it away does not
+  produce pride, and its street *is* a monotone. The old wording would have fired on it
+  and demanded the model be falsified into balance.
+  **`elsewhere` splits by direction, as disorder already does.** §7.6 left it with no row
+  in §3's sign table, so 12% of written voices carried no skew at all — in the one
+  register whose entire purpose is to diverge. One row cannot carry it: an office has an
+  interest in looking blameless for what it **lost** (an outward flow, minimized like any
+  harm, +D) *and* powerless over what was **decided above it** (the exchange's grade, the
+  metropole's standard — deflated toward "not a matter for this office", −D). Both arms
+  fire in the sample.
+  **TWO OF §7.4'S OWN FINDINGS ARE WITHDRAWN, AND THEY FAILED THE SAME WAY.** Both
+  measured one income mix and reported it as the model.
+  (1) *`wealth` does not top out at 55.* That was the max across 20 atlas seeds at
+  default weights. Swept across mixes it reaches **74** in a trade-heavy world. So the
+  charge against §4's worked example (d) — that it assumes `wealth` 71, "above the
+  observed maximum", "built on a column value the engine does not produce" — **is wrong
+  and is withdrawn.** The engine produces 71 comfortably, when the world runs on trade.
+  The example was sound; the diagnosis was parochial.
+  (2) *The rate of the rarest band depends on the seed family.* At the chosen ceiling
+  `proud` runs **1.1% over the atlas family and 5.3% over a generic one, 4.8×** — and
+  the first implementation of the restated V6 drew its 200-region population from a
+  single family, which happened to be the favourable one. Caught before it shipped. The
+  population is now a written-down mixed list, and this is the second reason V6 asks for
+  *representation* rather than a rate: at 200 regions even a 1.1% band yields ~2 towns,
+  so the check survives the spread it was nearly fooled by.
+  **A note on method, since it cost a wrong number.** The first W_REF sweep was
+  hand-rolled against the model's field names and disagreed with the prototype by 2×.
+  The prototype's context builder maps the spec's column names onto the export's real
+  ones (`toll_burden` is `tariff_burden`, `refining_capacity` is
+  `aetherworks_capacity`), and a formula that guesses them reads zeroes and reports a
+  world happier than it is. The sweep now runs inside the prototype. This is the same
+  defect as the byname read off the wrong feature and the garrison filtered on a kind
+  the export does not use: **a measurement that names a column it has not checked is not
+  a measurement.**
+  **The sample's seeds changed, and the gate could not have been walked without it.**
+  `docs/voices-sample.md` was three atlas seeds — one family, the low-pride one — and
+  regenerated under the new formula it still read `proud` 0 / `steady` 4 of 75. The gate
+  asks for a positive-band pair to be **read aloud**, and there was not reliably one to
+  read. It is now mixed across families and reads `aggrieved` 16 · `weary` 33 · `steady`
+  18 · `proud` 8. Less biased than the original, not more — but the positive bands are
+  commoner here than in an average world, the mix was chosen so the upper edge could be
+  *heard*, and the histogram ships inside the sample so the reading is never separated
+  from what it is a sample of.
+  **V6 as restated: PASS.** 202 regions across the mixed list — fury 3 · aggrieved 39 ·
+  weary 118 · steady 38 · proud 4, non-grievance 80%. V1–V5 still pass on 3 seeds, max
+  surface repeat 3.
+  **The gate is still not open, and cannot be opened from here.** What remains is the
+  half only the owner can do: read all 50, read 6 pairs aloud including a positive-band
+  pair, and judge the two named risks — euphemism-join flatness, and the
+  house-style-of-lying uniformity. Whether it *sounds* like people rather than a house
+  style with two settings is not something an invariant can answer, which is the whole
+  reason this is a gate and not a test. **D2 (#138) stays blocked on that reading**, and
+  with it the one bullet of #143 that did not ship.
 - **the reign surface: a seat you can sit in, and a verdict on what you did from it**
   (issue #143, E2; **no schema change and no exported byte moves** — E2 is a surface
   over E1's engine, so the fixtures do not move at all; `ch` now rides the URL, which

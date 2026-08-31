@@ -3,11 +3,11 @@
 `voices-proto.mjs`, scratchpad, **zero app changes**. Generated against real exports of
 `index.html` captured through the `gen()` pattern from `tools/lib.mjs`. The RNG
 (`hashStr`/`mulberry32`/`streams`) and the coiner (`NAME_CORPUS`/`buildChain`/
-`chainWalk`/`markovWord`) are pulled out of `index.html` by anchored regex — 9648 bytes,
-7 registers — so every voice is recomputable from the export + `index.html`, and a
+`chainWalk`/`markovWord`) are pulled out of `index.html` by anchored regex — 10738 bytes,
+8 registers — so every voice is recomputable from the export + `index.html`, and a
 moved symbol fails loudly instead of silently forking.
 
-Pools: **full (135 oral + 116 written = 251 fragments, every fragment slotted)**. Seeds `atlas-1`, `atlas-2`, `atlas-3`, 24 regions, 10 epochs, 50 voices per seed.
+Pools: **full (135 oral + 116 written = 251 fragments, every fragment slotted)**. Seeds `atlas-1`, `v6-2`, `v6-5`, 24 regions, 10 epochs, 50 voices per seed.
 
 Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the other 2 seeds contribute their invariants. `--all-prose` prints every seed.
 
@@ -16,14 +16,14 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 
 > world: metropole the Osmark Combine · rival the Verrant Hegemony · exchange Quill Exchange · gazette The Obsensign · precinct Ballard Precinct · regime `trade_war` · price index 0.783 · imperial attention 0.5
 >
-> world-coins (oaths, minted once per world per register): lowland Gle/Wick/Sor · frontier Strek/Thar/Dhok · temple Sonne/Mine/Calle · corporate Lum/Rynd/Ledel · precinct Quen/Ben/Lion · gazette Sign/Dige/Her · chthonic Moth/Nyxar/Under
+> world-coins (oaths, minted once per world per register): lowland Gle/Wick/Sor · frontier Strek/Thar/Dhok · temple Sonne/Mine/Calle · corporate Lum/Rynd/Ledel · precinct Quen/Ben/Lion · gazette Sign/Dige/Her · chthonic Moth/Nyxar/Under · imperial Trimo/Ine/Cine
 >
 > imperial coins (the Concordat tongue, one corpus): Solmaro, Cine, Aurecht, Pravine
 
 
 ### 1. Briarlstead the Lofted — *aggrieved*
 
-> S_oral **-22** · D 39 · lead `sky` (achievement inflated) · skew +39 → S_written **+17** · skin `works-town`
+> S_oral **-20** · D 39 · lead `sky` (achievement inflated) · skew +39 → S_written **+19** · skin `works-town`
 >
 > columns: wealth 9 · toll 39 · blight 27 · burden 56.8/1k · trust 33 · legib 64 · works 0 · decline
 
@@ -41,7 +41,7 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 
 ### 2. Dhulzak the Lofted — *steady*
 
-> S_oral **+16** · D 11 · lead `sky` (achievement inflated) · skew +11 → S_written **+27** · skin `works-town`
+> S_oral **+19** · D 11 · lead `sky` (achievement inflated) · skew +11 → S_written **+30** · skin `works-town`
 >
 > columns: wealth 12 · toll 39 · blight 10 · burden 39.2/1k · trust 70 · legib 15 · works 0 · stable
 
@@ -55,26 +55,9 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 | wealth | 12 | 12 | written: verbatim |
 
 
-### 3. Theresderby the Lofted — *aggrieved*
+### 3. Pelvetchste the Steadfast — *weary*
 
-> S_oral **-13** · D 24 · lead `smuggling` (constabulary inflates disorder) · skew +24 → S_written **+11** · skin `works-town`
->
-> columns: wealth 13 · toll 28 · blight 25 · burden 16.2/1k · trust 45 · legib 34 · works 0 · decline
-
-**ORAL** — You'll not hear this from the constabulary. There's a price for anything out of Theresderby if you know which door at Ballard Precinct — my father called Theresderby by the old name and would not use the new one. Word in Theresderby is Cramwick will not hold the seat past the next reckoning. Come back to Theresderby in ten years and see which of us was right.
-
-**WRITTEN** — Digest of conditions at Theresderby, prepared for Cramwick. Social trust in Theresderby is scored 45 by the standing instrument; per the shift return, the interruption at Theresderby is recorded as a variance in the schedule rather than a stoppage. Plant note: grid connection at Theresderby is complete and the benefit is already legible in the returns; the injustice index for Theresderby returns 22, within the range Cramwick has accepted before. The reduction in Theresderby vacancy is attributed to the administration's measures; a hand in the margin gives the Theresderby figure as queried and standing. The Theresderby schedule stands until superseded.
-
-| path | true | told | rule |
-|---|---|---|---|
-| attribution | market_access 10 | the constabulary | blame-shift: nearest visible named institution (§2) |
-| trust | 45 | 45 | written: verbatim |
-| injustice | 22 | 22 | written: verbatim |
-
-
-### 4. Pelvetchste the Steadfast — *weary*
-
-> S_oral **+10** · D 6 · lead `elsewhere` (no interest engaged) · skew +0 → S_written **+10** · skin `works-town`
+> S_oral **+13** · D 6 · lead `elsewhere` (outward loss minimised) · skew +6 → S_written **+19** · skin `works-town`
 >
 > columns: wealth 16 · toll 25 · blight 35 · burden 37.2/1k · trust 80 · legib 7 · works 0 · stable
 
@@ -89,9 +72,9 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 | servicegap | 33 | 33 | written: verbatim |
 
 
-### 5. Osteaste the Open — *weary*
+### 4. Osteaste the Open — *weary*
 
-> S_oral **+8** · D 6 · lead `elsewhere` (no interest engaged) · skew +0 → S_written **+8** · skin `works-town`
+> S_oral **+12** · D 6 · lead `elsewhere` (outward loss minimised) · skew +6 → S_written **+18** · skin `works-town`
 >
 > columns: wealth 18 · toll 28 · blight 49 · burden 36.4/1k · trust 80 · legib 7 · works 0 · stable
 
@@ -106,9 +89,43 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 | uncounted | 111 | 111 | written: verbatim |
 
 
-### 6. Brokstead the Open — *weary*
+### 5. Theresderby the Lofted — *aggrieved*
 
-> S_oral **+6** · D 8 · lead `elsewhere` (no interest engaged) · skew +0 → S_written **+6** · skin `works-town`
+> S_oral **-11** · D 24 · lead `smuggling` (constabulary inflates disorder) · skew +24 → S_written **+13** · skin `works-town`
+>
+> columns: wealth 13 · toll 28 · blight 25 · burden 16.2/1k · trust 45 · legib 34 · works 0 · decline
+
+**ORAL** — You'll not hear this from the constabulary. There's a price for anything out of Theresderby if you know which door at Ballard Precinct — my father called Theresderby by the old name and would not use the new one. Word in Theresderby is Cramwick will not hold the seat past the next reckoning. Come back to Theresderby in ten years and see which of us was right.
+
+**WRITTEN** — Digest of conditions at Theresderby, prepared for Cramwick. Social trust in Theresderby is scored 45 by the standing instrument; per the shift return, the interruption at Theresderby is recorded as a variance in the schedule rather than a stoppage. Plant note: grid connection at Theresderby is complete and the benefit is already legible in the returns; the injustice index for Theresderby returns 22, within the range Cramwick has accepted before. The reduction in Theresderby vacancy is attributed to the administration's measures; a hand in the margin gives the Theresderby figure as queried and standing. The Theresderby schedule stands until superseded.
+
+| path | true | told | rule |
+|---|---|---|---|
+| attribution | market_access 10 | the constabulary | blame-shift: nearest visible named institution (§2) |
+| trust | 45 | 45 | written: verbatim |
+| injustice | 22 | 22 | written: verbatim |
+
+
+### 6. Glefold-on-Pellowfolt the Kindled — *weary*
+
+> S_oral **+11** · D 7 · lead `works` (achievement inflated) · skew +7 → S_written **+18** · skin `works-town`
+>
+> columns: wealth 29 · toll 18 · blight 61 · burden 14.6/1k · trust 75 · legib 8 · works 99 · stable
+
+**ORAL** — There's what the office writes and there's what Glefold-on-Pellowfolt knows. Glefold-on-Pellowfolt feeds itself now, and that is not nothing, shift on shift. You learn the smell of a bad shift at the Glefold-on-Pellowfolt line before the bell says so. There's works here and none of it stays in Glefold-on-Pellowfolt. The ground gives under the north field of Glefold-on-Pellowfolt and always has, and there it is. Glefold-on-Pellowfolt will be here after the syndicate's factor, whatever the book says.
+
+**WRITTEN** — The office at Glefold-on-Pellowfolt reports as follows. Shift return appended: the order level returned for Glefold-on-Pellowfolt is 50; the office anticipates the next Glefold-on-Pellowfolt assessment with confidence. Blight load for Glefold-on-Pellowfolt stands at 61 in the register. The affected ground about Glefold-on-Pellowfolt is reclassified rather than lost — on the plant's own figures. The Glefold-on-Pellowfolt account is balanced as shown.
+
+| path | true | told | rule |
+|---|---|---|---|
+| attribution | world price_index 0.783 and grid_access 100 | the syndicate's factor | blame-shift: nearest visible named institution (§2) |
+| order | 50 | 50 | written: verbatim |
+| blight | 61 | 61 | written: verbatim |
+
+
+### 7. Brokstead the Open — *weary*
+
+> S_oral **+10** · D 8 · lead `elsewhere` (outward loss minimised) · skew +8 → S_written **+18** · skin `works-town`
 >
 > columns: wealth 16 · toll 25 · blight 49 · burden 39.4/1k · trust 78 · legib 10 · works 0 · stable
 
@@ -124,60 +141,9 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 | elite | 23 | 23 | written: verbatim |
 
 
-### 7. Glefold-on-Pellowfolt the Kindled — *weary*
+### 8. Badereton the Shadowed — *weary*
 
-> S_oral **+5** · D 7 · lead `works` (achievement inflated) · skew +7 → S_written **+12** · skin `works-town`
->
-> columns: wealth 29 · toll 18 · blight 61 · burden 14.6/1k · trust 75 · legib 8 · works 99 · stable
-
-**ORAL** — There's what the office writes and there's what Glefold-on-Pellowfolt knows. Glefold-on-Pellowfolt feeds itself now, and that is not nothing, shift on shift. You learn the smell of a bad shift at the Glefold-on-Pellowfolt line before the bell says so. There's works here and none of it stays in Glefold-on-Pellowfolt. The ground gives under the north field of Glefold-on-Pellowfolt and always has, and there it is. Glefold-on-Pellowfolt will be here after the syndicate's factor, whatever the book says.
-
-**WRITTEN** — The office at Glefold-on-Pellowfolt reports as follows. Shift return appended: the order level returned for Glefold-on-Pellowfolt is 50; the office anticipates the next Glefold-on-Pellowfolt assessment with confidence. Blight load for Glefold-on-Pellowfolt stands at 61 in the register. The affected ground about Glefold-on-Pellowfolt is reclassified rather than lost — on the plant's own figures. The Glefold-on-Pellowfolt account is balanced as shown.
-
-| path | true | told | rule |
-|---|---|---|---|
-| attribution | world price_index 0.783 and grid_access 100 | the syndicate's factor | blame-shift: nearest visible named institution (§2) |
-| order | 50 | 50 | written: verbatim |
-| blight | 61 | 61 | written: verbatim |
-
-
-### 8. Herow Ford the Gilded — *weary*
-
-> S_oral **-4** · D 3 · lead `works` (achievement inflated) · skew +3 → S_written **-1** · skin `works-town`
->
-> columns: wealth 32 · toll 14 · blight 61 · burden 12.5/1k · trust 79 · legib 0 · works 83 · decline
-
-**ORAL** — Ask anyone on the Herow Ford side of the Craverwick and you'll hear it the same. Herow Ford feeds itself now, and that is not nothing. You can hear the Raverelfolt cables over Herow Ford sing in a hard wind, and there it is. They burn what Herow Ford lifts in streets that have never seen the Craverwick. Say what you like: word in Herow Ford is Cramwick will not hold the seat past the next reckoning. And Herow Ford goes on, because what else is there.
-
-**WRITTEN** — The ordinary return for Herow Ford, nothing extraordinary arising. Social trust in Herow Ford is scored 79 by the standing instrument; as the works reports, grid connection at Herow Ford is complete and the benefit is already legible in the returns. The Herow Ford schedule follows the standard of the Osmark Combine and requires no local warrant; per the shift return, the injustice index for Herow Ford returns 41, within the range Cramwick has accepted before. Line schedule attached: traffic on the Herow Ford Road is returned as the district's principal land carriage; the discolouration of the Craverwick at Herow Ford is a known seasonal character of that water. The Herow Ford office remains at Cramwick's disposal.
-
-| path | true | told | rule |
-|---|---|---|---|
-| trust | 79 | 79 | written: verbatim |
-| injustice | 41 | 41 | written: verbatim |
-
-
-### 9. Skrakstead the Shadowed — *weary*
-
-> S_oral **-2** · D 19 · lead `water` (harm minimised) · skew +19 → S_written **+17** · skin `works-town`
->
-> columns: wealth 10 · toll 39 · blight 28 · burden 56.2/1k · trust 60 · legib 29 · works 0 · stable
-
-**ORAL** — My people have been in Skrakstead four generations and I'll say this plain. The healer is four days from Skrakstead and Cramwick's assessor is here every quarter. The ground gives under the north field of Skrakstead and always has. The rent takes a third part of a quarry-work wage in Skrakstead before the first shift is worked, and my father called Skrakstead by the old name and would not use the new one. They say the constables were paid twice this quarter in Skrakstead and the healers not at all. Write that down if you're writing anything.
-
-**WRITTEN** — Skrakstead, district return for the quarter. Market access for Skrakstead is scored at 15 against the standing table. Leave is sought to retain a portion of Skrakstead receipts against local works. Service provision at Skrakstead is scored at 70 against need; as the works reports, persons standing outside the Skrakstead count stand also outside the levy, and the office notes the saving. The Skrakstead matter is referred to the Osmark Combine and the office awaits instruction.
-
-| path | true | told | rule |
-|---|---|---|---|
-| attribution | market_access 15 | Cramwick's assessor | blame-shift: nearest visible named institution (§2) |
-| toll | 39 | a third part | folk |
-| market | 15 | 15 | written: verbatim |
-| servicegap | 70 | 70 | written: verbatim |
-
-
-### 10. Badereton the Shadowed — *weary*
-
-> S_oral **+2** · D 23 · lead `burden` (harm minimised) · skew +23 → S_written **+25** · skin `works-town`
+> S_oral **+5** · D 23 · lead `burden` (harm minimised) · skew +23 → S_written **+28** · skin `works-town`
 >
 > columns: wealth 15 · toll 18 · blight 25 · burden 54.8/1k · trust 53 · legib 36 · works 0 · stable
 
@@ -192,9 +158,40 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 | servicegap | 73 | 73 | written: verbatim |
 
 
+### 9. Zolgraddok — *weary*
+
+> S_oral **+11** · D 9 · lead `grid` (achievement inflated) · skew +9 → S_written **+20** · skin `works-town`
+>
+> columns: wealth 17 · toll 28 · blight 31 · burden 14.8/1k · trust 74 · legib 12 · works 0 · stable
+
+**ORAL** — You've come up the grid-work road into Zolgraddok, so you've seen the half of it already. We hold the Zolgraddok deeds ourselves, whatever they hold elsewhere — same hours either way. The ground gives under the north field of Zolgraddok and always has. My brother signed the recruiter's book out of Zolgraddok and his letter came with a stamp I can't read — there's a price for anything out of Zolgraddok if you know which door at Ballard Precinct. The Zolgraddok ground remembers longer than the register does.
+
+**WRITTEN** — Zolgraddok, district return for the quarter. Zolgraddok has met its schedule without recourse to Cramwick; the Zolgraddok entry is initialled by an officer no longer of this district. The Obsensign of the period carried the notice and Zolgraddok is deemed informed — blight load for Zolgraddok stands at 31 in the register. The return is certified as prepared from the Zolgraddok register.
+
+| path | true | told | rule |
+|---|---|---|---|
+| blight | 31 | 31 | written: verbatim |
+
+
+### 10. Herow Ford the Gilded — *weary*
+
+> S_oral **+2** · D 3 · lead `works` (achievement inflated) · skew +3 → S_written **+5** · skin `works-town`
+>
+> columns: wealth 32 · toll 14 · blight 61 · burden 12.5/1k · trust 79 · legib 0 · works 83 · decline
+
+**ORAL** — Ask anyone on the Herow Ford side of the Craverwick and you'll hear it the same. Herow Ford feeds itself now, and that is not nothing. You can hear the Raverelfolt cables over Herow Ford sing in a hard wind, and there it is. They burn what Herow Ford lifts in streets that have never seen the Craverwick. Say what you like: word in Herow Ford is Cramwick will not hold the seat past the next reckoning. And Herow Ford goes on, because what else is there.
+
+**WRITTEN** — The ordinary return for Herow Ford, nothing extraordinary arising. Social trust in Herow Ford is scored 79 by the standing instrument; as the works reports, grid connection at Herow Ford is complete and the benefit is already legible in the returns. The Herow Ford schedule follows the standard of the Osmark Combine and requires no local warrant; per the shift return, the injustice index for Herow Ford returns 41, within the range Cramwick has accepted before. Line schedule attached: traffic on the Herow Ford Road is returned as the district's principal land carriage; the discolouration of the Craverwick at Herow Ford is a known seasonal character of that water. The Herow Ford office remains at Cramwick's disposal.
+
+| path | true | told | rule |
+|---|---|---|---|
+| trust | 79 | 79 | written: verbatim |
+| injustice | 41 | 41 | written: verbatim |
+
+
 ### 11. Comfreton the Shadowed — *weary*
 
-> S_oral **-1** · D 18 · lead `water` (harm minimised) · skew +18 → S_written **+17** · skin `works-town`
+> S_oral **+1** · D 18 · lead `water` (harm minimised) · skew +18 → S_written **+19** · skin `works-town`
 >
 > columns: wealth 11 · toll 25 · blight 27 · burden 55.1/1k · trust 60 · legib 26 · works 0 · stable
 
@@ -211,24 +208,27 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 | order | 50 | 50 | written: verbatim |
 
 
-### 12. Zolgraddok — *weary*
+### 12. Skrakstead the Shadowed — *weary*
 
-> S_oral **+8** · D 9 · lead `grid` (achievement inflated) · skew +9 → S_written **+17** · skin `works-town`
+> S_oral **+0** · D 19 · lead `water` (harm minimised) · skew +19 → S_written **+19** · skin `works-town`
 >
-> columns: wealth 17 · toll 28 · blight 31 · burden 14.8/1k · trust 74 · legib 12 · works 0 · stable
+> columns: wealth 10 · toll 39 · blight 28 · burden 56.2/1k · trust 60 · legib 29 · works 0 · stable
 
-**ORAL** — You've come up the grid-work road into Zolgraddok, so you've seen the half of it already. We hold the Zolgraddok deeds ourselves, whatever they hold elsewhere — same hours either way. The ground gives under the north field of Zolgraddok and always has. My brother signed the recruiter's book out of Zolgraddok and his letter came with a stamp I can't read — there's a price for anything out of Zolgraddok if you know which door at Ballard Precinct. The Zolgraddok ground remembers longer than the register does.
+**ORAL** — My people have been in Skrakstead four generations and I'll say this plain. The healer is four days from Skrakstead and Cramwick's assessor is here every quarter. The ground gives under the north field of Skrakstead and always has. The rent takes a third part of a quarry-work wage in Skrakstead before the first shift is worked, and my father called Skrakstead by the old name and would not use the new one. They say the constables were paid twice this quarter in Skrakstead and the healers not at all. Write that down if you're writing anything.
 
-**WRITTEN** — Zolgraddok, district return for the quarter. Zolgraddok has met its schedule without recourse to Cramwick; the Zolgraddok entry is initialled by an officer no longer of this district. The Obsensign of the period carried the notice and Zolgraddok is deemed informed — blight load for Zolgraddok stands at 31 in the register. The return is certified as prepared from the Zolgraddok register.
+**WRITTEN** — Skrakstead, district return for the quarter. Market access for Skrakstead is scored at 15 against the standing table. Leave is sought to retain a portion of Skrakstead receipts against local works. Service provision at Skrakstead is scored at 70 against need; as the works reports, persons standing outside the Skrakstead count stand also outside the levy, and the office notes the saving. The Skrakstead matter is referred to the Osmark Combine and the office awaits instruction.
 
 | path | true | told | rule |
 |---|---|---|---|
-| blight | 31 | 31 | written: verbatim |
+| attribution | market_access 15 | Cramwick's assessor | blame-shift: nearest visible named institution (§2) |
+| toll | 39 | a third part | folk |
+| market | 15 | 15 | written: verbatim |
+| servicegap | 70 | 70 | written: verbatim |
 
 
 ### 13. Comfre — *weary*
 
-> S_oral **+6** · D 7 · lead `water` (harm minimised) · skew +7 → S_written **+13** · skin `works-town`
+> S_oral **+8** · D 7 · lead `water` (harm minimised) · skew +7 → S_written **+15** · skin `works-town`
 >
 > columns: wealth 13 · toll 25 · blight 30 · burden 45.8/1k · trust 75 · legib 7 · works 0 · stable
 
@@ -246,7 +246,7 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 
 ### 14. Welwick Height — *weary*
 
-> S_oral **+5** · D 5 · lead `elsewhere` (no interest engaged) · skew +0 → S_written **+5** · skin `works-town`
+> S_oral **+8** · D 5 · lead `elsewhere` (outward loss minimised) · skew +5 → S_written **+13** · skin `works-town`
 >
 > columns: wealth 14 · toll 32 · blight 36 · burden 40.8/1k · trust 79 · legib 3 · works 0 · stable
 
@@ -263,7 +263,7 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 
 ### 15. Hamhold — *weary*
 
-> S_oral **+4** · D 8 · lead `elsewhere` (no interest engaged) · skew +0 → S_written **+4** · skin `works-town`
+> S_oral **+7** · D 8 · lead `elsewhere` (outward loss minimised) · skew +8 → S_written **+15** · skin `works-town`
 >
 > columns: wealth 14 · toll 35 · blight 36 · burden 45.3/1k · trust 74 · legib 9 · works 0 · stable
 
@@ -282,7 +282,7 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 
 ### 16. Mookby — *weary*
 
-> S_oral **+3** · D 5 · lead `elsewhere` (no interest engaged) · skew +0 → S_written **+3** · skin `works-town`
+> S_oral **+6** · D 5 · lead `elsewhere` (outward loss minimised) · skew +5 → S_written **+11** · skin `works-town`
 >
 > columns: wealth 13 · toll 32 · blight 36 · burden 42/1k · trust 77 · legib 4 · works 0 · stable
 
@@ -299,26 +299,9 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 | elite | 24 | 24 | written: verbatim |
 
 
-### 17. Withenby — *weary*
+### 17. Netchfor — *weary*
 
-> S_oral **-2** · D 5 · lead `blight` (harm minimised) · skew +5 → S_written **+3** · skin `works-town`
->
-> columns: wealth 14 · toll 32 · blight 46 · burden 39.6/1k · trust 79 · legib 5 · works 0 · stable
-
-**ORAL** — I'll give you Withenby the way it is and not the way it reads. A third part of Withenby ground will grow nothing a person should eat — the ground gives under the north field of Withenby and always has. My brother signed the recruiter's book out of Withenby and his letter came with a stamp I can't read; there's a price for anything out of Withenby if you know which door at Ballard Precinct. Withenby buried the old quarrel and the two banks of the Craverwick trade again. The dust settles white on the Withenby sills by the second day. Withenby knows what it is owed, if not when.
-
-**WRITTEN** — The office at Withenby reports as follows. Works district: market access for Withenby is scored at 50 against the standing table; arrears in the Withenby healer's circuit are a scheduling matter and not a provision matter. The form is the Osmark Combine's; the office notes only that Withenby has completed it; service provision at Withenby is scored at 38 against need. The Withenby matter is referred to the Osmark Combine and the office awaits instruction.
-
-| path | true | told | rule |
-|---|---|---|---|
-| blight | 46 | a third part | folk |
-| market | 50 | 50 | written: verbatim |
-| servicegap | 38 | 38 | written: verbatim |
-
-
-### 18. Netchfor — *weary*
-
-> S_oral **+2** · D 10 · lead `water` (harm minimised) · skew +10 → S_written **+12** · skin `works-town`
+> S_oral **+5** · D 10 · lead `water` (harm minimised) · skew +10 → S_written **+15** · skin `works-town`
 >
 > columns: wealth 12 · toll 32 · blight 27 · burden 50.7/1k · trust 72 · legib 13 · works 0 · stable
 
@@ -334,9 +317,26 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 | safewater | 44 | 44 | written: verbatim |
 
 
+### 18. Withenby — *weary*
+
+> S_oral **+1** · D 5 · lead `blight` (harm minimised) · skew +5 → S_written **+6** · skin `works-town`
+>
+> columns: wealth 14 · toll 32 · blight 46 · burden 39.6/1k · trust 79 · legib 5 · works 0 · stable
+
+**ORAL** — I'll give you Withenby the way it is and not the way it reads. A third part of Withenby ground will grow nothing a person should eat — the ground gives under the north field of Withenby and always has. My brother signed the recruiter's book out of Withenby and his letter came with a stamp I can't read; there's a price for anything out of Withenby if you know which door at Ballard Precinct. Withenby buried the old quarrel and the two banks of the Craverwick trade again. The dust settles white on the Withenby sills by the second day. Withenby knows what it is owed, if not when.
+
+**WRITTEN** — The office at Withenby reports as follows. Works district: market access for Withenby is scored at 50 against the standing table; arrears in the Withenby healer's circuit are a scheduling matter and not a provision matter. The form is the Osmark Combine's; the office notes only that Withenby has completed it; service provision at Withenby is scored at 38 against need. The Withenby matter is referred to the Osmark Combine and the office awaits instruction.
+
+| path | true | told | rule |
+|---|---|---|---|
+| blight | 46 | a third part | folk |
+| market | 50 | 50 | written: verbatim |
+| servicegap | 38 | 38 | written: verbatim |
+
+
 ### 19. Briarlstead the Lofted (second pair) — *aggrieved*
 
-> S_oral **-22** · D 39 · lead `burden` (harm minimised) · skew +39 → S_written **+17** · skin `works-town`
+> S_oral **-20** · D 39 · lead `burden` (harm minimised) · skew +39 → S_written **+19** · skin `works-town`
 >
 > columns: wealth 9 · toll 39 · blight 27 · burden 56.8/1k · trust 33 · legib 64 · works 0 · decline
 
@@ -353,7 +353,7 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 
 ### 20. Dhulzak the Lofted (second pair) — *steady*
 
-> S_oral **+16** · D 11 · lead `burden` (harm minimised) · skew +11 → S_written **+27** · skin `works-town`
+> S_oral **+19** · D 11 · lead `burden` (harm minimised) · skew +11 → S_written **+30** · skin `works-town`
 >
 > columns: wealth 12 · toll 39 · blight 10 · burden 39.2/1k · trust 70 · legib 15 · works 0 · stable
 
@@ -371,28 +371,9 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 | market | 42 | 42 | written: verbatim |
 
 
-### 21. Theresderby the Lofted (second pair) — *aggrieved*
+### 21. Pelvetchste the Steadfast (second pair) — *weary*
 
-> S_oral **-13** · D 24 · lead `toll` (harm minimised) · skew +24 → S_written **+11** · skin `works-town`
->
-> columns: wealth 13 · toll 28 · blight 25 · burden 16.2/1k · trust 45 · legib 34 · works 0 · decline
-
-**ORAL** — There's no call to whisper, everyone in Theresderby knows it already. The rent takes a quarter part of a hauling and mill-work wage in Theresderby before the first shift is worked, and the line eats what the line eats. My father called Theresderby by the old name and would not use the new one. Half the pay that keeps this row of Theresderby comes in from off the map — which is the shift you get. There's a price for anything out of Theresderby if you know which door at Ballard Precinct. Word in Theresderby is Cramwick will not hold the seat past the next reckoning. Theresderby knows what it is owed, if not when.
-
-**WRITTEN** — Digest of conditions at Theresderby, prepared for Cramwick. Social trust in Theresderby is scored 45 by the standing instrument; the Theresderby figure is read as commerce awaiting classification. The price index against which Theresderby is assessed is entered at 0.783, as issued. Disease burden at Theresderby is returned at 16.2 in the thousand. Works district: the injustice index for Theresderby returns 22, within the range Cramwick has accepted before; departures from Theresderby are entered as the ordinary circulation of an expanding trade. For the Theresderby file, and for the Osmark Combine if called.
-
-| path | true | told | rule |
-|---|---|---|---|
-| toll | 28 | a quarter part | folk |
-| trust | 45 | 45 | written: verbatim |
-| price | 0.783 | 0.783 | written: verbatim |
-| burden | 16.2 | 16.2 | written: verbatim |
-| injustice | 22 | 22 | written: verbatim |
-
-
-### 22. Pelvetchste the Steadfast (second pair) — *weary*
-
-> S_oral **+10** · D 6 · lead `grid` (harm minimised) · skew +6 → S_written **+16** · skin `works-town`
+> S_oral **+13** · D 6 · lead `grid` (harm minimised) · skew +6 → S_written **+19** · skin `works-town`
 >
 > columns: wealth 16 · toll 25 · blight 35 · burden 37.2/1k · trust 80 · legib 7 · works 0 · stable
 
@@ -409,9 +390,9 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 | wealth | 16 | 16 | written: verbatim |
 
 
-### 23. Osteaste the Open (second pair) — *weary*
+### 22. Osteaste the Open (second pair) — *weary*
 
-> S_oral **+8** · D 6 · lead `toll` (harm minimised) · skew +6 → S_written **+14** · skin `works-town`
+> S_oral **+12** · D 6 · lead `toll` (harm minimised) · skew +6 → S_written **+18** · skin `works-town`
 >
 > columns: wealth 18 · toll 28 · blight 49 · burden 36.4/1k · trust 80 · legib 7 · works 0 · stable
 
@@ -429,26 +410,28 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 | elite | 26 | 26 | written: verbatim |
 
 
-### 24. Brokstead the Open (second pair) — *weary*
+### 23. Theresderby the Lofted (second pair) — *aggrieved*
 
-> S_oral **+6** · D 8 · lead `burden` (achievement inflated) · skew +8 → S_written **+14** · skin `works-town`
+> S_oral **-11** · D 24 · lead `toll` (harm minimised) · skew +24 → S_written **+13** · skin `works-town`
 >
-> columns: wealth 16 · toll 25 · blight 49 · burden 39.4/1k · trust 78 · legib 10 · works 0 · stable
+> columns: wealth 13 · toll 28 · blight 25 · burden 16.2/1k · trust 45 · legib 34 · works 0 · decline
 
-**ORAL** — Come down to the Pellowfolt below Brokstead and I'll show you rather than tell you. The rent takes a quarter part of a freight and factoring wage in Brokstead before the first shift is worked, and I've watched the Pellowfolt change colour off Brokstead twice in my life. Since the third whistle, a third part of Brokstead ground will grow nothing a person should eat; the ice on the Pellowfolt at Brokstead used to hold a cart and now it will not hold a dog. Word in Brokstead is Cramwick will not hold the seat past the next reckoning, and there's a mark on a Brokstead wall where the Pellowfolt came to, and it is above my head. Brokstead knows what it is owed, if not when.
+**ORAL** — There's no call to whisper, everyone in Theresderby knows it already. The rent takes a quarter part of a hauling and mill-work wage in Theresderby before the first shift is worked, and the line eats what the line eats. My father called Theresderby by the old name and would not use the new one. Half the pay that keeps this row of Theresderby comes in from off the map — which is the shift you get. There's a price for anything out of Theresderby if you know which door at Ballard Precinct. Word in Theresderby is Cramwick will not hold the seat past the next reckoning. Theresderby knows what it is owed, if not when.
 
-**WRITTEN** — The office at Brokstead reports as follows. Grid connection at Brokstead is complete and the benefit is already legible in the returns. Noted at the margin of the Brokstead return and read as ordinary — as the works reports. Shift return appended: the injustice index for Brokstead returns 41, within the range Cramwick has accepted before; persons standing outside the Brokstead count stand also outside the levy, and the office notes the saving. The Brokstead matter is referred to the Osmark Combine and the office awaits instruction.
+**WRITTEN** — Digest of conditions at Theresderby, prepared for Cramwick. Social trust in Theresderby is scored 45 by the standing instrument; the Theresderby figure is read as commerce awaiting classification. The price index against which Theresderby is assessed is entered at 0.783, as issued. Disease burden at Theresderby is returned at 16.2 in the thousand. Works district: the injustice index for Theresderby returns 22, within the range Cramwick has accepted before; departures from Theresderby are entered as the ordinary circulation of an expanding trade. For the Theresderby file, and for the Osmark Combine if called.
 
 | path | true | told | rule |
 |---|---|---|---|
-| toll | 25 | a quarter part | folk |
-| blight | 49 | a third part | folk |
-| injustice | 41 | 41 | written: verbatim |
+| toll | 28 | a quarter part | folk |
+| trust | 45 | 45 | written: verbatim |
+| price | 0.783 | 0.783 | written: verbatim |
+| burden | 16.2 | 16.2 | written: verbatim |
+| injustice | 22 | 22 | written: verbatim |
 
 
-### 25. Glefold-on-Pellowfolt the Kindled (second pair) — *weary*
+### 24. Glefold-on-Pellowfolt the Kindled (second pair) — *weary*
 
-> S_oral **+5** · D 7 · lead `elsewhere` (no interest engaged) · skew +0 → S_written **+5** · skin `works-town`
+> S_oral **+11** · D 7 · lead `elsewhere` (outward loss minimised) · skew +7 → S_written **+18** · skin `works-town`
 >
 > columns: wealth 29 · toll 18 · blight 61 · burden 14.6/1k · trust 75 · legib 8 · works 99 · stable
 
@@ -465,24 +448,41 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 | uncounted | 423 | 423 | written: verbatim |
 
 
-## Seed `atlas-2` — 50 voices
+### 25. Brokstead the Open (second pair) — *weary*
 
-> world: metropole the Ferran Concord · rival the Corvine League · exchange Lumbrell Exchange · gazette The Watch · precinct Quennary Precinct · regime `trade_war` · price index 0.783 · imperial attention 0.5
+> S_oral **+10** · D 8 · lead `burden` (achievement inflated) · skew +8 → S_written **+18** · skin `works-town`
 >
-> world-coins (oaths, minted once per world per register): lowland Moor/Wick/Hall · frontier Brok/Khek/Zolt · temple Fael/Vane/Lorne · corporate Trent/Drel/Dort · precinct Trix/Cind/Cord · gazette Bunel/Diel/Mer · chthonic Drath/Sable/Moth
+> columns: wealth 16 · toll 25 · blight 49 · burden 39.4/1k · trust 78 · legib 10 · works 0 · stable
+
+**ORAL** — Come down to the Pellowfolt below Brokstead and I'll show you rather than tell you. The rent takes a quarter part of a freight and factoring wage in Brokstead before the first shift is worked, and I've watched the Pellowfolt change colour off Brokstead twice in my life. Since the third whistle, a third part of Brokstead ground will grow nothing a person should eat; the ice on the Pellowfolt at Brokstead used to hold a cart and now it will not hold a dog. Word in Brokstead is Cramwick will not hold the seat past the next reckoning, and there's a mark on a Brokstead wall where the Pellowfolt came to, and it is above my head. Brokstead knows what it is owed, if not when.
+
+**WRITTEN** — The office at Brokstead reports as follows. Grid connection at Brokstead is complete and the benefit is already legible in the returns. Noted at the margin of the Brokstead return and read as ordinary — as the works reports. Shift return appended: the injustice index for Brokstead returns 41, within the range Cramwick has accepted before; persons standing outside the Brokstead count stand also outside the levy, and the office notes the saving. The Brokstead matter is referred to the Osmark Combine and the office awaits instruction.
+
+| path | true | told | rule |
+|---|---|---|---|
+| toll | 25 | a quarter part | folk |
+| blight | 49 | a third part | folk |
+| injustice | 41 | 41 | written: verbatim |
+
+
+## Seed `v6-2` — 50 voices
+
+> world: metropole the Ferran Concord · rival the Vantic Crown · exchange Osterce Exchange · gazette The Clantern · precinct Mallow Precinct · regime `trade_war` · price index 0.783 · imperial attention 0.5
 >
-> imperial coins (the Concordat tongue, one corpus): Cine, Prazzi, Ostrian, Sabrec
+> world-coins (oaths, minted once per world per register): lowland Pell/Brack/Wick · frontier Dhurn/Khak/Brak · temple Mine/Anth/Liane · corporate Trell/Hand/Calce · precinct Sent/Ostry/Bal · gazette Obsel/Coury/Hel · chthonic Geth/Sable/Moth · imperial Lenzo/Pra/Devin
+>
+> imperial coins (the Concordat tongue, one corpus): Cinal, Caldert, Ostra, Vecht
 
 *(paragraphs omitted; invariants below cover this seed)*
 
 
-## Seed `atlas-3` — 50 voices
+## Seed `v6-5` — 50 voices
 
-> world: metropole the Calderon Accord · rival the Aurean League · exchange Ferce Exchange · gazette The Merveraph · precinct Cadrock Precinct · regime `trade_war` · price index 0.783 · imperial attention 0.5
+> world: metropole the Ferran Concord · rival the Cindral Directorate · exchange Invmarrent Exchange · gazette The Sente · precinct Cordock Precinct · regime `trade_war` · price index 0.783 · imperial attention 0.5
 >
-> world-coins (oaths, minted once per world per register): lowland Mere/Aste/Otte · frontier Grak/Var/Mok · temple Mine/Liene/Ole · corporate Bell/Cal/Grend · precinct Wary/Prey/Ost · gazette Cord/Mer/Obsel · chthonic Drak/Geth/Baeth
+> world-coins (oaths, minted once per world per register): lowland Tare/Lar/Moor · frontier Throk/Mok/Tash · temple Aure/Vel/Viel · corporate Lum/Orec/Stren · precinct Prece/Corn/Bal · gazette Triel/Cone/Beac · chthonic Murk/Grim/Gloth · imperial Lenne/Qua/Quiro
 >
-> imperial coins (the Concordat tongue, one corpus): Cine, Calian, Obrec, Lend
+> imperial coins (the Concordat tongue, one corpus): Palis, Sabrend, Marra, Trazzi
 
 *(paragraphs omitted; invariants below cover this seed)*
 
@@ -498,61 +498,64 @@ Paragraphs are printed for `atlas-1` (the 50 the gate asks to be read); the othe
 | `atlas-1` | V3 every proper name appears verbatim in the export | PASS |
 | `atlas-1` | V4 S_written − S_oral is the signed skew law | PASS |
 | `atlas-1` | V5 no Cyrillic / banned lexicon, no surface > 3 | PASS (max repeat 3) |
-| `atlas-2` | V1 every digit in a written voice is an export value in facts[] | PASS |
-| `atlas-2` | V2 oral voices contain no digits | PASS |
-| `atlas-2` | V3 every proper name appears verbatim in the export | PASS |
-| `atlas-2` | V4 S_written − S_oral is the signed skew law | PASS |
-| `atlas-2` | V5 no Cyrillic / banned lexicon, no surface > 3 | PASS (max repeat 3) |
-| `atlas-3` | V1 every digit in a written voice is an export value in facts[] | PASS |
-| `atlas-3` | V2 oral voices contain no digits | PASS |
-| `atlas-3` | V3 every proper name appears verbatim in the export | PASS |
-| `atlas-3` | V4 S_written − S_oral is the signed skew law | PASS |
-| `atlas-3` | V5 no Cyrillic / banned lexicon, no surface > 3 | PASS (max repeat 3) |
-| all | V6 (strict) ≥2 bands each side, `weary` counted as neither | **FAIL** (neg 2/2, pos 1/2, non-grievance 81%) |
-| all | V6 (loose) `weary` counted on both sides, since it spans −10..+15 | PASS (neg 3/2, pos 2/2) |
+| `v6-2` | V1 every digit in a written voice is an export value in facts[] | PASS |
+| `v6-2` | V2 oral voices contain no digits | PASS |
+| `v6-2` | V3 every proper name appears verbatim in the export | PASS |
+| `v6-2` | V4 S_written − S_oral is the signed skew law | PASS |
+| `v6-2` | V5 no Cyrillic / banned lexicon, no surface > 3 | PASS (max repeat 3) |
+| `v6-5` | V1 every digit in a written voice is an export value in facts[] | PASS |
+| `v6-5` | V2 oral voices contain no digits | PASS |
+| `v6-5` | V3 every proper name appears verbatim in the export | PASS |
+| `v6-5` | V4 S_written − S_oral is the signed skew law | PASS |
+| `v6-5` | V5 no Cyrillic / banned lexicon, no surface > 3 | PASS (max repeat 3) |
+| all | V6 (strict) ≥2 bands each side, `weary` counted as neither | **FAIL** (neg 1/2, pos 2/2, non-grievance 86%) |
+| all | V6 (loose) `weary` counted on both sides, since it spans −10..+15 | PASS (neg 2/2, pos 3/2) |
+| 202 regions | **V6 AS RESTATED** — strict, over ≥200 settled regions at default weights | **PASS** (neg 2/2, pos 2/2, non-grievance 86% ≥20%) |
+
+> The two rows above are the OLD wording on a 3-seed sample, kept so the change is legible. V6 is now a statement about the model's range rather than about whichever ~75 voices three seeds produced: bands fury 3 · aggrieved 39 · weary 118 · steady 38 · proud 4.
 
 ### Sentiment bands (oral, all seeds, n=75)
 
-- `fury     ` ██ 2
-- `aggrieved` ███████████████████████████████ 31
-- `weary    ` ████████████████████████████████████████ 40
-- `steady   ` ██ 2
-- `proud    `  0
+- `fury     `  0
+- `aggrieved` ████████████████ 16
+- `weary    ` █████████████████████████████████ 33
+- `steady   ` ██████████████████ 18
+- `proud    ` ████████ 8
 
 ### The divergence law's reach (written voices, all seeds)
 
 | lead topic's interest | voices | share |
 |---|---|---|
-| harm minimised | 45 | 60% |
-| achievement inflated | 19 | 25% |
-| no interest engaged | 9 | 12% |
-| constabulary inflates disorder | 2 | 3% |
+| achievement inflated | 30 | 40% |
+| harm minimised | 23 | 31% |
+| outward loss minimised | 12 | 16% |
+| structural relation deflated (no discretion claimed) | 6 | 8% |
+| constabulary inflates disorder | 4 | 5% |
 
-lead topics: `toll` 17 · `tribute` 10 · `elsewhere` 9 · `grid` 8 · `sky` 7 · `water` 7 · `burden` 6 · `works` 3 · `blight` 3 · `smuggling` 2 · `abandon` 2 · `boom` 1
+lead topics: `elsewhere` 18 · `grid` 15 · `water` 9 · `sky` 7 · `burden` 7 · `toll` 5 · `boom` 5 · `smuggling` 4 · `works` 3 · `blight` 1 · `abandon` 1
 
 ### Class mix (oral sentences, all seeds)
 
-- `witness   ` 123 (25%)
-- `grievance ` 97 (19%)
-- `open      ` 75 (15%)
-- `closer    ` 75 (15%)
-- `rumor     ` 50 (10%)
-- `aspiration` 41 (8%)
-- `elsewhere ` 27 (5%)
-- `oath      ` 10 (2%)
+- `witness   ` 129 (25%)
+- `open      ` 75 (14%)
+- `grievance ` 75 (14%)
+- `closer    ` 75 (14%)
+- `aspiration` 62 (12%)
+- `rumor     ` 53 (10%)
+- `elsewhere ` 49 (9%)
 
 ### Surface repetition — top realized surfaces, all seeds
 
+- 8× `witness` — I have walked the Ore Road in every weather there is
+- 6× `closer` — that is not a complaint, it is a measurement
+- 5× `closer` — that is the whole of it, and you may check it yourself
 - 5× `open` — I keep no ledger, so I'll tell it straight
-- 5× `closer` — write that down if you're writing anything
 - 5× `closer` — you'll not get that from the office, but you have it from me
+- 4× `open` — you'll not hear this from the constabulary
 - 4× `elsewhere` — my cousin writes that the freight and factoring out there is worse and the pay
-- 4× `closer` — that is not a complaint, it is a measurement
-- 3× `closer` — that is the whole of it, and you may check it yourself
-- 3× `closer` — so much for the constabulary's schedule
-- 3× `closer` — so much for Calvere's assessor's schedule
+- 3× `closer` — write that down if you're writing anything
 
-distinct realized surfaces: 950 over 1022 draws
+distinct realized surfaces: 987 over 1068 draws
 
-town-name density (the cost of slotting every fragment): oral mean 5.9, max 8; written mean 7.0, max 11 mentions per voice
+town-name density (the cost of slotting every fragment): oral mean 6.0, max 10; written mean 7.3, max 10 mentions per voice
 

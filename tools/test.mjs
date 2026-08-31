@@ -5659,6 +5659,174 @@ console.log("# The reign surface E2 (#143): a seat you can sit in, and a verdict
   }
 }
 
+console.log("# The voices ship D2 (#138): the street and the ledger disagree on the record");
+{
+  // The spec's own invariants, on the shipping engine rather than the prototype.
+  // V1/V2 are register laws, V3 is a naming law, V4 is the divergence law's
+  // arithmetic, V5 is the anti-collision ceiling, V6 is the balance tripwire as
+  // restated by the #136 gate.
+  // Two ordinary worlds and one under control: without a high-order world the
+  // censor's-corridor arm of V4 asserts over nothing, which is the shape of every
+  // unfailable check this suite has had to fix.
+  const SEEDS = [["d2t-1", ""], ["d2t-2", ""], ["d2t-3", "&order=80"]];
+  const worlds = [];
+  for (const [sd, extra] of SEEDS) {
+    const S = LOOM.parseHash(`#seed=${sd}&regions=24&ep=10${extra}`);
+    const rg = LOOM.buildTopology(S), geo = LOOM.buildGeology(rg, S);
+    const model = LOOM.applyAttributes(rg, S, geo);
+    const gj = LOOM.toGeoJSON(model, S);
+    worlds.push({ sd, S, model, gj, W: LOOM.voiceWorld(gj, model), voices: gj.hinterland.voices });
+  }
+  const allV = worlds.flatMap(w => w.voices);
+
+  // (i) V1 — EVERY DIGIT IN A WRITTEN VOICE IS AN EXPORT VALUE IN ITS facts[].
+  //     The ledger may lie about what a number MEANS; it may not invent the number.
+  {
+    const bad = [];
+    for (const w of worlds) for (const v of w.voices.filter(x => x.kind === "written")) {
+      const shown = (v.text.match(/\d+(?:\.\d+)?/g) || []);
+      const told = new Set((v.facts || []).map(f => String(f.told)));
+      for (const d of shown) if (!told.has(d)) bad.push(`${w.sd} r${v.region_id}: "${d}" is in the text and not in facts[]`);
+    }
+    const digits = allV.filter(v => v.kind === "written")
+      .reduce((n, v) => n + (v.text.match(/\d+(?:\.\d+)?/g) || []).length, 0);
+    if (!bad.length && digits >= allV.filter(v => v.kind === "written").length)
+      ok(`V1 — the ledger cannot invent a figure: all ${digits} digit-sequences across the written voices of 3 worlds appear in that voice's own facts[], each carried with the column it came from`);
+    else fail(`V1: ${bad.slice(0, 3).join("; ")} (${digits} digits seen)`);
+  }
+
+  // (ii) V2 — ORAL VOICES CONTAIN NO DIGITS. Not policed here: it falls out of the
+  //      `street` register being digits:folk, which D1 wrote before this surface
+  //      existed. The check exists because a later register edit could silently
+  //      undo it.
+  {
+    const bad = [];
+    for (const w of worlds) for (const v of w.voices.filter(x => x.kind === "oral")) {
+      const d = v.text.match(/\d/g);
+      if (d) bad.push(`${w.sd} r${v.region_id}: "${v.text.slice(0, 60)}" carries ${d.join("")}`);
+    }
+    const n = allV.filter(v => v.kind === "oral").length;
+    if (!bad.length && n >= 6)
+      ok(`V2 — the street speaks no digits: ${n} oral voices, not one numeral, because \`street\` is a folk-digit register and the loom spells every quantity it is handed`);
+    else fail(`V2: ${bad.slice(0, 2).join("; ")}`);
+  }
+
+  // (iii) V3 — EVERY PROPER NAME APPEARS VERBATIM IN THE EXPORT. True by
+  //       construction now (voices read their names back out of the features they
+  //       ship beside), so this checks the construction rather than the authoring.
+  {
+    const bad = [];
+    for (const w of worlds) {
+      const corpus = new Set();
+      for (const f of w.gj.features) for (const val of Object.values(f.properties))
+        if (typeof val === "string") corpus.add(val);
+      const H = w.gj.hinterland;
+      for (const k of ["metropole", "rival"]) if ((H.powers || {})[k]) corpus.add(H.powers[k]);
+      for (const val of Object.values(H.institutions || {})) corpus.add(val);
+      if ((H.skyway || {}).name) corpus.add(H.skyway.name);
+      for (const f2 of ["crown", "temple", "magnate"]) for (const r2 of (H.rulers || {})[f2] || []) corpus.add(r2.name);
+      for (const v of w.voices) for (const nm of (v.facts || []).filter(f => f.path.startsWith("name:"))) {
+        const told = String(nm.told);
+        // an attribution is a COMPOSED phrase around an exported name ("the Crown's
+        // assessor"), so it is checked by the name it contains, not as a whole
+        if (nm.path === "name:blamed" || nm.path === "name:credited") continue;
+        if (told && !corpus.has(told)) bad.push(`${w.sd}: "${told}" (${nm.path}) is said and not exported`);
+      }
+    }
+    if (!bad.length)
+      ok(`V3 — every proper name a voice says is in the export it ships with, across 3 worlds; the voices read their names back out of the very features they travel beside, so this holds by construction rather than by a list kept in step`);
+    else fail(`V3: ${bad.slice(0, 3).join("; ")}`);
+  }
+
+  // (iv) V4 — S_written − S_oral IS THE SIGNED SKEW LAW, EXACTLY. The written voice
+  //      is not a second opinion; it is the first one pushed toward the institution's
+  //      interest by a number anyone can recompute.
+  {
+    const bad = [];
+    let corridors = 0;
+    for (const w of worlds) for (const v of w.voices.filter(x => x.kind === "written")) {
+      const want = Math.max(-100, Math.min(100, v.sentiment + v.skew));
+      const clamped = v.corridor === 1;
+      if (clamped) { corridors++; if (v.sentiment_written < -10 || v.sentiment_written > 25)
+        bad.push(`${w.sd} r${v.region_id}: corridor claimed but ${v.sentiment_written} is outside [−10,+25]`); }
+      else if (v.sentiment_written !== want)
+        bad.push(`${w.sd} r${v.region_id}: ${v.sentiment} + ${v.skew} = ${want}, but written is ${v.sentiment_written}`);
+    }
+    if (corridors === 0) bad.push("the censor's corridor never fired, so its arm asserts nothing");
+    if (!bad.length)
+      ok(`V4 — the divergence is arithmetic, not attitude: every written voice's sentiment is its oral sentiment plus the signed skew of its lead topic, and the ${corridors} inside the censor's corridor sit in [−10,+25] exactly as §3 says a controlled ledger must`);
+    else fail(`V4: ${bad.slice(0, 3).join("; ")}`);
+  }
+
+  // (v) V5 — NO SURFACE REPEATED > 3 TIMES PER WORLD, counted on the DISPLAYED text
+  //     (§7.5): the anaphora rule rewrites what the reader sees, so counting the
+  //     pre-anaphora fragment would let the rule manufacture variety nobody reads.
+  {
+    const bad = [];
+    for (const w of worlds) {
+      const seen = new Map();
+      for (const v of w.voices) for (const sent of v.text.split(/(?<=[.!?])\s+/)) {
+        const k = sent.trim().toLowerCase();
+        if (k.length < 12) continue;
+        seen.set(k, (seen.get(k) || 0) + 1);
+      }
+      for (const [k, n] of seen) if (n > 3) bad.push(`${w.sd}: "${k.slice(0, 50)}" x${n}`);
+    }
+    if (!bad.length)
+      ok(`V5 — the street does not repeat itself: over 3 worlds no displayed sentence appears more than three times, counted on the text as printed rather than on the fragment behind it`);
+    else fail(`V5: ${bad.slice(0, 3).join("; ")}`);
+  }
+
+  // (vi) V6 AS RESTATED BY THE GATE (#136). Strict — `weary` straddles zero and is
+  //      ~60% of towns, so counting it on both sides is an invariant that cannot
+  //      fail — over >= 200 REGIONS rather than a handful of voices, and at default
+  //      weights, because an extraction world honestly has no proud town and a
+  //      per-sample check would fire on a world that is correctly monotone.
+  {
+    const bandPop = { fury: 0, aggrieved: 0, weary: 0, steady: 0, proud: 0 };
+    const SEED_MIX = ["atlas-1", "atlas-2", "atlas-3", "v6-1", "v6-2", "v6-3",
+                      "fix-1", "fix-2", "fix-3", "e2-1", "e2-2", "e2-3"];
+    let n = 0;
+    for (const sd of SEED_MIX) {
+      if (n >= 200) break;
+      const S = LOOM.parseHash(`#seed=${sd}&regions=24&ep=10`);
+      const rg = LOOM.buildTopology(S), geo = LOOM.buildGeology(rg, S);
+      const model = LOOM.applyAttributes(rg, S, geo);
+      for (const reg of model.regions) {
+        if (!reg.settled) continue;
+        bandPop[LOOM.voiceBand(LOOM.voiceSentiment(LOOM.voiceOf(reg, model, S)))]++; n++;
+      }
+    }
+    const neg = ["fury", "aggrieved"].filter(b => bandPop[b]).length;
+    const pos = ["steady", "proud"].filter(b => bandPop[b]).length;
+    const cls = allV.filter(v => v.kind === "oral").length;
+    if (n >= 200 && neg >= 2 && pos >= 2 && cls >= 6)
+      ok(`V6 (strict, ${n} regions, default weights) — the street is not a monotone: both bands below zero and both above are reached, \`weary\` counted toward neither since it straddles zero and is most of the map (${["fury","aggrieved","weary","steady","proud"].map(b => `${b} ${bandPop[b]}`).join(" · ")})`);
+    else fail(`V6: ${n} regions, neg ${neg}/2, pos ${pos}/2 — ${JSON.stringify(bandPop)}`);
+  }
+
+  // (vii) THE VOICES CANNOT MOVE THE WORLD. The acceptance's byte-compat line. It
+  //       holds structurally — voices compose from the FINISHED export, after every
+  //       draw the world makes — but "holds structurally" is what the byte-pin said
+  //       about the reign engine too, and that is why the reign engine has a pin.
+  {
+    const bad = [];
+    for (const w of worlds) {
+      const rg = LOOM.buildTopology(w.S), geo = LOOM.buildGeology(rg, w.S);
+      const fresh = LOOM.applyAttributes(rg, w.S, geo);
+      const gj2 = LOOM.toGeoJSON(fresh, w.S);
+      const strip = (g) => { const { voices, ...rest } = g.hinterland; return JSON.stringify({ f: g.features, h: rest }); };
+      if (strip(gj2) !== strip(w.gj)) bad.push(`${w.sd}: composing voices moved the world`);
+      const a = JSON.stringify(w.gj.hinterland.voices.map(v => v.text));
+      const b = JSON.stringify(LOOM.toGeoJSON(fresh, w.S).hinterland.voices.map(v => v.text));
+      if (a !== b) bad.push(`${w.sd}: the voices are not deterministic`);
+    }
+    if (!bad.length)
+      ok(`the voices cannot move the world: over 3 worlds the export minus its voices is byte-identical whether or not the voices were composed, and the voices themselves reproduce exactly — they draw their own substream keyed on region and epoch, and they run after every draw the world makes`);
+    else fail(`byte-compat: ${bad.join("; ")}`);
+  }
+}
+
 console.log("# The suite audits itself: no assertion may sit in dead code");
 {
   // The audit that produced this check found a 1138-line validate() in THIS file

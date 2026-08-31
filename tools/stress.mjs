@@ -394,6 +394,9 @@ function validate(gj, tag) {
   // D3 events: columns valid + provenance timeline matches both ways
   {
     const EV = new Set(["none", "refinery_collapse", "blight_plague", "relic_calamity", "refinery_founded", "ore_strike", "war", "consecration", "seizure", "tower_burned", "tower_raised", "treaty", "revolt", "annexation", "settlement_abandoned",
+      // #185: a site the founding placed a hamlet on that nobody could live on —
+      // a correction, not a death, and a distinct type so the record can say so
+      "site_unviable",
       // D7 living-world shocks: weather, ground, discovery, the god's rise
       "drought", "flood", "quake", "storm", "discovery", "ascendancy"]);
     const evList = gj.hinterland.events || [];

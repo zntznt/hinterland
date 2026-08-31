@@ -1,6 +1,83 @@
 # Hinterland: the design history (newest first)
 
 **Schema history:**
+- **the reign surface: a seat you can sit in, and a verdict on what you did from it**
+  (issue #143, E2; **no schema change and no exported byte moves** — E2 is a surface
+  over E1's engine, so the fixtures do not move at all; `ch` now rides the URL, which
+  is not the export).
+  E1 made a reign playable by hand. This makes it playable: **THE REIGN** in the
+  compose drawer, a docked card at each fork, the map held at the year of the
+  question, and at the end the history you played set against the one the dice would
+  have run.
+  **§5.1'S CORE MECHANISM COULD NOT WORK, AND THAT WAS MEASURED BEFORE ANY UI EXISTED.**
+  The spec says the controller re-runs `applyAttributes(topology, {...params, ep:
+  frontier}, geo)` and reads the decisions for the frontier epoch — "the C1
+  counterfactual pattern applied to time". But **`ep` is not a playback length, it is a
+  world-shaping parameter**: #88's `evWindow` scales one-shot event scheduling by the
+  run's total length, so the same draw lands on a different year in a 4-epoch world
+  than in a 10-epoch one. Events at ep=N are a prefix of events at ep=10 in **0 of 60**
+  worlds; decisions in 34 of 60. Stepping `ep` would have shown the governor a
+  different world at every step — events shuffling, cards appearing and vanishing —
+  and ended in a history that never happens at the final `ep`. The world block
+  (regime chain, price index, attention, demand) *is* a prefix, so the divergence is
+  entirely inside the epoch loop.
+  **The fix was already in the app.** `scrubEpoch` — "preview-only: which epoch the map
+  shows" — indexes `epochSnaps` from a single fixed-`ep` run, and the map, the region
+  event stamps and the age label already honour it. So the frontier is a **reveal**,
+  not a re-run: `ep` stays at the target, the year being lived is `scrubEpoch`, and a
+  card resolves by appending to `params.ch` and recomputing the same world shape —
+  which is what the epoch-qualified keys were built for. Playing seed `e2-5` through
+  the page produces `g1:1,t1:2,s1:1,r8:2`, byte-identical to the reign
+  `reign-proto.mjs` builds for it headlessly. Recorded as **direction.md amendment
+  (e)**, with the general rule it leaves: *a surface may reveal a run, and it may
+  re-run a world, but it may not confuse the two.*
+  **The same finding retires §5.1's reign target.** `params.ep > 0 ? params.ep : 8`
+  assumed the controller could set the length; it cannot, so falling back to 8 would
+  reign over a history the page is not showing. The target is the world's own length,
+  and a founding snapshot has no years to reign over — the seat is disabled there with
+  a reason, rather than silently reigning over eight epochs that do not exist. (The
+  first build did exactly that, and said "Nothing in Welmere's 8 epochs" of a world
+  with none.)
+  **The card grades nothing, and the suite holds it to that.** §5 amendment (a) says
+  cards state the near edge and the far edge is discovered. So no brief and no road
+  promises an outcome, recommends itself, or calls another road a mistake — a check
+  greps the live card text for a vocabulary of grading (`better`, `safer`, `mistake`,
+  `you should`, …) across every decision a world offers. An app that told you which
+  road was wise would be doing the one thing this instrument exists not to do.
+  **The echo-the-dice invariant is now visible on the page.** Answer every card with
+  the die's own outcome and the verdict table shows no movement on any axis and reads
+  "the same story". E1 proves that on the engine; the verdict panel is the thing that
+  could have lied about it, so it is asserted through the DOM.
+  **G5 finding 6 lands here, where it always belonged.** A history that offered no
+  forks gets a line — *"Nothing in the N epochs of X turned on a decision the seat
+  could have taken differently"* — not a diff table of a world against itself.
+  **Seven DOM checks and a fuzz.** The suite walks the real page: the seat gated at
+  ep=0, a full reign with the map held at each question, the echo, recant restoring
+  the year, a world change vacating the seat, the no-grading grep, and `ch` riding the
+  link only when there is one. `stress.mjs` gains a **`ch`/`fate` fuzz**: 120
+  structured-garbage reigns — wrong kinds, impossible epochs, out-of-range options,
+  contradictions, injections, an 80-entry string — none of which threw, all of which
+  reproduce from their own canonical form, and the 34 that sanitized to nothing match
+  the auto-history byte for byte.
+  **A real browser, because jsdom cannot see layout.** `tools/reign-shots.mjs` walks a
+  six-epoch reign in Chromium and writes four plates to `docs/reign/`. It is
+  deliberately **not** in `npm test` — installing a browser would add minutes and
+  ~300MB to a job that already takes fifteen — and it earns its keep immediately: it
+  asserts the docked card actually sits inside the plate, which no jsdom test can.
+  (JPEG at quality 82: lossless shots ran ~850KB each, which would have made four
+  screenshots the largest thing in a repository whose biggest tracked file is the 1MB
+  bundle, re-entering history on every regeneration.)
+  **A stale doc, found while updating docs.** The README announced "Export schema
+  (v55)" through two bumps — v56 and E1's v57 — and cited the atlas sweep as v55 when
+  `docs/atlas.md` says v56 in its own first line. Both corrected, and the reign's
+  provenance (`ch`, `decisions`, the `by` column) is documented where the rest of the
+  schema is.
+  **The D2 (#138) voices seam ships empty and marked.** #143 asks the card to quote
+  2–3 epoch e−1 voices from the affected regions. #138 is blocked on #136, whose gate
+  is *"owner eyeballs all 50 and reads 6 random pairs aloud"* — a human act, open
+  since 2026-08-28. The card carries a marked empty node and reads without it; the
+  bullet is the one part of E2's build list not delivered, and it is named here rather
+  than quietly dropped.
 - **the reign engine: a governor's choices, replayable from a URL** (issue #142, E1;
   **schema 56 → 57, additive** — all 30 `world.geojson` fixtures differ in the version
   number and in nothing else, verified field by field: `ch` and its decision log appear

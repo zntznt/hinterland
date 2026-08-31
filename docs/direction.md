@@ -844,6 +844,36 @@ each difference is a reading of the ticket rather than a drift from it.
   worlds offer no fork, and the thinnest offers three — G5's case is reachable (ep=0)
   but not by accident.
 
+**AMENDMENT (e), from E2 (#143): the frontier is a REVEAL, not a re-run.** §5.1's
+Core mechanism above says the controller re-runs
+`applyAttributes(topology, {...params, ep: frontier}, geo)` and reads
+`model.decisions` for the frontier epoch — "the C1 counterfactual pattern applied to
+time". **Measured, it cannot work.** `ep` is not a playback length, it is a
+world-shaping parameter: #88's `evWindow` scales one-shot event scheduling by the
+run's total length, so the same draw lands on a different year in a 4-epoch world
+than in a 10-epoch one. Events at ep=N are a prefix of events at ep=10 in **0 of 60**
+worlds; decisions in 34 of 60. (The world block — regime chain, price index,
+attention, demand — *is* a prefix; the divergence is entirely inside the epoch loop.)
+Stepping `ep` would show the governor a different world at every step and end in a
+history that never happens at the final `ep`.
+
+So `ep` stays at the target and the year being lived is **`scrubEpoch`**, which
+already existed for exactly this and which the map, the region event stamps and the
+age label already honour. A card resolves by appending to `params.ch` and recomputing
+the same world shape — what the epoch-qualified keys were built for.
+
+Two consequences: §5.1's reign target `params.ep > 0 ? params.ep : 8` is retired (with
+the controller unable to set the length, the fallback would reign over a history the
+page is not showing — the target is the world's own length, and a founding snapshot
+offers no years to reign over at all); and **the rejected alternative is worth naming**
+— making `evWindow` independent of `ep` would change every world's history and move all
+30 fixtures to fix a UI convenience.
+
+**The general rule this leaves:** *a surface may reveal a run, and it may re-run a
+world, but it may not confuse the two.* Any future surface that wants to walk time —
+a replay, a scrubbed animation, an epoch-by-epoch export — reveals from one run's
+`epochSnaps`. Only a change to what the world IS re-runs it.
+
 **And a note on `fate` that cost a test.** A coverage table that held one fate constant
 across 60 seeds found the wound takeover in 0 of them, and read that as a dead branch.
 Nothing was broken: fate *is* the luck, so one fate over many seeds is a single run of

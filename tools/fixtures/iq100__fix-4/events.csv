@@ -1,7 +1,7 @@
 epoch,year,type,region_id,name,outcome,faction,measure,winner,ceded,tribute,occupied,contested,ruler,by
 1,1025,embargo,1,,,,,,,,,,,
-1,1025,settlement_abandoned,2,,,,,,,,,,,
-1,1025,settlement_abandoned,11,,,,,,,,,,,
+1,1025,site_unviable,2,,,,,,,,,,,
+1,1025,site_unviable,11,,,,,,,,,,,
 1,1025,seizure,1,,,magnate,,,,,,,,
 1,1025,drought,0,the Drought of 1025,,,,,,,,,,
 2,1050,settlement_abandoned,0,,,,,,,,,,,

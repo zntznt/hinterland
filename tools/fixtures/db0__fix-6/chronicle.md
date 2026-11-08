@@ -34,6 +34,10 @@ Ramwill Reach Bridge and Dravzek Crag Bridge carry every crossing in the realm, 
 
 **Year 1025.** The sea closed on Hamwick in 1025, and the second fortune at Hamwick was made on trade and unmade the same way. Nothing at Hamwick was destroyed and everything at Hamwick stopped.
 
+**Year 1025.** The ground at Khekton never carried anyone, whatever the founding rolls entered, so the record of Asellby keeps the name and drops the place.
+
+**Year 1025.** The site of Serrvarnuk Bastion was surveyed, entered, and never inhabited. And the rolls at Asellby were drawn from a map and not from a visit.
+
 **Year 1025.** What arrived at Asellby finished what the poison had started, so the blight had sat heavy on Asellby for years, so the fever arrived to a town already half-poisoned. The burial rolls at Asellby were kept and the cause was not, and the Dust Fever of 1025 is what the burial rolls are filed under.
 
 **Year 1050.** The country around Glasholt Crag dried from the edges inward, so the poorest ground at Glasholt Crag was the first to be given up. The grain price at Glasholt Crag doubled and the wage did not. And the dry page is headed the Drought of 1050.

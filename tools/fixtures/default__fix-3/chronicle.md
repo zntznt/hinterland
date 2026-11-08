@@ -32,6 +32,12 @@ Read at a distance the years are **the Quiet Years** (1000–1025), when the dis
 
 **Year 1025.** A quarrel between the Vantreth Imperium and the Metropole became the ruin of Comfre, so Comfre had built on foreign trade, and foreign trade was withdrawn. The capital that closed the lanes has never heard of Comfre.
 
+**Year 1025.** The stones set at Mariellenne Delf were the only thing that stayed, and the survey that placed Mariellenne Delf read the water and the road and did not read the ground.
+
+**Year 1025.** The hamlet marked at Drennath was gone before the first count, and the ground is the reason, so an entry in the survey of Comfre is not the same thing as a town.
+
+**Year 1025.** Nobody wintered at Surzethrak: the site was never one people could hold. The rolls of Comfre carried it for a season and then stopped.
+
 **Year 1025.** The magnates seized the crossing at Comfre in 1025, so the magnates collects at Comfre and maintains nothing. Nobody who crosses at Comfre was asked, and nobody who crosses there has another way round.
 
 **Year 1025.** The rains failed over Comfre, and failed again; the country the water had barely reached went to dust first, as it always does around Comfre. The grain price at Comfre doubled and the wage did not, so the Drought of 1025 is the entry, and it is a short one.

@@ -1940,7 +1940,11 @@ console.log("# The chronicle E4 acceptance: the world narrating itself");
   // that move the columns but are not chronicle HEADLINES; the chronicle narrates
   // the political/economic/wild shocks. Exclude the lifecycle pair from the
   // every-event-is-narrated requirement.
-  const LIFECYCLE = new Set(["settlement_founded", "settlement_abandoned"]);
+  // #185: `site_unviable` joins them — it is the same map-state class (a cell the
+  // founding placed a hamlet on that nobody could live on), not a political
+  // headline. It DOES narrate, but by the settlement's name rather than the
+  // region's place_name, which is what this check tests for the headline events.
+  const LIFECYCLE = new Set(["settlement_founded", "settlement_abandoned", "site_unviable"]);
   let named = 0, dated = 0;
   const evs = (R.gj.hinterland.events || []).filter(ev => !LIFECYCLE.has(ev.type));
   for (const ev of evs) {
